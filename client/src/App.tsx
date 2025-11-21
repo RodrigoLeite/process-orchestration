@@ -11,6 +11,7 @@ import DemandsManager from "@/pages/demands-manager";
 import DemandDetail from "@/pages/demand-detail";
 import DemandFlow from "@/pages/demand-flow";
 import KanbanBoardPage from "@/pages/kanban-board";
+import DashboardPage from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/app/demands/:id/flow" component={DemandFlow} />
         <Route path="/app/all-demands" component={AllDemands} />
         <Route path="/app/board" component={KanbanBoardPage} />
+        <Route path="/app/dashboard" component={DashboardPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
