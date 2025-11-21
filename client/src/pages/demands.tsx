@@ -253,71 +253,15 @@ export default function Demands() {
 
                     {/* Actions */}
                     <div className="flex gap-2 pt-2 flex-wrap">
-                      {demand.status === "pending" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="font-semibold hover:bg-blue-500/10 hover:text-blue-700 transition-all"
-                          onClick={() => navigate(`/app/demands/${demand.id}`)}
-                        >
-                          <ArrowRight className="w-4 h-4 mr-1" />
-                          Ver Detalhes
-                        </Button>
-                      )}
-                      {demand.status === "routed" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="font-semibold hover:bg-purple-500/10 hover:text-purple-700 transition-all"
-                          onClick={() => updateStatusMutation.mutate({ id: demand.id, status: "in_progress" })}
-                          disabled={updateStatusMutation.isPending}
-                        >
-                          <Loader2 className="w-4 h-4 mr-1" />
-                          Iniciar
-                        </Button>
-                      )}
-                      {demand.status === "in_progress" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="font-semibold hover:bg-green-500/10 hover:text-green-700 transition-all"
-                          onClick={() => updateStatusMutation.mutate({ id: demand.id, status: "done" })}
-                          disabled={updateStatusMutation.isPending}
-                        >
-                          <CheckCircle2 className="w-4 h-4 mr-1" />
-                          Finalizar
-                        </Button>
-                      )}
-                      {demand.status === "done" && parsed?.area && ( {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: demand.id })
-                              });
-                              if (!res.ok) throw new Error("Failed to execute agent");
-                              toast.success("✅ Agente executado com sucesso!", { duration: 2000 });
-                              queryClient.invalidateQueries({ queryKey: ["demands"] });
-                            } catch (error) {
-                              toast.error("❌ Erro ao executar agente", { duration: 2000 });
-                              console.error(error);
-                            } finally {
-                              setAgentId(null);
-                            }
-                          }}
-                          disabled={agentId === demand.id}
-                        >
-                          {agentId === demand.id ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-1 animate-spin inline" />
-                              Executando...
-                            </>
-                          ) : (
-                            <>
-                              <Zap className="w-4 h-4 mr-1 inline" />
-                              Executar agente
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="font-semibold hover:bg-blue-500/10 hover:text-blue-700 transition-all"
+                        onClick={() => navigate(`/app/demands/${demand.id}`)}
+                      >
+                        <ArrowRight className="w-4 h-4 mr-1" />
+                        Ver Detalhes
+                      </Button>
                     </div>
 
                     {/* Metadata */}

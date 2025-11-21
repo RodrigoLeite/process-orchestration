@@ -27,7 +27,6 @@ const areaColors: Record<string, string> = {
 };
 
 export default function AllDemands() {
-  const [agentId, setAgentId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { data: demands = [], isLoading } = useQuery<(Demand & { routeTo?: string })[]>({
     queryKey: ["all-demands"],
@@ -185,43 +184,6 @@ export default function AllDemands() {
                                     <span className="text-border/50">•</span>
                                     <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
                                   </div>
-                                  {demand.status === "routed" && parsed?.area && (
-                                    <button
-                                      className="w-full px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all flex items-center justify-center gap-2"
-                                      onClick={async () => {
-                                        try {
-                                          setAgentId(demand.id);
-                                          const normalizedArea = parsed.area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                                          const res = await fetch(`/api/agent/${normalizedArea}`, {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ id: demand.id })
-                                          });
-                                          if (!res.ok) throw new Error("Failed to execute agent");
-                                          toast.success("✅ Agente executado com sucesso!", { duration: 2000 });
-                                          queryClient.invalidateQueries({ queryKey: ["all-demands"] });
-                                        } catch (error) {
-                                          toast.error("❌ Erro ao executar agente", { duration: 2000 });
-                                          console.error(error);
-                                        } finally {
-                                          setAgentId(null);
-                                        }
-                                      }}
-                                      disabled={agentId === demand.id}
-                                    >
-                                      {agentId === demand.id ? (
-                                        <>
-                                          <Loader2 className="w-4 h-4 animate-spin" />
-                                          Executando...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Zap className="w-4 h-4" />
-                                          Executar agente
-                                        </>
-                                      )}
-                                    </button>
-                                  )}
                                 </div>
                               </div>
                             </CardContent>
