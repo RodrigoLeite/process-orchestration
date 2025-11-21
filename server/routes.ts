@@ -317,6 +317,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.warn("[DEMAND] Missing workflowId or firstStageId:", { workflowId, firstStageId });
         }
       }
+
+      // Automatically route the demand (status: pending → routed)
+      console.log("[AUTO] Routing demand automatically");
+      await storage.updateDemandStatus(demand.id, "routed");
+      await storage.createLog({ level: "info", message: "Demand automatically routed", metadata: { demandId: demand.id } });
+
+      // Automatically execute agent (status: routed → in_progress)
+      if (parsed.area) {
+        try {
+          console.log("[AUTO] Executing agent for area:", parsed.area);
+          const normalizeArea = (area: string): string => {
+            return area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          };
+          const normalizedArea = normalizeArea(parsed.area);
+          
+          // Call agent endpoint internally
+          const agentRes = await fetch(`http://localhost:5000/api/agent/${normalizedArea}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: demand.id })
+          });
+          
+          if (agentRes.ok) {
+            console.log("[AUTO] Agent executed successfully");
+          } else {
+            console.error("[AUTO] Agent execution failed:", agentRes.status);
+          }
+        } catch (error) {
+          console.error("[AUTO] Error executing agent:", error);
+        }
+      }
       
       res.status(201).json({ 
         id: demand.id, 
