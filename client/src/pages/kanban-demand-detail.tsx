@@ -63,9 +63,9 @@ export default function KanbanDemandDetail() {
 
   // Extract flow data
   const parsed = demand.parsed as any;
-  const flow: FlowItem[] = parsed?.flow || [];
-  const currentArea = parsed?.area_atual || "Não definida";
-  const description = parsed?.descricao_estruturada || demand.raw_text || "Sem descrição";
+  const flow: FlowItem[] = demand?.flow || [];
+  const currentArea = demand?.areaAtual || parsed?.area_atual || "Não definida";
+  const description = parsed?.descricao_estruturada || demand?.rawText || "Sem descrição";
   const category = parsed?.tipo || "Sem categoria";
   const priority = parsed?.prioridade || "média";
 
