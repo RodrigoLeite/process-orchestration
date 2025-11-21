@@ -183,19 +183,24 @@ export default function KanbanWorkflow() {
                 onDrop={handleDrop}
               >
                 {/* Column Header */}
-                <div className="border-b p-4 sticky top-0 z-10 bg-gray-50 border-gray-200">
-                  <h2 className="font-semibold text-sm" data-testid={`text-column-${stage.id}`}>
+                <div className="p-4 sticky top-0 z-10 bg-white border-b border-gray-200">
+                  <h2 className="font-bold text-base mb-2" data-testid={`text-column-${stage.id}`}>
                     {stage.name}
                   </h2>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {stageDemands.length} demanda{stageDemands.length !== 1 ? "s" : ""}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">
+                      {stageDemands.length} demanda{stageDemands.length !== 1 ? "s" : ""}
+                    </span>
+                    <Badge color="blue" className="text-xs">
+                      SLA: 48h
+                    </Badge>
+                  </div>
                 </div>
 
                 {/* Cards */}
-                <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                <div className="flex-1 p-4 space-y-4 overflow-y-auto">
                   {stageDemands.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
+                    <div className="text-center py-12 text-muted-foreground text-sm">
                       Nenhuma demanda
                     </div>
                   ) : (
@@ -209,7 +214,7 @@ export default function KanbanWorkflow() {
                         <div
                           key={demand.id}
                           draggable="true"
-                          className="cursor-move hover:shadow-md transition-shadow border border-slate-200 rounded-lg bg-white p-3 space-y-2"
+                          className="cursor-move hover:shadow-lg transition-all border-4 border-blue-400 rounded-xl bg-white p-4 space-y-3"
                           onDragStart={(e) => {
                             console.log("[DRAG] Starting drag for demand:", demand.id);
                             e.dataTransfer!.effectAllowed = "move";
@@ -218,12 +223,12 @@ export default function KanbanWorkflow() {
                           }}
                           data-testid={`card-demand-${demand.id}`}
                         >
-                          <p className="text-sm font-medium line-clamp-2 text-foreground">
-                            {title.substring(0, 60)}
+                          <p className="text-sm font-semibold line-clamp-3 text-foreground leading-snug">
+                            {title}
                           </p>
 
-                          <div className="flex gap-1 flex-wrap">
-                            <Badge color="blue" data-testid="badge-type">
+                          <div className="flex gap-2 flex-wrap">
+                            <Badge color="blue" data-testid="badge-type" className="text-xs font-medium">
                               {category}
                             </Badge>
                             <Badge
@@ -235,30 +240,20 @@ export default function KanbanWorkflow() {
                                   : "green"
                               }
                               data-testid="badge-priority"
+                              className="text-xs font-medium"
                             >
                               {priority}
                             </Badge>
                           </div>
 
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span className="text-xs text-muted-foreground">
-                              ID: {demand.id.slice(0, 6)}
-                            </span>
-                            <span
-                              className={`text-xs font-medium px-2 py-1 rounded ${
-                                demand.status === "completed"
-                                  ? "bg-green-100 text-green-700"
-                                  : demand.status === "blocked"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-blue-100 text-blue-700"
-                              }`}
-                            >
+                          <div className="bg-blue-100 rounded-lg px-3 py-2">
+                            <p className="text-xs font-semibold text-blue-700">
                               {demand.status === "completed"
-                                ? "✓"
+                                ? "✓ Concluído"
                                 : demand.status === "blocked"
-                                ? "✕"
-                                : "→"}
-                            </span>
+                                ? "✕ Bloqueado"
+                                : "Em processamento"}
+                            </p>
                           </div>
                         </div>
                       );
