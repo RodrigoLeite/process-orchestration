@@ -15,3 +15,11 @@ export interface Demand {
   created_at: string;
   updated_at: string;
 }
+
+export interface AgentResponse {
+  id: string;
+  demand_id: string;
+  area: string;
+  response: string;
+  created_at: string;
+}

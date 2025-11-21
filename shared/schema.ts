@@ -57,3 +57,19 @@ export const insertLogSchema = createInsertSchema(logs).omit({
 
 export type InsertLog = z.infer<typeof insertLogSchema>;
 export type Log = typeof logs.$inferSelect;
+
+export const agentResponses = pgTable("agent_responses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  demandId: uuid("demand_id").notNull(),
+  area: text("area").notNull(),
+  response: text("response").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAgentResponseSchema = createInsertSchema(agentResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAgentResponse = z.infer<typeof insertAgentResponseSchema>;
+export type AgentResponse = typeof agentResponses.$inferSelect;
