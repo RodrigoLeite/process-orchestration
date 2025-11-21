@@ -175,20 +175,20 @@ export default function DemandsManager() {
                       </td>
                       <td className="px-4 py-3">
                         {demand.status === "pending" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            onClick={() => handleRoute(demand.id)}
+                          <button
+                            className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={async () => {
+                              await fetch("/api/route-demand", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: demand.id })
+                              });
+                              refetch();
+                            }}
                             disabled={routingId === demand.id}
                           >
-                            {routingId === demand.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Zap className="w-4 h-4" />
-                            )}
-                            Rotear
-                          </Button>
+                            {routingId === demand.id ? "Roteando..." : "Rotear"}
+                          </button>
                         )}
                         {demand.status !== "pending" && (
                           <span className="text-xs text-muted-foreground">-</span>
