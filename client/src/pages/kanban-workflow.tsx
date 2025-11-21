@@ -158,62 +158,61 @@ export default function KanbanWorkflow() {
                       const category = parsed?.tipo || "-";
 
                       return (
-                        <Card
+                        <div
                           key={demand.id}
-                          className="cursor-move hover:shadow-md transition-shadow border-slate-200"
-                          draggable
+                          draggable="true"
+                          className="cursor-move hover:shadow-md transition-shadow border border-slate-200 rounded-lg bg-white p-3 space-y-2"
                           onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("demandId", demand.id);
-                            e.dataTransfer.setData("fromStageId", stage.id);
+                            console.log("[DRAG] Starting drag for demand:", demand.id);
+                            e.dataTransfer!.effectAllowed = "move";
+                            e.dataTransfer!.setData("demandId", demand.id);
+                            e.dataTransfer!.setData("fromStageId", stage.id);
                           }}
                           data-testid={`card-demand-${demand.id}`}
                         >
-                          <CardContent className="p-3 space-y-2">
-                            <p className="text-sm font-medium line-clamp-2 text-foreground">
-                              {title.substring(0, 60)}
-                            </p>
+                          <p className="text-sm font-medium line-clamp-2 text-foreground">
+                            {title.substring(0, 60)}
+                          </p>
 
-                            <div className="flex gap-1 flex-wrap">
-                              <Badge color="blue" data-testid="badge-type">
-                                {category}
-                              </Badge>
-                              <Badge
-                                color={
-                                  priority === "crítica"
-                                    ? "red"
-                                    : priority === "alta"
-                                    ? "orange"
-                                    : "green"
-                                }
-                                data-testid="badge-priority"
-                              >
-                                {priority}
-                              </Badge>
-                            </div>
+                          <div className="flex gap-1 flex-wrap">
+                            <Badge color="blue" data-testid="badge-type">
+                              {category}
+                            </Badge>
+                            <Badge
+                              color={
+                                priority === "crítica"
+                                  ? "red"
+                                  : priority === "alta"
+                                  ? "orange"
+                                  : "green"
+                              }
+                              data-testid="badge-priority"
+                            >
+                              {priority}
+                            </Badge>
+                          </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                              <span className="text-xs text-muted-foreground">
-                                ID: {demand.id.slice(0, 6)}
-                              </span>
-                              <span
-                                className={`text-xs font-medium px-2 py-1 rounded ${
-                                  demand.status === "completed"
-                                    ? "bg-green-100 text-green-700"
-                                    : demand.status === "blocked"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-blue-100 text-blue-700"
-                                }`}
-                              >
-                                {demand.status === "completed"
-                                  ? "✓"
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <span className="text-xs text-muted-foreground">
+                              ID: {demand.id.slice(0, 6)}
+                            </span>
+                            <span
+                              className={`text-xs font-medium px-2 py-1 rounded ${
+                                demand.status === "completed"
+                                  ? "bg-green-100 text-green-700"
                                   : demand.status === "blocked"
-                                  ? "✕"
-                                  : "→"}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {demand.status === "completed"
+                                ? "✓"
+                                : demand.status === "blocked"
+                                ? "✕"
+                                : "→"}
+                            </span>
+                          </div>
+                        </div>
                       );
                     })
                   )}
@@ -224,23 +223,29 @@ export default function KanbanWorkflow() {
                   className="border-t border-dashed border-gray-300 p-3 text-center text-xs text-gray-400 min-h-12 flex items-center justify-center hover:bg-blue-50 transition-colors"
                   onDragOver={(e) => {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
+                    e.dataTransfer!.dropEffect = "move";
+                    console.log("[DRAG] Over drop zone:", stage.id);
                   }}
                   onDrop={async (e) => {
                     e.preventDefault();
-                    const demandId = e.dataTransfer.getData("demandId");
+                    const demandId = e.dataTransfer!.getData("demandId");
+                    console.log("[DROP] Dropped demand:", demandId, "into stage:", stage.id);
                     if (demandId) {
                       try {
+                        console.log("[API] Calling PATCH /api/demands/" + demandId + "/stage with stageId:", stage.id);
                         const res = await fetch(`/api/demands/${demandId}/stage`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ stageId: stage.id })
                         });
+                        console.log("[API] Response status:", res.status);
                         if (res.ok) {
+                          console.log("[SUCCESS] Stage updated, invalidating queries");
                           // Refetch demands without full page reload
                           queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
                         } else {
-                          console.error("Failed to update stage:", res.statusText);
+                          const errorText = await res.text();
+                          console.error("Failed to update stage:", res.status, errorText);
                         }
                       } catch (error) {
                         console.error("Failed to update stage:", error);
