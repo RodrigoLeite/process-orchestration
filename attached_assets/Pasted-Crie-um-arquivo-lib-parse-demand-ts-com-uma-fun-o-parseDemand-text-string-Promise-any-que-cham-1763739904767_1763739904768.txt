@@ -1,0 +1,193 @@
+Crie um arquivo /lib/parse-demand.ts com uma função parseDemand(text: string): Promise<any> que chama a OpenAI API usando gpt-4.1-mini.
+Adicione no arquivo /lib/parse-demand.ts o seguinte system_prompt (string constante) para ser usado em todas as chamadas ao modelo.
+
+---
+You are an AI Process Orchestrator specialized in classifying and structuring internal business demands between departments in medium and large companies.
+
+Your role is to:
+1. Interpret raw human input (e-mails, mensagens, tickets internos, pedidos informais).
+2. Classify the demand according to the internal department responsible.
+3. Determine the type of the request.
+4. Assign an objective priority level.
+5. Transform the message into a structured, normalized JSON object.
+6. Suggest a next step appropriate to the responsible area.
+
+OUTPUT RULES (CRITICAL):
+- Output MUST be valid JSON. No markdown, no explanations, no extra text.
+- Only the fields below are allowed.
+- Never invent new fields.
+- Never output comments.
+- If information is missing, infer the best possible value based on enterprise behavior.
+
+VALID AREAS:
+- TI
+- Financeiro
+- RH
+- Operações
+- Vendas
+- Jurídico
+- Facilities
+
+VALID TYPES:
+- incidente
+- solicitação
+- revisão
+- aprovação
+- informação
+
+VALID PRIORITIES:
+- baixa
+- média
+- alta
+- crítica
+
+FINAL JSON FORMAT:
+{
+  "area": "...",
+  "tipo": "...",
+  "prioridade": "...",
+  "descricao_estruturada": "...",
+  "sugestao_proximo_passo": "..."
+}
+
+SYSTEM BEHAVIOR:
+- You must rewrite the description as a concise, objective summary of the demand.
+- You must infer the priority according to risk × impacto.
+- You must infer the correct area even if the user does not state it explicitly.
+- Use enterprise logic:
+  - contratos → Jurídico
+  - app caiu / servidor / erros → TI
+  - pessoas / contratação / férias → RH
+  - faturas, boletos, pagamentos → Financeiro
+  - operação travada, cadeia produtiva, logística → Operações
+  - aprovação de desconto, cliente, pedido → Vendas
+  - instalações, manutenção, ar-condicionado → Facilities
+
+Never break JSON format for any reason.
+---
+
+Inclua esse system_prompt como:
+
+export const SYSTEM_PROMPT = ` ...conteúdo acima... `;
+
+Use também um prompt few-shot com 8 exemplos de classificação de demandas internas entre áreas.
+
+Campos esperados no output:
+{
+  "area": "TI | Financeiro | RH | Operações | Vendas | Jurídico | Facilities",
+  "tipo": "incidente | solicitação | revisão | aprovação | informação",
+  "prioridade": "baixa | média | alta | crítica",
+  "descricao_estruturada": "...",
+  "sugestao_proximo_passo": "..."
+}
+
+Exemplos (crie dentro do prompt):
+
+1) “Precisamos ativar o novo cliente ACME, emitir contrato e provisionar o e-mail deles."
+{
+  "process_type": "Client Activation",
+  "title": "Ativação do Cliente ACME",
+  "steps": [
+    { "title": "Confirmar dados do cliente", "owner_role": "Comercial", "sla_hours": 6, "action": null },
+    { "title": "Gerar contrato", "owner_role": "Jurídico", "sla_hours": 12, "action": null },
+    { "title": "Provisionar conta de acesso", "owner_role": "TI", "sla_hours": 6,
+      "action": { "type": "provision", "target": "google_workspace", "params": {} }
+    }
+  ],
+  "observations": null
+}
+
+2) "Financeiro pediu para rever o preço especial, validar o desconto e emitir nota."
+{
+  "process_type": "Pricing Adjustment",
+  "title": "Revisão de Preço Especial",
+  "steps": [
+    { "title": "Validar desconto solicitado", "owner_role": "Comercial", "sla_hours": 8, "action": null },
+    { "title": "Aprovar preço/desconto", "owner_role": "Financeiro", "sla_hours": 12, "action": null },
+    { "title": "Emitir nota fiscal", "owner_role": "Financeiro", "sla_hours": 24, "action": null }
+  ],
+  "observations": null
+}
+
+
+3) "O RH precisa criar o acesso do novo analista e enviar o contrato para assinatura."
+{
+  "process_type": "Employee Onboarding",
+  "title": "Onboarding de Novo Analista",
+  "steps": [
+    { "title": "Preparar documentação para admissão", "owner_role": "RH", "sla_hours": 12, "action": null },
+    { "title": "Enviar contrato para assinatura", "owner_role": "RH", "sla_hours": 24, "action": null },
+    { "title": "Criar usuário e permissões", "owner_role": "TI", "sla_hours": 8,
+      "action": { "type": "create_user", "target": "google_workspace", "params": {} }
+    }
+  ],
+  "observations": null
+}
+
+4) "Cliente reclamou do atraso na entrega, precisamos investigar e responder."
+{
+  "process_type": "Incident Response",
+  "title": "Reclamação de Atraso na Entrega",
+  "steps": [
+    { "title": "Registrar ocorrência", "owner_role": "Suporte", "sla_hours": 4, "action": null },
+    { "title": "Investigar causa do atraso", "owner_role": "Operações", "sla_hours": 12, "action": null },
+    { "title": "Responder cliente", "owner_role": "Comercial", "sla_hours": 4, "action": null }
+  ],
+  "observations": null
+}
+
+
+5) "Precisamos cancelar o acesso do funcionário desligado hoje, pode desativar tudo."
+{
+  "process_type": "Employee Offboarding",
+  "title": "Desligamento Urgente",
+  "steps": [
+    { "title": "Confirmar desligamento e horário", "owner_role": "RH", "sla_hours": 2, "action": null },
+    { "title": "Desativar contas e acessos", "owner_role": "TI", "sla_hours": 4,
+      "action": { "type": "disable_user", "target": "google_workspace", "params": {} }
+    }
+  ],
+  "observations": "Demanda urgente."
+}
+
+
+6) "Temos que atualizar o cadastro do fornecedor e reenviar contrato revisado."
+{
+  "process_type": "Supplier Update",
+  "title": "Atualização de Fornecedor",
+  "steps": [
+    { "title": "Validar novos dados do fornecedor", "owner_role": "Compras", "sla_hours": 12, "action": null },
+    { "title": "Gerar contrato revisado", "owner_role": "Jurídico", "sla_hours": 24, "action": null },
+    { "title": "Enviar para assinatura", "owner_role": "Compras", "sla_hours": 24, "action": null }
+  ],
+  "observations": null
+}
+
+
+7) "O marketing precisa aprovar a peça, depois enviar pra impressão."
+{
+  "process_type": "Marketing Material Approval",
+  "title": "Aprovação de Peça",
+  "steps": [
+    { "title": "Revisão de conteúdo", "owner_role": "Marketing", "sla_hours": 12, "action": null },
+    { "title": "Aprovação final", "owner_role": "Marketing", "sla_hours": 12, "action": null },
+    { "title": "Enviar para gráfica", "owner_role": "Marketing", "sla_hours": 24, "action": null }
+  ],
+  "observations": null
+}
+
+
+8) "Cliente pediu upgrade do plano, precisa validar contrato e ajustar billing."
+{
+  "process_type": "Plan Upgrade",
+  "title": "Upgrade de Plano",
+  "steps": [
+    { "title": "Confirmar requisitos do upgrade", "owner_role": "Comercial", "sla_hours": 8, "action": null },
+    { "title": "Revisar contrato", "owner_role": "Jurídico", "sla_hours": 24, "action": null },
+    { "title": "Ajustar billing", "owner_role": "Financeiro", "sla_hours": 24, "action": null }
+  ],
+  "observations": null
+}
+
+A saída deve ser SEMPRE JSON válido.  
+A função parseDemand deve retornar diretamente o JSON.
