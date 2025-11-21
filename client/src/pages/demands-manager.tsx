@@ -95,7 +95,7 @@ export default function DemandsManager() {
                   <th className="px-4 py-3 text-left font-semibold">Área</th>
                   <th className="px-4 py-3 text-left font-semibold">Tipo</th>
                   <th className="px-4 py-3 text-left font-semibold">Prioridade</th>
-                  <th className="px-4 py-3 text-left font-semibold">Destino</th>
+                  <th className="px-4 py-3 text-left font-semibold">Workflow</th>
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
                   <th className="px-4 py-3 text-left font-semibold">Ação</th>
                 </tr>
@@ -145,10 +145,8 @@ export default function DemandsManager() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {demand.route_to ? (
-                          <Badge color="blue">
-                            {demand.route_to.charAt(0).toUpperCase() + demand.route_to.slice(1)}
-                          </Badge>
+                        {demand.workflowId ? (
+                          <Badge color="green">Workflow atribuído</Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
@@ -159,23 +157,11 @@ export default function DemandsManager() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-2 flex-wrap">
-                          <Link href={`/app/demands/${demand.id}`}>
-                            <a className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
-                              Abrir detalhes
-                            </a>
-                          </Link>
-                          <Link href={`/app/kanban/${demand.id}`}>
-                            <a className="px-2 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-700" data-testid={`link-kanban-${demand.id}`}>
-                              Ver workflow no Kanban
-                            </a>
-                          </Link>
-                          <Link href={`/app/demands/${demand.id}/flow`}>
-                            <a className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700" data-testid={`link-flow-${demand.id}`}>
-                              Timeline
-                            </a>
-                          </Link>
-                        </div>
+                        <Link href={`/app/demands/${demand.id}`}>
+                          <a className="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
+                            Ver detalhes
+                          </a>
+                        </Link>
                       </td>
                     </tr>
                   );
