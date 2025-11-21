@@ -6,6 +6,68 @@ import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
 import { buildAgentPrompt } from "./lib/agents/system_prompts";
 
+// Webhook event dispatcher
+async function dispatchWebhookEvent(
+  eventType: "DEMAND_MOVED" | "STATUS_UPDATED" | "AREA_OVERLOADED" | "DEMAND_COMPLETED",
+  area: string,
+  demandId: string,
+  payload: Record<string, any>
+) {
+  try {
+    const webhooksToNotify = await storage.getWebhooksForEvent(area, eventType);
+    
+    for (const webhook of webhooksToNotify) {
+      const event = await storage.createWebhookEvent({
+        webhookId: webhook.id,
+        eventType,
+        demandId,
+        payload,
+        status: "pending"
+      });
+
+      // Dispatch asynchronously
+      (async () => {
+        try {
+          const response = await fetch(webhook.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: event.id,
+              type: eventType,
+              timestamp: new Date().toISOString(),
+              demandId,
+              data: payload
+            }),
+            timeout: 5000
+          });
+
+          if (response.ok) {
+            await storage.updateWebhookEvent(event.id, {
+              status: "delivered",
+              sentAt: new Date(),
+              attempt: "1"
+            });
+          } else {
+            await storage.updateWebhookEvent(event.id, {
+              status: "failed",
+              error: `HTTP ${response.status}`,
+              attempt: "1"
+            });
+          }
+        } catch (error) {
+          await storage.updateWebhookEvent(event.id, {
+            status: "failed",
+            error: String(error),
+            attempt: "1"
+          });
+        }
+      })();
+    }
+  } catch (error) {
+    console.error("Error dispatching webhook event:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add request logging middleware
   app.use(createRequestLogger());
@@ -324,6 +386,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Webhook Endpoints ============
+
+  // Register webhook for area
+  app.post("/api/webhooks/register", async (req, res) => {
+    try {
+      const { area, url, events } = req.body;
+
+      if (!area || !url || !events || !Array.isArray(events)) {
+        return res.status(400).json({ success: false, data: null, error: "area, url, and events array are required" });
+      }
+
+      const validEvents = ["DEMAND_MOVED", "STATUS_UPDATED", "AREA_OVERLOADED", "DEMAND_COMPLETED"];
+      if (!events.every((e: string) => validEvents.includes(e))) {
+        return res.status(400).json({ success: false, data: null, error: "Invalid event types" });
+      }
+
+      const webhook = await storage.registerWebhook({ area, url, events });
+
+      await storage.createLog({
+        level: "info",
+        message: "Webhook registered",
+        metadata: { webhookId: webhook.id, area, url, events }
+      });
+
+      return res.json({
+        success: true,
+        data: webhook,
+        error: null
+      });
+    } catch (error) {
+      console.error("Error registering webhook:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to register webhook" });
+    }
+  });
+
+  // Dispatch webhook event
+  app.post("/api/webhooks/dispatch", async (req, res) => {
+    try {
+      const { eventType, area, demandId, payload } = req.body;
+
+      if (!eventType || !area) {
+        return res.status(400).json({ success: false, data: null, error: "eventType and area are required" });
+      }
+
+      await dispatchWebhookEvent(eventType, area, demandId, payload || {});
+
+      return res.json({
+        success: true,
+        data: { eventType, area, demandId, message: "Event dispatched" },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error dispatching webhook:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to dispatch webhook event" });
+    }
+  });
+
+  // Get webhooks for area
+  app.get("/api/webhooks/:area", async (req, res) => {
+    try {
+      const { area } = req.params;
+      const areaWebhooks = await storage.getWebhooksByArea(area);
+
+      return res.json({
+        success: true,
+        data: areaWebhooks,
+        error: null
+      });
+    } catch (error) {
+      console.error("Error fetching webhooks:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to fetch webhooks" });
+    }
+  });
+
+  // Delete webhook
+  app.delete("/api/webhooks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteWebhook(id);
+
+      return res.json({
+        success: true,
+        data: { id, message: "Webhook deleted" },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error deleting webhook:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to delete webhook" });
+    }
+  });
+
   // ============ Demand Flow Endpoints ============
 
   // Advance demand to next area
@@ -378,6 +531,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         level: "info",
         message: "Demand advanced to next area",
         metadata: { demandId, from: currentArea, to: nextArea, confidence: orchestration.confidence }
+      });
+
+      // Dispatch webhooks
+      await dispatchWebhookEvent("DEMAND_MOVED", nextArea, demandId, {
+        from: currentArea,
+        to: nextArea,
+        confidence: orchestration.confidence
       });
 
       return res.json({
@@ -445,6 +605,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         level: "info",
         message: "Demand manually reassigned",
         metadata: { demandId, from: currentArea, to: newArea, reason }
+      });
+
+      // Dispatch webhooks
+      await dispatchWebhookEvent("DEMAND_MOVED", newArea.toLowerCase(), demandId, {
+        from: currentArea,
+        to: newArea.toLowerCase(),
+        reason: reason || "Manual reassignment"
       });
 
       return res.json({
@@ -654,6 +821,14 @@ Retorne APENAS JSON (sem markdown):
         eta: etaDate,
         slaDeadline: slaDeadline,
         slaRemaining: slaRemaining,
+        delayRisk: `${aiDecision.sla_risk}%`
+      });
+
+      // Dispatch webhook for status update
+      await dispatchWebhookEvent("STATUS_UPDATED", demand.assignedTo || "unknown", demandId, {
+        previousStatus: demand.status,
+        newStatus: aiDecision.status,
+        slaRemaining,
         delayRisk: `${aiDecision.sla_risk}%`
       });
 

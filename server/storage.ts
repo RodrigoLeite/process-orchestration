@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -33,6 +33,16 @@ export interface IStorage {
 
   createDemandHistory(history: InsertDemandHistory): Promise<DemandHistory>;
   getDemandHistory(demandId: string): Promise<DemandHistory[]>;
+
+  registerWebhook(webhook: InsertWebhook): Promise<Webhook>;
+  getWebhooksByArea(area: string): Promise<Webhook[]>;
+  getWebhooksForEvent(area: string, eventType: string): Promise<Webhook[]>;
+  updateWebhook(id: string, updates: Partial<Webhook>): Promise<Webhook | undefined>;
+  deleteWebhook(id: string): Promise<void>;
+
+  createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
+  getWebhookEventsByStatus(status: string): Promise<WebhookEvent[]>;
+  updateWebhookEvent(id: string, updates: Partial<WebhookEvent>): Promise<WebhookEvent | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -186,6 +196,51 @@ export class DatabaseStorage implements IStorage {
 
   async getDemandHistory(demandId: string): Promise<DemandHistory[]> {
     return await this.db.select().from(demandHistory).where(eq(demandHistory.demandId, demandId)).orderBy(desc(demandHistory.createdAt));
+  }
+
+  async registerWebhook(insertWebhook: InsertWebhook): Promise<Webhook> {
+    const result = await this.db.insert(webhooks).values(insertWebhook).returning();
+    return result[0];
+  }
+
+  async getWebhooksByArea(area: string): Promise<Webhook[]> {
+    return await this.db.select().from(webhooks).where(eq(webhooks.area, area));
+  }
+
+  async getWebhooksForEvent(area: string, eventType: string): Promise<Webhook[]> {
+    const allWebhooks = await this.getWebhooksByArea(area);
+    return allWebhooks.filter(w => w.isActive === "true" && w.events?.includes(eventType as any));
+  }
+
+  async updateWebhook(id: string, updates: Partial<Webhook>): Promise<Webhook | undefined> {
+    const result = await this.db
+      .update(webhooks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(webhooks.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteWebhook(id: string): Promise<void> {
+    await this.db.delete(webhooks).where(eq(webhooks.id, id));
+  }
+
+  async createWebhookEvent(insertEvent: InsertWebhookEvent): Promise<WebhookEvent> {
+    const result = await this.db.insert(webhookEvents).values(insertEvent).returning();
+    return result[0];
+  }
+
+  async getWebhookEventsByStatus(status: string): Promise<WebhookEvent[]> {
+    return await this.db.select().from(webhookEvents).where(eq(webhookEvents.status, status)).orderBy(desc(webhookEvents.createdAt));
+  }
+
+  async updateWebhookEvent(id: string, updates: Partial<WebhookEvent>): Promise<WebhookEvent | undefined> {
+    const result = await this.db
+      .update(webhookEvents)
+      .set(updates)
+      .where(eq(webhookEvents.id, id))
+      .returning();
+    return result[0];
   }
 }
 
