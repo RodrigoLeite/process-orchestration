@@ -324,6 +324,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Status & SLA Endpoint ============
+
+  // Update status with SLA calculation
+  app.post("/api/update-status", async (req, res) => {
+    try {
+      const { demandId, statusUpdate, progressNotes } = req.body;
+      
+      if (!demandId) {
+        return res.status(400).json({ error: "demandId is required" });
+      }
+
+      const demand = await storage.getDemand(demandId);
+      if (!demand) {
+        return res.status(404).json({ error: "Demand not found" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const parsed = demand.parsed as any;
+      const prioridade = parsed?.prioridade || "média";
+      const createdAt = demand.createdAt;
+      const nowTime = new Date();
+      const elapsedHours = (nowTime.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
+      // Get similar demands in same area to estimate time
+      const similarDemands = await storage.getDemandsWithStatus("completed");
+      const areaMatches = similarDemands.filter(d => d.assignedTo === demand.assignedTo);
+      const avgCompletionHours = areaMatches.length > 0
+        ? areaMatches.reduce((sum, d) => sum + ((d.updatedAt.getTime() - d.createdAt.getTime()) / (1000 * 60 * 60)), 0) / areaMatches.length
+        : 24;
+
+      const slaPrompt = `Você é um especialista em gestão de SLAs corporativos.
+Analise esta demanda e atualize seu status com cálculos de SLA.
+
+Prioridade: ${prioridade}
+Tempo decorrido: ${elapsedHours.toFixed(1)} horas
+Tempo médio de conclusão: ${avgCompletionHours.toFixed(1)} horas
+Status atual: ${demand.status}
+Último status: ${statusUpdate || 'não informado'}
+Notas de progresso: ${progressNotes || 'nenhuma'}
+
+Classifique o status como um desses:
+- new: Demanda recém-criada
+- triaging: Em triagem/análise inicial
+- in_progress: Sendo processada ativamente
+- blocked: Travada por dependência externa
+- waiting_dependency: Aguardando outra área
+- completed: Concluída
+
+Estime:
+1. ETA (em horas a partir de agora)
+2. Risco de atraso (0-100%, onde 100% = risco altíssimo)
+
+Retorne APENAS JSON (sem markdown):
+{
+  "status": "in_progress",
+  "eta_hours": 12,
+  "sla_risk": 25,
+  "reasoning": "motivo da decisão"
+}`;
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "user",
+            content: slaPrompt
+          }
+        ],
+        temperature: 0.6,
+        max_tokens: 250
+      });
+
+      const responseText = response.choices[0]?.message?.content || "";
+      
+      let aiDecision;
+      try {
+        aiDecision = JSON.parse(responseText);
+      } catch (parseError) {
+        return res.status(500).json({ error: "Failed to parse AI response" });
+      }
+
+      // Calculate SLA dates
+      const etaDate = new Date(nowTime.getTime() + (aiDecision.eta_hours || 24) * 60 * 60 * 1000);
+      const slaDeadline = new Date(createdAt.getTime() + 
+        (prioridade === "crítica" ? 4 : prioridade === "alta" ? 8 : prioridade === "média" ? 24 : 72) * 60 * 60 * 1000
+      );
+
+      // Calculate remaining SLA
+      const remainingMs = slaDeadline.getTime() - nowTime.getTime();
+      const remainingHours = remainingMs / (1000 * 60 * 60);
+      const slaRemaining = remainingHours > 0 
+        ? `${Math.floor(remainingHours)}h ${Math.floor((remainingHours % 1) * 60)}m`
+        : "VENCIDO";
+
+      // Update demand
+      const updatedDemand = await storage.updateDemandWithSLA(demandId, {
+        status: aiDecision.status,
+        currentStatusDescription: statusUpdate,
+        eta: etaDate,
+        slaDeadline: slaDeadline,
+        slaRemaining: slaRemaining,
+        delayRisk: `${aiDecision.sla_risk}%`
+      });
+
+      res.json({
+        demandId,
+        status: aiDecision.status,
+        eta: etaDate.toISOString(),
+        slaDeadline: slaDeadline.toISOString(),
+        slaRemaining: slaRemaining,
+        delayRisk: `${aiDecision.sla_risk}%`,
+        reasoning: aiDecision.reasoning,
+        updatedDemand
+      });
+    } catch (error) {
+      console.error("Error in update-status endpoint:", error);
+      res.status(500).json({ error: "Failed to update demand status" });
+    }
+  });
+
   // ============ Orchestration Endpoint ============
 
   // Decide next area in workflow using AI
