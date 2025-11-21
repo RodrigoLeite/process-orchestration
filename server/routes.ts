@@ -393,7 +393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get the stage to check if it's the final "Concluído" stage
       const stage = await storage.getWorkflowStageById(stageId);
-      const isFinalStage = stage?.name?.toLowerCase() === "concluído";
+      console.log("[STAGE] Stage retrieved:", stage?.name);
+      const isFinalStage = stage?.name?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === "concluido";
 
       // Update stage
       const updatedDemand = await storage.updateDemandStage(req.params.id, stageId);
