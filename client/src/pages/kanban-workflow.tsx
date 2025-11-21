@@ -250,8 +250,20 @@ export default function KanbanWorkflow() {
                             </Badge>
                           </div>
 
-                          <div className="bg-blue-100 rounded-lg px-3 py-2">
-                            <p className="text-xs font-semibold text-blue-700">
+                          <div className={`rounded-lg px-3 py-2 ${
+                            demand.status === "completed" 
+                              ? "bg-green-100" 
+                              : demand.status === "blocked"
+                              ? "bg-red-100"
+                              : "bg-blue-100"
+                          }`}>
+                            <p className={`text-xs font-semibold ${
+                              demand.status === "completed"
+                                ? "text-green-700"
+                                : demand.status === "blocked"
+                                ? "text-red-700"
+                                : "text-blue-700"
+                            }`}>
                               {demand.status === "completed"
                                 ? "✓ Concluído"
                                 : demand.status === "blocked"
