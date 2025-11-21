@@ -175,49 +175,6 @@ export default function DemandsManager() {
                               Timeline
                             </a>
                           </Link>
-                          {demand.status === "pending" && (
-                            <button
-                              className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              onClick={async () => {
-                                await fetch("/api/route-demand", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ id: demand.id })
-                                });
-                                refetch();
-                              }}
-                              disabled={routingId === demand.id}
-                            >
-                              {routingId === demand.id ? "Roteando..." : "Rotear"}
-                            </button>
-                          )}
-                          {demand.status === "routed" && parsed?.area && (
-                            <button
-                              className="px-2 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              onClick={async () => {
-                                try {
-                                  setAgentId(demand.id);
-                                  const normalizedArea = parsed.area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                                  const res = await fetch(`/api/agent/${normalizedArea}`, {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: demand.id })
-                                  });
-                                  if (!res.ok) throw new Error("Failed to execute agent");
-                                  toast.success("✅ Agente executado com sucesso!", { duration: 2000 });
-                                  refetch();
-                                } catch (error) {
-                                  toast.error("❌ Erro ao executar agente", { duration: 2000 });
-                                  console.error(error);
-                                } finally {
-                                  setAgentId(null);
-                                }
-                              }}
-                              disabled={agentId === demand.id}
-                            >
-                              {agentId === demand.id ? "Executando..." : "Executar agente"}
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
