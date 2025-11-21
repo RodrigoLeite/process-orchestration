@@ -41,3 +41,18 @@ export const insertDemandSchema = createInsertSchema(demands).omit({
 
 export type InsertDemand = z.infer<typeof insertDemandSchema>;
 export type Demand = typeof demands.$inferSelect;
+
+export const logs = pgTable("logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  level: text("level").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertLogSchema = createInsertSchema(logs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertLog = z.infer<typeof insertLogSchema>;
+export type Log = typeof logs.$inferSelect;

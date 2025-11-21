@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
 import { eq, desc } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, users, demands } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, users, demands, logs } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -12,6 +12,8 @@ export interface IStorage {
   getDemand(id: string): Promise<Demand | undefined>;
   createDemand(demand: InsertDemand): Promise<Demand>;
   updateDemandStatus(id: string, status: string): Promise<Demand | undefined>;
+
+  createLog(log: InsertLog): Promise<Log>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -60,6 +62,11 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(demands.id, id))
       .returning();
+    return result[0];
+  }
+
+  async createLog(insertLog: InsertLog): Promise<Log> {
+    const result = await this.db.insert(logs).values(insertLog).returning();
     return result[0];
   }
 }
