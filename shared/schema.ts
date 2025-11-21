@@ -200,3 +200,34 @@ export const insertWebhookEventSchema = createInsertSchema(webhookEvents).omit({
 
 export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
 export type WebhookEvent = typeof webhookEvents.$inferSelect;
+
+export const areaWorkflows = pgTable("area_workflows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  areaName: text("area_name").notNull().unique(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAreaWorkflowSchema = createInsertSchema(areaWorkflows).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAreaWorkflow = z.infer<typeof insertAreaWorkflowSchema>;
+export type AreaWorkflow = typeof areaWorkflows.$inferSelect;
+
+export const workflowStages = pgTable("workflow_stages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowId: uuid("workflow_id").notNull(),
+  name: text("name").notNull(),
+  orderIndex: text("order_index").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertWorkflowStageSchema = createInsertSchema(workflowStages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWorkflowStage = z.infer<typeof insertWorkflowStageSchema>;
+export type WorkflowStage = typeof workflowStages.$inferSelect;

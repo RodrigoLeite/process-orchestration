@@ -139,6 +139,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignedTo,
         status: "pending"
       });
+
+      // Check if area already has a workflow
+      const existingWorkflow = await storage.getAreaWorkflow(assignedTo);
+      if (!existingWorkflow && assignedTo !== "unknown") {
+        // Create default workflow for this area
+        const areaName = assignedTo.toLowerCase();
+        const workflowName = `Workflow - ${parsed.area || "Área"}`;
+        
+        const newWorkflow = await storage.createAreaWorkflow({
+          areaName,
+          name: workflowName
+        });
+
+        // Create default stages based on area type
+        const defaultStages: Record<string, string[]> = {
+          "financeiro": ["Recebida", "Em análise", "Aprovação", "Processamento", "Concluída"],
+          "ti": ["Triagem", "Análise Técnica", "Implementação", "Testes", "Implantação"],
+          "rh": ["Recebimento", "Análise", "Entrevista/Reunião", "Decisão", "Finalização"],
+          "juridico": ["Protocolo", "Análise Jurídica", "Parecer", "Ação/Resposta", "Arquivamento"],
+          "operacoes": ["Recebimento", "Planejamento", "Execução", "Monitoramento", "Conclusão"],
+          "facilities": ["Solicitação", "Análise", "Orçamento", "Execução", "Finalização"],
+          "vendas": ["Prospecção", "Qualificação", "Proposta", "Negociação", "Fechamento"]
+        };
+
+        const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
+        
+        for (let i = 0; i < stages.length; i++) {
+          await storage.createWorkflowStage({
+            workflowId: newWorkflow.id,
+            name: stages[i],
+            orderIndex: String(i)
+          });
+        }
+
+        await logInfo("Default workflow created for area", { area: assignedTo, workflowId: newWorkflow.id });
+      }
       
       await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
       await storage.createLog({ level: "info", message: "Demand created", metadata: { demandId: demand.id, area: parsed.area, routeTo } });
@@ -193,6 +229,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignedTo,
         status: "pending"
       });
+
+      // Check if area already has a workflow
+      const existingWorkflow = await storage.getAreaWorkflow(assignedTo);
+      if (!existingWorkflow && assignedTo !== "unknown") {
+        // Create default workflow for this area
+        const areaName = assignedTo.toLowerCase();
+        const workflowName = `Workflow - ${parsed.area || "Área"}`;
+        
+        const newWorkflow = await storage.createAreaWorkflow({
+          areaName,
+          name: workflowName
+        });
+
+        // Create default stages based on area type
+        const defaultStages: Record<string, string[]> = {
+          "financeiro": ["Recebida", "Em análise", "Aprovação", "Processamento", "Concluída"],
+          "ti": ["Triagem", "Análise Técnica", "Implementação", "Testes", "Implantação"],
+          "rh": ["Recebimento", "Análise", "Entrevista/Reunião", "Decisão", "Finalização"],
+          "juridico": ["Protocolo", "Análise Jurídica", "Parecer", "Ação/Resposta", "Arquivamento"],
+          "operacoes": ["Recebimento", "Planejamento", "Execução", "Monitoramento", "Conclusão"],
+          "facilities": ["Solicitação", "Análise", "Orçamento", "Execução", "Finalização"],
+          "vendas": ["Prospecção", "Qualificação", "Proposta", "Negociação", "Fechamento"]
+        };
+
+        const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
+        
+        for (let i = 0; i < stages.length; i++) {
+          await storage.createWorkflowStage({
+            workflowId: newWorkflow.id,
+            name: stages[i],
+            orderIndex: String(i)
+          });
+        }
+      }
       
       res.status(201).json({ 
         id: demand.id, 
