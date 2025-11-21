@@ -9,6 +9,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add request logging middleware
   app.use(createRequestLogger());
 
+  // Test endpoint to verify OpenAI API key
+  app.get("/api/test-openai", async (req, res) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "OPENAI_API_KEY not configured" 
+        });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "user",
+            content: "Respond with 'success' if you receive this message"
+          }
+        ],
+        max_tokens: 10
+      });
+
+      res.json({
+        success: true,
+        message: "OpenAI API key is valid!",
+        apiKeySet: true,
+        model: response.model,
+        usage: response.usage
+      });
+    } catch (error: any) {
+      console.error("OpenAI test error:", error);
+      res.status(400).json({
+        success: false,
+        error: error.message || "Failed to connect to OpenAI",
+        details: error.error?.message || null
+      });
+    }
+  });
+
   app.post("/api/parse-demand", async (req, res) => {
     try {
       const { text } = req.body;
