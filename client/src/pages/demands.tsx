@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +32,7 @@ const priorityColors = {
 
 export default function Demands() {
   const [rawText, setRawText] = useState("");
-  const [agentId, setAgentId] = useState<string | null>(null);
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
 
   const { data: demands = [], isLoading } = useQuery<Demand[]>({
@@ -53,12 +54,16 @@ export default function Demands() {
       if (!res.ok) throw new Error("Failed to create demand");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["demands"] });
       setRawText("");
-      toast.success("✅ Demanda processada com sucesso!", {
-        duration: 3000,
+      toast.success("✅ Demanda criada e classificada automaticamente!", {
+        duration: 2000,
       });
+      // Redirect to demand details
+      setTimeout(() => {
+        navigate(`/app/demands/${data.id}`);
+      }, 500);
     },
     onError: () => {
       toast.error("❌ Erro ao processar demanda", {
@@ -253,11 +258,10 @@ export default function Demands() {
                           size="sm"
                           variant="outline"
                           className="font-semibold hover:bg-blue-500/10 hover:text-blue-700 transition-all"
-                          onClick={() => updateStatusMutation.mutate({ id: demand.id, status: "routed" })}
-                          disabled={updateStatusMutation.isPending}
+                          onClick={() => navigate(`/app/demands/${demand.id}`)}
                         >
                           <ArrowRight className="w-4 h-4 mr-1" />
-                          Rotear
+                          Ver Detalhes
                         </Button>
                       )}
                       {demand.status === "routed" && (
@@ -284,14 +288,7 @@ export default function Demands() {
                           Finalizar
                         </Button>
                       )}
-                      {demand.status === "routed" && parsed?.area && (
-                        <button
-                          className="px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
-                          onClick={async () => {
-                            try {
-                              setAgentId(demand.id);
-                              const normalizedArea = parsed.area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                              const res = await fetch(`/api/agent/${normalizedArea}`, {
+                      {demand.status === "done" && parsed?.area && ( {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ id: demand.id })

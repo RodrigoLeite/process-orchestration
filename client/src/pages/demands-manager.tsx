@@ -39,8 +39,6 @@ const getStatusLabel = (status: string): string => {
 
 export default function DemandsManager() {
   const [, navigate] = useLocation();
-  const [routingId, setRoutingId] = useState<string | null>(null);
-  const [agentId, setAgentId] = useState<string | null>(null);
 
   const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
     queryKey: ["demands-manager"],
@@ -51,28 +49,6 @@ export default function DemandsManager() {
     }
   });
 
-  const handleRoute = async (id: string) => {
-    try {
-      setRoutingId(id);
-      const res = await fetch("/api/route-demand", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to route demand");
-      }
-
-      toast.success("✅ Demanda roteada com sucesso!", { duration: 2000 });
-      refetch();
-    } catch (error) {
-      toast.error("❌ Erro ao rotear demanda", { duration: 2000 });
-      console.error(error);
-    } finally {
-      setRoutingId(null);
-    }
-  };
 
   const truncateText = (text: string, maxLength: number = 50) => {
     return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
