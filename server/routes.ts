@@ -14,14 +14,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const parsed = await parseDemand(text);
+      const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
       const demand = await storage.createDemand({
         rawText: text,
         parsed,
+        routeTo,
         status: "pending"
       });
       
-      res.status(201).json({ id: demand.id, parsed: demand.parsed });
+      res.status(201).json({ id: demand.id, parsed: demand.parsed, route_to: demand.routeTo });
     } catch (error) {
       console.error("Error parsing demand:", error);
       res.status(400).json({ error: "Failed to parse demand" });
