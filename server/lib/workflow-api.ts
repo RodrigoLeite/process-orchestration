@@ -23,7 +23,7 @@ export async function registerWorkflowRoutes(app: Express) {
   app.get("/api/workflows/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const workflow = await storage.getAreaWorkflow(id);
+      const workflow = await storage.getWorkflowById(id);
       
       if (!workflow) {
         return res.status(404).json({ error: "Workflow not found" });
