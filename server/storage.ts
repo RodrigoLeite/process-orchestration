@@ -12,6 +12,7 @@ export interface IStorage {
   getDemand(id: string): Promise<Demand | undefined>;
   createDemand(demand: InsertDemand): Promise<Demand>;
   updateDemandStatus(id: string, status: string): Promise<Demand | undefined>;
+  countDemandsByStatus(status: string): Promise<Record<string, number>>;
 
   createLog(log: InsertLog): Promise<Log>;
   createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
@@ -79,6 +80,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(demands.id, id))
       .returning();
     return result[0];
+  }
+
+  async countDemandsByStatus(status: string): Promise<Record<string, number>> {
+    const allDemands = await this.db.select().from(demands).where(eq(demands.status, status));
+    
+    const counts: Record<string, number> = {};
+    for (const demand of allDemands) {
+      const area = demand.assignedTo || "unknown";
+      counts[area] = (counts[area] || 0) + 1;
+    }
+    return counts;
   }
 
   async createLog(insertLog: InsertLog): Promise<Log> {

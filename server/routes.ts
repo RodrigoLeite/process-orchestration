@@ -324,6 +324,198 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Orchestration Endpoint ============
+
+  // Decide next area in workflow using AI
+  app.post("/api/orchestrate", async (req, res) => {
+    try {
+      const { demandId } = req.body;
+      
+      if (!demandId) {
+        return res.status(400).json({ error: "demandId is required" });
+      }
+
+      const demand = await storage.getDemand(demandId);
+      if (!demand) {
+        return res.status(404).json({ error: "Demand not found" });
+      }
+
+      // Check if demand is blocked
+      if (demand.status === "blocked") {
+        return res.json({
+          status: "blocked",
+          reason: "Demand is currently blocked",
+          demandId
+        });
+      }
+
+      const currentArea = demand.assignedTo || "unknown";
+      const parsed = demand.parsed as any;
+      const demandType = parsed?.tipo || null;
+      const demandCategory = parsed?.prioridade || null;
+
+      // Get current node
+      const currentNode = await storage.getWorkgraphNodeByName(currentArea);
+      if (!currentNode) {
+        return res.json({
+          status: "NO_VALID_ROUTE",
+          message: "Current area node not found in workgraph",
+          demandId,
+          currentArea
+        });
+      }
+
+      // Get outgoing edges from current area
+      const outgoingEdges = await storage.getWorkgraphEdgesByFromNode(currentNode.id);
+      
+      if (outgoingEdges.length === 0) {
+        return res.json({
+          status: "NO_VALID_ROUTE",
+          message: "No outgoing edges from current area",
+          demandId,
+          currentArea
+        });
+      }
+
+      // Get pending demands count by area
+      const pendingCounts = await storage.countDemandsByStatus("pending");
+
+      // Build list of candidate areas with their load
+      const candidates = [];
+      for (const edge of outgoingEdges) {
+        const nextNode = await storage.getWorkgraphNode(edge.toNodeId);
+        if (nextNode) {
+          const load = pendingCounts[nextNode.name] || 0;
+          const isOverloaded = load > 15;
+          
+          candidates.push({
+            nodeId: nextNode.id,
+            name: nextNode.name,
+            label: nextNode.label,
+            load,
+            isOverloaded,
+            demandType: edge.demandType,
+            demandCategory: edge.demandCategory,
+            condition: edge.condition,
+            weight: edge.weight
+          });
+        }
+      }
+
+      // Find fallback area (least loaded with isDefault = true)
+      const allNodes = await storage.getWorkgraphNodes();
+      let fallbackArea = allNodes.find(n => n.isDefault === "true");
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      // Call OpenAI to decide next area
+      const OpenAI = (await import("openai")).default;
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const orchestrationPrompt = `Você é um orquestrador de processos corporativos.
+Analize a demanda e decide para qual área ela deve ser roteada.
+
+Critérios de decisão:
+1. Tipo de demanda: ${demandType}
+2. Prioridade/Categoria: ${demandCategory}
+3. Áreas candidatas disponíveis:
+${candidates.map(c => `   - ${c.label} (carga: ${c.load}/15, sobrecarregada: ${c.isOverloaded})`).join('\n')}
+4. Área com fallback: ${fallbackArea?.label || 'nenhuma'}
+
+Restrições:
+- NÃO rotear para áreas sobrecarregadas (>15 demandas pending)
+- Se todas estiverem sobrecarregadas, usar fallback_area
+- Retornar APENAS um JSON válido com a estrutura abaixo
+
+Retorne APENAS o JSON (sem markdown, sem explicações):
+{
+  "nextArea": "nome_da_area",
+  "reason": "motivo da decisão",
+  "confidence": 0.95
+}
+
+Demanda: ${JSON.stringify(demand.parsed, null, 2)}`;
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "user",
+            content: orchestrationPrompt
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 200
+      });
+
+      const responseText = response.choices[0]?.message?.content || "";
+      
+      let decision;
+      try {
+        decision = JSON.parse(responseText);
+      } catch (parseError) {
+        return res.status(500).json({ error: "Failed to parse AI response" });
+      }
+
+      const nextAreaName = decision.nextArea?.toLowerCase();
+      const nextNode = await storage.getWorkgraphNodeByName(nextAreaName);
+
+      if (!nextNode) {
+        // Use fallback if recommended area not found
+        if (fallbackArea) {
+          return res.json({
+            nextArea: fallbackArea.name,
+            nextAreaLabel: fallbackArea.label,
+            reason: "AI suggested area not in workgraph, using fallback",
+            demandId,
+            currentArea,
+            confidence: decision.confidence,
+            usedFallback: true
+          });
+        }
+        return res.json({
+          status: "NO_VALID_ROUTE",
+          message: "No valid area found for orchestration",
+          demandId,
+          aiSuggestion: decision.nextArea
+        });
+      }
+
+      // Check if suggested area is overloaded
+      const suggestedLoad = pendingCounts[nextNode.name] || 0;
+      if (suggestedLoad > 15 && fallbackArea) {
+        return res.json({
+          nextArea: fallbackArea.name,
+          nextAreaLabel: fallbackArea.label,
+          reason: "Suggested area is overloaded, using fallback",
+          demandId,
+          currentArea,
+          confidence: decision.confidence,
+          originalSuggestion: decision.nextArea,
+          usedFallback: true
+        });
+      }
+
+      res.json({
+        nextArea: nextNode.name,
+        nextAreaLabel: nextNode.label,
+        reason: decision.reason,
+        demandId,
+        currentArea,
+        confidence: decision.confidence,
+        pendingInNextArea: suggestedLoad,
+        usedFallback: false
+      });
+    } catch (error) {
+      console.error("Error in orchestrate endpoint:", error);
+      res.status(500).json({ error: "Failed to orchestrate demand routing" });
+    }
+  });
+
   // ============ WorkGraph Endpoints ============
 
   // Get all nodes
