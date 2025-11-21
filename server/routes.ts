@@ -286,10 +286,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         response: agentResponseText
       });
 
+      const updatedDemand = await storage.updateDemandStatus(id, "in_progress");
+
       await storage.createLog({ 
         level: "info", 
-        message: "Agent response generated successfully", 
-        metadata: { area, demandId: id, responseId: savedResponse.id } 
+        message: "Agent response generated and demand status updated", 
+        metadata: { area, demandId: id, responseId: savedResponse.id, newStatus: "in_progress" } 
       });
 
       res.json({
@@ -297,7 +299,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         demand_id: savedResponse.demandId,
         area: savedResponse.area,
         response: savedResponse.response,
-        created_at: savedResponse.createdAt
+        created_at: savedResponse.createdAt,
+        demand_status: updatedDemand?.status
       });
     } catch (error) {
       console.error("Error in agent endpoint:", error);
