@@ -94,3 +94,39 @@ export const insertWorkflowSchema = createInsertSchema(workflows).omit({
 
 export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
 export type Workflow = typeof workflows.$inferSelect;
+
+export const workgraphNodes = pgTable("workgraph_nodes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  label: text("label").notNull(),
+  description: text("description"),
+  isDefault: text("is_default").default("false"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertWorkgraphNodeSchema = createInsertSchema(workgraphNodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWorkgraphNode = z.infer<typeof insertWorkgraphNodeSchema>;
+export type WorkgraphNode = typeof workgraphNodes.$inferSelect;
+
+export const workgraphEdges = pgTable("workgraph_edges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  fromNodeId: uuid("from_node_id").notNull(),
+  toNodeId: uuid("to_node_id").notNull(),
+  demandType: text("demand_type"),
+  demandCategory: text("demand_category"),
+  condition: text("condition"),
+  weight: text("weight").default("1"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertWorkgraphEdgeSchema = createInsertSchema(workgraphEdges).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWorkgraphEdge = z.infer<typeof insertWorkgraphEdgeSchema>;
+export type WorkgraphEdge = typeof workgraphEdges.$inferSelect;
