@@ -359,12 +359,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         response: agentResponseText
       });
 
-      const updatedDemand = await storage.updateDemandStatus(id, "in_progress");
+      // Parse agent response to extract workflow data
+      let flowData: Array<{ area: string; order: number; sla: number }> = [];
+      let areaAtual = "Recebido";
+      let statusAtual = "recebido";
+      let slaPerEtapa: Record<string, number> = {};
+      let risco = "0%";
+      let overloadPrevision = "0%";
+
+      try {
+        // Try to parse JSON from response
+        const jsonMatch = agentResponseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          
+          // Extract flow array
+          if (parsed.flow && Array.isArray(parsed.flow)) {
+            flowData = parsed.flow.map((f: any) => ({
+              area: f.area || "N/A",
+              order: f.order || 0,
+              sla: f.sla || 48
+            }));
+            areaAtual = flowData[0]?.area || "Recebido";
+          }
+          
+          // Extract other fields with defaults
+          statusAtual = parsed.status_atual || "recebido";
+          slaPerEtapa = parsed.sla_por_etapa || {};
+          risco = parsed.risco || "0%";
+          overloadPrevision = parsed.overload_prevision || "0%";
+        }
+      } catch (parseError) {
+        console.log("Could not parse agent JSON response, using defaults");
+      }
+
+      // Apply fallback if no flow was found
+      if (flowData.length === 0) {
+        flowData = [
+          { area: "Recebido", order: 0, sla: 48 },
+          { area: "Em andamento", order: 1, sla: 48 },
+          { area: "Concluído", order: 2, sla: 48 }
+        ];
+        areaAtual = "Recebido";
+      }
+
+      // Update demand with workflow data
+      const updatedDemand = await storage.updateDemandWithSLA(id, {
+        status: "in_progress",
+        flow: flowData,
+        areaAtual,
+        statusAtual,
+        slaPerEtapa,
+        risco,
+        overloadPrevision
+      });
 
       await storage.createLog({ 
         level: "info", 
-        message: "Agent response generated and demand status updated", 
-        metadata: { area, demandId: id, responseId: savedResponse.id, newStatus: "in_progress" } 
+        message: "Agent response generated and workflow saved", 
+        metadata: { 
+          area, 
+          demandId: id, 
+          responseId: savedResponse.id, 
+          newStatus: "in_progress",
+          flowSteps: flowData.length,
+          areaAtual
+        } 
       });
 
       res.json({
@@ -373,7 +433,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         area: savedResponse.area,
         response: savedResponse.response,
         created_at: savedResponse.createdAt,
-        demand_status: updatedDemand?.status
+        demand_status: updatedDemand?.status,
+        workflow: {
+          flow: flowData,
+          area_atual: areaAtual,
+          status_atual: statusAtual
+        }
       });
     } catch (error) {
       console.error("Error in agent endpoint:", error);
@@ -1169,6 +1234,39 @@ Demanda: ${JSON.stringify(demand.parsed, null, 2)}`;
           confidence: decision.confidence,
           originalSuggestion: decision.nextArea,
           usedFallback: true
+        });
+      }
+
+      // Save orchestration flow if demand doesn't already have one
+      if (!demand.flow || demand.flow.length === 0) {
+        // Build default flow with areas from orchestration
+        const orchestrationFlow: Array<{ area: string; order: number; sla: number }> = [];
+        
+        // Add current area
+        orchestrationFlow.push({
+          area: currentArea.charAt(0).toUpperCase() + currentArea.slice(1),
+          order: 0,
+          sla: 48
+        });
+        
+        // Add next area
+        orchestrationFlow.push({
+          area: nextNode.label || nextNode.name,
+          order: 1,
+          sla: 48
+        });
+        
+        // Add completion area
+        orchestrationFlow.push({
+          area: "Concluído",
+          order: 2,
+          sla: 48
+        });
+
+        await storage.updateDemandWithSLA(demandId, {
+          flow: orchestrationFlow,
+          areaAtual: currentArea.charAt(0).toUpperCase() + currentArea.slice(1),
+          statusAtual: "pendente"
         });
       }
 
