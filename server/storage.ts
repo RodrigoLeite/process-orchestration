@@ -15,6 +15,7 @@ export interface IStorage {
   updateDemandWithSLA(id: string, updates: any): Promise<Demand | undefined>;
   getDemandsWithStatus(status: string): Promise<Demand[]>;
   countDemandsByStatus(status: string): Promise<Record<string, number>>;
+  getDemandsFromLastDays(days: number): Promise<Demand[]>;
 
   createLog(log: InsertLog): Promise<Log>;
   createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
@@ -129,6 +130,14 @@ export class DatabaseStorage implements IStorage {
       counts[area] = (counts[area] || 0) + 1;
     }
     return counts;
+  }
+
+  async getDemandsFromLastDays(days: number): Promise<Demand[]> {
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return await this.db.select().from(demands).where((col) => {
+      const createdAt = col.createdAt;
+      return sql`${createdAt} >= ${cutoffDate}`;
+    });
   }
 
   async createLog(insertLog: InsertLog): Promise<Log> {
