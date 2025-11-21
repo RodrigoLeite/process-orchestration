@@ -324,6 +324,227 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Demand Flow Endpoints ============
+
+  // Advance demand to next area
+  app.post("/api/demands/advance", async (req, res) => {
+    try {
+      const { demandId } = req.body;
+      
+      if (!demandId) {
+        return res.status(400).json({ success: false, data: null, error: "demandId is required" });
+      }
+
+      const demand = await storage.getDemand(demandId);
+      if (!demand) {
+        return res.status(404).json({ success: false, data: null, error: "Demand not found" });
+      }
+
+      // Get next area via orchestration
+      const orchestration = await fetch("http://localhost:5000/api/orchestrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ demandId })
+      }).then(r => r.json());
+
+      if (!orchestration.nextArea) {
+        return res.json({
+          success: false,
+          data: null,
+          error: orchestration.message || "No valid next area found"
+        });
+      }
+
+      const currentArea = demand.assignedTo || "unknown";
+      const nextArea = orchestration.nextArea;
+
+      // Record history
+      await storage.createDemandHistory({
+        demandId,
+        fromArea: currentArea,
+        toArea: nextArea,
+        status: demand.status,
+        reason: `Advanced via orchestration (confidence: ${orchestration.confidence})`
+      });
+
+      // Update demand
+      const updated = await storage.updateDemandWithSLA(demandId, {
+        assignedTo: nextArea,
+        status: "in_progress"
+      });
+
+      // Audit log
+      await storage.createLog({
+        level: "info",
+        message: "Demand advanced to next area",
+        metadata: { demandId, from: currentArea, to: nextArea, confidence: orchestration.confidence }
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          demandId,
+          previousArea: currentArea,
+          nextArea: nextArea,
+          reasoning: orchestration.reason,
+          updatedDemand: updated
+        },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error advancing demand:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to advance demand" });
+    }
+  });
+
+  // Manually reassign demand to area
+  app.post("/api/demands/reassign", async (req, res) => {
+    try {
+      const { demandId, newArea, reason } = req.body;
+      
+      if (!demandId || !newArea) {
+        return res.status(400).json({ success: false, data: null, error: "demandId and newArea are required" });
+      }
+
+      const demand = await storage.getDemand(demandId);
+      if (!demand) {
+        return res.status(404).json({ success: false, data: null, error: "Demand not found" });
+      }
+
+      // Validate new area exists in workgraph
+      const newAreaNode = await storage.getWorkgraphNodeByName(newArea.toLowerCase());
+      if (!newAreaNode) {
+        return res.status(400).json({ success: false, data: null, error: "New area not found in workgraph" });
+      }
+
+      const currentArea = demand.assignedTo || "unknown";
+      if (currentArea === newArea.toLowerCase()) {
+        return res.json({
+          success: false,
+          data: null,
+          error: "Demand is already assigned to this area"
+        });
+      }
+
+      // Record history
+      await storage.createDemandHistory({
+        demandId,
+        fromArea: currentArea,
+        toArea: newArea.toLowerCase(),
+        status: demand.status,
+        reason: reason || "Manual reassignment"
+      });
+
+      // Update demand
+      const updated = await storage.updateDemandWithSLA(demandId, {
+        assignedTo: newArea.toLowerCase()
+      });
+
+      // Audit log
+      await storage.createLog({
+        level: "info",
+        message: "Demand manually reassigned",
+        metadata: { demandId, from: currentArea, to: newArea, reason }
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          demandId,
+          previousArea: currentArea,
+          newArea: newArea.toLowerCase(),
+          reason: reason || "Manual reassignment",
+          updatedDemand: updated
+        },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error reassigning demand:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to reassign demand" });
+    }
+  });
+
+  // Get complete flow history for demand
+  app.get("/api/demands/:id/flow", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const demand = await storage.getDemand(id);
+      if (!demand) {
+        return res.status(404).json({ success: false, data: null, error: "Demand not found" });
+      }
+
+      const history = await storage.getDemandHistory(id);
+
+      return res.json({
+        success: true,
+        data: {
+          demandId: id,
+          currentArea: demand.assignedTo,
+          currentStatus: demand.status,
+          history: history.map(h => ({
+            from: h.fromArea,
+            to: h.toArea,
+            status: h.status,
+            reason: h.reason,
+            timestamp: h.createdAt
+          }))
+        },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error fetching demand flow:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to fetch demand flow" });
+    }
+  });
+
+  // Get overloaded areas
+  app.get("/api/areas/overload", async (req, res) => {
+    try {
+      const pendingCounts = await storage.countDemandsByStatus("pending");
+      const inProgressCounts = await storage.countDemandsByStatus("in_progress");
+
+      const areas = await storage.getWorkgraphNodes();
+      const OVERLOAD_THRESHOLD = 15;
+
+      const areasData = areas.map(area => {
+        const pending = pendingCounts[area.name] || 0;
+        const inProgress = inProgressCounts[area.name] || 0;
+        const total = pending + inProgress;
+        const isOverloaded = total > OVERLOAD_THRESHOLD;
+        const capacity = Math.round((total / (OVERLOAD_THRESHOLD * 1.5)) * 100);
+
+        return {
+          area: area.name,
+          label: area.label,
+          pending,
+          inProgress,
+          total,
+          isOverloaded,
+          capacityPercentage: Math.min(capacity, 100),
+          available: OVERLOAD_THRESHOLD - total
+        };
+      });
+
+      const overloadedAreas = areasData.filter(a => a.isOverloaded);
+
+      return res.json({
+        success: true,
+        data: {
+          threshold: OVERLOAD_THRESHOLD,
+          totalAreas: areasData.length,
+          overloadedCount: overloadedAreas.length,
+          areas: areasData,
+          overloaded: overloadedAreas
+        },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error fetching area overload data:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to fetch area overload data" });
+    }
+  });
+
   // ============ Status & SLA Endpoint ============
 
   // Update status with SLA calculation
