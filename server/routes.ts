@@ -207,16 +207,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const VALID_AREAS = ["financeiro", "ti", "rh", "juridico", "operacoes", "facilities", "vendas"];
 
+  // Normalize area by removing accents and converting to lowercase
+  const normalizeArea = (area: string): string => {
+    return area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
+
   app.post("/api/agent/:area", async (req, res) => {
     try {
-      const { area } = req.params;
+      const { area: rawArea } = req.params;
       const { id } = req.body;
+
+      const area = normalizeArea(rawArea);
 
       if (!VALID_AREAS.includes(area)) {
         await storage.createLog({ 
           level: "error", 
           message: "Invalid area in agent request", 
-          metadata: { area } 
+          metadata: { area, rawArea } 
         });
         return res.status(400).json({ error: `Invalid area. Must be one of: ${VALID_AREAS.join(", ")}` });
       }
