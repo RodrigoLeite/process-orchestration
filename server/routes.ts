@@ -5,6 +5,29 @@ import { insertDemandSchema } from "@shared/schema";
 import { parseDemand } from "./parse-demand";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.post("/api/parse-demand", async (req, res) => {
+    try {
+      const { text } = req.body;
+      
+      if (!text || typeof text !== "string") {
+        return res.status(400).json({ error: "text is required and must be a string" });
+      }
+
+      const parsed = await parseDemand(text);
+      
+      const demand = await storage.createDemand({
+        rawText: text,
+        parsed,
+        status: "pending"
+      });
+      
+      res.status(201).json({ id: demand.id, parsed: demand.parsed });
+    } catch (error) {
+      console.error("Error parsing demand:", error);
+      res.status(400).json({ error: "Failed to parse demand" });
+    }
+  });
+
   app.get("/api/demands", async (req, res) => {
     try {
       const demands = await storage.getDemands();
