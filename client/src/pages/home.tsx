@@ -50,13 +50,11 @@ export default function Dashboard() {
       }
 
       const data = await res.json();
-      setCreateStatus({ type: "success", message: "Demanda criada com sucesso!" });
       setDemandText("");
-      queryClient.invalidateQueries({ queryKey: ["all-demands"] });
       
-      setTimeout(() => {
-        navigate(`/app/demands/${data.id}`);
-      }, 1500);
+      // Invalidate queries and redirect immediately
+      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+      navigate(`/app/demands/${data.id}`);
     } catch (error) {
       setCreateStatus({ type: "error", message: "Erro ao criar demanda. Tente novamente." });
     } finally {
