@@ -46,6 +46,7 @@ export interface IStorage {
   updateWebhookEvent(id: string, updates: Partial<WebhookEvent>): Promise<WebhookEvent | undefined>;
 
   getAreaWorkflow(areaName: string): Promise<AreaWorkflow | undefined>;
+  getWorkflowById(workflowId: string): Promise<AreaWorkflow | undefined>;
   createAreaWorkflow(workflow: InsertAreaWorkflow): Promise<AreaWorkflow>;
   createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStage>;
   getWorkflowStages(workflowId: string): Promise<WorkflowStage[]>;
@@ -272,6 +273,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(areaWorkflows)
       .where(eq(areaWorkflows.areaName, areaName.toLowerCase()))
+      .limit(1);
+    return result[0];
+  }
+
+  async getWorkflowById(workflowId: string): Promise<AreaWorkflow | undefined> {
+    const result = await this.db
+      .select()
+      .from(areaWorkflows)
+      .where(eq(areaWorkflows.id, workflowId))
       .limit(1);
     return result[0];
   }
