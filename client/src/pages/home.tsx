@@ -95,20 +95,20 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent hover:shadow-lg transition-all duration-300">
+          <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent hover:shadow-lg transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Brain className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <Brain className="w-5 h-5 text-green-600" />
                 </div>
                 OpenAI
               </CardTitle>
               <CardDescription>IA para Classificação</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 text-sm text-blue-700 font-semibold">
-                <AlertCircle className="w-4 h-4" />
-                Configure a chave de API
+              <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
+                <CheckCircle2 className="w-4 h-4" />
+                Conectado e pronto
               </div>
             </CardContent>
           </Card>
