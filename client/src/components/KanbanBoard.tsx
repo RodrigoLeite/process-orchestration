@@ -1,35 +1,23 @@
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import KanbanColumn from "@/components/KanbanColumn";
+import { useLocation } from "wouter";
 import type { Demand } from "@/lib/types";
 
-interface WorkgraphNode {
-  id: string;
-  name: string;
-  label: string;
-}
+const DEFAULT_COLUMNS = [
+  { id: "received", title: "Recebido" },
+  { id: "in_progress", title: "Em andamento" },
+  { id: "waiting", title: "Aguardando" },
+  { id: "done", title: "Concluído" },
+];
 
 export default function KanbanBoard() {
-  const [areas, setAreas] = useState<WorkgraphNode[]>([]);
+  const [location] = useLocation();
 
-  // Fetch areas from workgraph
-  useEffect(() => {
-    const fetchAreas = async () => {
-      try {
-        const res = await fetch("/api/workgraph");
-        if (res.ok) {
-          const data = await res.json();
-          setAreas(data.success ? data.data : []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch areas:", error);
-      }
-    };
-
-    fetchAreas();
-  }, []);
+  // Extract highlight param from URL
+  const urlParams = new URLSearchParams(location.split("?")[1] || "");
+  const highlightDemandId = urlParams.get("demand");
 
   // Fetch demands
   const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
@@ -37,7 +25,16 @@ export default function KanbanBoard() {
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
-      return res.json();
+      const data = await res.json();
+      // Normalize demands with defaults
+      return data.map((demand: Demand) => ({
+        ...demand,
+        status: demand.status || "received",
+        parsed: {
+          ...demand.parsed,
+          area: demand.parsed?.area || "Não definida"
+        }
+      }));
     }
   });
 
@@ -45,11 +42,11 @@ export default function KanbanBoard() {
     refetch();
   };
 
-  // Group demands by assigned area
-  const demandsByArea: Record<string, Demand[]> = {};
-  areas.forEach(area => {
-    demandsByArea[area.name] = demands.filter(
-      d => (d.assignedTo || d.assigned_to) === area.name
+  // Group demands by status
+  const demandsByStatus: Record<string, Demand[]> = {};
+  DEFAULT_COLUMNS.forEach(col => {
+    demandsByStatus[col.id] = demands.filter(
+      d => (d.status || "received") === col.id
     );
   });
 
@@ -62,27 +59,32 @@ export default function KanbanBoard() {
     );
   }
 
+  if (demands.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-12 text-center">
+        <p className="text-2xl mb-2">📭</p>
+        <p className="font-semibold text-foreground mb-1">Nenhuma demanda encontrada</p>
+        <p className="text-muted-foreground">Crie uma nova demanda para começar</p>
+      </div>
+    );
+  }
+
   return (
     <ScrollArea className="w-full rounded-lg border border-gray-200 bg-gray-50">
       <div
         className="flex gap-4 p-4"
         data-testid="kanban-board-container"
       >
-        {areas.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 w-full">
-            Nenhuma área configurada
-          </div>
-        ) : (
-          areas.map(area => (
-            <KanbanColumn
-              key={area.id}
-              area={area.name}
-              label={area.label}
-              demands={demandsByArea[area.name] || []}
-              onDemandAdvance={handleDemandAdvance}
-            />
-          ))
-        )}
+        {DEFAULT_COLUMNS.map(column => (
+          <KanbanColumn
+            key={column.id}
+            columnId={column.id}
+            label={column.title}
+            demands={demandsByStatus[column.id] || []}
+            highlightDemandId={highlightDemandId}
+            onDemandAdvance={handleDemandAdvance}
+          />
+        ))}
       </div>
     </ScrollArea>
   );
