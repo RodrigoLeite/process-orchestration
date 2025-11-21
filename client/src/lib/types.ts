@@ -10,6 +10,7 @@ export interface Demand {
     descricao_estruturada?: string;
     sugestao_proximo_passo?: string;
   } | null;
+  route_to?: string | null;
   status: DemandStatus;
   created_at: string;
   updated_at: string;
