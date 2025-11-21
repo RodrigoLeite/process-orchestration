@@ -183,10 +183,20 @@ export default function DemandsManager() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <Link href={`/app/demands/${demand.id}`}>
+                            <a className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
+                              Detalhes
+                            </a>
+                          </Link>
+                          <Link href={`/app/demands/${demand.id}/flow`}>
+                            <a className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700" data-testid={`link-flow-${demand.id}`}>
+                              Timeline
+                            </a>
+                          </Link>
                           {demand.status === "pending" && (
                             <button
-                              className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               onClick={async () => {
                                 await fetch("/api/route-demand", {
                                   method: "POST",
@@ -202,7 +212,7 @@ export default function DemandsManager() {
                           )}
                           {demand.status === "routed" && parsed?.area && (
                             <button
-                              className="px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-2 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               onClick={async () => {
                                 try {
                                   setAgentId(demand.id);
