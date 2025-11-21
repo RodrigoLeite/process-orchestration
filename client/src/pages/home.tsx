@@ -1,212 +1,252 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, Database, Zap, Brain } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, FileText, TrendingUp, BarChart3, Zap, Eye } from "lucide-react";
+import Badge from "@/components/Badge";
+import type { Demand } from "@/lib/types";
 
-export default function Home() {
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+export default function Dashboard() {
+  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    async function checkConnection() {
-      try {
-        if (import.meta.env.VITE_SUPABASE_URL) {
-           setIsConnected(true);
-        } else {
-           setIsConnected(false);
-        }
-      } catch (e) {
-        setIsConnected(false);
-      }
+  // Fetch demands
+  const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
+    queryKey: ["all-demands"],
+    queryFn: async () => {
+      const res = await fetch("/api/demands");
+      if (!res.ok) throw new Error("Failed to fetch demands");
+      return res.json();
     }
-    checkConnection();
-  }, []);
+  });
+
+  const recentDemands = demands.slice(0, 5);
+  const totalDemands = demands.length;
+  const inProgressDemands = demands.filter(d => d.status === "in_progress").length;
+  const completedDemands = demands.filter(d => d.status === "completed").length;
+
+  const handleCreateDemand = () => navigate("/app/demands");
+  const handleViewKanban = () => navigate("/app/workflows");
+  const handleViewInsights = () => navigate("/app/insights");
+  const handleViewBottlenecks = () => navigate("/app/bottlenecks");
 
   return (
-    <div className="space-y-16 max-w-7xl mx-auto">
-      {/* Hero Section */}
-      <section className="relative py-20 text-center space-y-8 overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 via-transparent to-purple-600/5 blur-3xl" />
-        
-        <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-            <span className="text-2xl">✨</span>
-            <span className="text-sm font-semibold text-primary">Sistema de IA para Demandas</span>
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter">
-            <span className="bg-gradient-to-r from-primary via-purple-600 to-primary bg-clip-text text-transparent">
-              Central de Demandas
-            </span>
-            <br />
-            <span className="text-foreground">com Inteligência Artificial</span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Classifique, roteeie e gerencie demandas automaticamente entre departamentos com IA avançada
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Bem-vindo ao sistema de orquestração de demandas</p>
+      </div>
 
-        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+      {/* Create Demand Section */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-purple-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Criar Nova Demanda
+          </CardTitle>
+          <CardDescription>
+            Inicie uma nova demanda que será automaticamente classificada e roteada pela IA
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <Button 
-            size="lg" 
-            className="h-14 px-10 text-lg font-semibold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105"
-            onClick={() => window.location.href = '/demands'}
-            data-testid="button-get-started"
-          >
-            <Zap className="w-5 h-5 mr-2" />
-            Começar Agora
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="h-14 px-10 text-lg font-semibold hover:bg-primary/5 transition-all duration-300"
-          >
-            <Brain className="w-5 h-5 mr-2" />
-            Saiba Mais
-          </Button>
-        </div>
-      </section>
-
-      {/* Status Section */}
-      <section className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl md:text-4xl font-bold">Status da Integração</h2>
-          <p className="text-muted-foreground">Verificando conexões com serviços externos</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent hover:shadow-lg transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Database className="w-5 h-5 text-green-600" />
-                </div>
-                PostgreSQL
-              </CardTitle>
-              <CardDescription>Database Connection</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
-                <CheckCircle2 className="w-4 h-4" />
-                Conectado e pronto
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent hover:shadow-lg transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Brain className="w-5 h-5 text-green-600" />
-                </div>
-                OpenAI
-              </CardTitle>
-              <CardDescription>IA para Classificação</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
-                <CheckCircle2 className="w-4 h-4" />
-                Conectado e pronto
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl md:text-4xl font-bold">Funcionalidades Principais</h2>
-          <p className="text-muted-foreground">Tudo que você precisa para gerenciar demandas eficientemente</p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: "🤖",
-              title: "Classificação IA",
-              description: "Usa GPT-4 para classificar demandas automaticamente por área, tipo e prioridade.",
-              color: "from-purple-500/10",
-              borderColor: "border-purple-500/20"
-            },
-            {
-              icon: "🎯",
-              title: "Roteamento Automático",
-              description: "Identifica o departamento responsável e sugere próximos passos automaticamente.",
-              color: "from-blue-500/10",
-              borderColor: "border-blue-500/20"
-            },
-            {
-              icon: "✅",
-              title: "Gestão de Status",
-              description: "Acompanhe o progresso: pendente, roteada, em andamento e concluída.",
-              color: "from-green-500/10",
-              borderColor: "border-green-500/20"
-            }
-          ].map((feature, i) => (
-            <Card 
-              key={i} 
-              className={`border-l-4 ${feature.borderColor} bg-gradient-to-br ${feature.color} to-transparent hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <span className="text-3xl">{feature.icon}</span>
-                  {feature.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl md:text-4xl font-bold">Por que usar?</h2>
-          <p className="text-muted-foreground">Benefícios da automatização inteligente</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {[
-            { title: "⚡ Processamento Rápido", desc: "Classifique demandas em segundos, não em horas" },
-            { title: "🎯 Precisão Alta", desc: "IA treinada para entender contexto empresarial" },
-            { title: "📊 Relatórios Automáticos", desc: "Visualize tendências e métricas em tempo real" },
-            { title: "🔄 Escalável", desc: "Processe centenas de demandas simultaneamente" }
-          ].map((benefit, i) => (
-            <div 
-              key={i} 
-              className="p-6 rounded-xl border border-border bg-card/50 hover:bg-card transition-all duration-300 hover:border-primary/50"
-            >
-              <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-              <p className="text-muted-foreground">{benefit.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="relative py-16 rounded-2xl overflow-hidden bg-gradient-to-r from-primary/10 to-purple-600/10 border border-primary/20">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 via-transparent to-purple-600/5 blur-3xl" />
-        
-        <div className="text-center space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold">Pronto para começar?</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Acesse a central de demandas e comece a classificar, rotear e gerenciar suas demandas com inteligência artificial.
-          </p>
-          <Button 
+            onClick={handleCreateDemand}
             size="lg"
-            className="h-14 px-10 text-lg font-semibold shadow-lg shadow-primary/30"
-            onClick={() => window.location.href = '/demands'}
+            className="gap-2"
+            data-testid="button-create-demand"
           >
-            Ir para Central de Demandas
+            <Zap className="w-4 h-4" />
+            Criar Demanda
           </Button>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
+
+      {/* Quick Stats */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Demandas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalDemands}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Em Andamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{inProgressDemands}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Concluídas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{completedDemands}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Demands Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Minhas Últimas Demandas</CardTitle>
+          <CardDescription>
+            As 5 demandas mais recentes criadas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {demandsLoading ? (
+            <div className="flex items-center justify-center py-8 gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-muted-foreground">Carregando demandas...</span>
+            </div>
+          ) : recentDemands.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhuma demanda criada ainda
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentDemands.map((demand) => {
+                const parsed = demand.parsed as any;
+                const title = parsed?.descricao_estruturada || demand.raw_text || "Sem título";
+                return (
+                  <div
+                    key={demand.id}
+                    className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/app/demands/${demand.id}`)}
+                    data-testid={`recent-demand-${demand.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{title.substring(0, 80)}</p>
+                        <div className="flex gap-2 mt-1">
+                          <Badge color="blue">
+                            {parsed?.tipo || "—"}
+                          </Badge>
+                          <Badge 
+                            color={
+                              demand.status === "completed"
+                                ? "green"
+                                : demand.status === "blocked"
+                                ? "red"
+                                : "orange"
+                            }
+                          >
+                            {demand.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{demand.id.slice(0, 6)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Botões Rápidos</CardTitle>
+          <CardDescription>
+            Acesse rapidamente as principais funcionalidades
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-auto py-4"
+              onClick={handleViewKanban}
+              data-testid="button-view-kanban"
+            >
+              <Eye className="w-5 h-5" />
+              <div className="text-left">
+                <p className="font-medium text-sm">Ver Kanban</p>
+                <p className="text-xs text-muted-foreground">Visualizar workflows</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-auto py-4"
+              onClick={() => navigate("/app/areas")}
+              data-testid="button-view-areas"
+            >
+              <BarChart3 className="w-5 h-5" />
+              <div className="text-left">
+                <p className="font-medium text-sm">Ver Áreas</p>
+                <p className="text-xs text-muted-foreground">Gerencie por departamento</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-auto py-4"
+              onClick={handleViewInsights}
+              data-testid="button-view-insights"
+            >
+              <TrendingUp className="w-5 h-5" />
+              <div className="text-left">
+                <p className="font-medium text-sm">Ver Insights</p>
+                <p className="text-xs text-muted-foreground">Análises e relatórios</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-auto py-4"
+              onClick={handleViewBottlenecks}
+              data-testid="button-view-bottlenecks"
+            >
+              <Zap className="w-5 h-5" />
+              <div className="text-left">
+                <p className="font-medium text-sm">Monitor de Gargalos</p>
+                <p className="text-xs text-muted-foreground">Detectar problemas</p>
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Demands by Area Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Demandas da Minha Área</CardTitle>
+          <CardDescription>
+            Demandas classificadas por departamento
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {demandsLoading ? (
+            <div className="flex items-center justify-center py-8 gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-muted-foreground">Carregando...</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(
+                demands.reduce((acc, demand) => {
+                  const area = demand.assignedTo || "Não atribuída";
+                  acc[area] = (acc[area] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>)
+              ).map(([area, count]) => (
+                <div
+                  key={area}
+                  className="flex items-center justify-between p-2 rounded border border-gray-200"
+                >
+                  <span className="font-medium">{area}</span>
+                  <Badge color="blue">{count}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
