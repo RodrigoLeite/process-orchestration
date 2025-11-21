@@ -7,7 +7,7 @@ import { createRequestLogger, logInfo, logError } from "./lib/logger";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add request logging middleware
-  app.use(await createRequestLogger());
+  app.use(createRequestLogger());
 
   app.post("/api/parse-demand", async (req, res) => {
     try {
@@ -18,7 +18,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "text is required and must be a string" });
       }
 
-      await logInfo("Processing demand with text", { length: text.length });
+      logInfo("Processing demand with text", { length: text.length }).catch(() => {});
       const parsed = await parseDemand(text);
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
@@ -29,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending"
       });
       
-      await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
+      logInfo("Demand successfully created", { id: demand.id, route_to: routeTo }).catch(() => {});
       res.status(201).json({ id: demand.id, parsed: demand.parsed, route_to: demand.routeTo });
     } catch (error) {
       await logError("Error parsing demand", error);

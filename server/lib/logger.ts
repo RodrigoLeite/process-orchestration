@@ -43,23 +43,32 @@ export async function logDebug(message: string, data?: any) {
 }
 
 export function createRequestLogger() {
-  return async (req: any, res: any, next: any) => {
+  return (req: any, res: any, next: any) => {
+    // Skip logging for static assets (Vite dev files, fonts, etc)
+    if (req.path.includes("/src/") || req.path.includes(".css") || req.path.includes(".js")) {
+      return next();
+    }
+
     const start = Date.now();
     const method = req.method;
     const path = req.path;
     
-    // Log incoming request
-    await logInfo(`REQUEST`, { method, path });
+    // Log incoming request (non-blocking, fire-and-forget)
+    logInfo(`REQUEST`, { method, path }).catch(err => 
+      console.error("Failed to log request:", err)
+    );
 
-    // Log response
-    res.on("finish", async () => {
+    // Log response (non-blocking)
+    res.on("finish", () => {
       const duration = Date.now() - start;
-      await logInfo(`RESPONSE`, { 
+      logInfo(`RESPONSE`, { 
         method, 
         path, 
         status: res.statusCode, 
         duration: `${duration}ms` 
-      });
+      }).catch(err => 
+        console.error("Failed to log response:", err)
+      );
     });
 
     next();
