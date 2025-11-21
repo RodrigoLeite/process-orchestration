@@ -81,7 +81,7 @@ export default function KanbanList() {
             <Card
               key={demand.id}
               className="cursor-pointer hover:shadow-lg transition-shadow border-slate-200 hover:border-primary/50 group"
-              onClick={() => navigate(`/app/kanban/${demand.id}`)}
+              onClick={() => demand.workflowId ? navigate(`/app/kanban/workflow/${demand.workflowId}`) : navigate(`/app/kanban/${demand.id}`)}
               data-testid={`card-workflow-${demand.id}`}
             >
               <CardHeader className="pb-3">

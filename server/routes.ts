@@ -141,7 +141,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Check if area already has a workflow
+      let workflowId: string | undefined;
+      let firstStageId: string | undefined;
       const existingWorkflow = await storage.getAreaWorkflow(assignedTo);
+      
       if (!existingWorkflow && assignedTo !== "unknown") {
         // Create default workflow for this area
         const areaName = assignedTo.toLowerCase();
@@ -151,6 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           areaName,
           name: workflowName
         });
+        workflowId = newWorkflow.id;
 
         // Create default stages based on area type
         const defaultStages: Record<string, string[]> = {
@@ -166,14 +170,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
         
         for (let i = 0; i < stages.length; i++) {
-          await storage.createWorkflowStage({
+          const stage = await storage.createWorkflowStage({
             workflowId: newWorkflow.id,
             name: stages[i],
             orderIndex: String(i)
           });
+          if (i === 0) firstStageId = stage.id;
         }
 
         await logInfo("Default workflow created for area", { area: assignedTo, workflowId: newWorkflow.id });
+      } else if (existingWorkflow) {
+        workflowId = existingWorkflow.id;
+        const stages = await storage.getWorkflowStages(existingWorkflow.id);
+        if (stages.length > 0) firstStageId = stages[0].id;
+      }
+
+      // Update demand with workflow_id and stage_id
+      if (workflowId && firstStageId) {
+        await storage.updateDemandWithSLA(demand.id, {
+          workflowId,
+          stageId: firstStageId
+        });
       }
       
       await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
@@ -231,7 +248,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Check if area already has a workflow
+      let workflowId: string | undefined;
+      let firstStageId: string | undefined;
       const existingWorkflow = await storage.getAreaWorkflow(assignedTo);
+      
       if (!existingWorkflow && assignedTo !== "unknown") {
         // Create default workflow for this area
         const areaName = assignedTo.toLowerCase();
@@ -241,6 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           areaName,
           name: workflowName
         });
+        workflowId = newWorkflow.id;
 
         // Create default stages based on area type
         const defaultStages: Record<string, string[]> = {
@@ -256,18 +277,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
         
         for (let i = 0; i < stages.length; i++) {
-          await storage.createWorkflowStage({
+          const stage = await storage.createWorkflowStage({
             workflowId: newWorkflow.id,
             name: stages[i],
             orderIndex: String(i)
           });
+          if (i === 0) firstStageId = stage.id;
         }
+      } else if (existingWorkflow) {
+        workflowId = existingWorkflow.id;
+        const stages = await storage.getWorkflowStages(existingWorkflow.id);
+        if (stages.length > 0) firstStageId = stages[0].id;
+      }
+
+      // Update demand with workflow_id and stage_id
+      if (workflowId && firstStageId) {
+        await storage.updateDemandWithSLA(demand.id, {
+          workflowId,
+          stageId: firstStageId
+        });
       }
       
       res.status(201).json({ 
         id: demand.id, 
         parsed: demand.parsed, 
-        route_to: demand.routeTo 
+        route_to: demand.routeTo,
+        workflow_id: workflowId
       });
     } catch (error) {
       console.error("Error creating demand:", error);
