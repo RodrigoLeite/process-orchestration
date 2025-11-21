@@ -38,12 +38,13 @@ export default function AllDemands() {
     refetchInterval: 5000
   });
 
-  const demandsByRoute = demands.reduce((acc, demand) => {
-    const route = (demand as any).route_to || (demand as any).routeTo || "unknown";
-    if (!acc[route]) {
-      acc[route] = [];
+  const demandsByArea = demands.reduce((acc, demand) => {
+    const parsed = demand.parsed as any;
+    const area = parsed?.area || "Sem área";
+    if (!acc[area]) {
+      acc[area] = [];
     }
-    acc[route].push(demand);
+    acc[area].push(demand);
     return acc;
   }, {} as Record<string, typeof demands>);
 
@@ -68,7 +69,7 @@ export default function AllDemands() {
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
           <p className="text-muted-foreground">Carregando demandas...</p>
         </div>
-      ) : Object.keys(demandsByRoute).length === 0 ? (
+      ) : Object.keys(demandsByArea).length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-16 text-center">
             <div className="space-y-3">
@@ -92,8 +93,8 @@ export default function AllDemands() {
             <Card className="border-l-4 border-l-blue-500">
               <CardContent className="pt-6">
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-muted-foreground">Departamentos</p>
-                  <p className="text-3xl font-bold">{Object.keys(demandsByRoute).length}</p>
+                  <p className="text-sm font-semibold text-muted-foreground">Áreas</p>
+                  <p className="text-3xl font-bold">{Object.keys(demandsByArea).length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -115,30 +116,30 @@ export default function AllDemands() {
             </Card>
           </div>
 
-          {/* Demands by Route */}
+          {/* Demands by Area */}
           <div className="space-y-6">
-            {Object.entries(demandsByRoute)
+            {Object.entries(demandsByArea)
               .sort(([a], [b]) => a.localeCompare(b))
-              .map(([route, routeDemands]) => {
-                const icon = areaIcons[route] || "📋";
-                const colorClass = areaColors[route] || "bg-gray-500/20 text-gray-700 border-gray-500/30";
+              .map(([area, areaDemands]) => {
+                const icon = areaIcons[area.toLowerCase()] || "📋";
+                const colorClass = areaColors[area.toLowerCase()] || "bg-gray-500/20 text-gray-700 border-gray-500/30";
                 
                 return (
-                  <div key={route} className="space-y-4">
-                    {/* Route Header */}
+                  <div key={area} className="space-y-4">
+                    {/* Area Header */}
                     <div className="flex items-center gap-3">
                       <Badge className={`${colorClass} border text-base py-1 px-3 font-semibold`}>
                         <span className="mr-2">{icon}</span>
-                        {route.charAt(0).toUpperCase() + route.slice(1)}
+                        {area}
                       </Badge>
                       <span className="text-sm font-medium text-muted-foreground">
-                        {routeDemands.length} demanda{routeDemands.length !== 1 ? 's' : ''}
+                        {areaDemands.length} demanda{areaDemands.length !== 1 ? 's' : ''}
                       </span>
                     </div>
 
                     {/* Demands Grid */}
                     <div className="grid gap-3">
-                      {routeDemands.map((demand) => {
+                      {areaDemands.map((demand) => {
                         const parsed = demand.parsed as any;
                         
                         return (

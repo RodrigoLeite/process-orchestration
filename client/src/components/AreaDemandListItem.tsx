@@ -1,20 +1,14 @@
-import { useState } from "react";
-import { Zap, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import Badge from "@/components/Badge";
-import { toast } from "sonner";
 import type { Demand } from "@/lib/types";
 
 interface AreaDemandListItemProps {
   demand: Demand;
-  onAdvance?: () => void;
 }
 
-export default function AreaDemandListItem({ demand, onAdvance }: AreaDemandListItemProps) {
-  const [isAdvancing, setIsAdvancing] = useState(false);
+export default function AreaDemandListItem({ demand }: AreaDemandListItemProps) {
+  const [, navigate] = useLocation();
 
-  const riskStr = demand.delayRisk || demand.delay_risk || "0%";
-  const riskValue = parseInt(riskStr.replace("%", ""));
   const getRiskColor = (risk: number): string => {
     if (risk < 30) return "green";
     if (risk < 60) return "yellow";
@@ -23,15 +17,9 @@ export default function AreaDemandListItem({ demand, onAdvance }: AreaDemandList
 
   const getStatusColor = (status: string): string => {
     const colorMap: Record<string, string> = {
-      new: "gray",
-      triaging: "blue",
-      in_progress: "yellow",
-      blocked: "red",
-      waiting_dependency: "orange",
       completed: "green",
-      pending: "gray",
-      routed: "blue",
-      done: "green"
+      blocked: "red",
+      in_progress: "blue"
     };
     return colorMap[status] || "gray";
   };
@@ -46,35 +34,16 @@ export default function AreaDemandListItem({ demand, onAdvance }: AreaDemandList
     return colorMap[prioridade] || "gray";
   };
 
-  const handleAdvance = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    try {
-      setIsAdvancing(true);
-      const res = await fetch("/api/demands/advance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ demandId: demand.id })
-      });
-
-      if (!res.ok) throw new Error("Failed to advance demand");
-      
-      toast.success("✅ Demanda avançada!", { duration: 2000 });
-      onAdvance?.();
-    } catch (error) {
-      toast.error("❌ Erro ao avançar demanda", { duration: 2000 });
-      console.error(error);
-    } finally {
-      setIsAdvancing(false);
-    }
-  };
-
+  const riskStr = demand.delayRisk || demand.delay_risk || "0%";
+  const riskValue = parseInt(riskStr.replace("%", ""));
   const category = demand.parsed?.tipo || "Sem categoria";
   const priority = demand.parsed?.prioridade || "média";
   const description = demand.parsed?.descricao_estruturada || demand.raw_text || "Sem descrição";
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => navigate(`/app/demands/${demand.id}`)}
       data-testid={`list-item-demand-${demand.id}`}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
@@ -93,47 +62,28 @@ export default function AreaDemandListItem({ demand, onAdvance }: AreaDemandList
 
         {/* Status */}
         <div className="md:col-span-2">
-          <Badge color={getStatusColor(demand.status)}>{demand.status}</Badge>
+          <Badge color={getStatusColor(demand.status)}>
+            {demand.status === "completed" ? "✓ Concluído" : demand.status === "blocked" ? "✕ Bloqueado" : "→ Em Processamento"}
+          </Badge>
         </div>
 
         {/* Prioridade */}
-        <div className="md:col-span-1">
+        <div className="md:col-span-2">
           <Badge color={getPriorityColor(priority)}>{priority}</Badge>
         </div>
 
-        {/* SLA */}
-        <div className="md:col-span-1">
-          <span className="text-xs font-mono" data-testid={`text-sla-${demand.id}`}>
-            {demand.slaRemaining || demand.sla_remaining || "N/A"}
-          </span>
-        </div>
-
         {/* Risco */}
-        <div className="md:col-span-1">
+        <div className="md:col-span-2">
           <Badge color={getRiskColor(riskValue)}>{riskStr}</Badge>
         </div>
 
-        {/* Botão Avançar */}
-        <div className="md:col-span-2">
-          <Button
-            size="sm"
-            className="w-full gap-2"
-            onClick={handleAdvance}
-            disabled={isAdvancing}
-            data-testid={`button-advance-${demand.id}`}
-          >
-            {isAdvancing ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Avançando...
-              </>
-            ) : (
-              <>
-                <Zap className="w-3 h-3" />
-                Avançar
-              </>
-            )}
-          </Button>
+        {/* Workflow */}
+        <div className="md:col-span-1">
+          {demand.workflowId ? (
+            <Badge color="green" className="text-xs">Workflow</Badge>
+          ) : (
+            <span className="text-xs text-muted-foreground">-</span>
+          )}
         </div>
       </div>
     </div>
