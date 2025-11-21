@@ -186,7 +186,8 @@ export default function AllDemands() {
                                       onClick={async () => {
                                         try {
                                           setAgentId(demand.id);
-                                          const res = await fetch(`/api/agent/${parsed.area.toLowerCase()}`, {
+                                          const normalizedArea = parsed.area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                                          const res = await fetch(`/api/agent/${normalizedArea}`, {
                                             method: "POST",
                                             headers: { "Content-Type": "application/json" },
                                             body: JSON.stringify({ id: demand.id })
