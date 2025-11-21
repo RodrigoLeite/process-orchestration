@@ -35,6 +35,12 @@ export const demands = pgTable("demands", {
   slaDeadline: timestamp("sla_deadline"),
   slaRemaining: text("sla_remaining"),
   delayRisk: text("delay_risk"),
+  flow: jsonb("flow").$type<Array<{ area: string; order: number; sla: number }>>(),
+  areaAtual: text("area_atual").default("Recebido"),
+  statusAtual: text("status_atual").default("recebido"),
+  slaPerEtapa: jsonb("sla_por_etapa").$type<Record<string, number>>(),
+  risco: text("risco").default("0%"),
+  overloadPrevision: text("overload_prevision").default("0%"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

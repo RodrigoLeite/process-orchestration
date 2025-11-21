@@ -105,6 +105,12 @@ export class DatabaseStorage implements IStorage {
     slaDeadline?: Date; 
     slaRemaining?: string; 
     delayRisk?: string;
+    flow?: Array<{ area: string; order: number; sla: number }>;
+    areaAtual?: string;
+    statusAtual?: string;
+    slaPerEtapa?: Record<string, number>;
+    risco?: string;
+    overloadPrevision?: string;
   }): Promise<Demand | undefined> {
     const result = await this.db
       .update(demands)
