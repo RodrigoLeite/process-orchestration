@@ -324,6 +324,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ WorkGraph Endpoints ============
+
+  // Get all nodes
+  app.get("/api/workgraph/nodes", async (req, res) => {
+    try {
+      const nodes = await storage.getWorkgraphNodes();
+      res.json(nodes);
+    } catch (error) {
+      console.error("Error fetching workgraph nodes:", error);
+      res.status(500).json({ error: "Failed to fetch workgraph nodes" });
+    }
+  });
+
+  // Create node
+  app.post("/api/workgraph/nodes", async (req, res) => {
+    try {
+      const { name, label, description, isDefault } = req.body;
+      
+      if (!name || !label) {
+        return res.status(400).json({ error: "name and label are required" });
+      }
+
+      const existingNode = await storage.getWorkgraphNodeByName(name);
+      if (existingNode) {
+        return res.status(409).json({ error: "Node with this name already exists" });
+      }
+
+      const node = await storage.createWorkgraphNode({
+        name,
+        label,
+        description,
+        isDefault: isDefault ? "true" : "false"
+      });
+
+      res.status(201).json(node);
+    } catch (error) {
+      console.error("Error creating workgraph node:", error);
+      res.status(500).json({ error: "Failed to create workgraph node" });
+    }
+  });
+
+  // Get all edges
+  app.get("/api/workgraph/edges", async (req, res) => {
+    try {
+      const edges = await storage.getWorkgraphEdges();
+      res.json(edges);
+    } catch (error) {
+      console.error("Error fetching workgraph edges:", error);
+      res.status(500).json({ error: "Failed to fetch workgraph edges" });
+    }
+  });
+
+  // Create edge
+  app.post("/api/workgraph/edges", async (req, res) => {
+    try {
+      const { fromNodeId, toNodeId, demandType, demandCategory, condition, weight } = req.body;
+      
+      if (!fromNodeId || !toNodeId) {
+        return res.status(400).json({ error: "fromNodeId and toNodeId are required" });
+      }
+
+      const fromNode = await storage.getWorkgraphNode(fromNodeId);
+      const toNode = await storage.getWorkgraphNode(toNodeId);
+
+      if (!fromNode || !toNode) {
+        return res.status(404).json({ error: "One or both nodes not found" });
+      }
+
+      const edge = await storage.createWorkgraphEdge({
+        fromNodeId,
+        toNodeId,
+        demandType: demandType || null,
+        demandCategory: demandCategory || null,
+        condition: condition || null,
+        weight: weight || "1"
+      });
+
+      res.status(201).json(edge);
+    } catch (error) {
+      console.error("Error creating workgraph edge:", error);
+      res.status(500).json({ error: "Failed to create workgraph edge" });
+    }
+  });
+
+  // Delete edge
+  app.delete("/api/workgraph/edges/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteWorkgraphEdge(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workgraph edge:", error);
+      res.status(500).json({ error: "Failed to delete workgraph edge" });
+    }
+  });
+
+  // Get workflow path for a demand
+  app.post("/api/workgraph/resolve-path", async (req, res) => {
+    try {
+      const { demandId } = req.body;
+      
+      if (!demandId) {
+        return res.status(400).json({ error: "demandId is required" });
+      }
+
+      const demand = await storage.getDemand(demandId);
+      if (!demand) {
+        return res.status(404).json({ error: "Demand not found" });
+      }
+
+      const parsed = demand.parsed as any;
+      const demandType = parsed?.tipo || null;
+      const demandCategory = parsed?.prioridade || null;
+
+      // Try to find path by type first
+      let edges = demandType ? await storage.getWorkgraphEdgesByType(demandType) : [];
+      
+      // If no type-specific path, get all edges and filter by category
+      if (edges.length === 0) {
+        const allEdges = await storage.getWorkgraphEdges();
+        edges = demandCategory 
+          ? allEdges.filter(e => e.demandCategory === demandCategory)
+          : allEdges;
+      }
+
+      // Get the starting node (should be the area node)
+      const startNodeName = demand.assignedTo || "unknown";
+      const startNode = await storage.getWorkgraphNodeByName(startNodeName);
+
+      if (!startNode) {
+        return res.json({
+          path: [{ id: startNode?.id, name: startNodeName, label: startNodeName }],
+          fallback: true,
+          message: "No path found, using assigned area as fallback"
+        });
+      }
+
+      // BFS to find path
+      const visited = new Set<string>();
+      const queue: Array<{ nodeId: string; path: string[] }> = [{
+        nodeId: startNode.id,
+        path: [startNode.name]
+      }];
+
+      let finalPath = [startNode.name];
+
+      while (queue.length > 0) {
+        const { nodeId, path: currentPath } = queue.shift()!;
+        
+        if (visited.has(nodeId)) continue;
+        visited.add(nodeId);
+
+        const outgoingEdges = await storage.getWorkgraphEdgesByFromNode(nodeId);
+        
+        for (const edge of outgoingEdges) {
+          const nextNode = await storage.getWorkgraphNode(edge.toNodeId);
+          if (nextNode && !visited.has(nextNode.id)) {
+            const newPath = [...currentPath, nextNode.name];
+            queue.push({ nodeId: nextNode.id, path: newPath });
+            
+            // Prefer shorter paths
+            if (newPath.length < finalPath.length || finalPath.length === 1) {
+              finalPath = newPath;
+            }
+          }
+        }
+      }
+
+      res.json({
+        path: finalPath,
+        demandType,
+        demandCategory,
+        message: finalPath.length > 1 ? "Path resolved" : "Fallback to assigned area"
+      });
+    } catch (error) {
+      console.error("Error resolving workflow path:", error);
+      res.status(500).json({ error: "Failed to resolve workflow path" });
+    }
+  });
+
   app.post("/api/suggest-workflow", async (req, res) => {
     try {
       const { id } = req.body;

@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, desc } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, users, demands, logs, agentResponses, workflows } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -16,6 +16,17 @@ export interface IStorage {
   createLog(log: InsertLog): Promise<Log>;
   createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
   createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
+
+  getWorkgraphNodes(): Promise<WorkgraphNode[]>;
+  getWorkgraphNode(id: string): Promise<WorkgraphNode | undefined>;
+  getWorkgraphNodeByName(name: string): Promise<WorkgraphNode | undefined>;
+  createWorkgraphNode(node: InsertWorkgraphNode): Promise<WorkgraphNode>;
+  
+  getWorkgraphEdges(): Promise<WorkgraphEdge[]>;
+  getWorkgraphEdgesByFromNode(fromNodeId: string): Promise<WorkgraphEdge[]>;
+  getWorkgraphEdgesByType(demandType: string): Promise<WorkgraphEdge[]>;
+  createWorkgraphEdge(edge: InsertWorkgraphEdge): Promise<WorkgraphEdge>;
+  deleteWorkgraphEdge(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -83,6 +94,49 @@ export class DatabaseStorage implements IStorage {
   async createWorkflow(insertWorkflow: InsertWorkflow): Promise<Workflow> {
     const result = await this.db.insert(workflows).values(insertWorkflow).returning();
     return result[0];
+  }
+
+  async getWorkgraphNodes(): Promise<WorkgraphNode[]> {
+    return await this.db.select().from(workgraphNodes).orderBy(workgraphNodes.name);
+  }
+
+  async getWorkgraphNode(id: string): Promise<WorkgraphNode | undefined> {
+    const result = await this.db.select().from(workgraphNodes).where(eq(workgraphNodes.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getWorkgraphNodeByName(name: string): Promise<WorkgraphNode | undefined> {
+    const result = await this.db.select().from(workgraphNodes).where(eq(workgraphNodes.name, name.toLowerCase())).limit(1);
+    return result[0];
+  }
+
+  async createWorkgraphNode(insertNode: InsertWorkgraphNode): Promise<WorkgraphNode> {
+    const result = await this.db.insert(workgraphNodes).values({
+      ...insertNode,
+      name: insertNode.name.toLowerCase()
+    }).returning();
+    return result[0];
+  }
+
+  async getWorkgraphEdges(): Promise<WorkgraphEdge[]> {
+    return await this.db.select().from(workgraphEdges).orderBy(workgraphEdges.createdAt);
+  }
+
+  async getWorkgraphEdgesByFromNode(fromNodeId: string): Promise<WorkgraphEdge[]> {
+    return await this.db.select().from(workgraphEdges).where(eq(workgraphEdges.fromNodeId, fromNodeId));
+  }
+
+  async getWorkgraphEdgesByType(demandType: string): Promise<WorkgraphEdge[]> {
+    return await this.db.select().from(workgraphEdges).where(eq(workgraphEdges.demandType, demandType));
+  }
+
+  async createWorkgraphEdge(insertEdge: InsertWorkgraphEdge): Promise<WorkgraphEdge> {
+    const result = await this.db.insert(workgraphEdges).values(insertEdge).returning();
+    return result[0];
+  }
+
+  async deleteWorkgraphEdge(id: string): Promise<void> {
+    await this.db.delete(workgraphEdges).where(eq(workgraphEdges.id, id));
   }
 }
 
