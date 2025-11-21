@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, FileText, TrendingUp, BarChart3, Zap, Eye } from "lucide-react";
+import { Loader2, FileText, TrendingUp, BarChart3, Zap, Eye, CheckCircle2, AlertCircle } from "lucide-react";
 import Badge from "@/components/Badge";
 import type { Demand } from "@/lib/types";
 
 export default function Dashboard() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const [demandText, setDemandText] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [createStatus, setCreateStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
 
   // Fetch demands
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
@@ -25,7 +29,41 @@ export default function Dashboard() {
   const inProgressDemands = demands.filter(d => d.status === "in_progress").length;
   const completedDemands = demands.filter(d => d.status === "completed").length;
 
-  const handleCreateDemand = () => navigate("/app/demands");
+  const handleCreateDemand = async () => {
+    if (!demandText.trim()) {
+      setCreateStatus({ type: "error", message: "Por favor, descreva a demanda" });
+      return;
+    }
+
+    setIsCreating(true);
+    setCreateStatus({ type: null, message: "" });
+
+    try {
+      const res = await fetch("/api/demands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rawText: demandText })
+      });
+
+      if (!res.ok) {
+        throw new Error("Falha ao criar demanda");
+      }
+
+      const data = await res.json();
+      setCreateStatus({ type: "success", message: "Demanda criada com sucesso!" });
+      setDemandText("");
+      queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+      
+      setTimeout(() => {
+        navigate(`/app/demands/${data.id}`);
+      }, 1500);
+    } catch (error) {
+      setCreateStatus({ type: "error", message: "Erro ao criar demanda. Tente novamente." });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const handleViewKanban = () => navigate("/app/workflows");
   const handleViewInsights = () => navigate("/app/insights");
   const handleViewBottlenecks = () => navigate("/app/bottlenecks");
@@ -46,18 +84,52 @@ export default function Dashboard() {
             Criar Nova Demanda
           </CardTitle>
           <CardDescription>
-            Inicie uma nova demanda que será automaticamente classificada e roteada pela IA
+            Descreva sua demanda em linguagem natural. A IA irá classificar e rotear automaticamente.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <textarea
+            value={demandText}
+            onChange={(e) => setDemandText(e.target.value)}
+            placeholder="Descreva sua demanda aqui... (ex: 'Preciso criar uma nova conta no sistema SYMPHONY com emissão de contrato')"
+            className="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            disabled={isCreating}
+            data-testid="textarea-demand"
+          />
+          
+          {createStatus.type && (
+            <div className={`flex items-center gap-2 p-3 rounded-lg ${
+              createStatus.type === "success"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}>
+              {createStatus.type === "success" ? (
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              )}
+              <span className="text-sm font-medium">{createStatus.message}</span>
+            </div>
+          )}
+
           <Button 
             onClick={handleCreateDemand}
             size="lg"
-            className="gap-2"
+            className="gap-2 w-full"
+            disabled={isCreating || !demandText.trim()}
             data-testid="button-create-demand"
           >
-            <Zap className="w-4 h-4" />
-            Criar Demanda
+            {isCreating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                Criar Demanda
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
