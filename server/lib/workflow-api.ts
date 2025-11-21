@@ -2,6 +2,23 @@ import type { Express } from "express";
 import { storage } from "../storage";
 
 export async function registerWorkflowRoutes(app: Express) {
+  // Get workflow by area name
+  app.get("/api/areas/:area/workflow", async (req, res) => {
+    try {
+      const { area } = req.params;
+      const workflow = await storage.getAreaWorkflow(area);
+      
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error fetching area workflow:", error);
+      res.status(500).json({ error: "Failed to fetch area workflow" });
+    }
+  });
+
   // Get workflow by ID
   app.get("/api/workflows/:id", async (req, res) => {
     try {

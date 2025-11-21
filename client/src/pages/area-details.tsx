@@ -1,8 +1,8 @@
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft, AlertTriangle } from "lucide-react";
+import { Loader2, ChevronLeft, AlertTriangle, ExternalLink } from "lucide-react";
 import Badge from "@/components/Badge";
 import AreaDemandListItem from "@/components/AreaDemandListItem";
 import SimpleVolumeChart from "@/components/SimpleVolumeChart";
@@ -13,12 +13,26 @@ interface Demand {
   status: string;
   assigned_to?: string;
   assignedTo?: string;
+  workflowId?: string;
+  stageId?: string;
   parsed?: any;
   raw_text?: string;
   sla_remaining?: string;
   slaRemaining?: string;
   delay_risk?: string;
   delayRisk?: string;
+}
+
+interface WorkflowStage {
+  id: string;
+  name: string;
+  orderIndex: string;
+}
+
+interface AreaWorkflow {
+  id: string;
+  areaName: string;
+  name: string;
 }
 
 interface BottleneckData {
@@ -35,6 +49,7 @@ interface BottleneckData {
 
 export default function AreaDetailsPage() {
   const [match, params] = useRoute("/app/areas/:id");
+  const [, navigate] = useLocation();
   const areaId = params?.id;
 
   // Fetch demands for this area
@@ -59,6 +74,29 @@ export default function AreaDetailsPage() {
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
       return res.json();
     }
+  });
+
+  // Fetch workflow for this area
+  const { data: workflow, isLoading: workflowLoading } = useQuery<AreaWorkflow>({
+    queryKey: ["area-workflow", areaId],
+    queryFn: async () => {
+      const res = await fetch(`/api/areas/${areaId}/workflow`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!areaId
+  });
+
+  // Fetch workflow stages
+  const { data: stages = [] } = useQuery<WorkflowStage[]>({
+    queryKey: ["area-workflow-stages", workflow?.id],
+    queryFn: async () => {
+      if (!workflow?.id) return [];
+      const res = await fetch(`/api/workflows/${workflow.id}/stages`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!workflow?.id
   });
 
   if (!match) return null;
@@ -134,6 +172,53 @@ export default function AreaDetailsPage() {
         </div>
       </div>
 
+      {/* Workflow Section */}
+      {workflow && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold" data-testid="section-workflow">
+            Workflow da Área
+          </h2>
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>{workflow.name}</CardTitle>
+                  <CardDescription className="mt-2">
+                    {stages.length} etapa{stages.length !== 1 ? "s" : ""}
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => navigate(`/app/kanban/workflow/${workflow.id}`)}
+                  data-testid="button-open-kanban-area"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Abrir Kanban
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-3">Etapas do Workflow</p>
+                  <div className="flex flex-wrap gap-2">
+                    {stages.sort((a, b) => parseInt(a.orderIndex) - parseInt(b.orderIndex)).map((stage, idx) => (
+                      <div key={stage.id} className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium">
+                          {stage.name}
+                        </span>
+                        {idx < stages.length - 1 && (
+                          <span className="text-gray-300">→</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardKPICard
@@ -176,11 +261,48 @@ export default function AreaDetailsPage() {
         ) : (
           <div className="space-y-3" data-testid="demands-list">
             {demands.map(demand => (
-              <AreaDemandListItem
-                key={demand.id}
-                demand={demand}
-                onAdvance={() => refetch()}
-              />
+              <Card key={demand.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground line-clamp-2">
+                        {(demand.parsed as any)?.descricao_estruturada || demand.raw_text || "Sem descrição"}
+                      </p>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <Badge color="blue">
+                          {(demand.parsed as any)?.tipo || "-"}
+                        </Badge>
+                        <Badge color={
+                          (demand.parsed as any)?.prioridade === "crítica" ? "red" :
+                          (demand.parsed as any)?.prioridade === "alta" ? "orange" : "green"
+                        }>
+                          {(demand.parsed as any)?.prioridade || "média"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">ID: {demand.id.slice(0, 8)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${
+                        demand.status === "completed" ? "bg-green-100 text-green-700" :
+                        demand.status === "blocked" ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>
+                        {demand.status === "completed" ? "✓" : demand.status === "blocked" ? "✕" : "→"}
+                      </span>
+                      {demand.workflowId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/app/kanban/workflow/${demand.workflowId}`)}
+                          data-testid={`button-kanban-${demand.id}`}
+                        >
+                          Ver no Kanban
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
@@ -250,6 +372,26 @@ export default function AreaDetailsPage() {
           </CardHeader>
           <CardContent>
             <SimpleVolumeChart data={volumeData} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Settings Section */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold" data-testid="section-settings">
+          Configurações da Área
+        </h2>
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">Gerenciamento de Workflows</p>
+              <p className="text-sm text-muted-foreground">
+                Funcionalidade para criar e gerenciar múltiplos workflows por área em breve.
+              </p>
+              <Button variant="outline" disabled data-testid="button-manage-workflows">
+                Gerenciar Workflows
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
