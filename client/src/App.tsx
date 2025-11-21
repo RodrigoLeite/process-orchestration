@@ -13,6 +13,7 @@ import DemandFlow from "@/pages/demand-flow";
 import KanbanBoardPage from "@/pages/kanban-board";
 import DashboardPage from "@/pages/dashboard";
 import AreaDetailsPage from "@/pages/area-details";
+import InsightsPage from "@/pages/insights";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +29,7 @@ function Router() {
         <Route path="/app/board" component={KanbanBoardPage} />
         <Route path="/app/dashboard" component={DashboardPage} />
         <Route path="/app/areas/:id" component={AreaDetailsPage} />
+        <Route path="/app/insights" component={InsightsPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
