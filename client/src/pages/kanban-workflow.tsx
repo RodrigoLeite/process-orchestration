@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ export default function KanbanWorkflow() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const workflowId = params?.workflowId;
+  const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
 
   // Fetch workflow
   const { data: workflow, isLoading: workflowLoading } = useQuery<AreaWorkflow>({
@@ -128,11 +130,57 @@ export default function KanbanWorkflow() {
               (d) => d.stageId === stage.id
             );
 
+            const handleDragOver = (e: React.DragEvent) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setDragOverStageId(stage.id);
+            };
+
+            const handleDragLeave = (e: React.DragEvent) => {
+              if ((e.target as HTMLElement).className.includes("flex flex-col")) {
+                setDragOverStageId(null);
+              }
+            };
+
+            const handleDrop = async (e: React.DragEvent) => {
+              e.preventDefault();
+              setDragOverStageId(null);
+              const demandId = e.dataTransfer.getData("demandId");
+              console.log("[DROP] Dropped demand:", demandId, "into stage:", stage.id);
+              if (demandId) {
+                try {
+                  console.log("[API] Calling PATCH /api/demands/" + demandId + "/stage with stageId:", stage.id);
+                  const res = await fetch(`/api/demands/${demandId}/stage`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stageId: stage.id })
+                  });
+                  console.log("[API] Response status:", res.status);
+                  if (res.ok) {
+                    console.log("[SUCCESS] Stage updated, invalidating queries");
+                    queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                  } else {
+                    const errorText = await res.text();
+                    console.error("Failed to update stage:", res.status, errorText);
+                  }
+                } catch (error) {
+                  console.error("Failed to update stage:", error);
+                }
+              }
+            };
+
             return (
               <div
                 key={stage.id}
-                className="flex flex-col w-80 bg-white rounded-lg border border-gray-200 flex-shrink-0"
+                className={`flex flex-col w-80 rounded-lg border flex-shrink-0 transition-all ${
+                  dragOverStageId === stage.id
+                    ? "bg-blue-50 border-blue-400 shadow-md"
+                    : "bg-white border-gray-200"
+                }`}
                 data-testid={`column-${stage.id}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
                 {/* Column Header */}
                 <div className="border-b p-4 sticky top-0 z-10 bg-gray-50 border-gray-200">
@@ -218,44 +266,12 @@ export default function KanbanWorkflow() {
                   )}
                 </div>
 
-                {/* Drop Zone */}
-                <div
-                  className="border-t border-dashed border-gray-300 p-3 text-center text-xs text-gray-400 min-h-12 flex items-center justify-center hover:bg-blue-50 transition-colors"
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer!.dropEffect = "move";
-                    console.log("[DRAG] Over drop zone:", stage.id);
-                  }}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    const demandId = e.dataTransfer!.getData("demandId");
-                    console.log("[DROP] Dropped demand:", demandId, "into stage:", stage.id);
-                    if (demandId) {
-                      try {
-                        console.log("[API] Calling PATCH /api/demands/" + demandId + "/stage with stageId:", stage.id);
-                        const res = await fetch(`/api/demands/${demandId}/stage`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ stageId: stage.id })
-                        });
-                        console.log("[API] Response status:", res.status);
-                        if (res.ok) {
-                          console.log("[SUCCESS] Stage updated, invalidating queries");
-                          // Refetch demands without full page reload
-                          queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
-                        } else {
-                          const errorText = await res.text();
-                          console.error("Failed to update stage:", res.status, errorText);
-                        }
-                      } catch (error) {
-                        console.error("Failed to update stage:", error);
-                      }
-                    }
-                  }}
-                  data-testid={`drop-zone-${stage.id}`}
-                >
-                  Arraste aqui
-                </div>
+                {/* Drop Hint */}
+                {dragOverStageId === stage.id && (
+                  <div className="border-t border-dashed border-blue-300 p-3 text-center text-xs text-blue-500 min-h-12 flex items-center justify-center bg-blue-100">
+                    Solte aqui para mover
+                  </div>
+                )}
               </div>
             );
           })}
