@@ -291,6 +291,57 @@ export default function KanbanWorkflow() {
                               </p>
                             </div>
                           )}
+
+                          {/* Block/Unblock Button */}
+                          <div className="flex gap-2">
+                            {demand.status === "blocked" ? (
+                              <button
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const res = await fetch(`/api/demands/${demand.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ status: "in_progress" })
+                                    });
+                                    if (res.ok) {
+                                      await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                                      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                                    }
+                                  } catch (error) {
+                                    console.error("Failed to unblock demand:", error);
+                                  }
+                                }}
+                                data-testid={`button-unblock-${demand.id}`}
+                                className="flex-1 text-xs px-2 py-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors font-medium"
+                              >
+                                🔓 Desbloquear
+                              </button>
+                            ) : (
+                              <button
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const res = await fetch(`/api/demands/${demand.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ status: "blocked" })
+                                    });
+                                    if (res.ok) {
+                                      await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                                      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                                    }
+                                  } catch (error) {
+                                    console.error("Failed to block demand:", error);
+                                  }
+                                }}
+                                data-testid={`button-block-${demand.id}`}
+                                className="flex-1 text-xs px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
+                              >
+                                🔒 Bloquear
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })
