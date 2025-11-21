@@ -14,6 +14,7 @@ import KanbanBoardPage from "@/pages/kanban-board";
 import KanbanDemandDetail from "@/pages/kanban-demand-detail";
 import KanbanAreaDetail from "@/pages/kanban-area-detail";
 import KanbanList from "@/pages/kanban-list";
+import KanbanWorkflow from "@/pages/kanban-workflow";
 import DashboardPage from "@/pages/dashboard";
 import AreaDetailsPage from "@/pages/area-details";
 import AreasListPage from "@/pages/areas-list";
@@ -33,6 +34,7 @@ function Router() {
         <Route path="/app/all-demands" component={AllDemands} />
         <Route path="/app/board" component={KanbanBoardPage} />
         <Route path="/app/workflows" component={KanbanList} />
+        <Route path="/app/kanban/workflow/:workflowId" component={KanbanWorkflow} />
         <Route path="/app/kanban/:id" component={KanbanDemandDetail} />
         <Route path="/app/kanban/area/:area" component={KanbanAreaDetail} />
         <Route path="/app/dashboard" component={DashboardPage} />

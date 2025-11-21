@@ -29,6 +29,8 @@ export const demands = pgTable("demands", {
   }>(),
   routeTo: text("route_to"),
   assignedTo: text("assigned_to"),
+  workflowId: uuid("workflow_id"),
+  stageId: uuid("stage_id"),
   status: text("status").notNull().default("new"),
   currentStatusDescription: text("current_status_description"),
   eta: timestamp("eta"),
