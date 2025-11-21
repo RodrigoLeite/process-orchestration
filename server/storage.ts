@@ -323,6 +323,13 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
+
+  async getAllAreaWorkflows(): Promise<AreaWorkflow[]> {
+    return await this.db
+      .select()
+      .from(areaWorkflows)
+      .orderBy(areaWorkflows.name);
+  }
 }
 
 export const storage = new DatabaseStorage();
