@@ -153,3 +153,44 @@ export const insertDemandHistorySchema = createInsertSchema(demandHistory).omit(
 
 export type InsertDemandHistory = z.infer<typeof insertDemandHistorySchema>;
 export type DemandHistory = typeof demandHistory.$inferSelect;
+
+export const webhooks = pgTable("webhooks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  area: text("area").notNull(),
+  url: text("url").notNull(),
+  events: text("events").array().$type<Array<"DEMAND_MOVED" | "STATUS_UPDATED" | "AREA_OVERLOADED" | "DEMAND_COMPLETED">>(),
+  isActive: text("is_active").default("true"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertWebhookSchema = createInsertSchema(webhooks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertWebhook = z.infer<typeof insertWebhookSchema>;
+export type Webhook = typeof webhooks.$inferSelect;
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  webhookId: uuid("webhook_id").notNull(),
+  eventType: text("event_type").notNull(),
+  demandId: uuid("demand_id"),
+  payload: jsonb("payload").$type<Record<string, any>>(),
+  status: text("status").notNull().default("pending"),
+  attempt: text("attempt").default("0"),
+  error: text("error"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  sentAt: timestamp("sent_at"),
+});
+
+export const insertWebhookEventSchema = createInsertSchema(webhookEvents).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+});
+
+export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
