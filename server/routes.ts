@@ -159,12 +159,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create default stages based on area type
         const defaultStages: Record<string, string[]> = {
           "financeiro": ["Recebida", "Em análise", "Aprovação", "Processamento", "Concluída"],
-          "ti": ["Triagem", "Análise Técnica", "Implementação", "Testes", "Implantação"],
-          "rh": ["Recebimento", "Análise", "Entrevista/Reunião", "Decisão", "Finalização"],
-          "juridico": ["Protocolo", "Análise Jurídica", "Parecer", "Ação/Resposta", "Arquivamento"],
-          "operacoes": ["Recebimento", "Planejamento", "Execução", "Monitoramento", "Conclusão"],
-          "facilities": ["Solicitação", "Análise", "Orçamento", "Execução", "Finalização"],
-          "vendas": ["Prospecção", "Qualificação", "Proposta", "Negociação", "Fechamento"]
+          "ti": ["Triagem", "Análise Técnica", "Implementação", "Testes", "Concluído"],
+          "rh": ["Recebimento", "Análise", "Entrevista/Reunião", "Decisão", "Concluído"],
+          "juridico": ["Protocolo", "Análise Jurídica", "Parecer", "Ação/Resposta", "Concluído"],
+          "operacoes": ["Recebimento", "Planejamento", "Execução", "Monitoramento", "Concluído"],
+          "facilities": ["Solicitação", "Análise", "Orçamento", "Execução", "Concluído"],
+          "vendas": ["Prospecção", "Qualificação", "Proposta", "Negociação", "Concluído"]
         };
 
         const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
