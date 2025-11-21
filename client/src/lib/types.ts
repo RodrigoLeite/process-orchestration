@@ -11,6 +11,7 @@ export interface Demand {
     sugestao_proximo_passo?: string;
   } | null;
   route_to?: string | null;
+  assigned_to?: string | null;
   status: DemandStatus;
   created_at: string;
   updated_at: string;

@@ -115,6 +115,7 @@ export default function DemandsManager() {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-3 text-left font-semibold">Descrição</th>
+                  <th className="px-4 py-3 text-left font-semibold">Responsável</th>
                   <th className="px-4 py-3 text-left font-semibold">Área</th>
                   <th className="px-4 py-3 text-left font-semibold">Tipo</th>
                   <th className="px-4 py-3 text-left font-semibold">Prioridade</th>
@@ -136,6 +137,13 @@ export default function DemandsManager() {
                         <div className="text-xs text-muted-foreground mt-1">
                           ID: {demand.id.slice(0, 8)}
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {demand.assigned_to ? (
+                          <Badge color="blue">{demand.assigned_to}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {parsed?.area ? (
