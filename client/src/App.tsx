@@ -14,6 +14,7 @@ import KanbanBoardPage from "@/pages/kanban-board";
 import DashboardPage from "@/pages/dashboard";
 import AreaDetailsPage from "@/pages/area-details";
 import InsightsPage from "@/pages/insights";
+import BottlenecksPage from "@/pages/bottlenecks";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/app/dashboard" component={DashboardPage} />
         <Route path="/app/areas/:id" component={AreaDetailsPage} />
         <Route path="/app/insights" component={InsightsPage} />
+        <Route path="/app/bottlenecks" component={BottlenecksPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
