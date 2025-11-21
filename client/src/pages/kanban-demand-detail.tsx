@@ -37,11 +37,11 @@ export default function KanbanDemandDetail() {
           variant="ghost"
           size="sm"
           className="gap-2 -ml-2"
-          onClick={() => navigate("/app/board")}
+          onClick={() => window.history.back()}
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar ao Kanban
+          Voltar
         </Button>
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
@@ -77,11 +77,11 @@ export default function KanbanDemandDetail() {
           variant="ghost"
           size="sm"
           className="gap-2 -ml-2"
-          onClick={() => navigate("/app/board")}
+          onClick={() => window.history.back()}
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar ao Kanban
+          Voltar
         </Button>
         
         <div className="space-y-4">
@@ -135,11 +135,11 @@ export default function KanbanDemandDetail() {
             variant="ghost"
             size="sm"
             className="gap-2 -ml-2 mb-4"
-            onClick={() => navigate("/app/board")}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ChevronLeft className="w-4 h-4" />
-            Voltar ao Kanban
+            Voltar
           </Button>
 
           <div className="space-y-4">
