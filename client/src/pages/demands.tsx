@@ -283,7 +283,7 @@ export default function Demands() {
                     {/* Metadata */}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border/50">
                       <span>ID: {demand.id.slice(0, 8)}...</span>
-                      <span>Criado: {new Date(demand.created_at).toLocaleDateString('pt-BR')}</span>
+                      <span>Criado: {demand.createdAt ? new Date(demand.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}</span>
                     </div>
                   </CardContent>
                 </Card>
