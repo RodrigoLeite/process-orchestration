@@ -121,7 +121,7 @@ export default function KanbanWorkflow() {
       </div>
 
       {/* Kanban Board */}
-      <ScrollArea className="w-full rounded-lg border border-gray-200 bg-gray-50 pb-4">
+      <div className="w-full rounded-lg border border-gray-200 bg-gray-50 pb-4 overflow-x-auto">
         <div className="flex gap-4 p-4 min-w-full" data-testid="kanban-workflow-container">
           {sortedStages.map((stage) => {
             const stageDemands = demands.filter(
@@ -260,7 +260,7 @@ export default function KanbanWorkflow() {
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
