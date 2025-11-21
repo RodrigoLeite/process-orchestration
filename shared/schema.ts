@@ -135,3 +135,21 @@ export const insertWorkgraphEdgeSchema = createInsertSchema(workgraphEdges).omit
 
 export type InsertWorkgraphEdge = z.infer<typeof insertWorkgraphEdgeSchema>;
 export type WorkgraphEdge = typeof workgraphEdges.$inferSelect;
+
+export const demandHistory = pgTable("demand_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  demandId: uuid("demand_id").notNull(),
+  fromArea: text("from_area"),
+  toArea: text("to_area"),
+  status: text("status"),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertDemandHistorySchema = createInsertSchema(demandHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDemandHistory = z.infer<typeof insertDemandHistorySchema>;
+export type DemandHistory = typeof demandHistory.$inferSelect;

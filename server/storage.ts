@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -30,6 +30,9 @@ export interface IStorage {
   getWorkgraphEdgesByType(demandType: string): Promise<WorkgraphEdge[]>;
   createWorkgraphEdge(edge: InsertWorkgraphEdge): Promise<WorkgraphEdge>;
   deleteWorkgraphEdge(id: string): Promise<void>;
+
+  createDemandHistory(history: InsertDemandHistory): Promise<DemandHistory>;
+  getDemandHistory(demandId: string): Promise<DemandHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -174,6 +177,15 @@ export class DatabaseStorage implements IStorage {
 
   async deleteWorkgraphEdge(id: string): Promise<void> {
     await this.db.delete(workgraphEdges).where(eq(workgraphEdges.id, id));
+  }
+
+  async createDemandHistory(insertHistory: InsertDemandHistory): Promise<DemandHistory> {
+    const result = await this.db.insert(demandHistory).values(insertHistory).returning();
+    return result[0];
+  }
+
+  async getDemandHistory(demandId: string): Promise<DemandHistory[]> {
+    return await this.db.select().from(demandHistory).where(eq(demandHistory.demandId, demandId)).orderBy(desc(demandHistory.createdAt));
   }
 }
 
