@@ -2,40 +2,20 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft, AlertTriangle, Lightbulb } from "lucide-react";
-import DemandHeader from "@/components/DemandHeader";
-import DemandInfo from "@/components/DemandInfo";
-import DemandActions from "@/components/DemandActions";
-import MiniTimeline from "@/components/MiniTimeline";
+import { Loader2, ChevronLeft, ExternalLink } from "lucide-react";
 import Badge from "@/components/Badge";
 import type { Demand } from "@/lib/types";
 
-interface FlowData {
-  success: boolean;
-  data: {
-    demandId: string;
-    currentArea: string;
-    currentStatus: string;
-    history: Array<{
-      from: string;
-      to: string;
-      status: string;
-      reason: string;
-      timestamp: string;
-    }>;
-  };
+interface WorkflowStage {
+  id: string;
+  name: string;
+  orderIndex: string;
 }
 
-interface BottleneckData {
-  success: boolean;
-  data: {
-    bottlenecks: Array<{
-      area: string;
-      severity: "high" | "medium" | "low";
-      reason: string;
-      actions: string[];
-    }>;
-  };
+interface AreaWorkflow {
+  id: string;
+  areaName: string;
+  name: string;
 }
 
 export default function DemandDetail() {
@@ -43,7 +23,7 @@ export default function DemandDetail() {
   const [, navigate] = useLocation();
 
   // Fetch demand
-  const { data: demand, isLoading, error, refetch } = useQuery<Demand>({
+  const { data: demand, isLoading, error } = useQuery<Demand>({
     queryKey: ["demand-detail", params?.id],
     queryFn: async () => {
       const res = await fetch(`/api/demands/${params?.id}`);
@@ -53,37 +33,40 @@ export default function DemandDetail() {
     enabled: !!params?.id
   });
 
-  // Fetch flow/timeline
-  const { data: flowData } = useQuery<FlowData>({
-    queryKey: ["demand-flow", params?.id],
+  // Fetch workflow for this demand
+  const { data: workflow } = useQuery<AreaWorkflow>({
+    queryKey: ["demand-workflow", demand?.workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/demands/${params?.id}/flow`);
-      if (!res.ok) throw new Error("Failed to fetch flow");
+      if (!demand?.workflowId) return null;
+      const res = await fetch(`/api/workflows/${demand.workflowId}`);
+      if (!res.ok) return null;
       return res.json();
     },
-    enabled: !!params?.id
+    enabled: !!demand?.workflowId
   });
 
-  // Fetch bottlenecks for AI suggestions
-  const { data: bottleneckData } = useQuery<BottleneckData>({
-    queryKey: ["demand-bottlenecks", params?.id],
+  // Fetch workflow stages
+  const { data: stages = [] } = useQuery<WorkflowStage[]>({
+    queryKey: ["demand-workflow-stages", workflow?.id],
     queryFn: async () => {
-      const res = await fetch("/api/bottlenecks");
-      if (!res.ok) throw new Error("Failed to fetch bottlenecks");
+      if (!workflow?.id) return [];
+      const res = await fetch(`/api/workflows/${workflow.id}/stages`);
+      if (!res.ok) return [];
       return res.json();
-    }
+    },
+    enabled: !!workflow?.id
   });
 
   if (!match) return null;
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         <Button
           variant="ghost"
           size="sm"
           className="gap-2 -ml-2"
-          onClick={() => navigate("/app/demands")}
+          onClick={() => navigate("/")}
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -108,21 +91,28 @@ export default function DemandDetail() {
   }
 
   const parsed = demand.parsed as any;
-  const timelineEvents = flowData?.data?.history || [];
-  
-  // Get area-specific bottlenecks
-  const area = parsed?.area || "N/A";
-  const areaBotto = bottleneckData?.data?.bottlenecks?.filter(
-    b => b.area.toLowerCase() === area.toLowerCase()
-  ) || [];
+  const title = parsed?.descricao_estruturada || demand.raw_text || "Sem título";
+  const area = parsed?.area || "—";
+  const priority = parsed?.prioridade || "média";
+  const type = parsed?.tipo || "—";
+  const currentStage = stages.find(s => s.id === demand.stageId);
 
-  const getSeverityColor = (severity: string): string => {
-    const colorMap: Record<string, string> = {
-      high: "red",
-      medium: "yellow",
-      low: "green"
-    };
-    return colorMap[severity] || "gray";
+  const getPriorityColor = (p: string) => {
+    if (p === "crítica") return "red";
+    if (p === "alta") return "orange";
+    return "green";
+  };
+
+  const getStatusColor = (s: string) => {
+    if (s === "completed") return "green";
+    if (s === "blocked") return "red";
+    return "blue";
+  };
+
+  const getStatusDisplay = (s: string) => {
+    if (s === "completed") return "✓ Concluído";
+    if (s === "blocked") return "✕ Bloqueado";
+    return "→ Em processamento";
   };
 
   return (
@@ -133,29 +123,128 @@ export default function DemandDetail() {
           variant="ghost"
           size="sm"
           className="gap-2 -ml-2"
-          onClick={() => navigate("/app/demands")}
+          onClick={() => navigate("/")}
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar
+          Voltar ao Dashboard
         </Button>
       </div>
 
-      {/* Section 1: Header */}
-      <DemandHeader demand={demand} />
+      {/* Main Title */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold" data-testid="title-demand">
+          {title}
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          ID: {demand.id}
+        </p>
+      </div>
 
-      {/* Section 2: SLA & AI */}
-      <DemandInfo demand={demand} />
+      {/* Status & Priority Badges */}
+      <div className="flex flex-wrap gap-2">
+        <Badge color={getStatusColor(demand.status)} data-testid="badge-status">
+          {getStatusDisplay(demand.status)}
+        </Badge>
+        <Badge color={getPriorityColor(priority)} data-testid="badge-priority">
+          {priority.toUpperCase()}
+        </Badge>
+        <Badge color="blue" data-testid="badge-type">
+          {type}
+        </Badge>
+      </div>
 
-      {/* Section 3: Description */}
-      <Card data-testid="description-card">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Area Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Área Detectada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold capitalize" data-testid="text-area">
+              {area}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Classificação automática
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Status Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div 
+              className={`text-2xl font-bold ${
+                demand.status === "completed"
+                  ? "text-green-600"
+                  : demand.status === "blocked"
+                  ? "text-red-600"
+                  : "text-blue-600"
+              }`}
+              data-testid="text-status"
+            >
+              {getStatusDisplay(demand.status)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Estado atual da demanda
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Workflow Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Workflow
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-workflow">
+              {workflow?.name || "—"}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {workflow?.areaName || "Área desconhecida"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Current Stage Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Fase Atual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-stage">
+              {currentStage?.name || "—"}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stages.length > 0 ? `Etapa ${
+                stages.findIndex(s => s.id === demand.stageId) + 1
+              } de ${stages.length}` : "Etapas desconhecidas"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Description Card */}
+      <Card>
         <CardHeader>
           <CardTitle>Descrição Completa</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {parsed?.descricao_estruturada && (
             <div>
-              <p className="text-xs text-gray-600 mb-2">Descrição Estruturada</p>
+              <p className="text-xs text-gray-600 mb-2 font-semibold">Descrição Estruturada</p>
               <p className="text-foreground bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
                 {parsed.descricao_estruturada}
               </p>
@@ -164,7 +253,7 @@ export default function DemandDetail() {
 
           {demand.raw_text && (
             <div>
-              <p className="text-xs text-gray-600 mb-2">Texto Original</p>
+              <p className="text-xs text-gray-600 mb-2 font-semibold">Texto Original</p>
               <p className="text-foreground/80 bg-gray-100 p-4 rounded-lg italic">
                 {demand.raw_text}
               </p>
@@ -173,7 +262,7 @@ export default function DemandDetail() {
 
           {parsed?.sugestao_proximo_passo && (
             <div>
-              <p className="text-xs text-gray-600 mb-2">Próximo Passo Sugerido</p>
+              <p className="text-xs text-gray-600 mb-2 font-semibold">Próximo Passo Sugerido</p>
               <p className="text-foreground bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
                 💡 {parsed.sugestao_proximo_passo}
               </p>
@@ -182,67 +271,27 @@ export default function DemandDetail() {
         </CardContent>
       </Card>
 
-      {/* Section 4: Timeline */}
-      <div className="space-y-3" data-testid="section-timeline">
-        <h2 className="text-2xl font-bold">Histórico de Fluxo</h2>
-        <MiniTimeline events={timelineEvents} />
-      </div>
-
-      {/* Section 5: Actions */}
-      <div className="space-y-3" data-testid="section-actions">
-        <h2 className="text-2xl font-bold">Ações</h2>
-        <DemandActions demandId={demand.id} onAdvanceSuccess={() => refetch()} />
-      </div>
-
-      {/* Section 6: AI Suggestions */}
-      <div className="space-y-3" data-testid="section-suggestions">
-        <h2 className="text-2xl font-bold">Sugestões da IA</h2>
-        {areaBotto.length === 0 ? (
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="pt-6">
-              <p className="text-center text-green-700">✅ Nenhum gargalo específico para esta área</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {areaBotto.map((botto, idx) => (
-              <Card key={idx} className="border-yellow-200 bg-yellow-50">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Lightbulb className="w-5 h-5 text-yellow-600" />
-                        {botto.reason}
-                      </CardTitle>
-                      <Badge
-                        color={getSeverityColor(botto.severity)}
-                        data-testid={`severity-${idx}`}
-                      >
-                        {botto.severity === "high"
-                          ? "🔴 Crítico"
-                          : botto.severity === "medium"
-                          ? "🟡 Médio"
-                          : "🟢 Baixo"}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-gray-600 mb-2 font-semibold">Ações Recomendadas</p>
-                  <ul className="space-y-2">
-                    {botto.actions.map((action, i) => (
-                      <li key={i} className="text-sm flex gap-2">
-                        <span className="text-yellow-600">✓</span>
-                        <span>{action}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Kanban Button */}
+      {workflow && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-semibold text-foreground">Ver no Kanban</p>
+                <p className="text-sm text-muted-foreground">Gerencie esta demanda no quadro Kanban</p>
+              </div>
+              <Button
+                onClick={() => navigate(`/app/kanban/workflow/${workflow.id}`)}
+                data-testid="button-open-kanban"
+                className="gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Abrir Kanban
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Metadata */}
       <Card className="border-gray-200 bg-gray-50">
@@ -254,7 +303,7 @@ export default function DemandDetail() {
               year: "numeric",
               hour: "2-digit",
               minute: "2-digit"
-            })} • ID: {demand.id}
+            })}
           </p>
         </CardContent>
       </Card>
