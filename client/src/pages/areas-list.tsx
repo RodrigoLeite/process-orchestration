@@ -49,31 +49,29 @@ export default function AreasListPage() {
       {/* Areas Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="areas-grid">
         {areas.map((area) => (
-          <Link key={area.id} href={`/app/areas/${area.id}`}>
-            <a>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full" data-testid={`area-card-${area.id}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        <span className="text-3xl">{area.icon}</span>
-                        {area.name}
-                      </CardTitle>
-                      <CardDescription className="mt-2">
-                        {area.description}
-                      </CardDescription>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          <Link key={area.id} href={`/app/areas/${area.id}`} className="block">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full" data-testid={`area-card-${area.id}`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <span className="text-3xl">{area.icon}</span>
+                      {area.name}
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      {area.description}
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full gap-2" data-testid={`button-view-${area.id}`}>
-                    Ver Detalhes
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </a>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full gap-2" data-testid={`button-view-${area.id}`}>
+                  Ver Detalhes
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
           </Link>
         ))}
       </div>

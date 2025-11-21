@@ -157,10 +157,8 @@ export default function DemandsManager() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/app/demands/${demand.id}`}>
-                          <a className="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
-                            Ver detalhes
-                          </a>
+                        <Link href={`/app/demands/${demand.id}`} className="inline-block px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
+                          Ver detalhes
                         </Link>
                       </td>
                     </tr>
