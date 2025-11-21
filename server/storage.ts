@@ -318,7 +318,7 @@ export class DatabaseStorage implements IStorage {
   async updateDemandStage(id: string, stageId: string): Promise<Demand | undefined> {
     const result = await this.db
       .update(demands)
-      .set({ stageId, updatedAt: new Date() })
+      .set({ stageId, stageMovedAt: new Date(), updatedAt: new Date() })
       .where(eq(demands.id, id))
       .returning();
     return result[0];
