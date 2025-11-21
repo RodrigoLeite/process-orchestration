@@ -1,0 +1,258 @@
+import { useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, ChevronLeft, AlertTriangle } from "lucide-react";
+import Badge from "@/components/Badge";
+import AreaDemandListItem from "@/components/AreaDemandListItem";
+import SimpleVolumeChart from "@/components/SimpleVolumeChart";
+import DashboardKPICard from "@/components/DashboardKPICard";
+
+interface Demand {
+  id: string;
+  status: string;
+  assigned_to?: string;
+  assignedTo?: string;
+  parsed?: any;
+  raw_text?: string;
+  sla_remaining?: string;
+  slaRemaining?: string;
+  delay_risk?: string;
+  delayRisk?: string;
+}
+
+interface BottleneckData {
+  success: boolean;
+  data: {
+    bottlenecks: Array<{
+      area: string;
+      severity: string;
+      reason: string;
+      actions: string[];
+    }>;
+  };
+}
+
+export default function AreaDetailsPage() {
+  const [match, params] = useRoute("/app/areas/:id");
+  const areaId = params?.id;
+
+  // Fetch demands for this area
+  const { data: demands = [], isLoading: demandsLoading, refetch } = useQuery<Demand[]>({
+    queryKey: ["area-demands", areaId],
+    queryFn: async () => {
+      const res = await fetch("/api/demands");
+      if (!res.ok) throw new Error("Failed to fetch demands");
+      const allDemands = await res.json();
+      return allDemands.filter(
+        (d: Demand) => (d.assigned_to || d.assignedTo) === areaId
+      );
+    },
+    enabled: !!areaId
+  });
+
+  // Fetch bottlenecks
+  const { data: bottleneckData } = useQuery<BottleneckData>({
+    queryKey: ["area-bottlenecks", areaId],
+    queryFn: async () => {
+      const res = await fetch("/api/bottlenecks");
+      if (!res.ok) throw new Error("Failed to fetch bottlenecks");
+      return res.json();
+    }
+  });
+
+  if (!match) return null;
+
+  if (demandsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando detalhes da área...</p>
+      </div>
+    );
+  }
+
+  // Calculate metrics
+  const completed = demands.filter(d => d.status === "completed").length;
+  const blocked = demands.filter(d => d.status === "blocked").length;
+  const inProgress = demands.filter(d => d.status === "in_progress").length;
+  const avgRisk = demands.length > 0
+    ? Math.floor(
+        demands.reduce((sum, d) => {
+          const riskStr = d.delay_risk || d.delayRisk || "0%";
+          const risk = parseInt(riskStr.replace("%", ""));
+          return sum + risk;
+        }, 0) / demands.length
+      )
+    : 0;
+
+  // Generate 7-day volume data
+  const volumeData = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - i));
+    return {
+      day: date.toLocaleDateString("pt-BR", { weekday: "short" }).substring(0, 3),
+      volume: Math.floor(Math.random() * 10) + demands.length
+    };
+  });
+
+  // Get bottlenecks for this area
+  const areaBottlenecks = bottleneckData?.data?.bottlenecks?.filter(
+    b => b.area.toLowerCase() === areaId?.toLowerCase()
+  ) || [];
+
+  const getSeverityColor = (severity: string): string => {
+    const colorMap: Record<string, string> = {
+      high: "red",
+      medium: "yellow",
+      low: "green"
+    };
+    return colorMap[severity] || "gray";
+  };
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 -ml-2"
+          onClick={() => window.history.back()}
+          data-testid="button-back"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Voltar
+        </Button>
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold capitalize" data-testid="title-area">
+            Área: {areaId}
+          </h1>
+          <p className="text-muted-foreground" data-testid="subtitle-area">
+            Gerenciamento e monitoramento de demandas da área
+          </p>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardKPICard
+          title="Total de Demandas"
+          value={demands.length}
+          description="Nesta área"
+          color="blue"
+        />
+        <DashboardKPICard
+          title="Concluídas"
+          value={completed}
+          description={`${demands.length > 0 ? Math.floor((completed / demands.length) * 100) : 0}%`}
+          color="green"
+        />
+        <DashboardKPICard
+          title="Bloqueadas"
+          value={blocked}
+          description="Aguardando"
+          color="red"
+        />
+        <DashboardKPICard
+          title="Risco Médio"
+          value={`${avgRisk}%`}
+          description="Atraso previsto"
+          color={avgRisk > 60 ? "red" : avgRisk > 30 ? "yellow" : "green"}
+        />
+      </div>
+
+      {/* Demands List */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold" data-testid="section-demands">
+          Demandas da Área
+        </h2>
+        {demands.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-gray-400">Nenhuma demanda atribuída a esta área</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3" data-testid="demands-list">
+            {demands.map(demand => (
+              <AreaDemandListItem
+                key={demand.id}
+                demand={demand}
+                onAdvance={() => refetch()}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bottlenecks */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold" data-testid="section-bottlenecks">
+          Gargalos Específicos (IA)
+        </h2>
+        {areaBottlenecks.length === 0 ? (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <p className="text-center text-green-700">✅ Nenhum gargalo crítico detectado nesta área</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3" data-testid="bottlenecks-list">
+            {areaBottlenecks.map((bottleneck, idx) => (
+              <Card key={idx} className="border-red-200 bg-red-50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-base">{bottleneck.reason}</CardTitle>
+                      <Badge
+                        color={getSeverityColor(bottleneck.severity)}
+                        data-testid={`severity-badge-${idx}`}
+                      >
+                        {bottleneck.severity === "high"
+                          ? "🔴 Crítico"
+                          : bottleneck.severity === "medium"
+                          ? "🟡 Médio"
+                          : "🟢 Baixo"}
+                      </Badge>
+                    </div>
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">Ações Recomendadas</p>
+                    <ul className="space-y-1">
+                      {bottleneck.actions.map((action, i) => (
+                        <li key={i} className="text-sm flex gap-2">
+                          <span className="text-gray-400">•</span>
+                          <span>{action}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Volume Chart */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold" data-testid="section-chart">
+          Volume dos Últimos 7 Dias
+        </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Histórico de Demandas</CardTitle>
+            <CardDescription>Visualização diária</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SimpleVolumeChart data={volumeData} />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
