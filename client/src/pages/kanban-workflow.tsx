@@ -259,7 +259,7 @@ export default function KanbanWorkflow() {
                             )}
                           </button>
 
-                          <p className="text-sm font-semibold line-clamp-3 text-foreground leading-snug">
+                          <p className="text-sm font-semibold line-clamp-3 text-foreground leading-snug pr-6">
                             {title}
                           </p>
 
