@@ -255,6 +255,26 @@ export default function KanbanWorkflow() {
                                 : "Em processamento"}
                             </p>
                           </div>
+
+                          {demand.stageMovedAt && (
+                            <div className="bg-gray-100 rounded-lg px-3 py-2">
+                              <p className="text-xs text-gray-700">
+                                {(() => {
+                                  const movedAt = new Date(demand.stageMovedAt);
+                                  const now = new Date();
+                                  const diffMs = now.getTime() - movedAt.getTime();
+                                  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                                  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                  
+                                  if (diffDays > 0) {
+                                    return `⏱️ ${diffDays}d ${diffHours}h`;
+                                  } else {
+                                    return `⏱️ ${diffHours}h`;
+                                  }
+                                })()}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       );
                     })
