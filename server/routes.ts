@@ -3,16 +3,22 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDemandSchema } from "@shared/schema";
 import { parseDemand } from "./parse-demand";
+import { createRequestLogger, logInfo, logError } from "./lib/logger";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add request logging middleware
+  app.use(await createRequestLogger());
+
   app.post("/api/parse-demand", async (req, res) => {
     try {
       const { text } = req.body;
       
       if (!text || typeof text !== "string") {
+        await logError("Invalid request to /api/parse-demand", "Missing or invalid text field");
         return res.status(400).json({ error: "text is required and must be a string" });
       }
 
+      await logInfo("Processing demand with text", { length: text.length });
       const parsed = await parseDemand(text);
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
@@ -23,9 +29,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending"
       });
       
+      await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
       res.status(201).json({ id: demand.id, parsed: demand.parsed, route_to: demand.routeTo });
     } catch (error) {
-      console.error("Error parsing demand:", error);
+      await logError("Error parsing demand", error);
       res.status(400).json({ error: "Failed to parse demand" });
     }
   });
