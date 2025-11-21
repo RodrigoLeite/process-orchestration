@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft } from "lucide-react";
+import { Loader2, ChevronLeft, Lock, LockOpen } from "lucide-react";
 import Badge from "@/components/Badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Demand } from "@/lib/types";
@@ -218,7 +218,7 @@ export default function KanbanWorkflow() {
                         <div
                           key={demand.id}
                           draggable="true"
-                          className="cursor-move hover:shadow-lg transition-all border-4 border-blue-400 rounded-xl bg-white p-4 space-y-3"
+                          className="cursor-move hover:shadow-lg transition-all border-4 border-blue-400 rounded-xl bg-white p-4 space-y-3 relative"
                           onDragStart={(e) => {
                             console.log("[DRAG] Starting drag for demand:", demand.id);
                             e.dataTransfer!.effectAllowed = "move";
@@ -227,6 +227,38 @@ export default function KanbanWorkflow() {
                           }}
                           data-testid={`card-demand-${demand.id}`}
                         >
+                          {/* Lock Icon */}
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              try {
+                                const newStatus = demand.status === "blocked" ? "in_progress" : "blocked";
+                                const res = await fetch(`/api/demands/${demand.id}`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ status: newStatus })
+                                });
+                                if (res.ok) {
+                                  await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                                  await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                                  await queryClient.invalidateQueries({ queryKey: ["area-demands"] });
+                                }
+                              } catch (error) {
+                                console.error("Failed to toggle block status:", error);
+                              }
+                            }}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                            data-testid={`button-lock-${demand.id}`}
+                            title={demand.status === "blocked" ? "Desbloquear demanda" : "Bloquear demanda"}
+                          >
+                            {demand.status === "blocked" ? (
+                              <Lock className="w-5 h-5" />
+                            ) : (
+                              <LockOpen className="w-5 h-5" />
+                            )}
+                          </button>
+
                           <p className="text-sm font-semibold line-clamp-3 text-foreground leading-snug">
                             {title}
                           </p>
@@ -291,59 +323,6 @@ export default function KanbanWorkflow() {
                               </p>
                             </div>
                           )}
-
-                          {/* Block/Unblock Button */}
-                          <div className="flex gap-2">
-                            {demand.status === "blocked" ? (
-                              <button
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  try {
-                                    const res = await fetch(`/api/demands/${demand.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ status: "in_progress" })
-                                    });
-                                    if (res.ok) {
-                                      await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
-                                      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
-                                      await queryClient.invalidateQueries({ queryKey: ["area-demands"] });
-                                    }
-                                  } catch (error) {
-                                    console.error("Failed to unblock demand:", error);
-                                  }
-                                }}
-                                data-testid={`button-unblock-${demand.id}`}
-                                className="flex-1 text-xs px-2 py-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors font-medium"
-                              >
-                                🔓 Desbloquear
-                              </button>
-                            ) : (
-                              <button
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  try {
-                                    const res = await fetch(`/api/demands/${demand.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ status: "blocked" })
-                                    });
-                                    if (res.ok) {
-                                      await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
-                                      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
-                                      await queryClient.invalidateQueries({ queryKey: ["area-demands"] });
-                                    }
-                                  } catch (error) {
-                                    console.error("Failed to block demand:", error);
-                                  }
-                                }}
-                                data-testid={`button-block-${demand.id}`}
-                                className="flex-1 text-xs px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
-                              >
-                                🔒 Bloquear
-                              </button>
-                            )}
-                          </div>
                         </div>
                       );
                     })
