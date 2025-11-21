@@ -278,6 +278,11 @@ export default function AreaDetailsPage() {
                         }>
                           {(demand.parsed as any)?.prioridade || "média"}
                         </Badge>
+                        {demand.stageId && stages.length > 0 && (
+                          <Badge color="purple">
+                            {stages.find(s => s.id === demand.stageId)?.name || "Etapa Desconhecida"}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">ID: {demand.id.slice(0, 8)}</p>
                     </div>
