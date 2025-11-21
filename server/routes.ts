@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "text is required and must be a string" });
       }
 
-      logInfo("Processing demand with text", { length: text.length }).catch(() => {});
+      await logInfo("Processing demand with text", { length: text.length });
       const parsed = await parseDemand(text);
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
@@ -72,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending"
       });
       
-      logInfo("Demand successfully created", { id: demand.id, route_to: routeTo }).catch(() => {});
+      await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
       res.status(201).json({ id: demand.id, parsed: demand.parsed, route_to: demand.routeTo });
     } catch (error) {
       await logError("Error parsing demand", error);
