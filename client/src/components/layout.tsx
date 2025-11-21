@@ -11,16 +11,13 @@ export function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-              S
+              D
             </div>
-            <span>Supabase App</span>
+            <span>Demandas IA</span>
           </div>
           <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
             <a href="/" className="hover:text-foreground transition-colors">Home</a>
-            <a href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</a>
-            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm">
-              Sign In
-            </button>
+            <a href="/demands" className="hover:text-foreground transition-colors">Demandas</a>
           </nav>
         </div>
       </header>
