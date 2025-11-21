@@ -157,8 +157,12 @@ export default function KanbanWorkflow() {
                   });
                   console.log("[API] Response status:", res.status);
                   if (res.ok) {
-                    console.log("[SUCCESS] Stage updated, invalidating queries");
-                    queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                    const responseData = await res.json();
+                    console.log("[SUCCESS] Stage updated, response status:", responseData.status);
+                    // Invalidate both workflow demands and all demands to refresh status
+                    await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                    await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                    console.log("[REFRESH] All queries invalidated");
                   } else {
                     const errorText = await res.text();
                     console.error("Failed to update stage:", res.status, errorText);
