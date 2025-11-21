@@ -279,7 +279,7 @@ export default function Demands() {
                           Finalizar
                         </Button>
                       )}
-                      {demand.status !== "pending" && parsed?.area && (
+                      {demand.status === "routed" && parsed?.area && (
                         <button
                           className="px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
                           onClick={async () => {

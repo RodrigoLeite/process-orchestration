@@ -192,7 +192,7 @@ export default function DemandsManager() {
                               {routingId === demand.id ? "Roteando..." : "Rotear"}
                             </button>
                           )}
-                          {demand.status !== "pending" && parsed?.area && (
+                          {demand.status === "routed" && parsed?.area && (
                             <button
                               className="px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               onClick={async () => {
@@ -217,9 +217,6 @@ export default function DemandsManager() {
                             >
                               {agentId === demand.id ? "Executando..." : "Executar agente"}
                             </button>
-                          )}
-                          {demand.status !== "pending" && !parsed?.area && (
-                            <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </div>
                       </td>
