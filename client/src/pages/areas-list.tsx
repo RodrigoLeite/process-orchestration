@@ -1,0 +1,91 @@
+import { Link } from "wouter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, Users } from "lucide-react";
+
+const areas = [
+  { id: "juridico", name: "Jurídico", description: "Gestão de questões legais e contratos", icon: "⚖️" },
+  { id: "financeiro", name: "Financeiro", description: "Controle financeiro e orçamentário", icon: "💰" },
+  { id: "comercial", name: "Comercial", description: "Vendas e relacionamento comercial", icon: "📊" },
+  { id: "fiscal", name: "Fiscal", description: "Compliance fiscal e tributário", icon: "📋" },
+  { id: "compras", name: "Compras", description: "Procurement e gestão de fornecedores", icon: "🛒" }
+];
+
+export default function AreasListPage() {
+  return (
+    <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Users className="w-8 h-8 text-blue-600" />
+          <h1 className="text-4xl font-bold" data-testid="title-areas">
+            Áreas Operacionais
+          </h1>
+        </div>
+        <p className="text-muted-foreground" data-testid="subtitle-areas">
+          Gerenciamento e monitoramento por departamento
+        </p>
+      </div>
+
+      {/* Areas Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="areas-grid">
+        {areas.map((area) => (
+          <Link key={area.id} href={`/app/areas/${area.id}`}>
+            <a>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full" data-testid={`area-card-${area.id}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <span className="text-3xl">{area.icon}</span>
+                        {area.name}
+                      </CardTitle>
+                      <CardDescription className="mt-2">
+                        {area.description}
+                      </CardDescription>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="outline" className="w-full gap-2" data-testid={`button-view-${area.id}`}>
+                    Ver Detalhes
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </a>
+          </Link>
+        ))}
+      </div>
+
+      {/* Statistics */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Total de Áreas</p>
+              <p className="text-2xl font-bold">{areas.length}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Demandas Ativas</p>
+              <p className="text-2xl font-bold">24</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">SLA Médio</p>
+              <p className="text-2xl font-bold">8h</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Taxa de Conclusão</p>
+              <p className="text-2xl font-bold">92%</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Áreas Críticas</p>
+              <p className="text-2xl font-bold text-red-600">1</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

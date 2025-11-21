@@ -13,6 +13,7 @@ import DemandFlow from "@/pages/demand-flow";
 import KanbanBoardPage from "@/pages/kanban-board";
 import DashboardPage from "@/pages/dashboard";
 import AreaDetailsPage from "@/pages/area-details";
+import AreasListPage from "@/pages/areas-list";
 import InsightsPage from "@/pages/insights";
 import BottlenecksPage from "@/pages/bottlenecks";
 import NotFound from "@/pages/not-found";
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/app/all-demands" component={AllDemands} />
         <Route path="/app/board" component={KanbanBoardPage} />
         <Route path="/app/dashboard" component={DashboardPage} />
+        <Route path="/app/areas" component={AreasListPage} />
         <Route path="/app/areas/:id" component={AreaDetailsPage} />
         <Route path="/app/insights" component={InsightsPage} />
         <Route path="/app/bottlenecks" component={BottlenecksPage} />
