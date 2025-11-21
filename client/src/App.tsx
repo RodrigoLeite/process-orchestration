@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout";
 import Home from "@/pages/home";
 import Demands from "@/pages/demands";
 import AllDemands from "@/pages/all-demands";
+import DemandsManager from "@/pages/demands-manager";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -15,7 +16,8 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/demands" component={Demands} />
-        <Route path="/app/demands" component={AllDemands} />
+        <Route path="/app/demands" component={DemandsManager} />
+        <Route path="/app/all-demands" component={AllDemands} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
