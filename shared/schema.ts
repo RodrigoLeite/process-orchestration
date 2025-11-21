@@ -27,6 +27,7 @@ export const demands = pgTable("demands", {
     descricao_estruturada?: string;
     sugestao_proximo_passo?: string;
   }>(),
+  routeTo: text("route_to"),
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

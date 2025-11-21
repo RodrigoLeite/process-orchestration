@@ -17,7 +17,8 @@ export function Layout({ children }: LayoutProps) {
           </div>
           <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
             <a href="/" className="hover:text-foreground transition-colors">Home</a>
-            <a href="/demands" className="hover:text-foreground transition-colors">Demandas</a>
+            <a href="/demands" className="hover:text-foreground transition-colors">Novo</a>
+            <a href="/app/demands" className="hover:text-foreground transition-colors">Todos</a>
           </nav>
         </div>
       </header>

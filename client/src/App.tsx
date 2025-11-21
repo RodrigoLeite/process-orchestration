@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Layout } from "@/components/layout";
 import Home from "@/pages/home";
 import Demands from "@/pages/demands";
+import AllDemands from "@/pages/all-demands";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/demands" component={Demands} />
+        <Route path="/app/demands" component={AllDemands} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
