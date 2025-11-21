@@ -173,7 +173,7 @@ export default function AllDemands() {
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border/50 pt-3">
                                   <span>ID: {demand.id.slice(0, 8)}</span>
                                   <span className="text-border/50">•</span>
-                                  <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}</span>
+                                  <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
                                 </div>
                               </div>
                             </CardContent>
