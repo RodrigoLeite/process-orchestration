@@ -4,29 +4,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, Send, Clock, CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { Demand } from "@/lib/types";
 
 const statusColors = {
-  pending: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
-  routed: "bg-blue-500/10 text-blue-700 border-blue-500/20",
-  in_progress: "bg-purple-500/10 text-purple-700 border-purple-500/20",
-  done: "bg-green-500/10 text-green-700 border-green-500/20"
+  pending: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
+  routed: "bg-blue-500/20 text-blue-700 border-blue-500/30",
+  in_progress: "bg-purple-500/20 text-purple-700 border-purple-500/30",
+  done: "bg-green-500/20 text-green-700 border-green-500/30"
 };
 
-const statusIcons = {
-  pending: Clock,
-  routed: AlertCircle,
-  in_progress: Loader2,
-  done: CheckCircle2
+const statusLabels = {
+  pending: "Pendente",
+  routed: "Roteado",
+  in_progress: "Em Andamento",
+  done: "Concluído"
 };
 
 const priorityColors = {
-  baixa: "bg-gray-500/10 text-gray-700",
-  média: "bg-blue-500/10 text-blue-700",
-  alta: "bg-orange-500/10 text-orange-700",
-  crítica: "bg-red-500/10 text-red-700"
+  baixa: "bg-slate-500/20 text-slate-700 border-slate-500/30",
+  média: "bg-blue-500/20 text-blue-700 border-blue-500/30",
+  alta: "bg-orange-500/20 text-orange-700 border-orange-500/30",
+  crítica: "bg-red-500/20 text-red-700 border-red-500/30"
 };
 
 export default function Demands() {
@@ -55,10 +55,14 @@ export default function Demands() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demands"] });
       setRawText("");
-      toast.success("Demanda criada e processada com sucesso!");
+      toast.success("✅ Demanda processada com sucesso!", {
+        duration: 3000,
+      });
     },
     onError: () => {
-      toast.error("Erro ao criar demanda");
+      toast.error("❌ Erro ao processar demanda", {
+        duration: 3000,
+      });
     }
   });
 
@@ -74,7 +78,7 @@ export default function Demands() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demands"] });
-      toast.success("Status atualizado!");
+      toast.success("✅ Status atualizado!", { duration: 2000 });
     }
   });
 
@@ -86,122 +90,167 @@ export default function Demands() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Central de Demandas</h1>
-        <p className="text-muted-foreground mt-2">
-          Sistema de classificação automática de demandas entre departamentos
+    <div className="space-y-12 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="space-y-4">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+          <Sparkles className="w-4 h-4" />
+          <span className="text-sm font-semibold text-primary">IA Classificadora</span>
+        </div>
+        <h1 className="text-4xl md:text-5xl font-bold">
+          Central de Demandas
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl">
+          Registre suas demandas e deixe a IA classificar, rotear e sugerir próximos passos automaticamente.
         </p>
       </div>
 
-      <Card>
+      {/* Input Section */}
+      <Card className="border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader>
-          <CardTitle>Nova Demanda</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="w-5 h-5" />
+            Nova Demanda
+          </CardTitle>
           <CardDescription>
-            Digite a demanda e ela será automaticamente classificada pela IA
+            Descreva sua demanda em linguagem natural - a IA fará o resto
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Textarea
               data-testid="input-demand"
-              placeholder="Ex: Precisamos ativar o novo cliente ACME, emitir contrato e provisionar o e-mail..."
+              placeholder="Ex: Precisamos ativar o novo cliente ACME, emitir contrato e provisionar o e-mail deles..."
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              rows={4}
-              className="resize-none"
+              rows={5}
+              className="resize-none text-base placeholder:text-muted-foreground/60"
             />
-            <Button
-              data-testid="button-submit"
-              type="submit"
-              disabled={!rawText.trim() || createMutation.isPending}
-              className="w-full sm:w-auto"
-            >
-              {createMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Enviar Demanda
-                </>
+            <div className="flex gap-3">
+              <Button
+                data-testid="button-submit"
+                type="submit"
+                disabled={!rawText.trim() || createMutation.isPending}
+                size="lg"
+                className="h-12 px-8 font-semibold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105"
+              >
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Processando IA...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Classificar Demanda
+                  </>
+                )}
+              </Button>
+              {createMutation.isPending && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  Analisando com IA...
+                </div>
               )}
-            </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
 
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Demandas Registradas</h2>
+      {/* Demands List */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold">Demandas Registradas</h2>
+            <p className="text-muted-foreground mt-1">{demands.length} demanda{demands.length !== 1 ? 's' : ''} no total</p>
+          </div>
+        </div>
         
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Carregando demandas...</p>
           </div>
         ) : demands.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              Nenhuma demanda registrada ainda
+          <Card className="border-dashed">
+            <CardContent className="py-16 text-center">
+              <div className="space-y-3">
+                <p className="text-2xl">📭</p>
+                <p className="text-lg font-semibold">Nenhuma demanda registrada</p>
+                <p className="text-muted-foreground">Comece criando uma nova demanda acima</p>
+              </div>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-            {demands.map((demand) => {
-              const StatusIcon = statusIcons[demand.status as keyof typeof statusIcons] || Clock;
+            {demands.map((demand, index) => {
               const parsed = demand.parsed as any;
+              const statusColor = statusColors[demand.status as keyof typeof statusColors];
               
               return (
-                <Card key={demand.id} data-testid={`card-demand-${demand.id}`}>
+                <Card 
+                  key={demand.id} 
+                  data-testid={`card-demand-${demand.id}`}
+                  className="border-l-4 border-l-primary hover:shadow-lg transition-all duration-300 overflow-hidden group"
+                >
                   <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className={statusColors[demand.status as keyof typeof statusColors]}>
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {demand.status}
+                    <div className="space-y-4">
+                      {/* Badges Row */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`${statusColor} border font-semibold`}>
+                          {statusLabels[demand.status as keyof typeof statusLabels]}
+                        </Badge>
+                        {parsed?.area && (
+                          <Badge variant="outline" className="font-semibold">
+                            🏢 {parsed.area}
                           </Badge>
-                          {parsed?.area && (
-                            <Badge variant="outline">{parsed.area}</Badge>
-                          )}
-                          {parsed?.tipo && (
-                            <Badge variant="secondary">{parsed.tipo}</Badge>
-                          )}
-                          {parsed?.prioridade && (
-                            <Badge className={priorityColors[parsed.prioridade as keyof typeof priorityColors]}>
-                              {parsed.prioridade}
-                            </Badge>
-                          )}
-                        </div>
-                        <CardTitle className="text-lg">
-                          {parsed?.descricao_estruturada || demand.raw_text}
-                        </CardTitle>
+                        )}
+                        {parsed?.tipo && (
+                          <Badge variant="secondary" className="font-semibold">
+                            {parsed.tipo}
+                          </Badge>
+                        )}
+                        {parsed?.prioridade && (
+                          <Badge className={`${priorityColors[parsed.prioridade as keyof typeof priorityColors]} border font-semibold`}>
+                            🔥 {parsed.prioridade}
+                          </Badge>
+                        )}
                       </div>
+
+                      {/* Title */}
+                      <CardTitle className="text-xl leading-relaxed">
+                        {parsed?.descricao_estruturada || demand.raw_text}
+                      </CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+
+                  <CardContent className="space-y-5">
+                    {/* Original Text */}
                     {demand.raw_text && parsed?.descricao_estruturada && (
-                      <div className="text-sm">
-                        <p className="font-medium text-muted-foreground mb-1">Texto original:</p>
+                      <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">📝 Texto Original</p>
                         <p className="text-foreground/80 italic">{demand.raw_text}</p>
                       </div>
                     )}
                     
+                    {/* Next Step */}
                     {parsed?.sugestao_proximo_passo && (
-                      <div className="text-sm">
-                        <p className="font-medium text-muted-foreground mb-1">Próximo passo sugerido:</p>
+                      <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-2">💡 Próximo Passo Sugerido</p>
                         <p className="text-foreground/80">{parsed.sugestao_proximo_passo}</p>
                       </div>
                     )}
 
+                    {/* Actions */}
                     <div className="flex gap-2 pt-2">
                       {demand.status === "pending" && (
                         <Button
                           size="sm"
                           variant="outline"
+                          className="font-semibold hover:bg-blue-500/10 hover:text-blue-700 transition-all"
                           onClick={() => updateStatusMutation.mutate({ id: demand.id, status: "routed" })}
+                          disabled={updateStatusMutation.isPending}
                         >
+                          <ArrowRight className="w-4 h-4 mr-1" />
                           Rotear
                         </Button>
                       )}
@@ -209,8 +258,11 @@ export default function Demands() {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="font-semibold hover:bg-purple-500/10 hover:text-purple-700 transition-all"
                           onClick={() => updateStatusMutation.mutate({ id: demand.id, status: "in_progress" })}
+                          disabled={updateStatusMutation.isPending}
                         >
+                          <Loader2 className="w-4 h-4 mr-1" />
                           Iniciar
                         </Button>
                       )}
@@ -218,11 +270,20 @@ export default function Demands() {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="font-semibold hover:bg-green-500/10 hover:text-green-700 transition-all"
                           onClick={() => updateStatusMutation.mutate({ id: demand.id, status: "done" })}
+                          disabled={updateStatusMutation.isPending}
                         >
+                          <CheckCircle2 className="w-4 h-4 mr-1" />
                           Finalizar
                         </Button>
                       )}
+                    </div>
+
+                    {/* Metadata */}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border/50">
+                      <span>ID: {demand.id.slice(0, 8)}...</span>
+                      <span>Criado: {new Date(demand.created_at).toLocaleDateString('pt-BR')}</span>
                     </div>
                   </CardContent>
                 </Card>
