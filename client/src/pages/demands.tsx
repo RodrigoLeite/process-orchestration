@@ -200,6 +200,11 @@ export default function Demands() {
                         <Badge className={`${statusColor} border font-semibold`}>
                           {statusLabels[demand.status as keyof typeof statusLabels]}
                         </Badge>
+                        {demand.assigned_to && (
+                          <Badge variant="outline" className="font-semibold">
+                            👤 Responsável: {demand.assigned_to}
+                          </Badge>
+                        )}
                         {parsed?.area && (
                           <Badge variant="outline" className="font-semibold">
                             🏢 {parsed.area}

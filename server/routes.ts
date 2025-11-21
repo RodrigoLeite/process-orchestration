@@ -68,11 +68,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const parsed = await parseDemand(text);
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
+      const assignedTo = parsed.area || "unknown";
       
       const demand = await storage.createDemand({
         rawText: text,
         parsed,
         routeTo,
+        assignedTo,
         status: "pending"
       });
       

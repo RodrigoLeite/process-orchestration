@@ -159,6 +159,11 @@ export default function AllDemands() {
                                       <Badge variant="outline" className="text-xs">
                                         {demand.status}
                                       </Badge>
+                                      {demand.assigned_to && (
+                                        <Badge className="text-xs bg-blue-500/20 text-blue-700">
+                                          👤 {demand.assigned_to}
+                                        </Badge>
+                                      )}
                                       {parsed?.tipo && (
                                         <Badge variant="secondary" className="text-xs">
                                           {parsed.tipo}
