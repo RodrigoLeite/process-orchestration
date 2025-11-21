@@ -324,6 +324,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/suggest-workflow", async (req, res) => {
+    try {
+      const { id } = req.body;
+      
+      if (!id || typeof id !== "string") {
+        await storage.createLog({ 
+          level: "error", 
+          message: "Invalid /api/suggest-workflow request - missing demand id", 
+          metadata: { hasId: !!id } 
+        });
+        return res.status(400).json({ error: "id is required and must be a string" });
+      }
+
+      const demand = await storage.getDemand(id);
+      if (!demand) {
+        await storage.createLog({ 
+          level: "error", 
+          message: "Demand not found in suggest-workflow request", 
+          metadata: { demandId: id } 
+        });
+        return res.status(404).json({ error: "Demand not found" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        await storage.createLog({ 
+          level: "error", 
+          message: "OpenAI API key not configured for workflow generation", 
+          metadata: {} 
+        });
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const workflowPrompt = `Sua tarefa é gerar um workflow corporativo para resolver esta demanda.
+O workflow deve ser uma lista de 3 a 8 passos lógicos e executáveis.
+
+Retorne APENAS o JSON válido no seguinte formato (sem código backticks nem explicações):
+[
+  { "step": 1, "title": "...", "responsible": "área", "description": "..." },
+  { "step": 2, "title": "...", "responsible": "área", "description": "..." }
+]
+
+DEMANDA:
+${JSON.stringify(demand.parsed, null, 2)}
+
+Texto original: ${demand.rawText}`;
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "user",
+            content: workflowPrompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500
+      });
+
+      const responseText = response.choices[0]?.message?.content || "";
+      
+      // Parse JSON from response
+      let steps;
+      try {
+        steps = JSON.parse(responseText);
+        if (!Array.isArray(steps)) {
+          throw new Error("Response is not an array");
+        }
+      } catch (parseError) {
+        await storage.createLog({ 
+          level: "error", 
+          message: "Failed to parse workflow JSON from OpenAI", 
+          metadata: { demandId: id, responseText } 
+        });
+        return res.status(500).json({ error: "Failed to parse workflow response" });
+      }
+
+      const savedWorkflow = await storage.createWorkflow({
+        demandId: id,
+        steps
+      });
+
+      await storage.createLog({ 
+        level: "info", 
+        message: "Workflow generated and saved", 
+        metadata: { demandId: id, workflowId: savedWorkflow.id, stepCount: steps.length } 
+      });
+
+      res.json({
+        id: savedWorkflow.id,
+        demand_id: savedWorkflow.demandId,
+        steps: savedWorkflow.steps,
+        created_at: savedWorkflow.createdAt
+      });
+    } catch (error) {
+      console.error("Error in suggest-workflow endpoint:", error);
+      await storage.createLog({ 
+        level: "error", 
+        message: "suggest-workflow endpoint error", 
+        metadata: { error: String(error) } 
+      });
+      res.status(500).json({ error: "Failed to generate workflow" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
