@@ -378,6 +378,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update demand stage (with auto-completion when moved to final stage)
+  app.patch("/api/demands/:id/stage", async (req, res) => {
+    try {
+      const { stageId } = req.body;
+      if (!stageId) {
+        return res.status(400).json({ error: "stageId is required" });
+      }
+
+      const demand = await storage.getDemand(req.params.id);
+      if (!demand) {
+        return res.status(404).json({ error: "Demand not found" });
+      }
+
+      // Get the stage to check if it's the final "Concluído" stage
+      const stage = await storage.getWorkflowStageById(stageId);
+      const isFinalStage = stage?.name?.toLowerCase() === "concluído";
+
+      // Update stage
+      const updatedDemand = await storage.updateDemandStage(req.params.id, stageId);
+
+      // If moved to final stage, automatically mark as completed
+      if (isFinalStage) {
+        const completedDemand = await storage.updateDemandStatus(req.params.id, "completed");
+        return res.json(completedDemand);
+      }
+
+      res.json(updatedDemand);
+    } catch (error) {
+      console.error("Error updating demand stage:", error);
+      res.status(500).json({ error: "Failed to update demand stage" });
+    }
+  });
+
   app.post("/api/route-demand", async (req, res) => {
     try {
       const { id } = req.body;

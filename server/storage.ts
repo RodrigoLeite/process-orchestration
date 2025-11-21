@@ -50,6 +50,7 @@ export interface IStorage {
   createAreaWorkflow(workflow: InsertAreaWorkflow): Promise<AreaWorkflow>;
   createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStage>;
   getWorkflowStages(workflowId: string): Promise<WorkflowStage[]>;
+  getWorkflowStageById(stageId: string): Promise<WorkflowStage | undefined>;
   getDemandsByWorkflow(workflowId: string): Promise<Demand[]>;
   updateDemandStage(id: string, stageId: string): Promise<Demand | undefined>;
 }
@@ -305,6 +306,15 @@ export class DatabaseStorage implements IStorage {
       .from(workflowStages)
       .where(eq(workflowStages.workflowId, workflowId))
       .orderBy(workflowStages.orderIndex);
+  }
+
+  async getWorkflowStageById(stageId: string): Promise<WorkflowStage | undefined> {
+    const result = await this.db
+      .select()
+      .from(workflowStages)
+      .where(eq(workflowStages.id, stageId))
+      .limit(1);
+    return result[0];
   }
 
   async getDemandsByWorkflow(workflowId: string): Promise<Demand[]> {
