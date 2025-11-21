@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -44,6 +44,11 @@ export interface IStorage {
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
   getWebhookEventsByStatus(status: string): Promise<WebhookEvent[]>;
   updateWebhookEvent(id: string, updates: Partial<WebhookEvent>): Promise<WebhookEvent | undefined>;
+
+  getAreaWorkflow(areaName: string): Promise<AreaWorkflow | undefined>;
+  createAreaWorkflow(workflow: InsertAreaWorkflow): Promise<AreaWorkflow>;
+  createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStage>;
+  getWorkflowStages(workflowId: string): Promise<WorkflowStage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -256,6 +261,36 @@ export class DatabaseStorage implements IStorage {
       .where(eq(webhookEvents.id, id))
       .returning();
     return result[0];
+  }
+
+  async getAreaWorkflow(areaName: string): Promise<AreaWorkflow | undefined> {
+    const result = await this.db
+      .select()
+      .from(areaWorkflows)
+      .where(eq(areaWorkflows.areaName, areaName.toLowerCase()))
+      .limit(1);
+    return result[0];
+  }
+
+  async createAreaWorkflow(insertWorkflow: InsertAreaWorkflow): Promise<AreaWorkflow> {
+    const result = await this.db
+      .insert(areaWorkflows)
+      .values({ ...insertWorkflow, areaName: insertWorkflow.areaName.toLowerCase() })
+      .returning();
+    return result[0];
+  }
+
+  async createWorkflowStage(insertStage: InsertWorkflowStage): Promise<WorkflowStage> {
+    const result = await this.db.insert(workflowStages).values(insertStage).returning();
+    return result[0];
+  }
+
+  async getWorkflowStages(workflowId: string): Promise<WorkflowStage[]> {
+    return await this.db
+      .select()
+      .from(workflowStages)
+      .where(eq(workflowStages.workflowId, workflowId))
+      .orderBy(workflowStages.orderIndex);
   }
 }
 
