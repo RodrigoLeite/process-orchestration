@@ -11,8 +11,8 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar Navigation */}
       <Navigation />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-64">
+      {/* Main content - adjust margin based on sidebar state (handled via CSS variable or default) */}
+      <div className="flex-1 flex flex-col lg:ml-64" style={{ transition: "margin-left 0.2s" }}>
         <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
           <div className="px-4 h-16 flex items-center">
             <h2 className="text-lg font-semibold">Sistema de Orquestração de Demandas</h2>

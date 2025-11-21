@@ -4,7 +4,7 @@ import { Loader2, Zap, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Badge from "@/components/Badge";
 import { toast } from "sonner";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import type { Demand } from "@/lib/types";
 
 const getPriorityColor = (prioridade: string): string => {
