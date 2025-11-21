@@ -391,10 +391,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demand not found" });
       }
 
-      // Get the stage to check if it's the final "Concluído" stage
+      // Get the stage to check if it's the final stage
       const stage = await storage.getWorkflowStageById(stageId);
       console.log("[STAGE] Stage retrieved:", stage?.name);
-      const isFinalStage = stage?.name?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === "concluido";
+      
+      // Get all stages for this workflow to determine if this is the last one
+      const allStages = await storage.getWorkflowStages(demand.workflowId || "");
+      const sortedStages = allStages.sort((a, b) => parseInt(a.orderIndex) - parseInt(b.orderIndex));
+      const lastStage = sortedStages[sortedStages.length - 1];
+      const isFinalStage = stage?.id === lastStage?.id;
 
       // Update stage
       const updatedDemand = await storage.updateDemandStage(req.params.id, stageId);
