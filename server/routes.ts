@@ -386,6 +386,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Bottleneck Detection Endpoint ============
+
+  // Detect bottlenecks using AI analysis
+  app.get("/api/bottlenecks", async (req, res) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ success: false, data: null, error: "OpenAI API key not configured" });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      // Get all demands from last 7 days
+      const last7DaysDemands = await storage.getDemandsFromLastDays(7);
+      const allAreas = await storage.getWorkgraphNodes();
+
+      // Calculate metrics per area
+      const areaMetrics: Record<string, any> = {};
+
+      for (const area of allAreas) {
+        const areaDemands = last7DaysDemands.filter(d => d.assignedTo === area.name);
+        
+        if (areaDemands.length === 0) {
+          continue;
+        }
+
+        const completed = areaDemands.filter(d => d.status === "completed").length;
+        const blocked = areaDemands.filter(d => d.status === "blocked").length;
+        const pending = areaDemands.filter(d => d.status === "pending").length;
+        const inProgress = areaDemands.filter(d => d.status === "in_progress").length;
+
+        // Calculate avg response time (created to first status change)
+        const avgResponseTime = areaDemands.reduce((sum, d) => {
+          return sum + (d.updatedAt.getTime() - d.createdAt.getTime()) / (1000 * 60 * 60);
+        }, 0) / Math.max(areaDemands.length, 1);
+
+        // Check for high delay risk
+        const highRisk = areaDemands.filter(d => {
+          const riskStr = d.delayRisk || "0%";
+          const risk = parseInt(riskStr.replace("%", ""));
+          return risk > 60;
+        }).length;
+
+        const demandHistory = await storage.getDemandHistory(areaDemands[0].id);
+        const areaChanges = demandHistory.filter(h => h.toArea === area.name).length;
+        const reopenings = demandHistory.length - areaChanges;
+
+        areaMetrics[area.name] = {
+          label: area.label,
+          totalDemands: areaDemands.length,
+          completed,
+          blocked,
+          pending,
+          inProgress,
+          completionRate: completed / areaDemands.length,
+          avgResponseTimeHours: avgResponseTime,
+          highRiskCount: highRisk,
+          reopenings,
+          blockagePercentage: blocked / areaDemands.length,
+          load: pending + inProgress
+        };
+      }
+
+      // Call AI to analyze and identify bottlenecks
+      const analysisPrompt = `Você é um analista de operações corporativas.
+Analise as métricas de demandas das últimas 7 dias e identifique os principais gargalos.
+
+Dados por área:
+${Object.entries(areaMetrics)
+  .map(
+    ([areaName, metrics]: any) => `
+${metrics.label} (${areaName}):
+- Total de demandas: ${metrics.totalDemandas}
+- Taxa de conclusão: ${(metrics.completionRate * 100).toFixed(1)}%
+- Tempo médio de resposta: ${metrics.avgResponseTimeHours.toFixed(1)}h
+- Demandas bloqueadas: ${metrics.blocked} (${(metrics.blockagePercentage * 100).toFixed(1)}%)
+- Reaberturas: ${metrics.reopenings}
+- Alto risco: ${metrics.highRiskCount}
+- Carga atual: ${metrics.load}
+`
+  )
+  .join("")}
+
+Identifique até 5 gargalos CRÍTICOS com base em:
+1. Taxa de conclusão baixa (<50%)
+2. Bloqueios altos (>30%)
+3. Fila acumulada (carga > 15)
+4. Reaberturas frequentes
+5. Demandas em alto risco
+
+Retorne APENAS um array JSON (sem markdown):
+[
+  {
+    "area": "Nome da Área",
+    "severity": "high|medium|low",
+    "reason": "Motivo do gargalo",
+    "actions": ["Ação 1", "Ação 2"]
+  }
+]
+
+Máximo 5 gargalos. Se houver menos, retorne apenas os críticos.`;
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "user",
+            content: analysisPrompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      const responseText = response.choices[0]?.message?.content || "[]";
+
+      let bottlenecks: any[] = [];
+      try {
+        bottlenecks = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse bottleneck analysis:", responseText);
+        bottlenecks = [];
+      }
+
+      // Log analysis
+      await storage.createLog({
+        level: "info",
+        message: "Bottleneck analysis completed",
+        metadata: { bottleneckCount: bottlenecks.length, areaMetrics }
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          timestamp: new Date().toISOString(),
+          bottlenecks: bottlenecks.slice(0, 5),
+          metrics: areaMetrics
+        },
+        error: null
+      });
+    } catch (error) {
+      console.error("Error detecting bottlenecks:", error);
+      return res.status(500).json({ success: false, data: null, error: "Failed to detect bottlenecks" });
+    }
+  });
+
   // ============ Webhook Endpoints ============
 
   // Register webhook for area
