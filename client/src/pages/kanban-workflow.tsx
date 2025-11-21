@@ -1,5 +1,5 @@
 import { useRoute, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft } from "lucide-react";
@@ -22,6 +22,7 @@ interface AreaWorkflow {
 export default function KanbanWorkflow() {
   const [match, params] = useRoute("/app/kanban/workflow/:workflowId");
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const workflowId = params?.workflowId;
 
   // Fetch workflow
@@ -230,13 +231,17 @@ export default function KanbanWorkflow() {
                     const demandId = e.dataTransfer.getData("demandId");
                     if (demandId) {
                       try {
-                        await fetch(`/api/demands/${demandId}/stage`, {
+                        const res = await fetch(`/api/demands/${demandId}/stage`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ stageId: stage.id })
                         });
-                        // Trigger refetch
-                        window.location.reload();
+                        if (res.ok) {
+                          // Refetch demands without full page reload
+                          queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+                        } else {
+                          console.error("Failed to update stage:", res.statusText);
+                        }
                       } catch (error) {
                         console.error("Failed to update stage:", error);
                       }
