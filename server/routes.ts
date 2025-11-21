@@ -1731,6 +1731,49 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  app.get("/api/areas", async (req, res) => {
+    try {
+      const areaWorkflows = await storage.getAllAreaWorkflows();
+      
+      const areaIcons: Record<string, string> = {
+        vendas: "📊",
+        ti: "💻",
+        operacoes: "⚙️",
+        rh: "👥",
+        juridico: "⚖️",
+        financeiro: "💰",
+        comercial: "📈",
+        fiscal: "📋",
+        compras: "🛒"
+      };
+
+      const areaDescriptions: Record<string, string> = {
+        vendas: "Gestão de vendas e relacionamento comercial",
+        ti: "Tecnologia da Informação e infraestrutura",
+        operacoes: "Operações corporativas e processos",
+        rh: "Recursos Humanos e gestão de pessoas",
+        juridico: "Gestão de questões legais e contratos",
+        financeiro: "Controle financeiro e orçamentário",
+        comercial: "Vendas e relacionamento comercial",
+        fiscal: "Compliance fiscal e tributário",
+        compras: "Procurement e gestão de fornecedores"
+      };
+
+      const areasWithMetadata = areaWorkflows.map(area => ({
+        id: area.areaName,
+        name: area.name,
+        icon: areaIcons[area.areaName.toLowerCase()] || "📌",
+        description: areaDescriptions[area.areaName.toLowerCase()] || "Área operacional",
+        workflowId: area.id
+      }));
+
+      res.json(areasWithMetadata);
+    } catch (error) {
+      console.error("Error fetching areas:", error);
+      res.status(500).json({ error: "Failed to fetch areas" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

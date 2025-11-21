@@ -1,17 +1,36 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users } from "lucide-react";
+import { ChevronRight, Users, Loader2 } from "lucide-react";
+import type { AreaWorkflow } from "@/lib/types";
 
-const areas = [
-  { id: "juridico", name: "Jurídico", description: "Gestão de questões legais e contratos", icon: "⚖️" },
-  { id: "financeiro", name: "Financeiro", description: "Controle financeiro e orçamentário", icon: "💰" },
-  { id: "comercial", name: "Comercial", description: "Vendas e relacionamento comercial", icon: "📊" },
-  { id: "fiscal", name: "Fiscal", description: "Compliance fiscal e tributário", icon: "📋" },
-  { id: "compras", name: "Compras", description: "Procurement e gestão de fornecedores", icon: "🛒" }
-];
+interface Area {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  workflowId: string;
+}
 
 export default function AreasListPage() {
+  const { data: areas = [], isLoading } = useQuery<Area[]>({
+    queryKey: ["areas"],
+    queryFn: async () => {
+      const res = await fetch("/api/areas");
+      if (!res.ok) throw new Error("Failed to fetch areas");
+      return res.json();
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header */}
