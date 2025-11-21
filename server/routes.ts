@@ -112,14 +112,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const parsed = await parseDemand(rawText);
+      const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
       const demand = await storage.createDemand({
         rawText,
         parsed,
+        routeTo,
         status: "pending"
       });
       
-      res.status(201).json(demand);
+      res.status(201).json({ 
+        id: demand.id, 
+        parsed: demand.parsed, 
+        route_to: demand.routeTo 
+      });
     } catch (error) {
       console.error("Error creating demand:", error);
       res.status(500).json({ error: "Failed to create demand" });
