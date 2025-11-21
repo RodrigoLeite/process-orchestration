@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, Clock, CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { Loader2, Send, Clock, CheckCircle2, ArrowRight, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
 import type { Demand } from "@/lib/types";
 
@@ -31,6 +31,7 @@ const priorityColors = {
 
 export default function Demands() {
   const [rawText, setRawText] = useState("");
+  const [agentId, setAgentId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: demands = [], isLoading } = useQuery<Demand[]>({
@@ -241,7 +242,7 @@ export default function Demands() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2 pt-2 flex-wrap">
                       {demand.status === "pending" && (
                         <Button
                           size="sm"
@@ -277,6 +278,42 @@ export default function Demands() {
                           <CheckCircle2 className="w-4 h-4 mr-1" />
                           Finalizar
                         </Button>
+                      )}
+                      {demand.status !== "pending" && parsed?.area && (
+                        <button
+                          className="px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
+                          onClick={async () => {
+                            try {
+                              setAgentId(demand.id);
+                              const res = await fetch(`/api/agent/${parsed.area.toLowerCase()}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: demand.id })
+                              });
+                              if (!res.ok) throw new Error("Failed to execute agent");
+                              toast.success("✅ Agente executado com sucesso!", { duration: 2000 });
+                              queryClient.invalidateQueries({ queryKey: ["demands"] });
+                            } catch (error) {
+                              toast.error("❌ Erro ao executar agente", { duration: 2000 });
+                              console.error(error);
+                            } finally {
+                              setAgentId(null);
+                            }
+                          }}
+                          disabled={agentId === demand.id}
+                        >
+                          {agentId === demand.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin inline" />
+                              Executando...
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-4 h-4 mr-1 inline" />
+                              Executar agente
+                            </>
+                          )}
+                        </button>
                       )}
                     </div>
 

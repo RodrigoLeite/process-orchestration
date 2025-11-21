@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, ListIcon } from "lucide-react";
+import { Loader2, MapPin, ListIcon, Zap } from "lucide-react";
+import { toast } from "sonner";
 import type { Demand } from "@/lib/types";
 
 const areaIcons: Record<string, string> = {
@@ -25,6 +27,8 @@ const areaColors: Record<string, string> = {
 };
 
 export default function AllDemands() {
+  const [agentId, setAgentId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const { data: demands = [], isLoading } = useQuery<(Demand & { routeTo?: string })[]>({
     queryKey: ["all-demands"],
     queryFn: async () => {
@@ -169,11 +173,49 @@ export default function AllDemands() {
                                   </div>
                                 </div>
 
-                                {/* Metadata */}
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border/50 pt-3">
-                                  <span>ID: {demand.id.slice(0, 8)}</span>
-                                  <span className="text-border/50">•</span>
-                                  <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                                {/* Metadata and Actions */}
+                                <div className="border-t border-border/50 pt-3 space-y-3">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>ID: {demand.id.slice(0, 8)}</span>
+                                    <span className="text-border/50">•</span>
+                                    <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                                  </div>
+                                  {demand.status !== "pending" && parsed?.area && (
+                                    <button
+                                      className="w-full px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all flex items-center justify-center gap-2"
+                                      onClick={async () => {
+                                        try {
+                                          setAgentId(demand.id);
+                                          const res = await fetch(`/api/agent/${parsed.area.toLowerCase()}`, {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ id: demand.id })
+                                          });
+                                          if (!res.ok) throw new Error("Failed to execute agent");
+                                          toast.success("✅ Agente executado com sucesso!", { duration: 2000 });
+                                          queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                                        } catch (error) {
+                                          toast.error("❌ Erro ao executar agente", { duration: 2000 });
+                                          console.error(error);
+                                        } finally {
+                                          setAgentId(null);
+                                        }
+                                      }}
+                                      disabled={agentId === demand.id}
+                                    >
+                                      {agentId === demand.id ? (
+                                        <>
+                                          <Loader2 className="w-4 h-4 animate-spin" />
+                                          Executando...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Zap className="w-4 h-4" />
+                                          Executar agente
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </CardContent>
