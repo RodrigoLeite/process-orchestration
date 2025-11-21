@@ -46,6 +46,7 @@ export const logs = pgTable("logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   level: text("level").notNull(),
   message: text("message").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

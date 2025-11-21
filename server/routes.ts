@@ -58,10 +58,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!text || typeof text !== "string") {
         await logError("Invalid request to /api/parse-demand", "Missing or invalid text field");
+        await storage.createLog({ level: "error", message: "Invalid /api/parse-demand request", metadata: { hasText: !!text } });
         return res.status(400).json({ error: "text is required and must be a string" });
       }
 
       await logInfo("Processing demand with text", { length: text.length });
+      await storage.createLog({ level: "info", message: "Processing demand", metadata: { textLength: text.length } });
+      
       const parsed = await parseDemand(text);
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
@@ -73,9 +76,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
+      await storage.createLog({ level: "info", message: "Demand created", metadata: { demandId: demand.id, area: parsed.area, routeTo } });
+      
       res.status(201).json({ id: demand.id, parsed: demand.parsed, route_to: demand.routeTo });
     } catch (error) {
       await logError("Error parsing demand", error);
+      await storage.createLog({ level: "error", message: "Failed to parse demand", metadata: { error: String(error) } });
       res.status(400).json({ error: "Failed to parse demand" });
     }
   });
@@ -154,23 +160,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.body;
       
       if (!id || typeof id !== "string") {
+        await storage.createLog({ level: "error", message: "Invalid /api/route-demand request", metadata: { hasId: !!id } });
         return res.status(400).json({ error: "id is required and must be a string" });
       }
 
+      await storage.createLog({ level: "info", message: "Routing demand", metadata: { demandId: id } });
+
       const demand = await storage.getDemand(id);
       if (!demand) {
+        await storage.createLog({ level: "error", message: "Demand not found", metadata: { demandId: id } });
         return res.status(400).json({ error: "Demand not found" });
       }
 
       const updated = await storage.updateDemandStatus(id, "routed");
       if (!updated) {
+        await storage.createLog({ level: "error", message: "Failed to update demand status", metadata: { demandId: id } });
         return res.status(400).json({ error: "Failed to update demand" });
       }
+
+      await storage.createLog({ level: "info", message: "Demand routed successfully", metadata: { demandId: id, routeTo: updated.routeTo } });
 
       res.json({ id: updated.id, status: "routed" });
     } catch (error) {
       console.error("Error routing demand:", error);
+      await storage.createLog({ level: "error", message: "Failed to route demand", metadata: { error: String(error) } });
       res.status(400).json({ error: "Failed to route demand" });
+    }
+  });
+
+  app.post("/api/logs", async (req, res) => {
+    try {
+      const { level, message, metadata } = req.body;
+      
+      if (!level || !message) {
+        return res.status(400).json({ error: "level and message are required" });
+      }
+
+      await storage.createLog({ level, message, metadata });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error creating log:", error);
+      res.status(400).json({ error: "Failed to create log" });
     }
   });
 
