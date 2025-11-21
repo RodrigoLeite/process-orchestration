@@ -1,0 +1,89 @@
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import KanbanColumn from "@/components/KanbanColumn";
+import type { Demand } from "@/lib/types";
+
+interface WorkgraphNode {
+  id: string;
+  name: string;
+  label: string;
+}
+
+export default function KanbanBoard() {
+  const [areas, setAreas] = useState<WorkgraphNode[]>([]);
+
+  // Fetch areas from workgraph
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const res = await fetch("/api/workgraph");
+        if (res.ok) {
+          const data = await res.json();
+          setAreas(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch areas:", error);
+      }
+    };
+
+    fetchAreas();
+  }, []);
+
+  // Fetch demands
+  const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
+    queryKey: ["kanban-demands"],
+    queryFn: async () => {
+      const res = await fetch("/api/demands");
+      if (!res.ok) throw new Error("Failed to fetch demands");
+      return res.json();
+    }
+  });
+
+  const handleDemandAdvance = () => {
+    refetch();
+  };
+
+  // Group demands by assigned area
+  const demandsByArea: Record<string, Demand[]> = {};
+  areas.forEach(area => {
+    demandsByArea[area.name] = demands.filter(
+      d => (d.assignedTo || d.assigned_to) === area.name
+    );
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando board...</p>
+      </div>
+    );
+  }
+
+  return (
+    <ScrollArea className="w-full rounded-lg border border-gray-200 bg-gray-50">
+      <div
+        className="flex gap-4 p-4"
+        data-testid="kanban-board-container"
+      >
+        {areas.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 w-full">
+            Nenhuma área configurada
+          </div>
+        ) : (
+          areas.map(area => (
+            <KanbanColumn
+              key={area.id}
+              area={area.name}
+              label={area.label}
+              demands={demandsByArea[area.name] || []}
+              onDemandAdvance={handleDemandAdvance}
+            />
+          ))
+        )}
+      </div>
+    </ScrollArea>
+  );
+}
