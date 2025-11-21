@@ -40,6 +40,7 @@ const getStatusLabel = (status: string): string => {
 export default function DemandsManager() {
   const [, navigate] = useLocation();
   const [routingId, setRoutingId] = useState<string | null>(null);
+  const [agentId, setAgentId] = useState<string | null>(null);
 
   const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
     queryKey: ["demands-manager"],
@@ -174,25 +175,53 @@ export default function DemandsManager() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        {demand.status === "pending" && (
-                          <button
-                            className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={async () => {
-                              await fetch("/api/route-demand", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: demand.id })
-                              });
-                              refetch();
-                            }}
-                            disabled={routingId === demand.id}
-                          >
-                            {routingId === demand.id ? "Roteando..." : "Rotear"}
-                          </button>
-                        )}
-                        {demand.status !== "pending" && (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
+                        <div className="flex gap-2">
+                          {demand.status === "pending" && (
+                            <button
+                              className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={async () => {
+                                await fetch("/api/route-demand", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ id: demand.id })
+                                });
+                                refetch();
+                              }}
+                              disabled={routingId === demand.id}
+                            >
+                              {routingId === demand.id ? "Roteando..." : "Rotear"}
+                            </button>
+                          )}
+                          {demand.status !== "pending" && parsed?.area && (
+                            <button
+                              className="px-3 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={async () => {
+                                try {
+                                  setAgentId(demand.id);
+                                  const res = await fetch(`/api/agent/${parsed.area.toLowerCase()}`, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: demand.id })
+                                  });
+                                  if (!res.ok) throw new Error("Failed to execute agent");
+                                  toast.success("✅ Agente executado com sucesso!", { duration: 2000 });
+                                  refetch();
+                                } catch (error) {
+                                  toast.error("❌ Erro ao executar agente", { duration: 2000 });
+                                  console.error(error);
+                                } finally {
+                                  setAgentId(null);
+                                }
+                              }}
+                              disabled={agentId === demand.id}
+                            >
+                              {agentId === demand.id ? "Executando..." : "Executar agente"}
+                            </button>
+                          )}
+                          {demand.status !== "pending" && !parsed?.area && (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
