@@ -29,7 +29,12 @@ export const demands = pgTable("demands", {
   }>(),
   routeTo: text("route_to"),
   assignedTo: text("assigned_to"),
-  status: text("status").notNull().default("pending"),
+  status: text("status").notNull().default("new"),
+  currentStatusDescription: text("current_status_description"),
+  eta: timestamp("eta"),
+  slaDeadline: timestamp("sla_deadline"),
+  slaRemaining: text("sla_remaining"),
+  delayRisk: text("delay_risk"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

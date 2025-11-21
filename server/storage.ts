@@ -12,6 +12,8 @@ export interface IStorage {
   getDemand(id: string): Promise<Demand | undefined>;
   createDemand(demand: InsertDemand): Promise<Demand>;
   updateDemandStatus(id: string, status: string): Promise<Demand | undefined>;
+  updateDemandWithSLA(id: string, updates: any): Promise<Demand | undefined>;
+  getDemandsWithStatus(status: string): Promise<Demand[]>;
   countDemandsByStatus(status: string): Promise<Record<string, number>>;
 
   createLog(log: InsertLog): Promise<Log>;
@@ -80,6 +82,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(demands.id, id))
       .returning();
     return result[0];
+  }
+
+  async updateDemandWithSLA(id: string, updates: { 
+    status?: string; 
+    currentStatusDescription?: string;
+    eta?: Date; 
+    slaDeadline?: Date; 
+    slaRemaining?: string; 
+    delayRisk?: string;
+  }): Promise<Demand | undefined> {
+    const result = await this.db
+      .update(demands)
+      .set({ 
+        ...updates,
+        updatedAt: new Date() 
+      })
+      .where(eq(demands.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getDemandsWithStatus(status: string): Promise<Demand[]> {
+    return await this.db.select().from(demands).where(eq(demands.status, status));
   }
 
   async countDemandsByStatus(status: string): Promise<Record<string, number>> {
