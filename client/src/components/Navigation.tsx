@@ -27,7 +27,7 @@ const navItems = [
 ];
 
 export default function Navigation() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -57,7 +57,7 @@ export default function Navigation() {
           {/* Logo + Collapse Toggle */}
           <div className="flex items-center justify-between mb-8">
             {!isCollapsed && (
-              <button onClick={() => window.location.href = "/"} className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity flex-1 bg-transparent border-none cursor-pointer">
+              <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity flex-1 bg-transparent border-none cursor-pointer">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-sm font-bold">
                   D
                 </div>
@@ -86,7 +86,7 @@ export default function Navigation() {
                 <button
                   key={item.href}
                   onClick={() => {
-                    window.location.href = item.href;
+                    navigate(item.href);
                     setIsOpen(false);
                   }}
                   className={`w-full flex items-center ${isCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors border-none bg-transparent cursor-pointer ${
