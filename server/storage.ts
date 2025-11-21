@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, users, demands, logs } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, users, demands, logs, agentResponses } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -14,6 +14,7 @@ export interface IStorage {
   updateDemandStatus(id: string, status: string): Promise<Demand | undefined>;
 
   createLog(log: InsertLog): Promise<Log>;
+  createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -70,6 +71,11 @@ export class DatabaseStorage implements IStorage {
 
   async createLog(insertLog: InsertLog): Promise<Log> {
     const result = await this.db.insert(logs).values(insertLog).returning();
+    return result[0];
+  }
+
+  async createAgentResponse(insertAgentResponse: InsertAgentResponse): Promise<AgentResponse> {
+    const result = await this.db.insert(agentResponses).values(insertAgentResponse).returning();
     return result[0];
   }
 }

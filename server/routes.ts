@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertDemandSchema } from "@shared/schema";
 import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
+import { buildAgentPrompt } from "./lib/agents/system_prompts";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add request logging middleware
@@ -201,6 +202,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating log:", error);
       res.status(400).json({ error: "Failed to create log" });
+    }
+  });
+
+  const VALID_AREAS = ["financeiro", "ti", "rh", "juridico", "operacoes", "facilities", "vendas"];
+
+  app.post("/api/agent/:area", async (req, res) => {
+    try {
+      const { area } = req.params;
+      const { id } = req.body;
+
+      if (!VALID_AREAS.includes(area)) {
+        await storage.createLog({ 
+          level: "error", 
+          message: "Invalid area in agent request", 
+          metadata: { area } 
+        });
+        return res.status(400).json({ error: `Invalid area. Must be one of: ${VALID_AREAS.join(", ")}` });
+      }
+
+      if (!id || typeof id !== "string") {
+        await storage.createLog({ 
+          level: "error", 
+          message: "Invalid agent request - missing demand id", 
+          metadata: { area, hasId: !!id } 
+        });
+        return res.status(400).json({ error: "id is required and must be a string" });
+      }
+
+      const demand = await storage.getDemand(id);
+      if (!demand) {
+        await storage.createLog({ 
+          level: "error", 
+          message: "Demand not found in agent request", 
+          metadata: { area, demandId: id } 
+        });
+        return res.status(404).json({ error: "Demand not found" });
+      }
+
+      await storage.createLog({ 
+        level: "info", 
+        message: "Agent request received", 
+        metadata: { area, demandId: id } 
+      });
+
+      if (!process.env.OPENAI_API_KEY) {
+        await storage.createLog({ 
+          level: "error", 
+          message: "OpenAI API key not configured", 
+          metadata: { area } 
+        });
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const prompt = buildAgentPrompt(area, demand);
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "system",
+            content: prompt
+          },
+          {
+            role: "user",
+            content: "Analise a demanda e forneça sua resposta estruturada."
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const agentResponseText = response.choices[0]?.message?.content || "";
+
+      const savedResponse = await storage.createAgentResponse({
+        demandId: id,
+        area,
+        response: agentResponseText
+      });
+
+      await storage.createLog({ 
+        level: "info", 
+        message: "Agent response generated successfully", 
+        metadata: { area, demandId: id, responseId: savedResponse.id } 
+      });
+
+      res.json({
+        id: savedResponse.id,
+        demand_id: savedResponse.demandId,
+        area: savedResponse.area,
+        response: savedResponse.response,
+        created_at: savedResponse.createdAt
+      });
+    } catch (error) {
+      console.error("Error in agent endpoint:", error);
+      await storage.createLog({ 
+        level: "error", 
+        message: "Agent endpoint error", 
+        metadata: { area: req.params.area, error: String(error) } 
+      });
+      res.status(500).json({ error: "Failed to generate agent response" });
     }
   });
 
