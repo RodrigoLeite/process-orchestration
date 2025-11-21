@@ -149,6 +149,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/route-demand", async (req, res) => {
+    try {
+      const { id } = req.body;
+      
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({ error: "id is required and must be a string" });
+      }
+
+      const demand = await storage.getDemand(id);
+      if (!demand) {
+        return res.status(400).json({ error: "Demand not found" });
+      }
+
+      const updated = await storage.updateDemandStatus(id, "routed");
+      if (!updated) {
+        return res.status(400).json({ error: "Failed to update demand" });
+      }
+
+      res.json({ id: updated.id, status: "routed" });
+    } catch (error) {
+      console.error("Error routing demand:", error);
+      res.status(400).json({ error: "Failed to route demand" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
