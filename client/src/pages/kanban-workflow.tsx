@@ -307,6 +307,7 @@ export default function KanbanWorkflow() {
                                     if (res.ok) {
                                       await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
                                       await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                                      await queryClient.invalidateQueries({ queryKey: ["area-demands"] });
                                     }
                                   } catch (error) {
                                     console.error("Failed to unblock demand:", error);
@@ -330,6 +331,7 @@ export default function KanbanWorkflow() {
                                     if (res.ok) {
                                       await queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
                                       await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+                                      await queryClient.invalidateQueries({ queryKey: ["area-demands"] });
                                     }
                                   } catch (error) {
                                     console.error("Failed to block demand:", error);
