@@ -186,7 +186,12 @@ export default function DemandsManager() {
                         <div className="flex gap-2 flex-wrap">
                           <Link href={`/app/demands/${demand.id}`}>
                             <a className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
-                              Detalhes
+                              Abrir detalhes
+                            </a>
+                          </Link>
+                          <Link href={`/app/board?demand=${demand.id}`}>
+                            <a className="px-2 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-700" data-testid={`link-kanban-${demand.id}`}>
+                              Ver no Kanban
                             </a>
                           </Link>
                           <Link href={`/app/demands/${demand.id}/flow`}>
