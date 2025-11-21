@@ -34,17 +34,19 @@ export default function Home() {
       {/* Hero Section */}
       <section className="text-center space-y-6 py-12">
         <h1 className="text-4xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent pb-2">
-          Next.js 14 Style Prototype
+          Central de Demandas IA
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          A clean, structured foundation with Tailwind CSS and Supabase integration, adapted for the Replit Mockup environment.
+          Sistema inteligente de classificação e roteamento de demandas entre departamentos usando IA.
         </p>
         <div className="flex justify-center gap-4 pt-4">
-          <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20">
-            Get Started
-          </Button>
-          <Button size="lg" variant="outline" className="h-12 px-8 text-base">
-            Documentation
+          <Button 
+            size="lg" 
+            className="h-12 px-8 text-base shadow-lg shadow-primary/20"
+            onClick={() => window.location.href = '/demands'}
+            data-testid="button-get-started"
+          >
+            Acessar Sistema
           </Button>
         </div>
       </section>
@@ -55,76 +57,60 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="w-5 h-5 text-primary" />
-              Supabase Status
+              Database Status
             </CardTitle>
-            <CardDescription>Connection check to your backend</CardDescription>
+            <CardDescription>PostgreSQL connection status</CardDescription>
           </CardHeader>
           <CardContent>
-            {isConnected ? (
-              <Alert className="bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400">
-                <CheckCircle2 className="h-4 w-4" />
-                <AlertTitle>Connected</AlertTitle>
-                <AlertDescription>
-                  Supabase environment variables detected.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Not Connected</AlertTitle>
-                <AlertDescription>
-                  Missing <code>VITE_SUPABASE_URL</code> or <code>NEXT_PUBLIC_SUPABASE_URL</code>.
-                  Add them to your Replit Secrets.
-                </AlertDescription>
-              </Alert>
-            )}
+            <Alert className="bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Connected</AlertTitle>
+              <AlertDescription>
+                PostgreSQL database configured and ready.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LayoutIcon className="w-5 h-5 text-primary" />
-              Project Structure
+              <Server className="w-5 h-5 text-primary" />
+              OpenAI Integration
             </CardTitle>
-            <CardDescription>Organized for scalability</CardDescription>
+            <CardDescription>IA for demand classification</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 p-2 rounded bg-muted/50">
-              <span className="font-mono font-bold text-primary">/components</span>
-              <span className="text-muted-foreground">UI Building blocks</span>
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded bg-muted/50">
-              <span className="font-mono font-bold text-primary">/lib</span>
-              <span className="text-muted-foreground">Utilities & Clients (Supabase)</span>
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded bg-muted/50">
-              <span className="font-mono font-bold text-primary">/pages</span>
-              <span className="text-muted-foreground">Application Routes</span>
-            </div>
+          <CardContent>
+            <Alert className="bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Setup Required</AlertTitle>
+              <AlertDescription>
+                Add <code>OPENAI_API_KEY</code> to Replit Secrets for AI parsing.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       </div>
 
       {/* Feature Section */}
       <section>
-        <h2 className="text-2xl font-bold mb-6">Included Features</h2>
+        <h2 className="text-2xl font-semibold mb-6">Funcionalidades</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
             {
-              title: "Tailwind CSS",
-              description: "Utility-first CSS framework for rapid UI development.",
-              icon: <span className="text-xl">🎨</span>
+              title: "Classificação IA",
+              description: "Usa GPT-4 para classificar demandas automaticamente por área, tipo e prioridade.",
+              icon: <span className="text-xl">🤖</span>
             },
             {
-              title: "TypeScript",
-              description: "Static type checking for better developer experience.",
-              icon: <span className="text-xl">📘</span>
+              title: "Roteamento Automático",
+              description: "Identifica o departamento responsável e sugere próximos passos.",
+              icon: <span className="text-xl">🎯</span>
             },
             {
-              title: "Supabase Client",
-              description: "Pre-configured client for Auth and Database.",
-              icon: <span className="text-xl">⚡</span>
+              title: "Gestão de Status",
+              description: "Acompanhe o progresso das demandas: pendente, roteada, em andamento e concluída.",
+              icon: <span className="text-xl">✅</span>
             }
           ].map((feature, i) => (
             <Card key={i} className="hover:shadow-md transition-shadow">
