@@ -189,9 +189,9 @@ export default function DemandsManager() {
                               Abrir detalhes
                             </a>
                           </Link>
-                          <Link href={`/app/board?demand=${demand.id}`}>
+                          <Link href={`/app/kanban/${demand.id}`}>
                             <a className="px-2 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-700" data-testid={`link-kanban-${demand.id}`}>
-                              Ver no Kanban
+                              Ver workflow no Kanban
                             </a>
                           </Link>
                           <Link href={`/app/demands/${demand.id}/flow`}>
