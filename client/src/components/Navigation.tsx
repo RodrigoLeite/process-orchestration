@@ -48,7 +48,7 @@ export default function Navigation() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-screen bg-card border-r border-border transition-all duration-200 z-30 
+        className={`fixed left-0 top-0 h-screen bg-white border-r border-border transition-all duration-200 z-30 
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           ${isCollapsed ? "w-20" : "w-64"}`}
         data-testid="navigation-sidebar"
