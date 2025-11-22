@@ -2867,6 +2867,7 @@ Texto original: ${demand.rawText}`;
   // ============ LangGraph Orchestration Endpoint ============
   // Import LangGraph orchestration
   const { executeOrchestrationGraph } = await import("./lib/ai/lc/graphs");
+  const { withTracing, logAgentExecution } = await import("./lib/ai/lc/telemetry");
 
   // Orchestration endpoint - Execute complete demand pipeline
   app.post("/api/orchestration/process-demand", async (req, res) => {
@@ -2894,6 +2895,145 @@ Texto original: ${demand.rawText}`;
         success: false,
         error: "Orchestration failed",
         details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // ============ AI Orchestration Endpoint (from database) ============
+  // Orchestrate demand from database with full persistence
+  app.post("/api/ai/orchestrate", async (req, res) => {
+    const startTime = Date.now();
+    
+    try {
+      const { demandId, manual } = req.body;
+
+      if (!demandId) {
+        return res.status(400).json({
+          success: false,
+          error: "demandId is required"
+        });
+      }
+
+      console.log(`[ORCHESTRATE] Starting orchestration for demand: ${demandId}`);
+
+      // Load demand from database
+      const demandRecord = await storage.getDemand(demandId);
+      if (!demandRecord) {
+        return res.status(404).json({
+          success: false,
+          error: `Demand not found: ${demandId}`
+        });
+      }
+
+      // Convert database demand to DemandInput format
+      const demandInput = {
+        titulo: demandRecord.title || demandRecord.summary || "Unknown",
+        descricao: demandRecord.description || "",
+        area: demandRecord.assignedTo?.toUpperCase() || "TECH",
+        urgencia: demandRecord.priority as any || "média",
+        resultadosEsperados: demandRecord.goals ? JSON.parse(demandRecord.goals) : [],
+        slaHoras: demandRecord.slaHours
+      };
+
+      console.log(`[ORCHESTRATE] Loaded demand: ${demandInput.titulo}`);
+
+      // Execute orchestration graph with tracing
+      const orchestrationResult = await withTracing("orchestrateFromDatabase", async () => {
+        return await executeOrchestrationGraph(storage, demandInput, demandId);
+      }, { demand_id: demandId, demand_title: demandInput.titulo, manual });
+
+      // Save workflow if generated successfully
+      if (orchestrationResult.workflow) {
+        try {
+          const workflowId = `wf_${demandId}_${Date.now()}`;
+          const workflowData = {
+            demandId,
+            title: orchestrationResult.workflow.titulo,
+            description: orchestrationResult.workflow.descricao,
+            stages: JSON.stringify(orchestrationResult.workflow.etapas),
+            totalDurationHours: orchestrationResult.workflow.duracao_total_horas,
+            priority: orchestrationResult.workflow.prioridade_workflow,
+            status: "created"
+          };
+          
+          await storage.createWorkflow(workflowData as any);
+          console.log(`[ORCHESTRATE] Saved workflow: ${workflowId}`);
+        } catch (error) {
+          console.error("[ORCHESTRATE] Error saving workflow:", error);
+        }
+      }
+
+      // Save bottleneck report if identified
+      if (orchestrationResult.bottlenecks && orchestrationResult.bottlenecks.length > 0) {
+        try {
+          const bottleneckData = {
+            demandId,
+            workflow: orchestrationResult.workflow?.titulo || "Unknown",
+            bottlenecks: JSON.stringify(orchestrationResult.bottlenecks),
+            severity: orchestrationResult.bottlenecks[0]?.severity || "média",
+            detectedAt: new Date(),
+            status: "open"
+          };
+          
+          await storage.createBottleneckReport(bottleneckData as any);
+          console.log(`[ORCHESTRATE] Saved ${orchestrationResult.bottlenecks.length} bottlenecks`);
+        } catch (error) {
+          console.error("[ORCHESTRATE] Error saving bottlenecks:", error);
+        }
+      }
+
+      // Save insights report if generated
+      if (orchestrationResult.insights) {
+        try {
+          const insightsData = {
+            demandId,
+            workflow: orchestrationResult.workflow?.titulo || "Unknown",
+            insights: JSON.stringify(orchestrationResult.insights),
+            generatedAt: new Date(),
+            status: "active"
+          };
+          
+          await storage.createInsightsReport(insightsData as any);
+          console.log(`[ORCHESTRATE] Saved insights report`);
+        } catch (error) {
+          console.error("[ORCHESTRATE] Error saving insights:", error);
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      console.log(`[ORCHESTRATE] Completed in ${duration}ms`);
+
+      // Log to telemetry
+      await logAgentExecution("orchestrateFromDatabase", { demandId, manual }, 
+        { success: orchestrationResult.status === "success", ...orchestrationResult },
+        { demand_id: demandId, endpoint: "/api/ai/orchestrate" },
+        duration
+      );
+
+      // Return consolidated result
+      res.json({
+        success: orchestrationResult.status === "success",
+        data: {
+          demand_id: demandId,
+          demand: demandInput,
+          workflow: orchestrationResult.workflow || null,
+          bottlenecks: orchestrationResult.bottlenecks || [],
+          insights: orchestrationResult.insights || null,
+          error: orchestrationResult.error || null,
+          timestamp: new Date().toISOString(),
+          duration_ms: duration,
+          status: orchestrationResult.status || "unknown"
+        }
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error("[ORCHESTRATE] Error:", error);
+      
+      res.status(500).json({
+        success: false,
+        error: "Orchestration failed",
+        details: error instanceof Error ? error.message : String(error),
+        duration_ms: duration
       });
     }
   });
