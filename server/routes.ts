@@ -1975,6 +1975,7 @@ Texto original: ${demand.rawText}`;
           const newAgent = await storage.createAgent({
             name: internalAgent.name,
             description: internalAgent.description,
+            internalKey: internalAgent.id,
             type: "system",
             active: "true"
           });
