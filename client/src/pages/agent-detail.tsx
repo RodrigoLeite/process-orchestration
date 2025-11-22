@@ -93,7 +93,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
-  const isActive = agent.active === 't' || agent.active === true;
+  const isActive = agent.active === 't' || agent.active === true || agent.active === "true";
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
