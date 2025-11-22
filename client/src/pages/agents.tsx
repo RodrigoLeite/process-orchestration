@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bot, Loader2, Play, Copy, X } from "lucide-react";
+import { Bot, Loader2, ArrowRight } from "lucide-react";
 import Badge from "@/components/Badge";
 
 interface Agent {
@@ -14,18 +15,8 @@ interface Agent {
   createdAt: string | Date;
 }
 
-interface ExecutionResult {
-  success?: boolean;
-  error?: string;
-  [key: string]: any;
-}
-
 export default function AgentsPage() {
-  const [executeModalAgent, setExecuteModalAgent] = useState<Agent | null>(null);
-  const [jsonPayload, setJsonPayload] = useState("{}");
-  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [, navigate] = useLocation();
 
   const { data: allAgents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["agents"],
@@ -41,40 +32,6 @@ export default function AgentsPage() {
   const agents = allAgents
     .filter(a => a.active === 't' || a.active === true || a.active === "true")
     .sort((a, b) => a.name.localeCompare(b.name));
-
-  const handleExecuteAgent = async () => {
-    if (!executeModalAgent?.internalKey) return;
-
-    setIsExecuting(true);
-    setExecutionResult(null);
-
-    try {
-      const payload = JSON.parse(jsonPayload);
-      const response = await fetch("/api/agents/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agent_key: executeModalAgent.internalKey,
-          payload
-        })
-      });
-
-      const result = await response.json();
-      setExecutionResult(result);
-    } catch (error) {
-      setExecutionResult({
-        error: `Erro: ${error instanceof Error ? error.message : "Falha ao executar agente"}`
-      });
-    } finally {
-      setIsExecuting(false);
-    }
-  };
-
-  const closeModal = () => {
-    setExecuteModalAgent(null);
-    setJsonPayload("{}");
-    setExecutionResult(null);
-  };
 
   if (isLoading) {
     return (
@@ -115,8 +72,9 @@ export default function AgentsPage() {
           {agents.map((agent) => (
             <Card 
               key={agent.id}
-              className="hover:shadow-lg transition-shadow h-full flex flex-col" 
+              className="hover:shadow-lg transition-shadow h-full flex flex-col cursor-pointer" 
               data-testid={`agent-card-${agent.id}`}
+              onClick={() => navigate(`/app/agents/${agent.id}`)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
@@ -153,14 +111,17 @@ export default function AgentsPage() {
                   </Badge>
                 </div>
 
-                {/* Execute Button */}
+                {/* View Details Button */}
                 <Button 
-                  onClick={() => setExecuteModalAgent(agent)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/app/agents/${agent.id}`);
+                  }}
                   className="w-full gap-2 mt-auto" 
-                  data-testid={`button-execute-${agent.id}`}
+                  data-testid={`button-details-${agent.id}`}
                 >
-                  <Play className="w-4 h-4" />
-                  Executar Agente
+                  <ArrowRight className="w-4 h-4" />
+                  Ver Detalhes
                 </Button>
               </CardContent>
             </Card>
@@ -189,109 +150,6 @@ export default function AgentsPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Execution Modal */}
-      {executeModalAgent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl bg-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div>
-                <CardTitle>Executar: {executeModalAgent.name}</CardTitle>
-                <CardDescription className="mt-2">
-                  Chave: <span className="font-mono text-xs">{executeModalAgent.internalKey}</span>
-                </CardDescription>
-              </div>
-              <button
-                onClick={closeModal}
-                className="p-1 hover:bg-muted rounded"
-                data-testid="button-close-modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Payload Input */}
-              <div>
-                <label className="text-sm font-semibold mb-2 block">JSON de Entrada</label>
-                <textarea
-                  value={jsonPayload}
-                  onChange={(e) => setJsonPayload(e.target.value)}
-                  className="w-full h-40 p-3 border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder='{"chave": "valor"}'
-                  data-testid="input-json-payload"
-                />
-              </div>
-
-              {/* Execution Result */}
-              {executionResult && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold">Resultado</label>
-                  <div className={`p-4 rounded-lg border ${
-                    executionResult.error
-                      ? "bg-red-50 border-red-200"
-                      : "bg-green-50 border-green-200"
-                  }`}>
-                    <pre className="text-xs overflow-auto max-h-40 font-mono">
-                      {JSON.stringify(executionResult, null, 2)}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="mt-2 gap-1 h-auto p-1 text-xs"
-                      onClick={() => {
-                        navigator.clipboard.writeText(JSON.stringify(executionResult, null, 2));
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      data-testid="button-copy-result"
-                    >
-                      {copied ? (
-                        <>✓ Copiado</>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          Copiar
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4 border-t">
-                <Button
-                  onClick={handleExecuteAgent}
-                  disabled={isExecuting}
-                  className="flex-1 gap-2"
-                  data-testid="button-execute-agent"
-                >
-                  {isExecuting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Executando...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4" />
-                      Executar
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={closeModal}
-                  variant="outline"
-                  className="flex-1"
-                  data-testid="button-cancel-modal"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
