@@ -1,5 +1,6 @@
 import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import { getLLM } from "../client";
+import { logGraphExecution } from "../telemetry";
 import type { IStorage } from "../../storage";
 import type { DemandInput } from "../../../ai/agents/demand-agent";
 import type { WorkflowOutput } from "../../../ai/agents/workflow-builder-agent";
@@ -45,6 +46,7 @@ export type OrchestrationGraphState = typeof OrchestrationState.State;
  */
 async function inputNode(state: OrchestrationGraphState, storage: IStorage) {
   console.log(`[GRAPH] Input Node - Processing demand: ${state.demand_id}`);
+  const startTime = Date.now();
 
   try {
     // Fetch demand from database if ID provided
@@ -54,30 +56,40 @@ async function inputNode(state: OrchestrationGraphState, storage: IStorage) {
     }
 
     if (!state.demand) {
+      const error = "No demand provided in state";
+      await logGraphExecution("orchestrationGraph", "input_node", state, { error }, { demand_id: state.demand_id }, Date.now() - startTime);
       return {
         ...state,
-        error: "No demand provided in state"
+        error
       };
     }
 
     // Validate demand has required fields
     if (!state.demand.titulo || !state.demand.area) {
+      const error = "Demand missing required fields (titulo, area)";
+      await logGraphExecution("orchestrationGraph", "input_node", state, { error }, { demand_id: state.demand_id }, Date.now() - startTime);
       return {
         ...state,
-        error: "Demand missing required fields (titulo, area)"
+        error
       };
     }
 
     console.log(`[GRAPH] Input validated: ${state.demand.titulo}`);
 
-    return {
+    const result = {
       ...state,
       timestamp: new Date().toISOString()
     };
+
+    await logGraphExecution("orchestrationGraph", "input_node", state, result, { demand_id: state.demand_id, demand_title: state.demand.titulo }, Date.now() - startTime);
+
+    return result;
   } catch (error) {
+    const errorMsg = `Input node error: ${error instanceof Error ? error.message : String(error)}`;
+    await logGraphExecution("orchestrationGraph", "input_node", state, { error: errorMsg }, { demand_id: state.demand_id }, Date.now() - startTime);
     return {
       ...state,
-      error: `Input node error: ${error instanceof Error ? error.message : String(error)}`
+      error: errorMsg
     };
   }
 }

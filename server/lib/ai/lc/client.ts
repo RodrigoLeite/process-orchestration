@@ -2,8 +2,10 @@ import { ChatOpenAI } from "@langchain/openai";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_model";
 import type { Embeddings } from "@langchain/core/embeddings";
+import { initTelemetry } from "./telemetry";
 
-// Remove unused MessageContent import
+// Initialize telemetry on startup
+initTelemetry();
 
 let llmInstance: BaseChatModel | null = null;
 let embeddingsInstance: Embeddings | null = null;

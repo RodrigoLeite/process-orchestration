@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
+import { withTracing, logAgentExecution } from "../../lib/ai/lc/telemetry";
 import type { DemandInput } from "./demand-agent";
 
 /**
@@ -67,9 +68,12 @@ function initializeLLM(): ChatOpenAI {
 export async function workflowBuilderAgent(
   input: WorkflowBuilderInput
 ): Promise<WorkflowBuilderOutput> {
-  try {
-    const llm = initializeLLM();
-    const { demanda, restricoes = [], recursos_disponiveis = [] } = input;
+  const startTime = Date.now();
+  
+  return withTracing("workflowBuilderAgent", async () => {
+    try {
+      const llm = initializeLLM();
+      const { demanda, restricoes = [], recursos_disponiveis = [] } = input;
 
     const systemPrompt = `You are an expert workflow designer for business process management.
 Your task is to create detailed, practical workflows for processing demands.
@@ -140,20 +144,32 @@ Generate a practical, executable workflow as JSON. No markdown, no explanation.`
       workflowData = JSON.parse(jsonMatch[0]);
     }
 
-    // Validate with Zod schema
-    const validated = WorkflowSchema.parse(workflowData);
+      // Validate with Zod schema
+      const validated = WorkflowSchema.parse(workflowData);
 
-    return {
-      success: true,
-      workflow: validated,
-      reasoning: `Created workflow "${validated.titulo}" with ${validated.etapas.length} stages, total duration: ${validated.duracao_total_horas}h`
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
+      const result = {
+        success: true,
+        workflow: validated,
+        reasoning: `Created workflow "${validated.titulo}" with ${validated.etapas.length} stages, total duration: ${validated.duracao_total_horas}h`
+      };
+
+      // Log to telemetry
+      const duration = Date.now() - startTime;
+      await logAgentExecution("workflowBuilderAgent", input, result, { agent_type: "workflow_builder", demand_title: demanda.titulo }, duration);
+
+      return result;
+    } catch (error) {
+      const result = {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+
+      const duration = Date.now() - startTime;
+      await logAgentExecution("workflowBuilderAgent", input, result, { agent_type: "workflow_builder" }, duration);
+
+      return result;
+    }
+  }, { agent_type: "workflow_builder", demand_title: input.demanda.titulo });
 }
 
 /**

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
+import { withTracing, logAgentExecution } from "../../lib/ai/lc/telemetry";
 import type { WorkflowOutput, WorkflowStage } from "./workflow-builder-agent";
 
 /**
@@ -75,9 +76,12 @@ function initializeLLM(): ChatOpenAI {
 export async function generateExecutionPlan(
   input: WorkflowExecutorInput
 ): Promise<ExecutionOutput> {
-  try {
-    const llm = initializeLLM();
-    const { workflow, etapa_atual_index, etapas_completadas = [], permite_paralelo = true } = input;
+  const startTime = Date.now();
+  
+  return withTracing("generateExecutionPlan", async () => {
+    try {
+      const llm = initializeLLM();
+      const { workflow, etapa_atual_index, etapas_completadas = [], permite_paralelo = true } = input;
 
     const etapa_atual = workflow.etapas[etapa_atual_index];
     if (!etapa_atual) {
@@ -143,21 +147,32 @@ Generate execution plan as JSON. No markdown, no explanation.`;
       planData = JSON.parse(jsonMatch[0]);
     }
 
-    // Validate with Zod schema
-    const validated = ExecutionPlanSchema.parse(planData);
+      // Validate with Zod schema
+      const validated = ExecutionPlanSchema.parse(planData);
 
-    return {
-      success: true,
-      plan: validated,
-      proximas_etapas: validated.proximas_acoes,
-      reasoning: `Stage "${etapa_atual.nome}" executing, ${validated.etapas_pendentes.length} stages remaining`
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
+      const result = {
+        success: true,
+        plan: validated,
+        proximas_etapas: validated.proximas_acoes,
+        reasoning: `Stage "${etapa_atual.nome}" executing, ${validated.etapas_pendentes.length} stages remaining`
+      };
+
+      const duration = Date.now() - startTime;
+      await logAgentExecution("generateExecutionPlan", input, result, { agent_type: "executor", workflow_id: input.workflow_id }, duration);
+
+      return result;
+    } catch (error) {
+      const result = {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+
+      const duration = Date.now() - startTime;
+      await logAgentExecution("generateExecutionPlan", input, result, { agent_type: "executor" }, duration);
+
+      return result;
+    }
+  }, { agent_type: "executor", workflow_id: input.workflow_id, stage_index: input.etapa_atual_index });
 }
 
 /**
