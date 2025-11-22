@@ -3,13 +3,33 @@ import { Loader2, LayoutGrid } from "lucide-react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Badge from "@/components/Badge";
-import type { Demand } from "@/lib/types";
+
+interface AreaWorkflow {
+  id: string;
+  areaName: string;
+  name: string;
+}
+
+interface WorkflowStats {
+  stageCount: number;
+  demandCount: number;
+}
 
 export default function KanbanList() {
   const [, navigate] = useLocation();
 
-  const { data: demands, isLoading, error } = useQuery<Demand[]>({
-    queryKey: ["all-demands-kanban"],
+  const { data: workflows, isLoading, error } = useQuery<AreaWorkflow[]>({
+    queryKey: ["workflows"],
+    queryFn: async () => {
+      const res = await fetch("/api/workflows");
+      if (!res.ok) throw new Error("Failed to fetch workflows");
+      return res.json();
+    }
+  });
+
+  // Fetch stats for each workflow
+  const { data: allDemands = [] } = useQuery({
+    queryKey: ["all-demands"],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
@@ -39,10 +59,7 @@ export default function KanbanList() {
     );
   }
 
-  // Filter only demands that have a flow
-  const demandsWithFlow = (demands || []).filter(d => d.flow && d.flow.length > 0);
-
-  if (!demandsWithFlow || demandsWithFlow.length === 0) {
+  if (!workflows || workflows.length === 0) {
     return (
       <div className="space-y-6">
         <h1 className="text-4xl font-bold">Workflows</h1>
@@ -52,7 +69,7 @@ export default function KanbanList() {
             <div>
               <p className="font-semibold text-foreground">Nenhum workflow criado ainda</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Crie uma demanda e execute o agente para gerar workflows.
+                Crie uma demanda e o agente criará workflows automaticamente.
               </p>
             </div>
           </CardContent>
@@ -61,99 +78,61 @@ export default function KanbanList() {
     );
   }
 
+  const getWorkflowStats = (workflowId: string) => {
+    const demands = allDemands.filter((d: any) => d.workflowId === workflowId);
+    return {
+      demandCount: demands.length,
+      stageCount: 0 // Will be fetched separately if needed
+    };
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <LayoutGrid className="w-8 h-8" />
-        <h1 className="text-4xl font-bold">Workflows ({demandsWithFlow.length})</h1>
+        <h1 className="text-4xl font-bold">Workflows ({workflows.length})</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {demandsWithFlow.map((demand) => {
-          const parsed = demand.parsed as any;
-          const flow = demand.flow || [];
-          const title = parsed?.descricao_estruturada || demand.rawText || "Sem descrição";
-          const category = parsed?.tipo || "Sem categoria";
-          const priority = parsed?.prioridade || "média";
-          const area = parsed?.area || demand.assignedTo || "Não atribuída";
+        {workflows.map((workflow) => {
+          const stats = getWorkflowStats(workflow.id);
 
           return (
             <Card
-              key={demand.id}
+              key={workflow.id}
               className="cursor-pointer hover:shadow-lg transition-shadow border-slate-200 hover:border-primary/50 group"
-              onClick={() => demand.workflowId ? navigate(`/app/kanban/workflow/${demand.workflowId}`) : navigate(`/app/kanban/${demand.id}`)}
-              data-testid={`card-workflow-${demand.id}`}
+              onClick={() => navigate(`/app/kanban/workflow/${workflow.id}`)}
+              data-testid={`card-workflow-${workflow.id}`}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                    {title.substring(0, 50)}
+                    {workflow.name}
                   </CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Badges */}
                 <div className="flex gap-2 flex-wrap">
-                  <Badge color="blue" data-testid="badge-category">
-                    {category}
-                  </Badge>
-                  <Badge
-                    color={
-                      priority === "crítica"
-                        ? "red"
-                        : priority === "alta"
-                        ? "orange"
-                        : "green"
-                    }
-                    data-testid="badge-priority"
-                  >
-                    {priority}
+                  <Badge color="blue" data-testid="badge-area">
+                    {workflow.areaName.toUpperCase()}
                   </Badge>
                 </div>
 
-                {/* Área */}
+                {/* Demandas */}
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Área</p>
-                  <p className="text-sm font-medium text-foreground">{area}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Demandas</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.demandCount}</p>
                 </div>
 
-                {/* Fases do Workflow */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Fases ({flow.length})</p>
-                  <div className="flex flex-wrap gap-2">
-                    {flow.map((phase, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded border border-border hover:border-primary/50 transition-colors"
-                      >
-                        {phase.area}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Status</p>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      demand.status === "completed" ? "bg-green-500" :
-                      demand.status === "blocked" ? "bg-red-500" :
-                      demand.status === "in_progress" ? "bg-blue-500" :
-                      "bg-yellow-500"
-                    }`} />
-                    <span className="text-sm font-medium text-foreground capitalize">
-                      {demand.status === "completed" ? "Concluído" :
-                       demand.status === "blocked" ? "Bloqueado" :
-                       demand.status === "in_progress" ? "Em progresso" :
-                       "Pendente"}
-                    </span>
-                  </div>
+                {/* Descrição */}
+                <div className="text-sm text-muted-foreground">
+                  Workflow para a área <span className="font-semibold">{workflow.areaName}</span>
                 </div>
 
                 {/* ID */}
                 <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                  ID: {demand.id.slice(0, 8)}
+                  ID: {workflow.id.slice(0, 8)}
                 </p>
               </CardContent>
             </Card>
