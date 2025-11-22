@@ -326,3 +326,25 @@ export const insertSystemEventSchema = createInsertSchema(systemEvents).omit({
 
 export type InsertSystemEvent = z.infer<typeof insertSystemEventSchema>;
 export type SystemEvent = typeof systemEvents.$inferSelect;
+
+export const langflowAgents = pgTable("langflow_agents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  langflowJson: jsonb("langflow_json").$type<Record<string, any>>().notNull(),
+  compiledCode: text("compiled_code"),
+  version: integer("version").default(1).notNull(),
+  isActive: text("is_active").default("true").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertLangflowAgentSchema = createInsertSchema(langflowAgents).omit({
+  id: true,
+  version: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLangflowAgent = z.infer<typeof insertLangflowAgentSchema>;
+export type LangflowAgent = typeof langflowAgents.$inferSelect;

@@ -2315,6 +2315,220 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ LangFlow Gateway Endpoints ============
+  // Import LangFlow client utilities
+  const { validateFlowStructure, compileFlow, executeCompiledAgent, createNextVersion } = await import("./lib/langflow-client");
+
+  // List all LangFlow agents
+  app.get("/api/langflow/list", async (req, res) => {
+    try {
+      const agents = await storage.getLangflowAgents();
+      res.json({
+        success: true,
+        count: agents.length,
+        data: agents
+      });
+    } catch (error) {
+      console.error("Error fetching LangFlow agents:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch agents"
+      });
+    }
+  });
+
+  // Get specific LangFlow agent
+  app.get("/api/langflow/:id", async (req, res) => {
+    try {
+      const agent = await storage.getLangflowAgent(req.params.id);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: "Agent not found"
+        });
+      }
+      res.json({
+        success: true,
+        data: agent
+      });
+    } catch (error) {
+      console.error("Error fetching LangFlow agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch agent"
+      });
+    }
+  });
+
+  // Import LangFlow agent (upload JSON from LangFlow)
+  app.post("/api/langflow/import", async (req, res) => {
+    try {
+      const { name, description, langflowJson } = req.body;
+
+      if (!name || !langflowJson) {
+        return res.status(400).json({
+          success: false,
+          error: "name and langflowJson are required"
+        });
+      }
+
+      // Validate the flow structure
+      const validation = validateFlowStructure(langflowJson);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid LangFlow JSON structure",
+          details: validation.errors
+        });
+      }
+
+      // Check if agent already exists
+      const existing = await storage.getLangflowAgentByName(name);
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          error: "Agent with this name already exists"
+        });
+      }
+
+      // Create the agent
+      const agent = await storage.createLangflowAgent({
+        name,
+        description: description || "",
+        langflowJson,
+        isActive: "true",
+        compiledCode: null as any
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Agent imported successfully",
+        data: agent
+      });
+    } catch (error) {
+      console.error("Error importing LangFlow agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to import agent"
+      });
+    }
+  });
+
+  // Compile LangFlow agent to executable code
+  app.post("/api/langflow/:id/compile", async (req, res) => {
+    try {
+      const agent = await storage.getLangflowAgent(req.params.id);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: "Agent not found"
+        });
+      }
+
+      // Compile the flow
+      const compilation = compileFlow(agent.langflowJson, agent.name);
+      if (!compilation.success) {
+        return res.status(400).json({
+          success: false,
+          error: "Compilation failed",
+          details: compilation.error
+        });
+      }
+
+      // Update agent with compiled code and new version
+      const nextVersion = createNextVersion(agent.version);
+      const updated = await storage.updateLangflowAgent(req.params.id, {
+        compiledCode: compilation.code,
+        version: nextVersion
+      });
+
+      res.json({
+        success: true,
+        message: "Agent compiled successfully",
+        data: updated,
+        version: nextVersion
+      });
+    } catch (error) {
+      console.error("Error compiling LangFlow agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to compile agent"
+      });
+    }
+  });
+
+  // Execute compiled LangFlow agent
+  app.post("/api/langflow/:id/run", async (req, res) => {
+    try {
+      const { input } = req.body;
+      const agent = await storage.getLangflowAgent(req.params.id);
+
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: "Agent not found"
+        });
+      }
+
+      if (!agent.compiledCode) {
+        return res.status(400).json({
+          success: false,
+          error: "Agent is not compiled. Call /compile endpoint first."
+        });
+      }
+
+      // Execute the compiled code
+      const execution = await executeCompiledAgent(agent.compiledCode, input || {});
+
+      if (!execution.success) {
+        return res.status(400).json({
+          success: false,
+          error: "Execution failed",
+          details: execution.error
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Agent executed successfully",
+        output: execution.output,
+        executionTime: execution.executionTime
+      });
+    } catch (error) {
+      console.error("Error executing LangFlow agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute agent"
+      });
+    }
+  });
+
+  // Deactivate LangFlow agent
+  app.delete("/api/langflow/:id", async (req, res) => {
+    try {
+      const agent = await storage.getLangflowAgent(req.params.id);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: "Agent not found"
+        });
+      }
+
+      await storage.deleteLangflowAgent(req.params.id);
+
+      res.json({
+        success: true,
+        message: "Agent deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting LangFlow agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to delete agent"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
