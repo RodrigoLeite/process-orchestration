@@ -44,6 +44,14 @@ export const INTERNAL_AGENTS: InternalAgent[] = [
     type: "internal",
     active: true,
     createdAt: new Date("2024-01-01")
+  },
+  {
+    id: "bottleneck_ai",
+    name: "AgenteGargalos",
+    description: "Monitora, detecta e analisa gargalos operacionais, sugerindo otimizações de fluxo.",
+    type: "internal",
+    active: true,
+    createdAt: new Date("2024-01-01")
   }
 ];
 
