@@ -21,20 +21,26 @@ interface SystemEvent {
 export default function ObservabilityPage() {
   const [filterAgent, setFilterAgent] = useState<string | null>(null);
 
-  // Fetch system events
+  // Fetch ALL system events (no server-side filtering)
   const { data: eventsData, isLoading } = useQuery({
-    queryKey: ["system-events", filterAgent],
+    queryKey: ["system-events"],
     queryFn: async () => {
-      const url = filterAgent ? `/api/system-events?agent=${filterAgent}` : "/api/system-events";
-      const res = await fetch(url);
+      const res = await fetch("/api/system-events");
       if (!res.ok) throw new Error("Failed to fetch events");
       return res.json();
     },
     refetchInterval: 5000 // Update every 5 seconds
   });
 
-  const events = eventsData?.data || [];
-  const agents = [...new Set(events.map((e: SystemEvent) => e.agentKey).filter(Boolean))];
+  const allEvents = eventsData?.data || [];
+  
+  // Filter on client side
+  const events = filterAgent 
+    ? allEvents.filter((e: SystemEvent) => e.agentKey === filterAgent)
+    : allEvents;
+  
+  // Get unique agents from ALL events
+  const agents = Array.from(new Set(allEvents.map((e: SystemEvent) => e.agentKey).filter(Boolean))) as (string | undefined)[];
 
   const getStatusIcon = (status: string) => {
     return status === "success" ? (
@@ -71,7 +77,7 @@ export default function ObservabilityPage() {
             onClick={() => setFilterAgent(null)}
             data-testid="filter-all"
           >
-            Todos ({events.length})
+            Todos ({allEvents.length})
           </Button>
           {agents.map((agent) => (
             <Button
@@ -81,7 +87,7 @@ export default function ObservabilityPage() {
               onClick={() => setFilterAgent(agent)}
               data-testid={`filter-${agent}`}
             >
-              {agent} ({events.filter((e: SystemEvent) => e.agentKey === agent).length})
+              {agent} ({allEvents.filter((e: SystemEvent) => e.agentKey === agent).length})
             </Button>
           ))}
         </div>
