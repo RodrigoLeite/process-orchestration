@@ -39,7 +39,7 @@ export default function AgentsPage() {
 
   // Filter active agents and sort by name
   const agents = allAgents
-    .filter(a => a.active === 't' || a.active === true)
+    .filter(a => a.active === 't' || a.active === true || a.active === "true")
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleExecuteAgent = async () => {
