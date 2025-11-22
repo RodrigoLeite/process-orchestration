@@ -339,7 +339,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateDemandStage(id: string, stageId: string, stageName?: string): Promise<Demand | undefined> {
     // Get current demand to preserve history
-    const currentDemand = await this.getDemandById(id);
+    const currentDemand = await this.getDemand(id);
     if (!currentDemand) {
       return undefined;
     }
