@@ -2737,6 +2737,133 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ New Generation AI Agents Endpoints ============
+  // Import new generation agents
+  const { 
+    demandAgent, 
+    workflowBuilderAgent, 
+    generateExecutionPlan,
+    planFullExecution
+  } = await import("./ai/agents");
+
+  // Demand Agent endpoint - Interpret and structure demands
+  app.post("/api/agents/demand", async (req, res) => {
+    try {
+      const { texto, contexto } = req.body;
+
+      if (!texto) {
+        return res.status(400).json({
+          success: false,
+          error: "texto (user input) is required"
+        });
+      }
+
+      const output = await demandAgent({
+        texto,
+        contexto: contexto || {}
+      });
+
+      res.json(output);
+    } catch (error) {
+      console.error("Error in demand agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to process demand",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Workflow Builder Agent endpoint - Create workflows from demands
+  app.post("/api/agents/workflow-builder", async (req, res) => {
+    try {
+      const { demanda, restricoes, recursos_disponiveis } = req.body;
+
+      if (!demanda) {
+        return res.status(400).json({
+          success: false,
+          error: "demanda object is required"
+        });
+      }
+
+      const output = await workflowBuilderAgent({
+        demanda,
+        restricoes: restricoes || [],
+        recursos_disponiveis: recursos_disponiveis || []
+      });
+
+      res.json(output);
+    } catch (error) {
+      console.error("Error in workflow builder agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to build workflow",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Workflow Executor Agent endpoint - Plan execution
+  app.post("/api/agents/executor-plan", async (req, res) => {
+    try {
+      const { workflow_id, workflow, etapa_atual_index, etapas_completadas, permite_paralelo } = req.body;
+
+      if (!workflow || typeof etapa_atual_index !== "number") {
+        return res.status(400).json({
+          success: false,
+          error: "workflow and etapa_atual_index are required"
+        });
+      }
+
+      const output = await generateExecutionPlan({
+        workflow_id: workflow_id || "workflow-default",
+        workflow,
+        etapa_atual_index,
+        etapas_completadas: etapas_completadas || [],
+        permite_paralelo: permite_paralelo !== false
+      });
+
+      res.json(output);
+    } catch (error) {
+      console.error("Error in workflow executor agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to plan execution",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Full workflow execution planning endpoint
+  app.post("/api/agents/executor-full-plan", async (req, res) => {
+    try {
+      const { workflow_id, workflow } = req.body;
+
+      if (!workflow) {
+        return res.status(400).json({
+          success: false,
+          error: "workflow is required"
+        });
+      }
+
+      const output = await planFullExecution({
+        workflow_id: workflow_id || "workflow-default",
+        workflow,
+        etapa_atual_index: 0,
+        permite_paralelo: true
+      });
+
+      res.json(output);
+    } catch (error) {
+      console.error("Error in workflow executor agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to plan full execution",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
