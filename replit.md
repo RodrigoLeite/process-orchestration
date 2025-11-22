@@ -113,3 +113,45 @@ This system provides live monitoring of critical bottlenecks with a dedicated da
 - Trigger on demand creation/updates via webhook system
 
 **Testing Status**: ✅ All 3 agents tested and working correctly
+
+## New Generation AI Agents (Nov 2025)
+
+**Modern LangChain 2024+ agents for demand processing**:
+
+Three purpose-built pure TypeScript functions:
+
+1. **demandAgent** (`server/ai/agents/demand-agent.ts`)
+   - Input: Raw user text + optional context
+   - Output: Structured demand (titulo, descricao, area, urgencia, resultadosEsperados, slaHoras)
+   - Temperature: 0.7 (balanced)
+   - API: `POST /api/agents/demand`
+
+2. **workflowBuilderAgent** (`server/ai/agents/workflow-builder-agent.ts`)
+   - Input: Structured demand + constraints + resources
+   - Output: Workflow with stages, dependencies, durations, success criteria
+   - Temperature: 0.5 (deterministic)
+   - API: `POST /api/agents/workflow-builder`
+
+3. **workflowExecutorAgent** (`server/ai/agents/workflow-executor-agent.ts`)
+   - Functions: `generateExecutionPlan()`, `executeWorkflowStage()`, `planFullExecution()`
+   - Input: Workflow + current stage index + completion state
+   - Output: Execution plan with progress, dependencies, next actions
+   - Temperature: 0.3 (strict)
+   - APIs: `POST /api/agents/executor-plan`, `POST /api/agents/executor-full-plan`
+
+**Technology**:
+- Pure TypeScript functions (no classes/side effects)
+- Zod schemas for strict validation
+- GPT-4 Turbo model
+- No memory/cache (stateless)
+- Structured JSON-only responses
+- LangChain 2024+ modern API
+
+**Integration Points**:
+- Demand → Workflow → Execution pipeline
+- Can be called independently or chained
+- Batch operations supported
+- Full error handling and type safety
+- Compatible with existing webhook/scheduler systems
+
+**Testing**: All 3 agents tested and working ✅
