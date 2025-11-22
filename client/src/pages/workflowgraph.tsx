@@ -99,7 +99,8 @@ export default function WorkflowGraph() {
     queryFn: async () => {
       const res = await fetch("/api/ai/graph");
       if (!res.ok) throw new Error("Failed to fetch graph");
-      return res.json();
+      const json = await res.json();
+      return json.data;
     },
   });
 
@@ -109,7 +110,8 @@ export default function WorkflowGraph() {
     queryFn: async () => {
       const res = await fetch(`/api/ai/graph/${selectedNodeId}`);
       if (!res.ok) throw new Error("Failed to fetch node details");
-      return res.json();
+      const json = await res.json();
+      return json.data;
     },
     enabled: !!selectedNodeId,
   });
