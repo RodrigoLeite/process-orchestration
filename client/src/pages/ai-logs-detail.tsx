@@ -92,15 +92,19 @@ export default function AILogsDetailPage() {
     );
   }
 
-  const getPriorityColor = (p: string) => {
-    if (p === "crítica") return "red";
-    if (p === "alta") return "orange";
+  const getPriorityColor = (p: string | undefined) => {
+    if (!p) return "gray";
+    const lower = p.toLowerCase();
+    if (lower === "crítica") return "red";
+    if (lower === "alta") return "orange";
     return "green";
   };
 
-  const getSeverityColor = (s: string) => {
-    if (s === "crítica" || s === "alta") return "red";
-    if (s === "média") return "orange";
+  const getSeverityColor = (s: string | undefined) => {
+    if (!s) return "gray";
+    const lower = s.toLowerCase();
+    if (lower === "crítica" || lower === "alta") return "red";
+    if (lower === "média") return "orange";
     return "green";
   };
 
@@ -217,32 +221,32 @@ export default function AILogsDetailPage() {
               <div>
                 <p className="text-sm font-semibold text-gray-600">Título</p>
                 <p className="text-base mt-1" data-testid="text-demand-title">
-                  {detail.demandData.title}
+                  {detail.demandData?.title || "—"}
                 </p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">ID</p>
                 <p className="font-mono text-sm mt-1" data-testid="text-demand-id">
-                  {detail.demandData.id}
+                  {detail.demandData?.id || "—"}
                 </p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">Prioridade</p>
-                <Badge color={getPriorityColor(detail.demandData.priority)} data-testid="badge-demand-priority">
-                  {detail.demandData.priority.toUpperCase()}
+                <Badge color={getPriorityColor(detail.demandData?.priority)} data-testid="badge-demand-priority">
+                  {(detail.demandData?.priority || "desconhecida").toUpperCase()}
                 </Badge>
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">Área</p>
                 <p className="text-base mt-1" data-testid="text-demand-area">
-                  {detail.demandData.area || "—"}
+                  {detail.demandData?.area || "—"}
                 </p>
               </div>
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-600 mb-2">Descrição</p>
               <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded" data-testid="text-demand-description">
-                {detail.demandData.description || "—"}
+                {detail.demandData?.description || "—"}
               </p>
             </div>
           </CardContent>
@@ -262,13 +266,13 @@ export default function AILogsDetailPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {detail.workflows.map((workflow, idx) => (
+            {detail.workflows?.map((workflow, idx) => workflow && (
               <div key={workflow.id} className="border-l-4 border-blue-500 pl-4 py-2">
                 <p className="font-semibold text-base" data-testid={`workflow-title-${idx}`}>
-                  {workflow.title}
+                  {workflow.title || "—"}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">{workflow.description || "—"}</p>
-                <p className="font-mono text-xs text-gray-500 mt-2">{workflow.id}</p>
+                <p className="font-mono text-xs text-gray-500 mt-2">{workflow.id || "—"}</p>
               </div>
             ))}
           </CardContent>
@@ -288,15 +292,15 @@ export default function AILogsDetailPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {detail.bottlenecks.map((bottleneck, idx) => (
+            {detail.bottlenecks?.map((bottleneck, idx) => bottleneck && (
               <div key={bottleneck.id} className="border-l-4 border-orange-500 pl-4 py-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <p className="font-semibold text-base">{bottleneck.workflow}</p>
+                  <p className="font-semibold text-base">{bottleneck.workflow || "—"}</p>
                   <Badge
                     color={getSeverityColor(bottleneck.severity)}
                     data-testid={`bottleneck-severity-${idx}`}
                   >
-                    {bottleneck.severity.toUpperCase()}
+                    {(bottleneck.severity || "média").toUpperCase()}
                   </Badge>
                 </div>
                 {Array.isArray(bottleneck.bottlenecks) && bottleneck.bottlenecks.length > 0 && (
@@ -336,9 +340,9 @@ export default function AILogsDetailPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {detail.insights.map((insight, idx) => (
+            {detail.insights?.map((insight, idx) => insight && (
               <div key={insight.id} className="border-l-4 border-yellow-500 pl-4 py-2">
-                <p className="font-semibold text-base mb-2">{insight.workflow}</p>
+                <p className="font-semibold text-base mb-2">{insight.workflow || "—"}</p>
 
                 {insight.insights && (
                   <div className="space-y-3">
