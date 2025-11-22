@@ -1,210 +1,316 @@
 /**
- * Insights AI Agent
- * Analisa fluxos, SLAs, tempos e volumes para gerar insights de melhoria
+ * Insights IA Agent
+ * Analisa workflows existentes e gera inteligência acionável
  * Integrado com LangSmith para rastreamento detalhado
  */
 
-export interface InsightsAIPayload {
-  timeframe?: string;
-  analysisType?: string;
-  avgTime?: string;
-  bottleneckArea?: string;
-  demandId?: string;
+export interface InsightsIAPayload {
   workflowId?: string;
-  dataPoints?: number;
-  workflows?: any[];
+  demandId?: string;
+  workflow?: any;
+  stages?: any[];
+  currentStage?: string;
+  elapsedTime?: number;
+  slaHours?: number;
+  demandsInProgress?: number;
+  recentMovements?: any[];
+  processingTime?: number;
+  event?: string;
   [key: string]: any;
 }
 
 /**
- * Gerar insights baseados em análise de métricas
+ * Tipo de insight
  */
-function generateInsights(
-  timeframe: string,
-  analysisType: string,
-  payload: InsightsAIPayload
-): Array<any> {
-  const insights = [];
+interface Insight {
+  tipo: string;
+  mensagem: string;
+  impacto: "alto" | "médio" | "baixo";
+  recomendacao: string;
+  evidencia?: string;
+  prioridade?: "crítica" | "alta" | "média" | "baixa";
+}
 
-  // Insight 1: Eficiência por Etapa
-  insights.push({
-    id: "efficiency_001",
-    type: "efficiency",
-    title: "Tempo Médio por Etapa",
-    value: payload?.avgTime || "2.5 horas",
-    timeframe: timeframe,
-    benchmark: "2.0 horas",
-    variance: "+25%",
-    recommendation:
-      "A etapa de análise está 25% acima da média. Considere aumentar recursos ou revisar critérios.",
-    priority: "high",
-    impact: "Reduzir tempo em 30% economizaria 4 horas por demanda",
-    actionItems: [
-      "Revisar critérios de análise",
-      "Aumentar número de analistas",
-      "Implementar checklist de validação"
-    ]
-  });
+/**
+ * Analisar workflow e gerar insights de atraso
+ */
+function analyzeDelayRisks(payload: InsightsIAPayload): Insight[] {
+  const insights: Insight[] = [];
+  const elapsedTime = payload?.elapsedTime || 0;
+  const slaHours = payload?.slaHours || 48;
+  const slaMinutes = slaHours * 60;
+  const utilizationPercent = (elapsedTime / slaMinutes) * 100;
 
-  // Insight 2: Detecção de Gargalo
-  insights.push({
-    id: "bottleneck_001",
-    type: "bottleneck",
-    title: "Gargalo Detectado em Etapa",
-    location: payload?.bottleneckArea || "Análise Jurídica",
-    impact: "Alto",
-    affectedDemands: payload?.dataPoints || 0,
-    delayHours: Math.round((payload?.dataPoints || 0) * 2.5),
-    suggestedActions: [
-      "Aumentar recurso alocado para esta etapa",
-      "Redirecionar demandas menos críticas para processamento paralelo",
-      "Revisar critérios de aceitação para filtrar demandas inviáveis",
-      "Implementar processamento em lote para demandas similares",
-      "Escalar para gerência se impacto afetando SLA"
-    ],
-    estimatedResolution: "48-72 horas"
-  });
+  // Insight 1: Risco de atraso baseado em tempo decorrido
+  if (utilizationPercent > 75) {
+    insights.push({
+      tipo: "🌡 Sinal de Atraso",
+      mensagem: `Workflow utilizou ${utilizationPercent.toFixed(0)}% do SLA (${elapsedTime}min de ${slaMinutes}min)`,
+      impacto: utilizationPercent > 90 ? "alto" : "médio",
+      recomendacao:
+        utilizationPercent > 90
+          ? "URGENTE: Mobilizar recursos para acelerar etapas restantes"
+          : "Revisar etapa atual e identificar gargalos potenciais",
+      evidencia: `${elapsedTime} minutos decorridos`,
+      prioridade: utilizationPercent > 90 ? "crítica" : "alta"
+    });
+  }
 
-  // Insight 3: Tendência de Volume
-  insights.push({
-    id: "trend_001",
-    type: "trend",
-    title: "Tendência de Volume",
-    trend: "Aumento de 15% vs período anterior",
-    timeframeComparison: `${timeframe} vs período anterior`,
-    forecastNextPeriod: "+18% (projetado)",
-    recommendation: "Preparar escalabilidade de recursos",
-    actionItems: [
-      "Recrutar 2 analistas adicionais",
-      "Revisar capacidade de infraestrutura",
-      "Implementar automação em etapas repetitivas"
-    ],
-    urgency: "medium"
-  });
-
-  // Insight 4: Taxa de Rejeição
-  insights.push({
-    id: "rejection_001",
-    type: "quality",
-    title: "Taxa de Rejeição/Retorno",
-    value: "12%",
-    benchmark: "5%",
-    variance: "+140%",
-    recommendation: "Taxa acima do esperado indica possível problema de qualidade",
-    actionItems: [
-      "Revisar causas de rejeição mais comuns",
-      "Implementar treinamento para reduzir erros",
-      "Criar validação de entrada mais rigorosa"
-    ]
-  });
-
-  // Insight 5: SLA Compliance
-  insights.push({
-    id: "sla_001",
-    type: "compliance",
-    title: "Cumprimento de SLA",
-    value: "87%",
-    benchmark: "95%",
-    variance: "-8%",
-    recommendation:
-      "SLA não está sendo cumprido em 13% dos casos. Revisar etapas críticas.",
-    actionItems: [
-      "Identificar demandas com atraso",
-      "Analisar etapas que mais contribuem para atraso",
-      "Criar plano de ação para melhoria"
-    ]
-  });
+  // Insight 2: Acúmulo de cards (demandas em progresso)
+  if ((payload?.demandsInProgress || 0) > 5) {
+    insights.push({
+      tipo: "🌡 Acúmulo de Cards",
+      mensagem: `${payload.demandsInProgress} demandas em progresso simultânea. Risco de travamento.`,
+      impacto: "alto",
+      recomendacao:
+        "Priorizar e completar demandas em etapas críticas antes de aceitar novas",
+      evidencia: `${payload.demandsInProgress} cards ativas`,
+      prioridade: "alta"
+    });
+  }
 
   return insights;
 }
 
 /**
- * Execute insights AI agent
- * Analisa workflow metrics e gera insights de melhoria
+ * Analisar workflow e gerar insights de melhoria
  */
-export async function execute(payload: InsightsAIPayload): Promise<any> {
-  // Extrair parâmetros
-  const timeframe = payload?.timeframe || "7d";
-  const analysisType = payload?.analysisType || "general";
-  const demandId = payload?.demandId || "all_demands";
-  const workflowId = payload?.workflowId || "all_workflows";
+function analyzeImprovements(payload: InsightsIAPayload): Insight[] {
+  const insights: Insight[] = [];
+  const stages = payload?.stages || [];
+  const workflow = payload?.workflow || {};
 
-  // Gerar insights
-  const insights = generateInsights(timeframe, analysisType, payload);
+  // Insight 3: Simplificação do fluxo
+  if (stages.length > 7) {
+    insights.push({
+      tipo: "🔁 Simplificação do Fluxo",
+      mensagem: `Workflow possui ${stages.length} etapas. Acima do recomendado (máx 7).`,
+      impacto: "médio",
+      recomendacao: `Mesclar etapas similares. Combinar "Validação" + "Verificação" em uma única etapa.`,
+      evidencia: `${stages.length} etapas identificadas`,
+      prioridade: "média"
+    });
+  }
 
-  // Análise estruturada
-  const analysis = {
-    timeframe: timeframe,
-    analysisType: analysisType,
-    generatedAt: new Date().toISOString(),
-    dataPoints: payload?.dataPoints || 0,
-    workflowsCovered: payload?.workflows?.length || 1,
-    periodStart: calculateDateRange(timeframe).start,
-    periodEnd: calculateDateRange(timeframe).end
+  // Insight 4: Sugestões de rebalanceamento
+  if ((payload?.workflow?.responsaveis || []).length < 3 && stages.length > 4) {
+    insights.push({
+      tipo: "👥 Rebalanceamento de Responsáveis",
+      mensagem: `Poucas pessoas responsáveis (${payload.workflow.responsaveis?.length || 0}) para ${stages.length} etapas`,
+      impacto: "médio",
+      recomendacao:
+        "Aumentar número de responsáveis ou distribuir carga mais uniformemente entre áreas",
+      prioridade: "média"
+    });
+  }
+
+  // Insight 5: Sugestões de reordenação
+  if (stages.length >= 3) {
+    const approvalStages = stages.filter((s: any) =>
+      ["aprovação", "aprovação", "review"].includes((s?.nome || "").toLowerCase())
+    );
+
+    if (approvalStages.length > 1) {
+      insights.push({
+        tipo: "🧭 Reordenação de Etapas",
+        mensagem: `${approvalStages.length} etapas de aprovação detectadas. Podem estar duplicadas.`,
+        impacto: "médio",
+        recomendacao: "Consolidar aprovações em uma única etapa ou torna-las sequenciais em vez de paralelas",
+        prioridade: "média"
+      });
+    }
+  }
+
+  return insights;
+}
+
+/**
+ * Analisar workflow e gerar insights de compliance e riscos
+ */
+function analyzeCompliance(payload: InsightsIAPayload): Insight[] {
+  const insights: Insight[] = [];
+
+  // Insight 6: Riscos de compliance
+  const riskKeywords = ["juridico", "financeiro", "compliance", "auditoria", "segurança"];
+  const workflowText =
+    `${payload?.workflow?.nome_processo || ""} ${payload?.workflow?.descricao || ""}`.toLowerCase();
+
+  if (riskKeywords.some(kw => workflowText.includes(kw))) {
+    insights.push({
+      tipo: "🚧 Risco de Compliance",
+      mensagem: `Workflow em área sensível detectada (${riskKeywords.filter(kw => workflowText.includes(kw)).join(", ")})`,
+      impacto: "alto",
+      recomendacao:
+        "Garantir trilha de auditoria completa. Documentar todas as decisões e aprovações.",
+      prioridade: "alta"
+    });
+  }
+
+  return insights;
+}
+
+/**
+ * Calcular métricas do workflow
+ */
+function calculateMetrics(payload: InsightsIAPayload): any {
+  const stages = payload?.stages || [];
+  const elapsedTime = payload?.elapsedTime || 0;
+  const slaHours = payload?.slaHours || 48;
+  const slaMinutes = slaHours * 60;
+
+  // Eficiência (0-100)
+  const efficiency = Math.min(100, Math.round((100 / stages.length) * (stages.length - 1)));
+
+  // Risco de atraso (0-100)
+  const delayRisk = Math.round((elapsedTime / slaMinutes) * 100);
+
+  // Etapas críticas (que estão acumulando tempo)
+  const stagesCritical = stages
+    .filter((s: any) => (s?.sla_horas || 0) > (slaHours / 2))
+    .map((s: any) => s?.nome);
+
+  // Tempo estimado para conclusão
+  const remainingStages = Math.max(0, stages.length - 1);
+  const avgTimePerStage = remainingStages > 0 ? slaMinutes / stages.length : 0;
+  const estimatedCompletionHours = (avgTimePerStage * remainingStages) / 60;
+
+  return {
+    eficiencia: efficiency,
+    risco_atraso: Math.min(100, delayRisk),
+    etapas_criticas: stagesCritical,
+    tempo_estimado_conclusao_horas: Math.round(estimatedCompletionHours)
   };
+}
+
+/**
+ * Gerar recomendação geral de otimização
+ */
+function generateOptimizationInsight(payload: InsightsIAPayload, metrics: any): Insight | null {
+  const efficiency = metrics.eficiencia;
+  const delayRisk = metrics.risco_atraso;
+
+  if (efficiency < 50 || delayRisk > 75) {
+    const improvements: string[] = [];
+
+    if (efficiency < 50) {
+      improvements.push("Revisar distribuição de responsabilidades entre etapas");
+    }
+    if (delayRisk > 75) {
+      improvements.push("Paralelizar etapas independentes onde possível");
+      improvements.push("Implementar automação em validações repetitivas");
+    }
+
+    return {
+      tipo: "🎯 Otimização Operacional",
+      mensagem: `Workflow pode ser otimizado. Eficiência: ${efficiency}% | Risco de atraso: ${delayRisk}%`,
+      impacto: "alto",
+      recomendacao: improvements.join(". "),
+      prioridade: "alta"
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Execute insights IA agent
+ * Analisa workflows existentes e gera inteligência acionável
+ */
+export async function execute(payload: InsightsIAPayload): Promise<any> {
+  const workflowId = payload?.workflowId || payload?.workflow?.id || "unknown";
+  const demandId = payload?.demandId || "all_demands";
+  const event = payload?.event || "WORKFLOW_ANALYSIS";
+
+  // Coletar insights de todas as análises
+  const insights: Insight[] = [];
+
+  // 1. Análise de atrasos
+  insights.push(...analyzeDelayRisks(payload));
+
+  // 2. Análise de melhorias
+  insights.push(...analyzeImprovements(payload));
+
+  // 3. Análise de compliance
+  insights.push(...analyzeCompliance(payload));
+
+  // 4. Calcular métricas
+  const metrics = calculateMetrics(payload);
+
+  // 5. Gerar insight de otimização se aplicável
+  const optimizationInsight = generateOptimizationInsight(payload, metrics);
+  if (optimizationInsight) {
+    insights.push(optimizationInsight);
+  }
+
+  // 6. Predição de conclusão
+  insights.push({
+    tipo: "📊 Predição de Conclusão",
+    mensagem: `Tempo estimado até conclusão: ${metrics.tempo_estimado_conclusao_horas} horas`,
+    impacto: "médio",
+    recomendacao: "Validar estimativa com responsáveis. Considerar buffer para imprevistos.",
+    prioridade: "média"
+  });
 
   // Log estruturado
-  console.log(`[INSIGHTS_AI] ✓ Análise completa para timeframe: ${timeframe}`);
   console.log(
-    `[INSIGHTS_AI] Insights gerados: ${insights.length} | Recomendações: ${insights.reduce((sum, i) => sum + (i.actionItems?.length || 0), 0)}`
+    `[INSIGHTS_IA] ✓ Análise completa para workflow ${workflowId} | Event: ${event}`
+  );
+  console.log(
+    `[INSIGHTS_IA] Insights gerados: ${insights.length} | Eficiência: ${metrics.eficiencia}% | Risco: ${metrics.risco_atraso}%`
   );
 
-  // Retornar resultado com LangSmith trace
+  // Retornar resultado com estrutura obrigatória
   return {
     success: true,
     insights: insights,
-    analysis: analysis,
+    metricas: metrics,
     summary: {
       totalInsights: insights.length,
-      highPriorityCount: insights.filter(i => i.priority === "high").length,
-      recommendedActions: insights.reduce((sum, i) => sum + (i.actionItems?.length || 0), 0),
-      estimatedImpact:
-        "Implementar recomendações pode melhorar eficiência em 25-35% e aumentar SLA compliance para 98%"
-    },
-    metadata: {
-      agent: "insights_ai",
-      model: "insights-analyzer-v2",
-      analysisFramework: "SLA-based-metrics",
-      timeframeAnalyzed: timeframe,
-      insightCount: insights.length,
-      timestamp: new Date().toISOString()
+      highPriorityCount: insights.filter(i => i.prioridade === "crítica" || i.prioridade === "alta")
+        .length,
+      highImpactCount: insights.filter(i => i.impacto === "alto").length
     },
     trace: {
-      agent: "insights_ai",
-      event: "INSIGHTS_GENERATED",
-      demanda_id: demandId,
+      agent: "insights_ia",
+      event: event,
       workflow_id: workflowId,
+      demanda_id: demandId,
       timestamp: new Date().toISOString(),
       decisions_made: {
         insights_generated: insights.length,
-        high_priority_insights: insights.filter(i => i.priority === "high").length,
-        total_recommendations: insights.reduce((sum, i) => sum + (i.actionItems?.length || 0), 0),
-        estimated_impact: "25-35% efficiency improvement"
+        critical_priority_insights: insights.filter(i => i.prioridade === "crítica").length,
+        high_impact_insights: insights.filter(i => i.impacto === "alto").length,
+        metrics_calculated: Object.keys(metrics).length,
+        analysis_quality: calculateAnalysisQuality(insights, metrics)
       }
+    },
+    metadata: {
+      agent: "insights_ia",
+      model: "insights-analyzer-v3",
+      analysisFramework: "workflow-optimization",
+      timestamp: new Date().toISOString()
     }
   };
 }
 
 /**
- * Calcular intervalo de datas baseado no timeframe
+ * Auto-avaliação da qualidade da análise
  */
-function calculateDateRange(timeframe: string): { start: string; end: string } {
-  const now = new Date();
-  let start = new Date(now);
+function calculateAnalysisQuality(insights: Insight[], metrics: any): string {
+  const insightCount = insights.length;
+  const hasHighPriority = insights.some(i => i.prioridade === "crítica");
+  const hasConcreteRecommendations = insights.every(i => i.recomendacao && i.recomendacao.length > 10);
+  const hasEvidence = insights.filter(i => i.evidencia).length / insightCount > 0.5;
 
-  const timeframeMap: Record<string, number> = {
-    "1d": 1,
-    "7d": 7,
-    "14d": 14,
-    "30d": 30,
-    "90d": 90
-  };
+  let quality = "boa";
 
-  const days = timeframeMap[timeframe] || 7;
-  start.setDate(start.getDate() - days);
+  if (insightCount < 3) {
+    quality = "limitada";
+  } else if (hasHighPriority && hasConcreteRecommendations && hasEvidence) {
+    quality = "excelente";
+  } else if (hasConcreteRecommendations) {
+    quality = "muito_boa";
+  }
 
-  return {
-    start: start.toISOString().split("T")[0],
-    end: now.toISOString().split("T")[0]
-  };
+  return quality;
 }
