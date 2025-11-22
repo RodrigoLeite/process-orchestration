@@ -137,7 +137,9 @@ export default function KanbanWorkflow() {
             };
 
             const handleDragLeave = (e: React.DragEvent) => {
-              if ((e.target as HTMLElement).className.includes("flex flex-col")) {
+              const target = e.target as HTMLElement;
+              const className = target?.className;
+              if (typeof className === "string" && className.includes("flex flex-col")) {
                 setDragOverStageId(null);
               }
             };
