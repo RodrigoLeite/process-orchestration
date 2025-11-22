@@ -84,6 +84,22 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6" data-testid="alerts-page">
+      {/* Purpose Banner */}
+      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4" data-testid="purpose-banner">
+        <div className="flex gap-3">
+          <div className="flex-shrink-0">
+            <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-red-900">Centro de Controle de Crises</h3>
+            <p className="text-sm text-red-800 mt-1">
+              Esta página mostra apenas alertas CRÍTICOS em tempo real (score &gt; 70) que exigem ação imediata. 
+              Use para responder rapidamente a problemas operacionais. Para análise técnica e histórico, veja a página de "Gargalos (IA)".
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -91,7 +107,7 @@ export default function AlertsPage() {
             🚨 Alertas Críticos
           </h1>
           <p className="text-gray-600 mt-1" data-testid="page-description">
-            Monitoramento em tempo real de gargalos críticos detectados
+            Monitoramento em tempo real com auto-escalação automática quando score &gt; 80
           </p>
         </div>
         <Bell className="w-8 h-8 text-red-600" />

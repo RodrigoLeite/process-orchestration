@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Zap, AlertTriangle } from "lucide-react";
+import { Loader2, Zap, AlertTriangle, Brain } from "lucide-react";
 import BottleneckCard from "@/components/BottleneckCard";
 import SeverityGrid from "@/components/SeverityGrid";
 import AreaImpactTable from "@/components/AreaImpactTable";
@@ -56,7 +56,8 @@ export default function BottlenecksPage() {
       const res = await fetch("/api/bottlenecks");
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
       return res.json();
-    }
+    },
+    refetchInterval: false // Não auto-atualizar para análise detalhada
   });
 
   // Fetch overload
@@ -133,16 +134,32 @@ export default function BottlenecksPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Purpose Banner */}
+      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4" data-testid="purpose-banner">
+        <div className="flex gap-3">
+          <div className="flex-shrink-0">
+            <Brain className="w-6 h-6 text-blue-600 mt-0.5" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-blue-900">Análise Técnica e Histórico de Gargalos</h3>
+            <p className="text-sm text-blue-800 mt-1">
+              Esta página fornece análise técnica detalhada de gargalos, causas raiz e planos de mitigação baseados em IA. 
+              Para tomar ações rápidas sobre alertas críticos em tempo real, acesse "Alertas Críticos".
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-8 h-8 text-red-600" />
           <h1 className="text-4xl font-bold" data-testid="title-bottlenecks">
-            Monitor de Gargalos
+            Monitor de Gargalos (IA)
           </h1>
         </div>
         <p className="text-muted-foreground" data-testid="subtitle-bottlenecks">
-          Cockpit operacional para detecção e mitigação de gargalos em tempo real
+          Análise inteligente com recomendações técnicas para resolução de gargalos
         </p>
       </div>
 
