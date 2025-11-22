@@ -6,6 +6,7 @@ import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
 import { buildAgentPrompt } from "./lib/agents/system_prompts";
 import { getInternalAgents, getInternalAgent } from "./lib/agents/registry";
+import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/workflowAgentService";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -236,12 +237,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "rawText is required" });
       }
 
+      // 1. Parse the demand text
       const parsed = await parseDemand(rawText);
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       const assignedTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
       console.log("[DEMAND] Creating demand with area:", assignedTo, "parsed.area:", parsed.area);
       
+      // 2. Create the demand
       const demand = await storage.createDemand({
         rawText,
         parsed,
@@ -252,109 +255,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[DEMAND] Created demand:", demand.id);
 
-      // Check if area already has a workflow
-      let workflowId: string | undefined;
-      let firstStageId: string | undefined;
+      // 3. Automatically invoke AgenteCriadorDeWorkflow
+      console.log("[WORKFLOW_AGENT] Invoking workflow agent for demand:", demand.id);
+      const workflowResult = await createWorkflowForDemand(demand);
       
-      if (assignedTo !== "unknown") {
-        const existingWorkflow = await storage.getAreaWorkflow(assignedTo);
-        console.log("[WORKFLOW] Existing workflow for", assignedTo, ":", existingWorkflow?.id);
-        
-        if (!existingWorkflow) {
-          // Create default workflow for this area
-          const areaName = assignedTo.toLowerCase();
-          const workflowName = `Workflow - ${parsed.area || "Área"}`;
-          
-          console.log("[WORKFLOW] Creating new workflow for area:", areaName);
-          
-          const newWorkflow = await storage.createAreaWorkflow({
-            areaName,
-            name: workflowName
-          });
-          
-          console.log("[WORKFLOW] Created workflow:", newWorkflow.id);
-          workflowId = newWorkflow.id;
-
-          // Create default stages based on area type
-          const defaultStages: Record<string, string[]> = {
-            "financeiro": ["Recebida", "Em análise", "Aprovação", "Processamento", "Concluída"],
-            "ti": ["Triagem", "Análise Técnica", "Implementação", "Testes", "Implantação"],
-            "rh": ["Recebimento", "Análise", "Entrevista/Reunião", "Decisão", "Finalização"],
-            "juridico": ["Protocolo", "Análise Jurídica", "Parecer", "Ação/Resposta", "Arquivamento"],
-            "operacoes": ["Recebimento", "Planejamento", "Execução", "Monitoramento", "Conclusão"],
-            "facilities": ["Solicitação", "Análise", "Orçamento", "Execução", "Finalização"],
-            "vendas": ["Prospecção", "Qualificação", "Proposta", "Negociação", "Fechamento"]
-          };
-
-          const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
-          
-          console.log("[WORKFLOW] Creating", stages.length, "stages for workflow:", newWorkflow.id);
-          
-          for (let i = 0; i < stages.length; i++) {
-            const stage = await storage.createWorkflowStage({
-              workflowId: newWorkflow.id,
-              name: stages[i],
-              orderIndex: String(i)
-            });
-            console.log("[WORKFLOW] Created stage:", stages[i], "id:", stage.id);
-            if (i === 0) firstStageId = stage.id;
-          }
-        } else {
-          workflowId = existingWorkflow.id;
-          const stages = await storage.getWorkflowStages(existingWorkflow.id);
-          console.log("[WORKFLOW] Using existing workflow with", stages.length, 'stages');
-          if (stages.length > 0) firstStageId = stages[0].id;
-        }
-
-        // Update demand with workflow_id and stage_id
-        if (workflowId && firstStageId) {
-          console.log("[DEMAND] Updating demand with workflow:", workflowId, "stage:", firstStageId);
-          await storage.updateDemandWithSLA(demand.id, {
-            workflowId,
-            stageId: firstStageId
-          });
-          console.log("[DEMAND] Updated demand successfully");
-        } else {
-          console.warn("[DEMAND] Missing workflowId or firstStageId:", { workflowId, firstStageId });
-        }
+      if (workflowResult.success && workflowResult.workflowId && workflowResult.stageId) {
+        // 4. Attach workflow to demand
+        await attachWorkflowToDemand(
+          demand.id,
+          workflowResult.workflowId,
+          workflowResult.stageId
+        );
+        console.log("[DEMAND] Workflow attached successfully");
+      } else {
+        console.warn("[DEMAND] Workflow creation failed:", workflowResult.message);
       }
 
-      // Automatically route the demand (status: pending → routed)
+      // 5. Automatically route the demand (status: pending → routed)
       console.log("[AUTO] Routing demand automatically");
       await storage.updateDemandStatus(demand.id, "routed");
-      await storage.createLog({ level: "info", message: "Demand automatically routed", metadata: { demandId: demand.id } });
-
-      // Automatically execute agent (status: routed → in_progress)
-      if (parsed.area) {
-        try {
-          console.log("[AUTO] Executing agent for area:", parsed.area);
-          const normalizeArea = (area: string): string => {
-            return area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-          };
-          const normalizedArea = normalizeArea(parsed.area);
-          
-          // Call agent endpoint internally
-          const agentRes = await fetch(`http://localhost:5000/api/agent/${normalizedArea}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: demand.id })
-          });
-          
-          if (agentRes.ok) {
-            console.log("[AUTO] Agent executed successfully");
-          } else {
-            console.error("[AUTO] Agent execution failed:", agentRes.status);
-          }
-        } catch (error) {
-          console.error("[AUTO] Error executing agent:", error);
-        }
-      }
+      await storage.createLog({ 
+        level: "info", 
+        message: "Demand automatically routed and workflow created", 
+        metadata: { demandId: demand.id, workflowId: workflowResult.workflowId } 
+      });
       
       res.status(201).json({ 
         id: demand.id, 
         parsed: demand.parsed, 
         route_to: demand.routeTo,
-        workflow_id: workflowId
+        workflow_id: workflowResult.workflowId
       });
     } catch (error) {
       console.error("Error creating demand:", error);
