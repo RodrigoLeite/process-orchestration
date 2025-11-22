@@ -1,8 +1,10 @@
 /**
  * Gargalo Detector Agent
  * Especializado em identificar pontos de lentidão e travamentos no processo
- * Integrado com LangSmith para rastreamento detalhado
+ * Integrado com LangSmith e auto-escalation para criticidade alta
  */
+
+import { shouldEscalate, executeEscalation } from "../autoEscalation";
 
 export interface GargaloDetectorPayload {
   workflowId?: string;
@@ -252,6 +254,27 @@ export async function execute(payload: GargaloDetectorPayload): Promise<any> {
   console.log(
     `[GARGALO_DETECTOR] Gargalos: ${gargalos.length} | Severity Score: ${severityScore}/100`
   );
+
+  // Verificar se deve escalar automaticamente
+  if (shouldEscalate(severityScore)) {
+    console.log(`[GARGALO_DETECTOR] 🔴 ESCALAÇÃO CRÍTICA ACIONADA! Score: ${severityScore}`);
+    
+    // Executar escalação assincronamente sem bloquear a resposta
+    (async () => {
+      try {
+        await executeEscalation({
+          severity_score: severityScore,
+          area: payload?.area || "unknown",
+          etapa: etapaAnalisada,
+          cause: gargalos[0]?.causa_provavel || "unknown",
+          recommendation: gargalos[0]?.sugestao_correcao || "unknown",
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error("[GARGALO_DETECTOR] Erro ao executar escalação:", error);
+      }
+    })();
+  }
 
   // Retornar resultado estruturado
   return {

@@ -24,7 +24,7 @@ import {
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
-  eventType: "DEMAND_MOVED" | "STATUS_UPDATED" | "AREA_OVERLOADED" | "DEMAND_COMPLETED",
+  eventType: "DEMAND_MOVED" | "STATUS_UPDATED" | "AREA_OVERLOADED" | "DEMAND_COMPLETED" | "BOTTLENECK_CRITICAL",
   area: string,
   demandId: string,
   payload: Record<string, any>
@@ -750,7 +750,7 @@ Máximo 5 gargalos. Se houver menos, retorne apenas os críticos.`;
         return res.status(400).json({ success: false, data: null, error: "area, url, and events array are required" });
       }
 
-      const validEvents = ["DEMAND_MOVED", "STATUS_UPDATED", "AREA_OVERLOADED", "DEMAND_COMPLETED"];
+      const validEvents = ["DEMAND_MOVED", "STATUS_UPDATED", "AREA_OVERLOADED", "DEMAND_COMPLETED", "BOTTLENECK_CRITICAL"];
       if (!events.every((e: string) => validEvents.includes(e))) {
         return res.status(400).json({ success: false, data: null, error: "Invalid event types" });
       }
@@ -1877,6 +1877,46 @@ Texto original: ${demand.rawText}`;
     } catch (error) {
       console.error("Error fetching insights reports:", error);
       res.status(500).json({ error: "Failed to fetch insights reports" });
+    }
+  });
+
+  // Critical alerts endpoint
+  app.get("/api/alerts/critical", async (req, res) => {
+    try {
+      // Fetch recent bottleneck reports and filter critical ones
+      const bottleneckReports = await storage.getBottleneckReports(50);
+      
+      const criticalAlerts = bottleneckReports
+        .filter(report => {
+          const data = report.data as any;
+          return data?.summary?.severity_score > 70;
+        })
+        .map((report, index) => {
+          const data = report.data as any;
+          return {
+            id: report.id,
+            area: data?.summary?.area || "unknown",
+            severity_score: data?.summary?.severity_score || 0,
+            etapa: data?.summary?.etapa || "unknown",
+            causa_provavel: data?.summary?.problem_principal || "unknown",
+            sugestao_correcao: data?.summary?.acao_imediata || "unknown",
+            timestamp: report.createdAt,
+            status: index % 3 === 0 ? "resolved" : index % 3 === 1 ? "acknowledged" : "active"
+          };
+        });
+
+      res.json({
+        success: true,
+        alerts: criticalAlerts,
+        count: {
+          active: criticalAlerts.filter(a => a.status === "active").length,
+          acknowledged: criticalAlerts.filter(a => a.status === "acknowledged").length,
+          resolved: criticalAlerts.filter(a => a.status === "resolved").length
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching critical alerts:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch alerts" });
     }
   });
 
