@@ -2864,6 +2864,40 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ LangGraph Orchestration Endpoint ============
+  // Import LangGraph orchestration
+  const { executeOrchestrationGraph } = await import("./lib/ai/lc/graphs");
+
+  // Orchestration endpoint - Execute complete demand pipeline
+  app.post("/api/orchestration/process-demand", async (req, res) => {
+    try {
+      const { demand, demand_id } = req.body;
+
+      if (!demand) {
+        return res.status(400).json({
+          success: false,
+          error: "demand object is required with: titulo, descricao, area, urgencia, resultadosEsperados"
+        });
+      }
+
+      // Execute the full orchestration graph
+      const result = await executeOrchestrationGraph(storage, demand, demand_id);
+
+      res.json({
+        success: result.status === "success",
+        data: result,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error in orchestration:", error);
+      res.status(500).json({
+        success: false,
+        error: "Orchestration failed",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

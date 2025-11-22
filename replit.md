@@ -155,3 +155,50 @@ Three purpose-built pure TypeScript functions:
 - Compatible with existing webhook/scheduler systems
 
 **Testing**: All 3 agents tested and working ✅
+
+## LangGraph Orchestration System (NEW - Nov 2025)
+
+**Complete demand processing pipeline using LangGraph**:
+
+**Location**: `server/lib/ai/lc/graphs/orchestrationGraph.ts`
+
+**Architecture**:
+1. **input_node** - Validate demand structure
+2. **workflow_builder_node** - Generate workflow from demand
+3. **bottleneck_detector_node** - Identify workflow risks
+4. **insights_node** - Generate business insights
+5. **output_node** - Consolidate and return results
+
+**State Management** (Annotation-based):
+```typescript
+{
+  demand_id: string;
+  demand: DemandInput;
+  workflow: WorkflowOutput;
+  bottlenecks: any[];
+  insights: any;
+  error: string | null;
+  timestamp: string;
+}
+```
+
+**API Endpoint**: `POST /api/orchestration/process-demand`
+
+**Flow**:
+```
+Input → Validate → Build Workflow → Detect Bottlenecks → Generate Insights → Output
+```
+
+**Features**:
+- Linear sequential node execution
+- Error handling and state persistence
+- Automatic state propagation
+- Comprehensive logging
+- Type-safe TypeScript + LangGraph 0.2+
+
+**Ready For**:
+- ✅ Database persistence integration
+- ✅ Streaming responses
+- ✅ Conditional branching
+- ✅ Parallel execution
+- ✅ Webhook integration
