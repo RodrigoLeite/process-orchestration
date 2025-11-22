@@ -15,6 +15,7 @@ import * as workflowBuilderAgent from "./lib/agents/workflow_builder";
 import * as insightsAIAgent from "./lib/agents/insights_ai";
 import * as bottleneckAIAgent from "./lib/agents/bottleneck_ai";
 import * as gargaloDetectorAgent from "./lib/agents/gargalo_detector";
+import * as predictiveAIAgent from "./lib/agents/predictive_ai";
 import {
   processSupervisorEvent,
   validateSupervisorEvent,
@@ -1920,6 +1921,48 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Predictions endpoint
+  app.get("/api/predictions", async (req, res) => {
+    try {
+      const days = Math.min(parseInt(req.query.days as string) || 7, 30);
+      
+      // Get historical demand data
+      const last30DaysDemands = await storage.getDemandsFromLastDays(30);
+      
+      // Group by date to get daily volumes
+      const demandHistory = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (30 - i));
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const count = last30DaysDemands.filter(d => {
+          const demandDate = new Date(d.createdAt || '').toISOString().split('T')[0];
+          return demandDate === dateStr;
+        }).length;
+        
+        return { date: dateStr, count };
+      });
+
+      // Get current areas data
+      const areasData = await storage.getWorkgraphNodes();
+
+      // Execute predictive agent
+      const predictions = await predictiveAIAgent.execute({
+        days,
+        demandHistory,
+        areasData: areasData.map(a => ({ area: a.name }))
+      });
+
+      res.json({
+        success: true,
+        data: predictions
+      });
+    } catch (error) {
+      console.error("Error generating predictions:", error);
+      res.status(500).json({ success: false, error: "Failed to generate predictions" });
+    }
+  });
+
   // Agent execution by internal key
   app.post("/api/agents/run", async (req, res) => {
     try {
@@ -1941,6 +1984,8 @@ Texto original: ${demand.rawText}`;
         handler = bottleneckAIAgent.execute;
       } else if (agent_key === "gargalo_detector") {
         handler = gargaloDetectorAgent.execute;
+      } else if (agent_key === "predictive_ai") {
+        handler = predictiveAIAgent.execute;
       } else {
         return res.status(404).json({ error: `Unknown agent: ${agent_key}` });
       }

@@ -45,6 +45,7 @@ Preferred communication style: Simple, everyday language.
    - **Workflow Builder** (`workflow_builder`): Transforms demands into custom workflows
    - **Insights AI** (`insights_ai`): Analyzes workflows for optimization opportunities
    - **Bottleneck Detector** (`bottleneck_ai`, `gargalo_detector`): Identifies process congestion
+   - **Predictive AI** (`predictive_ai`): Forecasts demand volume trends and risk scores using historical pattern analysis
    - All agents use GPT-4-mini via OpenAI API with structured JSON output
 
 4. **Scheduler** (`scheduler.ts`)
@@ -156,8 +157,16 @@ Preferred communication style: Simple, everyday language.
 
 **API Endpoints**:
 - `GET /api/alerts/critical` - Fetch all critical alerts with status filtering
+- `GET /api/predictions?days=N` - Get AI-powered demand forecasts for next N days (1-30)
 - `POST /api/webhooks/register` - Register webhooks (now supports BOTTLENECK_CRITICAL event)
 - `POST /api/agents/run` - Execute agents with auto-escalation (via gargalo_detector)
+
+**Predictive AI Features** (NEW):
+- Analyzes 30-day historical demand volume
+- Calculates growth trends and volatility patterns
+- Generates daily forecasts with volume, risk score, and trend
+- Provides actionable recommendations for critical days
+- Real-time predictions on Insights IA page (no more mock data)
 
 ### Development Tools
 - **Replit Plugins**: Dev banner, cartographer, runtime error overlay (development only)
