@@ -19,6 +19,7 @@ import KanbanWorkflow from "@/pages/kanban-workflow";
 import AreaDetailsPage from "@/pages/area-details";
 import AreasListPage from "@/pages/areas-list";
 import AgentsPage from "@/pages/agents";
+import AgentDetailPage from "@/pages/agent-detail";
 import InsightsPage from "@/pages/insights";
 import BottlenecksPage from "@/pages/bottlenecks";
 import NotFound from "@/pages/not-found";
@@ -43,6 +44,7 @@ function Router() {
         <Route path="/app/areas" component={AreasListPage} />
         <Route path="/app/areas/:id" component={AreaDetailsPage} />
         <Route path="/app/agents" component={AgentsPage} />
+        <Route path="/app/agents/:id" component={AgentDetailPage} />
         <Route path="/app/insights" component={InsightsPage} />
         <Route path="/app/bottlenecks" component={BottlenecksPage} />
         <Route component={NotFound} />

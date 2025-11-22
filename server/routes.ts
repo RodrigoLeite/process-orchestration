@@ -1823,6 +1823,81 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  app.get("/api/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = await storage.getAgent(id);
+      
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      res.json(agent);
+    } catch (error) {
+      console.error("Error fetching agent:", error);
+      res.status(500).json({ error: "Failed to fetch agent" });
+    }
+  });
+
+  app.get("/api/agents/:id/logs", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const logs = await storage.getAgentLogs(id);
+      res.json(logs.slice(0, 20));
+    } catch (error) {
+      console.error("Error fetching agent logs:", error);
+      res.status(500).json({ error: "Failed to fetch agent logs" });
+    }
+  });
+
+  app.post("/api/agents/:id/execute", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { input } = req.body;
+
+      const agent = await storage.getAgent(id);
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+
+      // Simulate agent execution
+      let output: any = {
+        message: `Agent "${agent.name}" executed successfully`,
+        timestamp: new Date().toISOString(),
+        inputReceived: input
+      };
+
+      // Save execution log
+      await storage.createAgentLog({
+        agentId: id,
+        inputJson: input,
+        outputJson: output,
+        status: "success"
+      });
+
+      res.json(output);
+    } catch (error: any) {
+      const errorOutput = {
+        error: String(error),
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        const { id } = req.params;
+        await storage.createAgentLog({
+          agentId: id,
+          inputJson: req.body.input,
+          outputJson: errorOutput,
+          status: "error"
+        });
+      } catch (logError) {
+        console.error("Failed to log error:", logError);
+      }
+
+      res.status(500).json(errorOutput);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
