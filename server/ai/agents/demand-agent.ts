@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
+import { withTracing, logAgentExecution } from "../../lib/ai/lc/telemetry";
 
 /**
  * DemandAgent - Interprets user demands and extracts structured data
@@ -50,8 +51,11 @@ function initializeLLM(): ChatOpenAI {
  * Extract structured demand from user input
  */
 export async function demandAgent(input: DemandAgentInput): Promise<DemandAgentOutput> {
-  try {
-    const llm = initializeLLM();
+  const startTime = Date.now();
+  
+  return withTracing("demandAgent", async () => {
+    try {
+      const llm = initializeLLM();
 
     const systemPrompt = `You are an expert demand analyst for a business process management system.
 Your task is to interpret user requests and extract structured demand information.
@@ -104,17 +108,29 @@ Respond ONLY with valid JSON matching the schema. No markdown, no explanation.`;
     // Validate with Zod schema
     const validated = DemandSchema.parse(demandData);
 
-    return {
+    const result = {
       success: true,
       demanda: validated,
       reasoning: `Extracted demand: "${validated.titulo}" (Area: ${validated.area}, Urgency: ${validated.urgencia})`
     };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
+
+    // Log to telemetry
+    const duration = Date.now() - startTime;
+    await logAgentExecution("demandAgent", input, result, { agent_type: "demand" }, duration);
+
+    return result;
+    } catch (error) {
+      const result = {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+
+      const duration = Date.now() - startTime;
+      await logAgentExecution("demandAgent", input, result, { agent_type: "demand" }, duration);
+
+      return result;
+    }
+  }, { agent_type: "demand", input_text: input.texto.slice(0, 100) });
 }
 
 /**
