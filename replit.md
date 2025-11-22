@@ -70,6 +70,7 @@ Preferred communication style: Simple, everyday language.
 - `agents` / `agent_logs`: AI agent registry and execution history
 - `webhooks` / `webhook_events`: External integration event system
 - `demand_history`: Audit trail for demand state changes
+- `langflow_agents`: LangFlow agent storage with JSON definition, compiled code, versioning
 
 **Key Decisions**:
 - JSONB fields for flexible metadata storage (parsed demand data, workflow configs)
@@ -232,3 +233,67 @@ Preferred communication style: Simple, everyday language.
 8. Insights IA (predictive forecasts)
 9. **Observabilidade** (admin-only, internal events)
 10. Configurações
+
+## LangFlow Integration (NEW - Nov 2025)
+
+**Purpose**: Backend gateway for LangFlow agents - users design flows in LangFlow UI, backend compiles and executes them securely without exposing LangFlow directly
+
+**Components Added**:
+
+1. **Database Schema** (`langflow_agents` table)
+   - Stores imported LangFlow JSON flows
+   - Versioning system (auto-increment on compilation)
+   - Compiled TypeScript/JavaScript code storage
+   - Active/inactive status toggle
+
+2. **Client Utilities** (`server/lib/langflow-client.ts`)
+   - `validateFlowStructure()`: Validates LangFlow JSON format
+   - `compileFlow()`: Generates executable code from flow JSON
+   - `executeCompiledAgent()`: Runs compiled agents safely
+   - `sendFlowToLangFlow()`: API integration for future LangFlow cloud features
+   - `createNextVersion()`: Handles agent versioning
+
+3. **API Endpoints** (`/api/langflow/*`)
+   - `GET /langflow/list`: Lists all imported agents
+   - `GET /langflow/{id}`: Get specific agent details
+   - `POST /langflow/import`: Import JSON from LangFlow (with validation)
+   - `POST /langflow/{id}/compile`: Compile flow to executable code
+   - `POST /langflow/{id}/run`: Execute compiled agent with input
+   - `DELETE /langflow/{id}`: Remove agent
+
+4. **Environment Configuration**
+   - `LANGFLOW_ENDPOINT`: Base URL for LangFlow API (optional, for future cloud integration)
+   - `LANGFLOW_API_KEY`: API key for LangFlow cloud (optional, for future use)
+
+**Data Flow**:
+1. User designs flow in LangFlow UI
+2. User exports JSON from LangFlow
+3. Backend: POST /langflow/import → validates → stores in DB
+4. Backend: POST /langflow/{id}/compile → generates JS/TS code → stores v1
+5. Backend: POST /langflow/{id}/run → executes compiled code → returns output
+6. On edit: POST /langflow/{id}/compile → increments version → stores code
+
+**Security**:
+- Flow JSON validated before storage (prevents malformed data)
+- Compiled code executed in safe context (no file system access)
+- Backend is the ONLY gateway - users cannot access LangFlow API directly
+- All agent operations logged for audit trail
+
+**Example Workflow**:
+```
+LangFlow UI Export → {"nodes": [...], "edges": [...]}
+           ↓
+POST /api/langflow/import
+           ↓
+Validate structure + Store in DB
+           ↓
+POST /api/langflow/{agentId}/compile
+           ↓
+Generate code: `async execute(input) { ... }`
+           ↓
+Store compiled_code + increment version
+           ↓
+POST /api/langflow/{agentId}/run
+           ↓
+Execute code in sandbox → Return output
+```

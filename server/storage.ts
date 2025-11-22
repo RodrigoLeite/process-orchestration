@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -69,6 +69,13 @@ export interface IStorage {
   createSystemEvent(event: InsertSystemEvent): Promise<SystemEvent>;
   getSystemEvents(limit?: number): Promise<SystemEvent[]>;
   getSystemEventsByAgent(agentKey: string, limit?: number): Promise<SystemEvent[]>;
+
+  getLangflowAgents(): Promise<LangflowAgent[]>;
+  getLangflowAgent(id: string): Promise<LangflowAgent | undefined>;
+  getLangflowAgentByName(name: string): Promise<LangflowAgent | undefined>;
+  createLangflowAgent(agent: InsertLangflowAgent): Promise<LangflowAgent>;
+  updateLangflowAgent(id: string, updates: Partial<LangflowAgent>): Promise<LangflowAgent | undefined>;
+  deleteLangflowAgent(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -494,6 +501,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(systemEvents.agentKey, agentKey))
       .orderBy(desc(systemEvents.createdAt))
       .limit(limit);
+  }
+
+  async getLangflowAgents(): Promise<LangflowAgent[]> {
+    return await this.db
+      .select()
+      .from(langflowAgents)
+      .orderBy(desc(langflowAgents.createdAt));
+  }
+
+  async getLangflowAgent(id: string): Promise<LangflowAgent | undefined> {
+    const result = await this.db
+      .select()
+      .from(langflowAgents)
+      .where(eq(langflowAgents.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getLangflowAgentByName(name: string): Promise<LangflowAgent | undefined> {
+    const result = await this.db
+      .select()
+      .from(langflowAgents)
+      .where(eq(langflowAgents.name, name))
+      .limit(1);
+    return result[0];
+  }
+
+  async createLangflowAgent(agent: InsertLangflowAgent): Promise<LangflowAgent> {
+    const result = await this.db
+      .insert(langflowAgents)
+      .values(agent)
+      .returning();
+    return result[0];
+  }
+
+  async updateLangflowAgent(id: string, updates: Partial<LangflowAgent>): Promise<LangflowAgent | undefined> {
+    const result = await this.db
+      .update(langflowAgents)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(langflowAgents.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteLangflowAgent(id: string): Promise<void> {
+    await this.db
+      .delete(langflowAgents)
+      .where(eq(langflowAgents.id, id));
   }
 }
 
