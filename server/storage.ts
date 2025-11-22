@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -53,6 +53,12 @@ export interface IStorage {
   getWorkflowStageById(stageId: string): Promise<WorkflowStage | undefined>;
   getDemandsByWorkflow(workflowId: string): Promise<Demand[]>;
   updateDemandStage(id: string, stageId: string): Promise<Demand | undefined>;
+
+  getAgents(): Promise<Agent[]>;
+  getAgent(id: string): Promise<Agent | undefined>;
+  createAgent(agent: InsertAgent): Promise<Agent>;
+  createAgentLog(log: InsertAgentLog): Promise<AgentLog>;
+  getAgentLogs(agentId: string): Promise<AgentLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -339,6 +345,33 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(areaWorkflows)
       .orderBy(areaWorkflows.name);
+  }
+
+  async getAgents(): Promise<Agent[]> {
+    return await this.db.select().from(agents).orderBy(desc(agents.createdAt));
+  }
+
+  async getAgent(id: string): Promise<Agent | undefined> {
+    const result = await this.db.select().from(agents).where(eq(agents.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createAgent(agent: InsertAgent): Promise<Agent> {
+    const result = await this.db.insert(agents).values(agent).returning();
+    return result[0];
+  }
+
+  async createAgentLog(log: InsertAgentLog): Promise<AgentLog> {
+    const result = await this.db.insert(agentLogs).values(log).returning();
+    return result[0];
+  }
+
+  async getAgentLogs(agentId: string): Promise<AgentLog[]> {
+    return await this.db
+      .select()
+      .from(agentLogs)
+      .where(eq(agentLogs.agentId, agentId))
+      .orderBy(desc(agentLogs.createdAt));
   }
 }
 

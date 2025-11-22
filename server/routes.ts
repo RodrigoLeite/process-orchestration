@@ -1813,6 +1813,16 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  app.get("/api/agents", async (req, res) => {
+    try {
+      const agents = await storage.getAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error("Error fetching agents:", error);
+      res.status(500).json({ error: "Failed to fetch agents" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
