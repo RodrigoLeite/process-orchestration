@@ -14,6 +14,12 @@ import { runInstrumentedAgent } from "./lib/instrumentedAgent";
 import * as workflowBuilderAgent from "./lib/agents/workflow_builder";
 import * as insightsAIAgent from "./lib/agents/insights_ai";
 import * as bottleneckAIAgent from "./lib/agents/bottleneck_ai";
+import {
+  processSupervisorEvent,
+  validateSupervisorEvent,
+  getSupervisorStatus,
+  type SupervisorEvent
+} from "./lib/agentSupervisor";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -2050,6 +2056,52 @@ Texto original: ${demand.rawText}`;
       });
     } catch (error) {
       console.error("LangSmith health check error:", error);
+      res.status(500).json({
+        success: false,
+        error: String(error)
+      });
+    }
+  });
+
+  // Agent Supervisor - Event Orchestration
+  app.post("/api/supervisor/process-event", async (req, res) => {
+    try {
+      const event: SupervisorEvent = req.body;
+
+      // Validate event
+      const validation = validateSupervisorEvent(event);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: validation.error
+        });
+      }
+
+      // Process event through supervisor
+      const decisions = await processSupervisorEvent(event);
+
+      res.json({
+        success: true,
+        event_type: event.tipo,
+        decisions_made: decisions.length,
+        decisions: decisions
+      });
+    } catch (error) {
+      console.error("Error processing supervisor event:", error);
+      res.status(500).json({
+        success: false,
+        error: String(error)
+      });
+    }
+  });
+
+  // Supervisor Status - View orchestration rules and configuration
+  app.get("/api/supervisor/status", async (req, res) => {
+    try {
+      const status = getSupervisorStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting supervisor status:", error);
       res.status(500).json({
         success: false,
         error: String(error)
