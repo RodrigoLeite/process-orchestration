@@ -27,7 +27,7 @@ const navItems = [
   { label: "Alertas Críticos", href: "/app/alerts", icon: Bell },
   { label: "Gargalos (IA)", href: "/app/bottlenecks", icon: AlertTriangle },
   { label: "Insights IA", href: "/app/insights", icon: Zap },
-  { label: "Observabilidade", href: "/observability", icon: Activity },
+  { label: "Logs de Orquestração", href: "/app/ai/logs", icon: Activity },
   { label: "Configurações", href: "/settings", icon: Settings }
 ];
 
