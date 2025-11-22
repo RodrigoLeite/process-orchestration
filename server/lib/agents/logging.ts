@@ -11,15 +11,18 @@ export async function saveAgentLog(
   status: "success" | "error"
 ) {
   try {
+    console.log(`[AGENT_LOG] Saving log for agent: "${agentName}"`);
+    
     // Try to find existing agent by name
-    const existingAgent = await storage.getAgents().then(agents => 
-      agents.find(a => a.name === agentName)
-    );
+    const allAgents = await storage.getAgents();
+    const existingAgent = allAgents.find(a => a.name === agentName);
 
     let agentId = existingAgent?.id;
+    console.log(`[AGENT_LOG] Existing agent found: ${agentId ? "yes" : "no"}`);
 
     // If agent doesn't exist, create it
     if (!agentId) {
+      console.log(`[AGENT_LOG] Creating new agent: "${agentName}"`);
       const newAgent = await storage.createAgent({
         name: agentName,
         description: `AI Agent: ${agentName}`,
@@ -27,17 +30,20 @@ export async function saveAgentLog(
         active: "true"
       });
       agentId = newAgent.id;
+      console.log(`[AGENT_LOG] Agent created with ID: ${agentId}`);
     }
 
     // Create the log entry
-    await storage.createAgentLog({
+    console.log(`[AGENT_LOG] Creating log entry for agentId: ${agentId}`);
+    const logEntry = await storage.createAgentLog({
       agentId,
       inputJson: input,
       outputJson: output,
       status
     });
+    console.log(`[AGENT_LOG] Log entry created with ID: ${logEntry.id}`);
   } catch (error) {
-    console.error(`Failed to save agent log for "${agentName}":`, error);
+    console.error(`[AGENT_LOG] Failed to save agent log for "${agentName}":`, error);
     // Don't throw - logging failures shouldn't break the main operation
   }
 }
