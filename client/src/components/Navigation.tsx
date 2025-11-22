@@ -12,7 +12,8 @@ import {
   ChevronRight,
   LayoutGrid,
   Bot,
-  Bell
+  Bell,
+  Activity
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const navItems = [
   { label: "Alertas Críticos", href: "/app/alerts", icon: Bell },
   { label: "Gargalos (IA)", href: "/app/bottlenecks", icon: AlertTriangle },
   { label: "Insights IA", href: "/app/insights", icon: Zap },
+  { label: "Observabilidade", href: "/observability", icon: Activity },
   { label: "Configurações", href: "/settings", icon: Settings }
 ];
 

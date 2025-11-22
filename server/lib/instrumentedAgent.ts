@@ -5,6 +5,7 @@
 
 import { getLangsmithClient, updateLangSmithRun } from "./langsmith";
 import { langsmithConfig } from "./langsmith-config";
+import { storage } from "../storage";
 
 /**
  * Callback interface for metrics extension
@@ -170,6 +171,21 @@ export async function runInstrumentedAgent({
       outputSize: JSON.stringify(output).length,
     });
 
+    // Log system event (fire and forget - don't block agent execution)
+    storage.createSystemEvent({
+      type: "AGENT_EXECUTION",
+      agentKey,
+      demandId: demandId as any,
+      areaId: areaId as any,
+      userId: userId as any,
+      status: "success",
+      durationMs: duration as any,
+      metadata: {
+        outputSize: JSON.stringify(output).length,
+        timestamp: new Date().toISOString(),
+      }
+    }).catch(err => console.error(`[SYSTEM_EVENTS] Failed to log success event:`, err));
+
     return output;
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -206,6 +222,21 @@ export async function runInstrumentedAgent({
       duration: `${duration}ms`,
       error: errorMessage,
     });
+
+    // Log system event error (fire and forget - don't block agent execution)
+    storage.createSystemEvent({
+      type: "AGENT_EXECUTION",
+      agentKey,
+      demandId: demandId as any,
+      areaId: areaId as any,
+      userId: userId as any,
+      status: "error",
+      durationMs: duration as any,
+      metadata: {
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      }
+    }).catch(err => console.error(`[SYSTEM_EVENTS] Failed to log error event:`, err));
 
     throw error;
   }

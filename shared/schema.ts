@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, uuid, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, uuid, jsonb, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -305,3 +305,24 @@ export const insertInsightsReportSchema = createInsertSchema(insightsReports).om
 
 export type InsertInsightsReport = z.infer<typeof insertInsightsReportSchema>;
 export type InsightsReport = typeof insightsReports.$inferSelect;
+
+export const systemEvents = pgTable("system_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: text("type").notNull(),
+  agentKey: text("agent_key"),
+  demandId: uuid("demand_id"),
+  areaId: uuid("area_id"),
+  userId: uuid("user_id"),
+  status: text("status").notNull(),
+  durationMs: integer("duration_ms"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSystemEventSchema = createInsertSchema(systemEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSystemEvent = z.infer<typeof insertSystemEventSchema>;
+export type SystemEvent = typeof systemEvents.$inferSelect;

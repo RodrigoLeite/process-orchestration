@@ -83,8 +83,9 @@ Preferred communication style: Simple, everyday language.
 - Direct database access via storage layer
 - No user sessions or role-based access control
 - System designed for internal enterprise use behind VPN/firewall
+- Observability page (`/observability`) uses placeholder admin middleware (requireAdmin checks isAdmin=true)
 
-**Recommendation**: Add session-based auth with `connect-pg-simple` (already in dependencies) when deploying to production.
+**Recommendation**: Add session-based auth with `connect-pg-simple` (already in dependencies) when deploying to production. Update `server/lib/adminAuthMiddleware.ts` to verify `profiles.role = "admin"` once auth is implemented.
 
 ## External Dependencies
 
@@ -114,7 +115,44 @@ Preferred communication style: Simple, everyday language.
   - SendGrid (Email) - interface created, ready for API key integration
   - Webhook dispatcher for external systems (fully implemented + BOTTLENECK_CRITICAL event)
 
-## Critical Bottleneck Alerts & Auto-Escalation System (NEW)
+## Internal Observability System (NEW - Nov 2025)
+
+**Purpose**: Admin-only internal monitoring of agent execution and system events
+- Zero LangSmith exposure in UI (runId, traceId, links all hidden)
+- Internal-only event tracking at `/observability` route
+- No external references or AI stack visibility to users
+
+**Components Added**:
+
+1. **System Events Table** (`system_events`)
+   - Records all agent executions with metadata
+   - Fields: id, type, agentKey, demandId, areaId, userId, status, durationMs, metadata, createdAt
+   - Automatically populated by `instrumentedAgent.ts` (fire-and-forget logging)
+
+2. **Admin Middleware** (`server/lib/adminAuthMiddleware.ts`)
+   - `requireAdmin`: Restricts `/observability` to admins (currently checks isAdmin=true placeholder)
+   - `logAdminAccess`: Logs all admin endpoint accesses
+   - TODO: Replace isAdmin placeholder with `profiles.role === "admin"` check once auth is implemented
+
+3. **API Endpoint** (`GET /api/system-events`)
+   - Returns all system events (latest 100) or filtered by agent key
+   - Protected by admin middleware
+   - Query params: `?agent=agentKey` for filtering
+
+4. **Observability Dashboard** (`client/src/pages/observability.tsx`)
+   - Lists all system events in card format
+   - Shows: event type, agent, status, duration, timestamps, metadata
+   - Agent filter buttons for quick analysis
+   - Auto-refreshes every 5 seconds
+   - Zero indication of external monitoring tools
+
+**Data Flow**:
+- Agent executes → `instrumentedAgent.ts` wraps execution
+- On success/error → `storage.createSystemEvent()` logs event (non-blocking)
+- Admin accesses `/observability` → `GET /api/system-events` (middleware checks admin)
+- Events displayed in real-time dashboard with filters
+
+## Critical Bottleneck Alerts & Auto-Escalation System
 
 **Components Added** (Nov 2025):
 
@@ -156,6 +194,7 @@ Preferred communication style: Simple, everyday language.
    - Existing events still: DEMAND_MOVED, STATUS_UPDATED, AREA_OVERLOADED, DEMAND_COMPLETED
 
 **API Endpoints**:
+- `GET /api/system-events` - Admin-only: Fetch internal system events (latest 100, or filtered by agent)
 - `GET /api/alerts/critical` - Fetch all critical alerts with status filtering
 - `GET /api/predictions?days=N` - Get AI-powered demand forecasts for next N days (1-30)
 - `POST /api/webhooks/register` - Register webhooks (now supports BOTTLENECK_CRITICAL event)
@@ -177,5 +216,19 @@ Preferred communication style: Simple, everyday language.
 - 40+ Radix UI primitive components for accessible, composable UI
 - `date-fns` for date formatting
 - `cmdk` for command palette (currently unused)
-- `lucide-react` for iconography
+- `lucide-react` for iconography (Activity icon for observability)
 - `sonner` + custom toast system for notifications
+
+## Navigation Structure
+
+**Main Menu Items** (client/src/components/Navigation.tsx):
+1. Home
+2. Demandas
+3. Workflows
+4. Áreas
+5. Agentes IA
+6. Alertas Críticos (operational actions)
+7. Gargalos (IA) (technical bottleneck analysis)
+8. Insights IA (predictive forecasts)
+9. **Observabilidade** (admin-only, internal events)
+10. Configurações

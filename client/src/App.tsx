@@ -23,6 +23,7 @@ import AgentDetailPage from "@/pages/agent-detail";
 import InsightsPage from "@/pages/insights";
 import BottlenecksPage from "@/pages/bottlenecks";
 import AlertsPage from "@/pages/alerts";
+import ObservabilityPage from "@/pages/observability";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -49,6 +50,7 @@ function Router() {
         <Route path="/app/insights" component={InsightsPage} />
         <Route path="/app/bottlenecks" component={BottlenecksPage} />
         <Route path="/app/alerts" component={AlertsPage} />
+        <Route path="/observability" component={ObservabilityPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
