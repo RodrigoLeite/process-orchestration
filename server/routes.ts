@@ -11,6 +11,9 @@ import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/wo
 import { executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
 import { runInstrumentedAgent } from "./lib/instrumentedAgent";
+import * as workflowBuilderAgent from "./lib/agents/workflow_builder";
+import * as insightsAIAgent from "./lib/agents/insights_ai";
+import * as bottleneckAIAgent from "./lib/agents/bottleneck_ai";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -1873,65 +1876,43 @@ Texto original: ${demand.rawText}`;
   // Agent execution by internal key
   app.post("/api/agents/run", async (req, res) => {
     try {
-      const { agent_key, payload } = req.body;
+      const { agent_key, payload, userId, demandId, areaId } = req.body;
 
       if (!agent_key) {
         return res.status(400).json({ error: "agent_key is required" });
       }
 
       let result: any = {};
+      let handler: (input: any) => Promise<any>;
 
       // Route to the appropriate agent handler
       if (agent_key === "workflow_builder") {
-        // Get demand from payload or create a stub
-        const demand = payload?.demand || {
-          id: payload?.demandId || `demand_${Date.now()}`,
-          parsed: payload?.parsed || { area: "unknown" },
-          rawText: payload?.rawText || ""
-        };
-        result = await createWorkflowForDemand(demand);
+        handler = workflowBuilderAgent.execute;
       } else if (agent_key === "insights_ai") {
-        // Insights AI handler - return structured insight response
-        result = {
-          success: true,
-          insights: [
-            {
-              type: "efficiency",
-              title: "Tempo Médio por Etapa",
-              value: payload?.avgTime || "2.5 horas",
-              recommendation: "Revisar a etapa com maior tempo"
-            },
-            {
-              type: "bottleneck",
-              title: "Gargalo Detectado",
-              location: payload?.bottleneckArea || "Análise Jurídica",
-              impact: "Alto"
-            }
-          ],
-          payload: payload
-        };
+        handler = insightsAIAgent.execute;
       } else if (agent_key === "bottleneck_ai") {
-        // Bottleneck detection handler
-        result = {
-          success: true,
-          bottlenecks: [
-            {
-              area: payload?.area || "unknown",
-              severity: payload?.severity || "medium",
-              reason: payload?.reason || "Fila de processamento elevada",
-              actions: [
-                "Aumentar recurso alocado",
-                "Redirecionar demandas menos críticas",
-                "Revisar critérios de aceitação"
-              ]
-            }
-          ],
-          timestamp: new Date().toISOString(),
-          payload: payload
-        };
+        handler = bottleneckAIAgent.execute;
       } else {
         return res.status(404).json({ error: `Unknown agent: ${agent_key}` });
       }
+
+      // Execute via instrumented agent wrapper
+      result = await runInstrumentedAgent({
+        agentKey: agent_key,
+        input: payload || {},
+        userId: userId || "api-client",
+        demandId: demandId,
+        areaId: areaId,
+        handler: handler,
+        metricsCallback: {
+          onSuccess: (context, output, duration) => {
+            console.log(`[AGENT_API] ${agent_key} succeeded in ${duration}ms`);
+          },
+          onError: (context, error, duration) => {
+            console.error(`[AGENT_API] ${agent_key} failed after ${duration}ms:`, error.message);
+          }
+        }
+      });
 
       res.json(result);
     } catch (error) {
