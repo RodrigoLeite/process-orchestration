@@ -26,10 +26,24 @@ import { requireAdmin, logAdminAccess } from "./lib/adminAuthMiddleware";
 
 // Calculate delay risk based on SLA
 function calculateDelayRisk(demand: any): string {
-  if (!demand.slaDeadline) return "0%";
-  
   const now = new Date();
-  const deadline = new Date(demand.slaDeadline);
+  
+  // Calculate SLA deadline if not exists
+  let deadline = demand.slaDeadline ? new Date(demand.slaDeadline) : null;
+  
+  if (!deadline) {
+    // Calculate deadline based on priority
+    const createdAt = new Date(demand.createdAt);
+    const priority = demand.parsed?.prioridade || "média";
+    const slaDays = 
+      priority === "crítica" ? 0.167 : // 4 hours
+      priority === "alta" ? 0.333 : // 8 hours
+      priority === "média" ? 1 : // 24 hours
+      3; // 72 hours for low
+    
+    deadline = new Date(createdAt.getTime() + (slaDays * 24 * 60 * 60 * 1000));
+  }
+  
   const remainingMs = deadline.getTime() - now.getTime();
   const remainingHours = remainingMs / (1000 * 60 * 60);
   
