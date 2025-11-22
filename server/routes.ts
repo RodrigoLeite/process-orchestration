@@ -3198,11 +3198,11 @@ Texto original: ${demand.rawText}`;
           demandId,
           demandData: demandData ? {
             id: demandData.id,
-            title: demandData.title,
-            description: demandData.description,
-            priority: demandData.priority,
+            title: demandData.rawText?.substring(0, 100) || demandData.summary || "—",
+            description: demandData.parsed?.descricao_estruturada || demandData.rawText || "—",
+            priority: demandData.parsed?.prioridade || "desconhecida",
             status: demandData.status,
-            area: demandData.assignedTo
+            area: demandData.assignedTo || demandData.parsed?.area || "—"
           } : null,
           execution: {
             timestamp: event.createdAt,
