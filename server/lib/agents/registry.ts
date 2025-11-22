@@ -15,40 +15,24 @@ export interface InternalAgent {
 export const INTERNAL_AGENTS: InternalAgent[] = [
   {
     id: "workflow_builder",
-    name: "AgenteCriadorDeWorkflow",
-    description: "Converte demandas em processos, criando fases e tarefas automaticamente.",
+    name: "Gerador de Workflow",
+    description: "Cria automaticamente o workflow personalizado para cada demanda.",
     type: "internal",
     active: true,
     createdAt: new Date("2024-01-01")
   },
   {
     id: "insights_ai",
-    name: "AgenteInsights",
-    description: "Analisa dados do workflow e gera recomendações sobre gargalos, atrasos e melhorias de processos.",
-    type: "internal",
-    active: true,
-    createdAt: new Date("2024-01-01")
-  },
-  {
-    id: "timeline_ai",
-    name: "AgenteTimeline",
-    description: "Analisa a evolução temporal de uma demanda ou projeto, rastreando progresso e desvios.",
-    type: "internal",
-    active: true,
-    createdAt: new Date("2024-01-01")
-  },
-  {
-    id: "dashboard_ai",
-    name: "AgenteDashboard",
-    description: "Gera KPIs automáticos de produtividade e métricas de performance do sistema.",
+    name: "Insights Inteligentes",
+    description: "Analisa fluxos, SLAs, tempos e volumes para gerar insights de melhoria.",
     type: "internal",
     active: true,
     createdAt: new Date("2024-01-01")
   },
   {
     id: "bottleneck_ai",
-    name: "AgenteGargalos",
-    description: "Monitora, detecta e analisa gargalos operacionais, sugerindo otimizações de fluxo.",
+    name: "Monitor de Gargalos",
+    description: "Detecta etapas lentas, bloqueadas ou sobrecarregadas nos workflows.",
     type: "internal",
     active: true,
     createdAt: new Date("2024-01-01")
