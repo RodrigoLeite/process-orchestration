@@ -1799,6 +1799,24 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id/logs", async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // Check if it's an internal agent
+      const internalAgent = getInternalAgent(id);
+      if (internalAgent) {
+        // Find the corresponding database agent by name
+        const allDbAgents = await storage.getAgents();
+        const dbAgent = allDbAgents.find(a => a.name === internalAgent.name);
+        
+        if (dbAgent) {
+          const logs = await storage.getAgentLogs(dbAgent.id);
+          return res.json(logs.slice(0, 20));
+        } else {
+          // No corresponding DB agent found, return empty logs
+          return res.json([]);
+        }
+      }
+      
+      // For regular agents, query the database directly
       const logs = await storage.getAgentLogs(id);
       res.json(logs.slice(0, 20));
     } catch (error) {
