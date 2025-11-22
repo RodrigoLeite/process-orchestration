@@ -24,6 +24,24 @@ import {
 } from "./lib/agentSupervisor";
 import { requireAdmin, logAdminAccess } from "./lib/adminAuthMiddleware";
 
+// Calculate delay risk based on SLA
+function calculateDelayRisk(demand: any): string {
+  if (!demand.slaDeadline) return "0%";
+  
+  const now = new Date();
+  const deadline = new Date(demand.slaDeadline);
+  const remainingMs = deadline.getTime() - now.getTime();
+  const remainingHours = remainingMs / (1000 * 60 * 60);
+  
+  if (remainingHours <= 0) return "100%";
+  if (remainingHours <= 1) return "90%";
+  if (remainingHours <= 2) return "85%";
+  if (remainingHours <= 4) return "70%";
+  if (remainingHours <= 8) return "50%";
+  if (remainingHours <= 24) return "25%";
+  return "10%";
+}
+
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
   eventType: "DEMAND_MOVED" | "STATUS_UPDATED" | "AREA_OVERLOADED" | "DEMAND_COMPLETED" | "BOTTLENECK_CRITICAL",
@@ -225,7 +243,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/demands", async (req, res) => {
     try {
       const demands = await storage.getDemands();
-      res.json(demands);
+      // Calculate delay risk for each demand
+      const demandsWithRisk = demands.map((d: any) => ({
+        ...d,
+        delayRisk: d.delayRisk || calculateDelayRisk(d),
+        delay_risk: d.delayRisk || calculateDelayRisk(d)
+      }));
+      res.json(demandsWithRisk);
     } catch (error) {
       console.error("Error fetching demands:", error);
       res.status(500).json({ error: "Failed to fetch demands" });
@@ -238,7 +262,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!demand) {
         return res.status(404).json({ error: "Demand not found" });
       }
-      res.json(demand);
+      // Calculate delay risk
+      const demandWithRisk = {
+        ...demand,
+        delayRisk: demand.delayRisk || calculateDelayRisk(demand),
+        delay_risk: demand.delayRisk || calculateDelayRisk(demand)
+      };
+      res.json(demandWithRisk);
     } catch (error) {
       console.error("Error fetching demand:", error);
       res.status(500).json({ error: "Failed to fetch demand" });
