@@ -2987,15 +2987,17 @@ Texto original: ${demand.rawText}`;
       if (orchestrationResult.bottlenecks && orchestrationResult.bottlenecks.length > 0) {
         try {
           const bottleneckData = {
-            demandId,
-            workflow: orchestrationResult.workflow?.titulo || "Unknown",
-            bottlenecks: JSON.stringify(orchestrationResult.bottlenecks),
-            severity: orchestrationResult.bottlenecks[0]?.severity || "média",
-            detectedAt: new Date(),
-            status: "open"
+            agentKey: "bottleneck-detector-orchestration",
+            data: {
+              demandId,
+              workflow: orchestrationResult.workflow?.titulo || "Unknown",
+              bottlenecks: orchestrationResult.bottlenecks,
+              severity: orchestrationResult.bottlenecks[0]?.severity || "média",
+              detectedAt: new Date().toISOString()
+            }
           };
           
-          await storage.createBottleneckReport(bottleneckData as any);
+          await storage.createBottleneckReport(bottleneckData);
           console.log(`[ORCHESTRATE] Saved ${orchestrationResult.bottlenecks.length} bottlenecks`);
         } catch (error) {
           console.error("[ORCHESTRATE] Error saving bottlenecks:", error);
