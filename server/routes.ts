@@ -3038,6 +3038,156 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ AI Logs Endpoints ============
+  // Get orchestration execution logs
+  app.get("/api/ai/logs", async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+      
+      // Get system events related to orchestration
+      const systemEvents = await storage.getSystemEventsByAgent("orchestrateFromDatabase", limit);
+      
+      // Format response with execution details
+      const logs = await Promise.all(systemEvents.map(async (event: any) => {
+        const demandId = event.metadata?.demand_id;
+        
+        // Get associated workflow
+        let workflow = null;
+        if (demandId) {
+          try {
+            const workflows = await storage.getDemandsByWorkflow(demandId);
+            if (workflows.length > 0) {
+              workflow = { id: workflows[0].workflowId, title: workflows[0].title };
+            }
+          } catch (e) {
+            // Workflow not found
+          }
+        }
+
+        return {
+          id: event.id,
+          executionId: event.id,
+          demandId: demandId || "unknown",
+          timestamp: event.createdAt,
+          duration_ms: event.durationMs || 0,
+          status: event.status,
+          agentExecuted: "orchestrateFromDatabase",
+          metadata: event.metadata || {},
+          workflow: workflow
+        };
+      }));
+
+      res.json({
+        success: true,
+        data: logs,
+        total: logs.length
+      });
+    } catch (error) {
+      console.error("Error fetching AI logs:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to fetch logs" 
+      });
+    }
+  });
+
+  // Get orchestration execution details
+  app.get("/api/ai/logs/:executionId", async (req, res) => {
+    try {
+      const { executionId } = req.params;
+
+      // Get the system event
+      const systemEvents = await storage.getSystemEvents(500);
+      const event = systemEvents.find((e: any) => e.id === executionId);
+
+      if (!event) {
+        return res.status(404).json({
+          success: false,
+          error: "Execution not found"
+        });
+      }
+
+      const demandId = event.metadata?.demand_id;
+
+      // Get demand details
+      let demandData = null;
+      if (demandId) {
+        demandData = await storage.getDemand(demandId);
+      }
+
+      // Get workflow(s) for this demand
+      const workflows: any[] = [];
+      const bottlenecks: any[] = [];
+      const insights: any[] = [];
+
+      if (demandId) {
+        try {
+          const allWorkflows = await storage.getDemandsByWorkflow(demandId);
+          workflows.push(...allWorkflows.map(w => ({
+            id: w.workflowId,
+            title: w.title,
+            description: w.description
+          })));
+
+          const allBottlenecks = await storage.getBottleneckReports(100);
+          bottlenecks.push(...allBottlenecks
+            .filter((b: any) => b.demandId === demandId)
+            .map((b: any) => ({
+              id: b.id,
+              workflow: b.workflow,
+              severity: b.severity,
+              bottlenecks: b.bottlenecks ? JSON.parse(b.bottlenecks) : [],
+              detectedAt: b.createdAt
+            })));
+
+          const allInsights = await storage.getInsightsReports(100);
+          insights.push(...allInsights
+            .filter((i: any) => i.demandId === demandId)
+            .map((i: any) => ({
+              id: i.id,
+              workflow: i.workflow,
+              insights: i.insights ? JSON.parse(i.insights) : {},
+              generatedAt: i.createdAt
+            })));
+        } catch (e) {
+          console.error("Error fetching related data:", e);
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          executionId: event.id,
+          demandId,
+          demandData: demandData ? {
+            id: demandData.id,
+            title: demandData.title,
+            description: demandData.description,
+            priority: demandData.priority,
+            status: demandData.status,
+            area: demandData.assignedTo
+          } : null,
+          execution: {
+            timestamp: event.createdAt,
+            duration_ms: event.durationMs || 0,
+            status: event.status,
+            agentKey: event.agentKey,
+            metadata: event.metadata || {}
+          },
+          workflows,
+          bottlenecks,
+          insights
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching execution details:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch execution details"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
