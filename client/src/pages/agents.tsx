@@ -146,10 +146,10 @@ export default function AgentsPage() {
                 {/* Status Badge */}
                 <div className="flex gap-2">
                   <Badge 
-                    color={agent.active === 't' || agent.active === true ? "green" : "red"}
+                    color={agent.active === 't' || agent.active === true || agent.active === "true" ? "green" : "red"}
                     data-testid={`agent-status-${agent.id}`}
                   >
-                    {agent.active === 't' || agent.active === true ? "✓ Ativo" : "✕ Inativo"}
+                    {agent.active === 't' || agent.active === true || agent.active === "true" ? "✓ Ativo" : "✕ Inativo"}
                   </Badge>
                 </div>
 
@@ -183,7 +183,7 @@ export default function AgentsPage() {
             <div>
               <p className="text-muted-foreground">Inativos</p>
               <p className="text-2xl font-bold text-red-600">
-                {allAgents.filter(a => a.active !== 't' && a.active !== true).length}
+                {allAgents.filter(a => a.active !== 't' && a.active !== true && a.active !== "true").length}
               </p>
             </div>
           </div>
