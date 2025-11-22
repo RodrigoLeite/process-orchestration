@@ -22,6 +22,7 @@ import {
   getSupervisorStatus,
   type SupervisorEvent
 } from "./lib/agentSupervisor";
+import { requireAdmin, logAdminAccess } from "./lib/adminAuthMiddleware";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -1918,6 +1919,28 @@ Texto original: ${demand.rawText}`;
     } catch (error) {
       console.error("Error fetching critical alerts:", error);
       res.status(500).json({ success: false, error: "Failed to fetch alerts" });
+    }
+  });
+
+  // System events endpoint (admin only)
+  app.get("/api/system-events", requireAdmin, logAdminAccess, async (req, res) => {
+    try {
+      const agent = req.query.agent as string | undefined;
+      
+      let events;
+      if (agent) {
+        events = await storage.getSystemEventsByAgent(agent, 100);
+      } else {
+        events = await storage.getSystemEvents(100);
+      }
+
+      res.json({
+        success: true,
+        data: events
+      });
+    } catch (error) {
+      console.error("Error fetching system events:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch system events" });
     }
   });
 
