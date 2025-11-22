@@ -193,7 +193,7 @@ export async function parseDemand(text: string): Promise<any> {
       sugestao_proximo_passo: "Configurar chave da API OpenAI."
     };
     
-    await saveAgentLog("parse-demand", inputPayload, fallbackOutput, "success");
+    await // saveAgentLog("parse-demand", inputPayload, fallbackOutput, "success");
     return fallbackOutput;
   }
 
@@ -222,7 +222,7 @@ export async function parseDemand(text: string): Promise<any> {
     }
 
     // Log successful execution
-    await saveAgentLog("parse-demand", inputPayload, output, "success");
+    await // saveAgentLog("parse-demand", inputPayload, output, "success");
     return output;
   } catch (error) {
     const errorOutput = {
@@ -232,7 +232,7 @@ export async function parseDemand(text: string): Promise<any> {
     };
     
     // Log failed execution
-    await saveAgentLog("parse-demand", inputPayload, errorOutput, "error");
+    await // saveAgentLog("parse-demand", inputPayload, errorOutput, "error");
     
     console.error("Error parsing demand:", error);
     throw error;
