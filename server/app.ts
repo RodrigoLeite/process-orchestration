@@ -3,7 +3,7 @@ import express, { type Express, type Request, Response, NextFunction } from "exp
 import { registerRoutes } from "./routes";
 import { registerWorkflowRoutes } from "./lib/workflow-api";
 import { seedAgents } from "./lib/seeds";
-import { startScheduler } from "./lib/scheduler";
+import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -67,6 +67,18 @@ export default async function runApp(
   await registerWorkflowRoutes(app);
   await seedAgents();
   startScheduler();
+  
+  // Execute agents once on startup to generate initial history
+  setTimeout(async () => {
+    try {
+      console.log("[STARTUP] Executing initial agent runs...");
+      await executeBottleneckAgent();
+      await executeInsightsAgent();
+      console.log("[STARTUP] ✓ Initial agent runs completed");
+    } catch (error) {
+      console.error("[STARTUP] Error executing initial agents:", error);
+    }
+  }, 1000);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
