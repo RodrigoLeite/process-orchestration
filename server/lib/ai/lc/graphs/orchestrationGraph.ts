@@ -404,6 +404,7 @@ export async function executeOrchestrationGraph(
       agentKey: "orchestrateFromDatabase",
       demandId: demandIdFinal,
       metadata: {
+        demand_id: demandIdFinal,
         demand_title: demand.titulo,
         demand_area: demand.area,
         demand_urgencia: demand.urgencia
@@ -423,6 +424,7 @@ export async function executeOrchestrationGraph(
       agentKey: "orchestrateFromDatabase",
       demandId: demandIdFinal,
       metadata: {
+        demand_id: demandIdFinal,
         status: result.status,
         duration_ms: duration,
         workflow_created: !!result.workflow,
@@ -444,6 +446,9 @@ export async function executeOrchestrationGraph(
         agentKey: "orchestrateFromDatabase",
         demandId: demand_id,
         metadata: {
+          demand_id: demand_id,
+          demand_title: demand.titulo,
+          demand_area: demand.area,
           error: error instanceof Error ? error.message : String(error),
           duration_ms: Date.now() - startTime
         },
