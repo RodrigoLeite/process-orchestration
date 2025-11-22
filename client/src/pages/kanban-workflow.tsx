@@ -317,12 +317,37 @@ export default function KanbanWorkflow() {
                                   const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                                   
                                   if (diffDays > 0) {
-                                    return `⏱️ ${diffDays}d ${diffHours}h`;
+                                    return `⏱️ Nesta etapa: ${diffDays}d ${diffHours}h`;
                                   } else {
-                                    return `⏱️ ${diffHours}h`;
+                                    return `⏱️ Nesta etapa: ${diffHours}h`;
                                   }
                                 })()}
                               </p>
+                            </div>
+                          )}
+
+                          {demand.stageHistory && demand.stageHistory.length > 0 && (
+                            <div className="bg-blue-50 rounded-lg px-3 py-2 border border-blue-200">
+                              <p className="text-xs font-semibold text-blue-900 mb-2">📊 Histórico de Etapas:</p>
+                              <div className="space-y-1">
+                                {demand.stageHistory.map((historyEntry, idx) => {
+                                  const entered = new Date(historyEntry.enteredAt);
+                                  const exited = historyEntry.exitedAt ? new Date(historyEntry.exitedAt) : new Date();
+                                  const timeMs = exited.getTime() - entered.getTime();
+                                  const timeDays = Math.floor(timeMs / (1000 * 60 * 60 * 24));
+                                  const timeHours = Math.floor((timeMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                  
+                                  return (
+                                    <div key={idx} className="text-xs text-blue-800">
+                                      <span className="font-medium">{idx + 1}. {historyEntry.stageName}:</span>
+                                      <span className="ml-1">
+                                        {timeDays > 0 ? `${timeDays}d ${timeHours}h` : `${timeHours}h`}
+                                      </span>
+                                      {!historyEntry.exitedAt && <span className="ml-1">⏳ (atual)</span>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>

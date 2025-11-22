@@ -337,10 +337,50 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(demands.createdAt));
   }
 
-  async updateDemandStage(id: string, stageId: string): Promise<Demand | undefined> {
+  async updateDemandStage(id: string, stageId: string, stageName?: string): Promise<Demand | undefined> {
+    // Get current demand to preserve history
+    const currentDemand = await this.getDemandById(id);
+    if (!currentDemand) {
+      return undefined;
+    }
+
+    // Get the stage name if not provided
+    if (!stageName && stageId) {
+      const stage = await this.getWorkflowStageById(stageId);
+      stageName = stage?.name || "Unknown";
+    }
+
+    const now = new Date();
+    const isoNow = now.toISOString();
+
+    // Build updated history
+    let updatedHistory = currentDemand.stageHistory || [];
+    
+    // If there's a current stage, mark it as exited
+    if (currentDemand.stageId && currentDemand.stageMovedAt) {
+      updatedHistory = updatedHistory.map(entry => {
+        if (entry.stageId === currentDemand.stageId && !entry.exitedAt) {
+          return { ...entry, exitedAt: isoNow };
+        }
+        return entry;
+      });
+    }
+
+    // Add new stage entry
+    updatedHistory.push({
+      stageId,
+      stageName: stageName || "Unknown",
+      enteredAt: isoNow
+    });
+
     const result = await this.db
       .update(demands)
-      .set({ stageId, stageMovedAt: new Date(), updatedAt: new Date() })
+      .set({ 
+        stageId, 
+        stageMovedAt: now, 
+        stageHistory: updatedHistory,
+        updatedAt: now 
+      })
       .where(eq(demands.id, id))
       .returning();
     return result[0];

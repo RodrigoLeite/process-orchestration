@@ -32,6 +32,12 @@ export const demands = pgTable("demands", {
   workflowId: uuid("workflow_id"),
   stageId: uuid("stage_id"),
   stageMovedAt: timestamp("stage_moved_at").defaultNow(),
+  stageHistory: jsonb("stage_history").$type<Array<{
+    stageId: string;
+    stageName: string;
+    enteredAt: string;
+    exitedAt?: string;
+  }>>(),
   status: text("status").notNull().default("new"),
   currentStatusDescription: text("current_status_description"),
   eta: timestamp("eta"),
