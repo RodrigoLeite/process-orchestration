@@ -1,110 +1,89 @@
-/**
- * Scheduler for automated agent execution
- * Runs bottleneck_ai every 5 minutes and insights_ai every night
- */
+import { type Server } from "node:http";
+import express, { type Express, type Request, Response, NextFunction } from "express";
+import { registerRoutes } from "./routes";
+import { registerWorkflowRoutes } from "./lib/workflow-api";
+import { seedAgents } from "./lib/seeds";
+import { startScheduler } from "./lib/scheduler";
 
-import { storage } from "../storage";
-import type { Demand } from "@shared/schema";
+export function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
 
-/**
- * Execute bottleneck agent and save report
- */
-export async function executeBottleneckAgent(): Promise<void> {
-  try {
-    console.log("[SCHEDULER] Running bottleneck agent...");
-    
-    // Get all demands to analyze
-    const demands = await storage.getDemands();
-    
-    // Mock result - in production, would call actual bottleneck analysis
-    const bottleneckResult = {
-      success: true,
-      bottlenecks: demands.length > 0 ? [
-        {
-          area: "unknown",
-          severity: "medium",
-          reason: "Analysis completed",
-          actions: ["Monitor queue"]
-        }
-      ] : [],
-      timestamp: new Date().toISOString(),
-      demandsAnalyzed: demands.length
-    };
-
-    // Save report to database
-    await storage.createBottleneckReport({
-      agentKey: "bottleneck_ai",
-      data: bottleneckResult
-    });
-
-    console.log("[SCHEDULER] ✓ Bottleneck agent executed and report saved");
-  } catch (error) {
-    console.error("[SCHEDULER] Error executing bottleneck agent:", error);
-  }
+  console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-/**
- * Execute insights agent and save report
- */
-export async function executeInsightsAgent(): Promise<void> {
-  try {
-    console.log("[SCHEDULER] Running insights agent...");
-    
-    // Get all demands to analyze
-    const demands = await storage.getDemands();
-    
-    // Mock result - in production, would call actual insights generation
-    const insightsResult = {
-      success: true,
-      insights: [
-        {
-          type: "efficiency",
-          title: "Tempo Médio por Demanda",
-          value: "4.2 horas",
-          recommendation: "Manter monitoramento"
-        }
-      ],
-      timestamp: new Date().toISOString(),
-      demandsAnalyzed: demands.length,
-      generatedAt: new Date().toISOString()
-    };
+export const app = express();
 
-    // Save report to database
-    await storage.createInsightsReport({
-      agentKey: "insights_ai",
-      data: insightsResult
-    });
-
-    console.log("[SCHEDULER] ✓ Insights agent executed and report saved");
-  } catch (error) {
-    console.error("[SCHEDULER] Error executing insights agent:", error);
+declare module 'http' {
+  interface IncomingMessage {
+    rawBody: unknown
   }
 }
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(express.urlencoded({ extended: false }));
 
-/**
- * Start the scheduler
- */
-export function startScheduler(): void {
-  // Run bottleneck agent every 5 minutes (300000 ms)
-  setInterval(() => {
-    executeBottleneckAgent().catch(err => console.error("Bottleneck agent error:", err));
-  }, 5 * 60 * 1000);
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  // Run insights agent every night at 2 AM (86400000 ms = 24h)
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(2, 0, 0, 0);
-  
-  const msUntilMidnight = tomorrow.getTime() - now.getTime();
-  
-  setTimeout(() => {
-    executeInsightsAgent().catch(err => console.error("Insights agent error:", err));
-    // Then run every 24 hours
-    setInterval(() => {
-      executeInsightsAgent().catch(err => console.error("Insights agent error:", err));
-    }, 24 * 60 * 60 * 1000);
-  }, msUntilMidnight);
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
 
-  console.log("[SCHEDULER] ✓ Schedulers initialized");
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
+  });
+
+  next();
+});
+
+export default async function runApp(
+  setup: (app: Express, server: Server) => Promise<void>,
+) {
+  const server = await registerRoutes(app);
+  await registerWorkflowRoutes(app);
+  await seedAgents();
+  startScheduler();
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+    throw err;
+  });
+
+  await setup(app, server);
+
+  const port = parseInt(process.env.PORT || '5000', 10);
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  }, () => {
+    log(`serving on port ${port}`);
+  });
 }
