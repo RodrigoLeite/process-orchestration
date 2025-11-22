@@ -8,6 +8,7 @@ import { buildAgentPrompt } from "./lib/agents/system_prompts";
 import { getInternalAgents, getInternalAgent } from "./lib/agents/registry";
 import { getCustomAgents, getCustomAgent } from "./lib/agents/customAgentsRegistry";
 import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/workflowAgentService";
+import { executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -2023,6 +2024,24 @@ Texto original: ${demand.rawText}`;
       }
 
       res.status(500).json(errorOutput);
+    }
+  });
+
+  // Execute agents manually (for testing/initialization)
+  app.post("/api/execute-agents", async (req, res) => {
+    try {
+      await executeBottleneckAgent();
+      await executeInsightsAgent();
+      res.json({ 
+        success: true,
+        message: "Agents executed successfully"
+      });
+    } catch (error) {
+      console.error("Error executing agents:", error);
+      res.status(500).json({ 
+        success: false,
+        error: String(error)
+      });
     }
   });
 

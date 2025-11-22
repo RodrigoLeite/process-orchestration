@@ -2,8 +2,14 @@
  * Scheduler for automated agent execution
  */
 import { storage } from "../storage";
+import { saveAgentLog } from "./agents/logging";
 
 export async function executeBottleneckAgent(): Promise<void> {
+  const input = {
+    type: "scheduled",
+    timestamp: new Date().toISOString()
+  };
+
   try {
     console.log("[SCHEDULER] Running bottleneck agent...");
     const demands = await storage.getDemands();
@@ -17,13 +23,27 @@ export async function executeBottleneckAgent(): Promise<void> {
       agentKey: "bottleneck_ai",
       data: result
     });
+    
+    // Log agent execution
+    await saveAgentLog("Monitor de Gargalos", input, result, "success");
+    
     console.log("[SCHEDULER] ✓ Bottleneck report saved");
   } catch (error) {
     console.error("[SCHEDULER] Bottleneck error:", error);
+    const errorOutput = {
+      success: false,
+      error: String(error)
+    };
+    await saveAgentLog("Monitor de Gargalos", input, errorOutput, "error");
   }
 }
 
 export async function executeInsightsAgent(): Promise<void> {
+  const input = {
+    type: "scheduled",
+    timestamp: new Date().toISOString()
+  };
+
   try {
     console.log("[SCHEDULER] Running insights agent...");
     const demands = await storage.getDemands();
@@ -37,9 +57,18 @@ export async function executeInsightsAgent(): Promise<void> {
       agentKey: "insights_ai",
       data: result
     });
+    
+    // Log agent execution
+    await saveAgentLog("Insights Inteligentes", input, result, "success");
+    
     console.log("[SCHEDULER] ✓ Insights report saved");
   } catch (error) {
     console.error("[SCHEDULER] Insights error:", error);
+    const errorOutput = {
+      success: false,
+      error: String(error)
+    };
+    await saveAgentLog("Insights Inteligentes", input, errorOutput, "error");
   }
 }
 
