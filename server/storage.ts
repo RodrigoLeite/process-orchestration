@@ -366,12 +366,26 @@ export class DatabaseStorage implements IStorage {
       });
     }
 
-    // Add new stage entry
-    updatedHistory.push({
-      stageId,
-      stageName: stageName || "Unknown",
-      enteredAt: isoNow
-    });
+    // Check if the new stage already exists in history (user is going back to a previous stage)
+    const existingStageEntry = updatedHistory.find(entry => entry.stageId === stageId);
+    
+    if (existingStageEntry && existingStageEntry.exitedAt) {
+      // User is going back to a previous stage - remove exitedAt to resume time tracking
+      updatedHistory = updatedHistory.map(entry => {
+        if (entry.stageId === stageId) {
+          const { exitedAt, ...rest } = entry;
+          return rest;
+        }
+        return entry;
+      });
+    } else if (!existingStageEntry) {
+      // New stage - add it to history
+      updatedHistory.push({
+        stageId,
+        stageName: stageName || "Unknown",
+        enteredAt: isoNow
+      });
+    }
 
     const result = await this.db
       .update(demands)
