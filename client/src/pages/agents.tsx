@@ -4,7 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Bot, Loader2, Plus } from "lucide-react";
 import Badge from "@/components/Badge";
-import type { Agent } from "@shared/schema";
+
+interface Agent {
+  id: string;
+  name: string;
+  description?: string;
+  type: "internal" | "custom" | "system" | "user";
+  active: boolean | string;
+  createdAt: string | Date;
+}
 
 export default function AgentsPage() {
   const { data: agents = [], isLoading } = useQuery<Agent[]>({
@@ -13,7 +21,8 @@ export default function AgentsPage() {
       const res = await fetch("/api/agents");
       if (!res.ok) throw new Error("Failed to fetch agents");
       return res.json();
-    }
+    },
+    refetchInterval: 5000
   });
 
   if (isLoading) {
@@ -88,16 +97,16 @@ export default function AgentsPage() {
                   {/* Type and Status badges */}
                   <div className="flex gap-2 flex-wrap">
                     <Badge 
-                      color={agent.type === "system" ? "blue" : "purple"}
+                      color={agent.type === "internal" ? "blue" : agent.type === "custom" ? "green" : agent.type === "system" ? "blue" : "purple"}
                       data-testid={`agent-type-${agent.id}`}
                     >
-                      {agent.type === "system" ? "Sistema" : "Usuário"}
+                      {agent.type === "internal" ? "🔧 Interno" : agent.type === "custom" ? "⚙️ Custom" : agent.type === "system" ? "🔧 Sistema" : "👤 Usuário"}
                     </Badge>
                     <Badge 
                       color={agent.active === 't' || agent.active === true ? "green" : "red"}
                       data-testid={`agent-status-${agent.id}`}
                     >
-                      {agent.active === 't' || agent.active === true ? "Ativo" : "Inativo"}
+                      {agent.active === 't' || agent.active === true ? "✓ Ativo" : "✕ Inativo"}
                     </Badge>
                   </div>
 
@@ -143,15 +152,15 @@ export default function AgentsPage() {
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground">Agentes do Sistema</p>
-              <p className="text-2xl font-bold">
-                {agents.filter(a => a.type === "system").length}
+              <p className="text-muted-foreground">Agentes Internos</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {agents.filter(a => a.type === "internal" || a.type === "system").length}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground">Agentes do Usuário</p>
-              <p className="text-2xl font-bold">
-                {agents.filter(a => a.type === "user").length}
+              <p className="text-muted-foreground">Agentes Custom</p>
+              <p className="text-2xl font-bold text-green-600">
+                {agents.filter(a => a.type === "custom" || a.type === "user").length}
               </p>
             </div>
           </div>
