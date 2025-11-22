@@ -234,3 +234,37 @@ export const insertWorkflowStageSchema = createInsertSchema(workflowStages).omit
 
 export type InsertWorkflowStage = z.infer<typeof insertWorkflowStageSchema>;
 export type WorkflowStage = typeof workflowStages.$inferSelect;
+
+export const agents = pgTable("agents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("system"),
+  active: text("active").default("true"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAgentSchema = createInsertSchema(agents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAgent = z.infer<typeof insertAgentSchema>;
+export type Agent = typeof agents.$inferSelect;
+
+export const agentLogs = pgTable("agent_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id").notNull(),
+  inputJson: jsonb("input_json").$type<Record<string, any>>(),
+  outputJson: jsonb("output_json").$type<Record<string, any>>(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAgentLogSchema = createInsertSchema(agentLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAgentLog = z.infer<typeof insertAgentLogSchema>;
+export type AgentLog = typeof agentLogs.$inferSelect;
