@@ -239,6 +239,7 @@ export const agents = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description"),
+  internalKey: text("internal_key"),
   type: text("type").notNull().default("system"),
   active: text("active").default("true"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
