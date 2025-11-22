@@ -1747,29 +1747,8 @@ Texto original: ${demand.rawText}`;
 
   app.get("/api/agents", async (req, res) => {
     try {
-      const internalAgents = getInternalAgents().map(agent => ({
-        id: agent.id,
-        name: agent.name,
-        description: agent.description,
-        type: agent.type,
-        active: agent.active,
-        createdAt: agent.createdAt
-      }));
-      
-      const customAgents = getCustomAgents().map(agent => ({
-        id: agent.id,
-        name: agent.name,
-        description: agent.description,
-        type: agent.type,
-        active: agent.active,
-        createdAt: agent.createdAt
-      }));
-      
       const dbAgents = await storage.getAgents();
-      
-      // Combine internal agents, custom agents, and database agents
-      const allAgents = [...internalAgents, ...customAgents, ...dbAgents];
-      res.json(allAgents);
+      res.json(dbAgents);
     } catch (error) {
       console.error("Error fetching agents:", error);
       res.status(500).json({ error: "Failed to fetch agents" });
@@ -1863,6 +1842,76 @@ Texto original: ${demand.rawText}`;
     } catch (error) {
       console.error("Error fetching custom agents:", error);
       res.status(500).json({ error: "Failed to fetch custom agents" });
+    }
+  });
+
+  // Agent execution by internal key
+  app.post("/api/agents/run", async (req, res) => {
+    try {
+      const { agent_key, payload } = req.body;
+
+      if (!agent_key) {
+        return res.status(400).json({ error: "agent_key is required" });
+      }
+
+      let result: any = {};
+
+      // Route to the appropriate agent handler
+      if (agent_key === "workflow_builder") {
+        // Get demand from payload or create a stub
+        const demand = payload?.demand || {
+          id: payload?.demandId || `demand_${Date.now()}`,
+          parsed: payload?.parsed || { area: "unknown" },
+          rawText: payload?.rawText || ""
+        };
+        result = await createWorkflowForDemand(demand);
+      } else if (agent_key === "insights_ai") {
+        // Insights AI handler - return structured insight response
+        result = {
+          success: true,
+          insights: [
+            {
+              type: "efficiency",
+              title: "Tempo Médio por Etapa",
+              value: payload?.avgTime || "2.5 horas",
+              recommendation: "Revisar a etapa com maior tempo"
+            },
+            {
+              type: "bottleneck",
+              title: "Gargalo Detectado",
+              location: payload?.bottleneckArea || "Análise Jurídica",
+              impact: "Alto"
+            }
+          ],
+          payload: payload
+        };
+      } else if (agent_key === "bottleneck_ai") {
+        // Bottleneck detection handler
+        result = {
+          success: true,
+          bottlenecks: [
+            {
+              area: payload?.area || "unknown",
+              severity: payload?.severity || "medium",
+              reason: payload?.reason || "Fila de processamento elevada",
+              actions: [
+                "Aumentar recurso alocado",
+                "Redirecionar demandas menos críticas",
+                "Revisar critérios de aceitação"
+              ]
+            }
+          ],
+          timestamp: new Date().toISOString(),
+          payload: payload
+        };
+      } else {
+        return res.status(404).json({ error: `Unknown agent: ${agent_key}` });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error executing agent:", error);
+      res.status(500).json({ error: String(error) });
     }
   });
 

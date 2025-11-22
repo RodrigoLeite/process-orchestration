@@ -3,6 +3,7 @@ import { type Server } from "node:http";
 import express, { type Express, type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { registerWorkflowRoutes } from "./lib/workflow-api";
+import { seedAgents } from "./lib/seeds";
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -64,6 +65,7 @@ export default async function runApp(
 ) {
   const server = await registerRoutes(app);
   await registerWorkflowRoutes(app);
+  await seedAgents();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
