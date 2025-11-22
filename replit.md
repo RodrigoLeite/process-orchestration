@@ -1,6 +1,6 @@
 # Overview
 
-This is an AI-driven process orchestration system that intelligently classifies, routes, and manages internal business demands across departments. The application uses GPT-4 to automatically analyze incoming requests, create custom workflows, detect bottlenecks, and generate actionable insights. It features a React/Vite frontend with a Kanban board interface, an Express backend with automated AI agent orchestration, and PostgreSQL database (via Drizzle ORM) for persistent storage.
+This project is an AI-driven process orchestration system designed to classify, route, and manage internal business demands across departments. It leverages GPT-4 for automated request analysis, custom workflow creation, bottleneck detection, and actionable insight generation. The system aims to streamline business processes, improve efficiency, and provide predictive insights for better decision-making.
 
 # User Preferences
 
@@ -10,290 +10,69 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 
-**Technology Stack**: React 18 + Vite + TypeScript
-- **UI Framework**: Radix UI components with Tailwind CSS v4 (using `@theme inline` for design tokens)
-- **State Management**: TanStack Query (React Query) for server state caching and synchronization
-- **Routing**: Wouter (lightweight client-side routing)
-- **Forms**: React Hook Form with Zod validation via `@hookform/resolvers`
-
-**Key Design Decisions**:
-- Single-page application (SPA) architecture with server-side rendering in development via Vite middleware
-- Component-based architecture using shadcn/ui patterns (New York style)
-- Real-time updates via polling (5-30 second intervals) for demands, agents, and bottlenecks
-- Mobile-responsive design with collapsible navigation sidebar
+The frontend is a React 18 + Vite + TypeScript single-page application, utilizing Radix UI components with Tailwind CSS for styling and shadcn/ui patterns for a consistent design. State management is handled by TanStack Query, and Wouter is used for lightweight client-side routing. Forms are managed with React Hook Form and Zod validation. The design is mobile-responsive with a collapsible navigation sidebar and features real-time updates through polling.
 
 ## Backend Architecture
 
-**Technology Stack**: Node.js + Express + TypeScript (ESM modules)
-- **Build System**: esbuild for production bundling, tsx for development hot-reload
-- **API Design**: RESTful endpoints with JSON responses
-- **Middleware**: Custom logging middleware with request/response tracking
+The backend is built with Node.js + Express + TypeScript, using esbuild for production and tsx for development. It exposes RESTful JSON APIs and employs custom logging middleware.
 
-**Core Services**:
+**Core Components:**
 
-1. **AI Agent Supervisor** (`agentSupervisor.ts`)
-   - Orchestrates AI agents based on system events (DEMANDA_CRIADA, WORKFLOW_ATUALIZADO, etc.)
-   - Routes execution to appropriate specialized agents
-   - All decisions traced through LangSmith for observability
+-   **AI Agent Supervisor**: Orchestrates various specialized AI agents based on system events, with all decisions traced via LangSmith.
+-   **Instrumented Agent Wrapper**: Provides generic LangSmith tracing, logging, and error handling for all AI agents.
+-   **Specialized AI Agents**: Include Workflow Builder, Insights AI, Bottleneck Detector, and Predictive AI, all using GPT-4-mini via OpenAI API with structured JSON output.
+-   **Scheduler**: Manages automated periodic execution of bottleneck and insights agents, driven by an event-driven architecture for demand lifecycle events.
+-   **Notification Infrastructure**: Stubs for Twilio (SMS) and SendGrid (Email) integration, along with a webhook dispatcher.
+-   **Auto-Escalation Engine**: Automatically triggers tiered escalation strategies based on bottleneck severity, including increasing priority, reassigning demands, and splitting workflows.
+-   **LangFlow Integration**: A backend gateway for executing LangFlow-designed agents. It stores imported LangFlow JSON flows, compiles them to executable code, and runs them securely, providing an API for management and execution.
+-   **LangChain AI Agents Foundation**: Provides a robust foundation for building LangChain-based AI agents, including an LLM client (GPT-4 Turbo), a prompt builder, and various tools for interacting with the system.
 
-2. **Instrumented Agent Wrapper** (`instrumentedAgent.ts`)
-   - Generic wrapper providing LangSmith tracing for all AI agents
-   - Automatic logging, duration tracking, error handling
-   - Extensible metrics callbacks for monitoring
+**Architectural Patterns:**
 
-3. **Specialized AI Agents**:
-   - **Workflow Builder** (`workflow_builder`): Transforms demands into custom workflows
-   - **Insights AI** (`insights_ai`): Analyzes workflows for optimization opportunities
-   - **Bottleneck Detector** (`bottleneck_ai`, `gargalo_detector`): Identifies process congestion
-   - **Predictive AI** (`predictive_ai`): Forecasts demand volume trends and risk scores using historical pattern analysis
-   - All agents use GPT-4-mini via OpenAI API with structured JSON output
-
-4. **Scheduler** (`scheduler.ts`)
-   - Automated periodic execution of bottleneck and insights agents
-   - Event-driven architecture for demand lifecycle events
-
-**Architectural Patterns**:
-- **Event-Driven**: Webhook system for external integrations (DEMAND_MOVED, SLA_ESTOURADO, etc.)
-- **Separation of Concerns**: Agent logic separated from API routes and storage layer
-- **Instrumentation First**: All AI operations logged to LangSmith for debugging and audit trails
+The system is event-driven, with a webhook system for external integrations. It adheres to separation of concerns, isolating agent logic from API routes and storage. All AI operations are extensively instrumented and logged to LangSmith for observability and audit trails.
 
 ## Data Storage
 
-**Database**: PostgreSQL (via Neon serverless connector)
-- **ORM**: Drizzle ORM with type-safe schema definitions
-- **Schema Location**: `shared/schema.ts` (shared between client and server)
+PostgreSQL, via Neon serverless connector, is used for persistent storage, managed by Drizzle ORM with type-safe schema definitions.
 
-**Core Data Models**:
-- `demands`: Main entity with parsed metadata, workflow associations, SLA tracking
-- `workflows` / `area_workflows`: Workflow definitions with stages and rules
-- `workgraph_nodes` / `workgraph_edges`: Graph-based workflow execution paths
-- `agents` / `agent_logs`: AI agent registry and execution history
-- `webhooks` / `webhook_events`: External integration event system
-- `demand_history`: Audit trail for demand state changes
-- `langflow_agents`: LangFlow agent storage with JSON definition, compiled code, versioning
+**Core Data Models:**
 
-**Key Decisions**:
-- JSONB fields for flexible metadata storage (parsed demand data, workflow configs)
-- UUID primary keys for distributed system compatibility
-- Timestamp tracking (created_at, updated_at) for all entities
-- Stage history tracking within demands for workflow progression
+-   `demands`: Main entity for requests, including metadata, workflows, and SLA.
+-   `workflows` / `area_workflows`: Define workflow structures.
+-   `workgraph_nodes` / `workgraph_edges`: Represent graph-based workflow execution paths.
+-   `agents` / `agent_logs`: AI agent registry and execution history.
+-   `webhooks` / `webhook_events`: External integration event system.
+-   `demand_history`: Audit trail for demand state changes.
+-   `langflow_agents`: Stores LangFlow agent definitions, compiled code, and versioning.
+-   `system_events`: Records all agent executions with metadata for internal observability.
+
+Key decisions include using JSONB fields for flexible metadata, UUIDs for primary keys, and comprehensive timestamp tracking.
 
 ## Authentication & Authorization
 
-**Current State**: No authentication implemented
-- Direct database access via storage layer
-- No user sessions or role-based access control
-- System designed for internal enterprise use behind VPN/firewall
-- Observability page (`/observability`) uses placeholder admin middleware (requireAdmin checks isAdmin=true)
+Currently, no authentication is implemented, with direct database access. The system is designed for internal enterprise use behind a VPN/firewall. Recommendations include adding session-based authentication and role-based access control for production deployment.
 
-**Recommendation**: Add session-based auth with `connect-pg-simple` (already in dependencies) when deploying to production. Update `server/lib/adminAuthMiddleware.ts` to verify `profiles.role = "admin"` once auth is implemented.
+## Internal Observability System
 
-## External Dependencies
-
-### AI & Language Models
-- **OpenAI API**: GPT-4-mini for demand parsing and agent execution
-  - Environment: `OPENAI_API_KEY` or `VITE_OPENAI_API_KEY`
-  - Usage: Structured JSON output for classification, workflow generation, insights
-
-- **LangSmith**: Observability and tracing for AI agent execution
-  - Environment: `LANGSMITH_API_KEY`
-  - Project: `process-orchestration`
-  - Purpose: Debug agent decisions, track performance, audit trails
-
-### Database
-- **Neon Serverless PostgreSQL**: Cloud-hosted database
-  - Environment: `DATABASE_URL`
-  - Driver: `@neondatabase/serverless` with WebSocket support
-  - Alternative: Any PostgreSQL-compatible database (Supabase, local Postgres)
-
-### Optional Services
-- **Supabase**: Storage client configured but not actively used
-  - Environment: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - Can be repurposed for file storage or additional auth
-
-- **Notifications** (Partial):
-  - Twilio (SMS) - interface created, ready for API key integration
-  - SendGrid (Email) - interface created, ready for API key integration
-  - Webhook dispatcher for external systems (fully implemented + BOTTLENECK_CRITICAL event)
-
-## Internal Observability System (NEW - Nov 2025)
-
-**Purpose**: Admin-only internal monitoring of agent execution and system events
-- Zero LangSmith exposure in UI (runId, traceId, links all hidden)
-- Internal-only event tracking at `/observability` route
-- No external references or AI stack visibility to users
-
-**Components Added**:
-
-1. **System Events Table** (`system_events`)
-   - Records all agent executions with metadata
-   - Fields: id, type, agentKey, demandId, areaId, userId, status, durationMs, metadata, createdAt
-   - Automatically populated by `instrumentedAgent.ts` (fire-and-forget logging)
-
-2. **Admin Middleware** (`server/lib/adminAuthMiddleware.ts`)
-   - `requireAdmin`: Restricts `/observability` to admins (currently checks isAdmin=true placeholder)
-   - `logAdminAccess`: Logs all admin endpoint accesses
-   - TODO: Replace isAdmin placeholder with `profiles.role === "admin"` check once auth is implemented
-
-3. **API Endpoint** (`GET /api/system-events`)
-   - Returns all system events (latest 100) or filtered by agent key
-   - Protected by admin middleware
-   - Query params: `?agent=agentKey` for filtering
-
-4. **Observability Dashboard** (`client/src/pages/observability.tsx`)
-   - Lists all system events in card format
-   - Shows: event type, agent, status, duration, timestamps, metadata
-   - Agent filter buttons for quick analysis
-   - Auto-refreshes every 5 seconds
-   - Zero indication of external monitoring tools
-
-**Data Flow**:
-- Agent executes → `instrumentedAgent.ts` wraps execution
-- On success/error → `storage.createSystemEvent()` logs event (non-blocking)
-- Admin accesses `/observability` → `GET /api/system-events` (middleware checks admin)
-- Events displayed in real-time dashboard with filters
+An admin-only internal monitoring system tracks agent execution and system events without exposing LangSmith details. It includes a `system_events` table, admin middleware for access control, an API endpoint to fetch events, and a dashboard for real-time visualization and filtering.
 
 ## Critical Bottleneck Alerts & Auto-Escalation System
 
-**Components Added** (Nov 2025):
+This system provides live monitoring of critical bottlenecks with a dedicated dashboard for tracking alert status (Active, Acknowledged, Resolved) and severity. It integrates with notification stubs (Twilio, SendGrid) and an auto-escalation engine that triggers tiered responses based on bottleneck severity scores calculated by the Gargalo Detector.
 
-1. **Real-time Alerts Dashboard** (`client/src/pages/alerts.tsx`)
-   - Live monitoring of critical bottlenecks (Severity Score > 70)
-   - Status tracking: Active → Acknowledged → Resolved
-   - Severity badges with color-coded indicators (Crítico/Alto/Médio)
-   - KPI cards showing alert counts and trends
-   - Auto-refresh every 30 seconds
+# External Dependencies
 
-2. **Notification Infrastructure** (`server/lib/notifications.ts`)
-   - `sendSMS()`: Twilio integration stub with async dispatch
-   - `sendEmail()`: SendGrid integration stub with HTML templates
-   - `notifyCriticalBottleneck()`: Pre-formatted alert messages with dashboard links
-   - Fallback logging for all notifications
+## AI & Language Models
 
-3. **Auto-Escalation Engine** (`server/lib/autoEscalation.ts`)
-   - Automatically triggered when bottleneck severity_score > 80
-   - Tiered escalation strategy:
-     - Alert: Always sent to stakeholders
-     - Increase Priority: Score > 80
-     - Reassign Demands: Score > 85
-     - Split Workflow: Score > 90 (parallel processing)
-   - Comprehensive logging of all escalation actions
+-   **OpenAI API**: Utilizes GPT-4-mini for demand parsing, classification, workflow generation, and insights.
+-   **LangSmith**: Provides observability and tracing for AI agent execution, including debugging, performance tracking, and audit trails.
 
-4. **Gargalo Detector Integration**
-   - Modified to calculate severity_score across 4 dimensions:
-     - Volume analysis (cards above threshold)
-     - SLA compliance (repeated delays)
-     - Processing time (vs SLA budget)
-     - Resource utilization (responsible person load)
-   - Automatic escalation trigger when score > 80
-   - Asynchronous execution to avoid blocking
+## Database
 
-5. **Webhook Events**
-   - New event type: `BOTTLENECK_CRITICAL`
-   - Fired when severity_score > 80
-   - Payload includes: area, severity_score, etapa, root_cause, recommendations
-   - Existing events still: DEMAND_MOVED, STATUS_UPDATED, AREA_OVERLOADED, DEMAND_COMPLETED
+-   **Neon Serverless PostgreSQL**: Cloud-hosted database solution.
 
-**API Endpoints**:
-- `GET /api/system-events` - Admin-only: Fetch internal system events (latest 100, or filtered by agent)
-- `GET /api/alerts/critical` - Fetch all critical alerts with status filtering
-- `GET /api/predictions?days=N` - Get AI-powered demand forecasts for next N days (1-30)
-- `POST /api/webhooks/register` - Register webhooks (now supports BOTTLENECK_CRITICAL event)
-- `POST /api/agents/run` - Execute agents with auto-escalation (via gargalo_detector)
+## Optional Services
 
-**Predictive AI Features** (NEW):
-- Analyzes 30-day historical demand volume
-- Calculates growth trends and volatility patterns
-- Generates daily forecasts with volume, risk score, and trend
-- Provides actionable recommendations for critical days
-- Real-time predictions on Insights IA page (no more mock data)
-
-### Development Tools
-- **Replit Plugins**: Dev banner, cartographer, runtime error overlay (development only)
-- **Vite**: HMR in development, static build in production
-- **Drizzle Kit**: Database migrations and schema management
-
-### Frontend Libraries
-- 40+ Radix UI primitive components for accessible, composable UI
-- `date-fns` for date formatting
-- `cmdk` for command palette (currently unused)
-- `lucide-react` for iconography (Activity icon for observability)
-- `sonner` + custom toast system for notifications
-
-## Navigation Structure
-
-**Main Menu Items** (client/src/components/Navigation.tsx):
-1. Home
-2. Demandas
-3. Workflows
-4. Áreas
-5. Agentes IA
-6. Alertas Críticos (operational actions)
-7. Gargalos (IA) (technical bottleneck analysis)
-8. Insights IA (predictive forecasts)
-9. **Observabilidade** (admin-only, internal events)
-10. Configurações
-
-## LangFlow Integration (NEW - Nov 2025)
-
-**Purpose**: Backend gateway for LangFlow agents - users design flows in LangFlow UI, backend compiles and executes them securely without exposing LangFlow directly
-
-**Components Added**:
-
-1. **Database Schema** (`langflow_agents` table)
-   - Stores imported LangFlow JSON flows
-   - Versioning system (auto-increment on compilation)
-   - Compiled TypeScript/JavaScript code storage
-   - Active/inactive status toggle
-
-2. **Client Utilities** (`server/lib/langflow-client.ts`)
-   - `validateFlowStructure()`: Validates LangFlow JSON format
-   - `compileFlow()`: Generates executable code from flow JSON
-   - `executeCompiledAgent()`: Runs compiled agents safely
-   - `sendFlowToLangFlow()`: API integration for future LangFlow cloud features
-   - `createNextVersion()`: Handles agent versioning
-
-3. **API Endpoints** (`/api/langflow/*`)
-   - `GET /langflow/list`: Lists all imported agents
-   - `GET /langflow/{id}`: Get specific agent details
-   - `POST /langflow/import`: Import JSON from LangFlow (with validation)
-   - `POST /langflow/{id}/compile`: Compile flow to executable code
-   - `POST /langflow/{id}/run`: Execute compiled agent with input
-   - `DELETE /langflow/{id}`: Remove agent
-
-4. **Environment Configuration**
-   - `LANGFLOW_ENDPOINT`: Base URL for LangFlow API (optional, for future cloud integration)
-   - `LANGFLOW_API_KEY`: API key for LangFlow cloud (optional, for future use)
-
-**Data Flow**:
-1. User designs flow in LangFlow UI
-2. User exports JSON from LangFlow
-3. Backend: POST /langflow/import → validates → stores in DB
-4. Backend: POST /langflow/{id}/compile → generates JS/TS code → stores v1
-5. Backend: POST /langflow/{id}/run → executes compiled code → returns output
-6. On edit: POST /langflow/{id}/compile → increments version → stores code
-
-**Security**:
-- Flow JSON validated before storage (prevents malformed data)
-- Compiled code executed in safe context (no file system access)
-- Backend is the ONLY gateway - users cannot access LangFlow API directly
-- All agent operations logged for audit trail
-
-**Example Workflow**:
-```
-LangFlow UI Export → {"nodes": [...], "edges": [...]}
-           ↓
-POST /api/langflow/import
-           ↓
-Validate structure + Store in DB
-           ↓
-POST /api/langflow/{agentId}/compile
-           ↓
-Generate code: `async execute(input) { ... }`
-           ↓
-Store compiled_code + increment version
-           ↓
-POST /api/langflow/{agentId}/run
-           ↓
-Execute code in sandbox → Return output
-```
+-   **Supabase**: Storage client configured but not actively used, can be repurposed for file storage or additional authentication.
+-   **Twilio**: SMS notification interface (requires API key).
+-   **SendGrid**: Email notification interface (requires API key).
