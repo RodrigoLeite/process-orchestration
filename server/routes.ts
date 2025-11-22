@@ -6,6 +6,7 @@ import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
 import { buildAgentPrompt } from "./lib/agents/system_prompts";
 import { getInternalAgents, getInternalAgent } from "./lib/agents/registry";
+import { getCustomAgents, getCustomAgent } from "./lib/agents/customAgentsRegistry";
 import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/workflowAgentService";
 
 // Webhook event dispatcher
@@ -1755,10 +1756,19 @@ Texto original: ${demand.rawText}`;
         createdAt: agent.createdAt
       }));
       
+      const customAgents = getCustomAgents().map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        type: agent.type,
+        active: agent.active,
+        createdAt: agent.createdAt
+      }));
+      
       const dbAgents = await storage.getAgents();
       
-      // Combine internal agents with database agents
-      const allAgents = [...internalAgents, ...dbAgents];
+      // Combine internal agents, custom agents, and database agents
+      const allAgents = [...internalAgents, ...customAgents, ...dbAgents];
       res.json(allAgents);
     } catch (error) {
       console.error("Error fetching agents:", error);
@@ -1780,6 +1790,19 @@ Texto original: ${demand.rawText}`;
           type: internalAgent.type,
           active: internalAgent.active,
           createdAt: internalAgent.createdAt
+        });
+      }
+      
+      // Check custom agents
+      const customAgent = getCustomAgent(id);
+      if (customAgent) {
+        return res.json({
+          id: customAgent.id,
+          name: customAgent.name,
+          description: customAgent.description,
+          type: customAgent.type,
+          active: customAgent.active,
+          createdAt: customAgent.createdAt
         });
       }
       
@@ -1822,6 +1845,24 @@ Texto original: ${demand.rawText}`;
     } catch (error) {
       console.error("Error fetching agent logs:", error);
       res.status(500).json({ error: "Failed to fetch agent logs" });
+    }
+  });
+
+  // Custom Agents endpoint (prepared for future implementation)
+  app.get("/api/custom-agents", async (req, res) => {
+    try {
+      const customAgents = getCustomAgents().map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        type: agent.type,
+        active: agent.active,
+        createdAt: agent.createdAt
+      }));
+      res.json(customAgents);
+    } catch (error) {
+      console.error("Error fetching custom agents:", error);
+      res.status(500).json({ error: "Failed to fetch custom agents" });
     }
   });
 
