@@ -10,6 +10,7 @@ import { getCustomAgents, getCustomAgent } from "./lib/agents/customAgentsRegist
 import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/workflowAgentService";
 import { executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
+import { runInstrumentedAgent } from "./lib/instrumentedAgent";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -2071,6 +2072,57 @@ Texto original: ${demand.rawText}`;
       res.status(500).json({
         success: false,
         error: String(error)
+      });
+    }
+  });
+
+  // Test instrumented agent wrapper
+  app.post("/api/test/instrumented-agent", async (req, res) => {
+    try {
+      const result = await runInstrumentedAgent({
+        agentKey: "test_agent",
+        input: {
+          message: "This is a test of the instrumented agent wrapper",
+          timestamp: new Date().toISOString()
+        },
+        userId: req.body?.userId || "test-user",
+        demandId: req.body?.demandId || "test-demand",
+        areaId: req.body?.areaId || "test-area",
+        handler: async (input) => {
+          // Simulate agent processing
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return {
+            success: true,
+            processedAt: new Date().toISOString(),
+            inputEcho: input,
+            result: "Agent executed successfully with LangSmith tracing"
+          };
+        },
+        metricsCallback: {
+          onStart: (context) => {
+            console.log(`[TEST] Agent ${context.agentKey} started with context:`, {
+              userId: context.userId,
+              demandId: context.demandId,
+              areaId: context.areaId
+            });
+          },
+          onSuccess: (context, output, duration) => {
+            console.log(`[TEST] Agent ${context.agentKey} succeeded in ${duration}ms`);
+          }
+        }
+      });
+
+      res.json({
+        success: true,
+        message: "Instrumented agent executed successfully",
+        result: result
+      });
+    } catch (error) {
+      console.error("Instrumented agent test error:", error);
+      res.status(500).json({
+        success: false,
+        error: String(error),
+        message: "Failed to execute instrumented agent test"
       });
     }
   });
