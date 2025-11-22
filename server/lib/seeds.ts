@@ -1,4 +1,4 @@
-import { storage } from "@server/storage";
+import { storage } from "../storage";
 import type { InsertAgent } from "@shared/schema";
 
 const INITIAL_AGENTS: InsertAgent[] = [
