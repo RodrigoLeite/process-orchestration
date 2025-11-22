@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ReactFlow, {
   Node,
@@ -10,6 +10,8 @@ import ReactFlow, {
   useEdgesState,
   SelectionMode,
   NodeProps,
+  Handle,
+  Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Button } from "@/components/ui/button";
@@ -74,16 +76,35 @@ const getNodeColor = (type: string): string => {
 const CustomNode = ({ data, selected }: NodeProps<GraphNode>) => {
   return (
     <div
-      className={`px-4 py-2 rounded-lg border-2 transition-all ${getNodeColor(
+      className={`px-4 py-3 rounded-lg border-2 transition-all min-w-[150px] ${getNodeColor(
         data.type
       )} ${selected ? "border-blue-400 shadow-lg shadow-blue-500/50" : ""}`}
       title={data.description}
       data-testid={`node-${data.id}`}
     >
+      <Handle 
+        type="target" 
+        position={Position.Top}
+        id={`${data.id}-input`}
+        isConnectable={true}
+        style={{ width: 10, height: 10 }}
+      />
       <div className="font-semibold text-sm text-white">{data.label}</div>
       <div className="text-xs text-gray-300 mt-1">{data.type}</div>
+      <Handle 
+        type="source" 
+        position={Position.Bottom}
+        id={`${data.id}-output`}
+        isConnectable={true}
+        style={{ width: 10, height: 10 }}
+      />
     </div>
   );
+};
+
+// Memoize nodeTypes to avoid React Flow warning
+const nodeTypes = {
+  default: CustomNode,
 };
 
 export default function WorkflowGraph() {
@@ -231,9 +252,7 @@ export default function WorkflowGraph() {
               onSelectionChange={handleSelectionChange}
               fitView
               selectionMode={SelectionMode.Full}
-              nodeTypes={{
-                default: CustomNode,
-              }}
+              nodeTypes={nodeTypes}
             >
               <Background
                 color="#334155"
