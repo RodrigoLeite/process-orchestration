@@ -1,0 +1,417 @@
+import { useRoute, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, ChevronLeft, CheckCircle2, AlertCircle, Zap, Target, Lightbulb } from "lucide-react";
+import Badge from "@/components/Badge";
+
+interface ExecutionDetail {
+  executionId: string;
+  demandId: string;
+  demandData: {
+    id: string;
+    title: string;
+    description: string;
+    priority: string;
+    status: string;
+    area: string;
+  } | null;
+  execution: {
+    timestamp: string;
+    duration_ms: number;
+    status: "success" | "error";
+    agentKey: string;
+    metadata: Record<string, any>;
+  };
+  workflows: Array<{
+    id: string;
+    title: string;
+    description: string;
+  }>;
+  bottlenecks: Array<{
+    id: string;
+    workflow: string;
+    severity: string;
+    bottlenecks: any[];
+    detectedAt: string;
+  }>;
+  insights: Array<{
+    id: string;
+    workflow: string;
+    insights: Record<string, any>;
+    generatedAt: string;
+  }>;
+}
+
+export default function AILogsDetailPage() {
+  const [match, params] = useRoute("/app/ai/logs/:id");
+  const [, navigate] = useLocation();
+
+  const { data: detailData, isLoading, error } = useQuery<{ success: boolean; data: ExecutionDetail }>({
+    queryKey: ["ai-logs-detail", params?.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/ai/logs/${params?.id}`);
+      if (!res.ok) throw new Error("Failed to fetch execution details");
+      return res.json();
+    },
+    enabled: !!params?.id
+  });
+
+  const detail = detailData?.data;
+
+  if (!match) return null;
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 -ml-2"
+          onClick={() => navigate("/app/ai/logs")}
+          data-testid="button-back"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Voltar aos Logs
+        </Button>
+        <Card className="border-red-500/20">
+          <CardContent className="pt-6">
+            <p className="text-red-700 font-semibold">❌ Execução não encontrada</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading || !detail) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando detalhes da execução...</p>
+      </div>
+    );
+  }
+
+  const getPriorityColor = (p: string) => {
+    if (p === "crítica") return "red";
+    if (p === "alta") return "orange";
+    return "green";
+  };
+
+  const getSeverityColor = (s: string) => {
+    if (s === "crítica" || s === "alta") return "red";
+    if (s === "média") return "orange";
+    return "green";
+  };
+
+  const formatDuration = (ms: number) => {
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
+  };
+
+  return (
+    <div className="space-y-8 max-w-6xl mx-auto" data-testid="ai-logs-detail-page">
+      {/* Back Button */}
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 -ml-2"
+          onClick={() => navigate("/app/ai/logs")}
+          data-testid="button-back"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Voltar aos Logs
+        </Button>
+      </div>
+
+      {/* Execution Title */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold" data-testid="title-execution">
+          Detalhes da Execução #{detail.executionId.substring(0, 8)}
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          ID: {detail.executionId}
+        </p>
+      </div>
+
+      {/* Execution Status & Badges */}
+      <div className="flex flex-wrap gap-2">
+        <Badge
+          color={detail.execution.status === "success" ? "green" : "red"}
+          data-testid="badge-status"
+        >
+          {detail.execution.status === "success" ? "✓ Sucesso" : "✗ Erro"}
+        </Badge>
+        <Badge color="blue" data-testid="badge-duration">
+          ⏱ {formatDuration(detail.execution.duration_ms)}
+        </Badge>
+        <Badge color="purple" data-testid="badge-agent">
+          🤖 {detail.execution.agentKey}
+        </Badge>
+      </div>
+
+      {/* Execution Details */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Timestamp
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm font-mono" data-testid="text-timestamp">
+              {new Date(detail.execution.timestamp).toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Duração
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-duration">
+              {formatDuration(detail.execution.duration_ms)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              {detail.execution.status === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              )}
+              <span className="font-semibold" data-testid="text-status">
+                {detail.execution.status === "success" ? "Sucesso" : "Erro"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Demand Details */}
+      {detail.demandData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Demanda Processada
+            </CardTitle>
+            <CardDescription>
+              Informações da demanda que originou esta execução
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Título</p>
+                <p className="text-base mt-1" data-testid="text-demand-title">
+                  {detail.demandData.title}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">ID</p>
+                <p className="font-mono text-sm mt-1" data-testid="text-demand-id">
+                  {detail.demandData.id}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Prioridade</p>
+                <Badge color={getPriorityColor(detail.demandData.priority)} data-testid="badge-demand-priority">
+                  {detail.demandData.priority.toUpperCase()}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Área</p>
+                <p className="text-base mt-1" data-testid="text-demand-area">
+                  {detail.demandData.area || "—"}
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-600 mb-2">Descrição</p>
+              <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded" data-testid="text-demand-description">
+                {detail.demandData.description || "—"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Workflows Generated */}
+      {detail.workflows && detail.workflows.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              Workflows Gerados ({detail.workflows.length})
+            </CardTitle>
+            <CardDescription>
+              Workflows criados durante esta execução do grafo
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {detail.workflows.map((workflow, idx) => (
+              <div key={workflow.id} className="border-l-4 border-blue-500 pl-4 py-2">
+                <p className="font-semibold text-base" data-testid={`workflow-title-${idx}`}>
+                  {workflow.title}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">{workflow.description || "—"}</p>
+                <p className="font-mono text-xs text-gray-500 mt-2">{workflow.id}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bottlenecks Detected */}
+      {detail.bottlenecks && detail.bottlenecks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              Gargalos Identificados ({detail.bottlenecks.length})
+            </CardTitle>
+            <CardDescription>
+              Riscos e bloqueadores detectados no workflow
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {detail.bottlenecks.map((bottleneck, idx) => (
+              <div key={bottleneck.id} className="border-l-4 border-orange-500 pl-4 py-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="font-semibold text-base">{bottleneck.workflow}</p>
+                  <Badge
+                    color={getSeverityColor(bottleneck.severity)}
+                    data-testid={`bottleneck-severity-${idx}`}
+                  >
+                    {bottleneck.severity.toUpperCase()}
+                  </Badge>
+                </div>
+                {Array.isArray(bottleneck.bottlenecks) && bottleneck.bottlenecks.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {bottleneck.bottlenecks.map((item: any, i: number) => (
+                      <div key={i} className="text-sm bg-orange-50 p-2 rounded">
+                        <p className="font-semibold text-gray-700">{item.stage || item.title || "Gargalo"}</p>
+                        <p className="text-gray-600">{item.reason || item.description || "—"}</p>
+                        {item.recommended_action && (
+                          <p className="text-gray-700 mt-1">
+                            <strong>Recomendação:</strong> {item.recommended_action}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  {new Date(bottleneck.detectedAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Insights Generated */}
+      {detail.insights && detail.insights.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-yellow-600" />
+              Insights & Recomendações ({detail.insights.length})
+            </CardTitle>
+            <CardDescription>
+              Análises e recomendações geradas pelo sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {detail.insights.map((insight, idx) => (
+              <div key={insight.id} className="border-l-4 border-yellow-500 pl-4 py-2">
+                <p className="font-semibold text-base mb-2">{insight.workflow}</p>
+
+                {insight.insights && (
+                  <div className="space-y-3">
+                    {insight.insights.key_insights && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">🎯 Insights Principais:</p>
+                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                          {Array.isArray(insight.insights.key_insights) &&
+                            insight.insights.key_insights.map((item: any, i: number) => (
+                              <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {insight.insights.recommendations && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">💡 Recomendações:</p>
+                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                          {Array.isArray(insight.insights.recommendations) &&
+                            insight.insights.recommendations.map((item: any, i: number) => (
+                              <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {insight.insights.risk_factors && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">⚠️ Fatores de Risco:</p>
+                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                          {Array.isArray(insight.insights.risk_factors) &&
+                            insight.insights.risk_factors.map((item: any, i: number) => (
+                              <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {insight.insights.optimization_opportunities && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">🚀 Oportunidades de Otimização:</p>
+                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                          {Array.isArray(insight.insights.optimization_opportunities) &&
+                            insight.insights.optimization_opportunities.map((item: any, i: number) => (
+                              <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 mt-3">
+                  {new Date(insight.generatedAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Results */}
+      {(!detail.workflows || detail.workflows.length === 0) &&
+        (!detail.bottlenecks || detail.bottlenecks.length === 0) &&
+        (!detail.insights || detail.insights.length === 0) && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600">Nenhum resultado gerado nesta execução</p>
+            </CardContent>
+          </Card>
+        )}
+    </div>
+  );
+}

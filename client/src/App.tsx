@@ -24,6 +24,8 @@ import InsightsPage from "@/pages/insights";
 import BottlenecksPage from "@/pages/bottlenecks";
 import AlertsPage from "@/pages/alerts";
 import ObservabilityPage from "@/pages/observability";
+import AILogsPage from "@/pages/ai-logs";
+import AILogsDetailPage from "@/pages/ai-logs-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -50,6 +52,8 @@ function Router() {
         <Route path="/app/insights" component={InsightsPage} />
         <Route path="/app/bottlenecks" component={BottlenecksPage} />
         <Route path="/app/alerts" component={AlertsPage} />
+        <Route path="/app/ai/logs" component={AILogsPage} />
+        <Route path="/app/ai/logs/:id" component={AILogsDetailPage} />
         <Route path="/observability" component={ObservabilityPage} />
         <Route component={NotFound} />
       </Switch>
