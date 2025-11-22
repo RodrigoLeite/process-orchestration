@@ -269,3 +269,33 @@ export const insertAgentLogSchema = createInsertSchema(agentLogs).omit({
 
 export type InsertAgentLog = z.infer<typeof insertAgentLogSchema>;
 export type AgentLog = typeof agentLogs.$inferSelect;
+
+export const bottleneckReports = pgTable("bottleneck_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentKey: text("agent_key").notNull(),
+  data: jsonb("data").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertBottleneckReportSchema = createInsertSchema(bottleneckReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBottleneckReport = z.infer<typeof insertBottleneckReportSchema>;
+export type BottleneckReport = typeof bottleneckReports.$inferSelect;
+
+export const insightsReports = pgTable("insights_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentKey: text("agent_key").notNull(),
+  data: jsonb("data").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertInsightsReportSchema = createInsertSchema(insightsReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertInsightsReport = z.infer<typeof insertInsightsReportSchema>;
+export type InsightsReport = typeof insightsReports.$inferSelect;
