@@ -2,6 +2,17 @@ import type { Express } from "express";
 import { storage } from "../storage";
 
 export async function registerWorkflowRoutes(app: Express) {
+  // Get all workflows
+  app.get("/api/workflows", async (req, res) => {
+    try {
+      const workflows = await storage.getAllAreaWorkflows();
+      res.json(workflows);
+    } catch (error) {
+      console.error("Error fetching all workflows:", error);
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
   // Get workflow by area name
   app.get("/api/areas/:area/workflow", async (req, res) => {
     try {
