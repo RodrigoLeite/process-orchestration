@@ -356,8 +356,18 @@ export class DatabaseStorage implements IStorage {
     // Build updated history
     let updatedHistory = currentDemand.stageHistory || [];
     
-    // If there's a current stage, mark it as exited
-    if (currentDemand.stageId && currentDemand.stageMovedAt) {
+    // If this is the first move (history is empty) and there's a current stage, add it to history first
+    if (updatedHistory.length === 0 && currentDemand.stageId && currentDemand.stageMovedAt) {
+      const previousStage = await this.getWorkflowStageById(currentDemand.stageId);
+      const previousStageName = previousStage?.name || "Unknown";
+      updatedHistory.push({
+        stageId: currentDemand.stageId,
+        stageName: previousStageName,
+        enteredAt: currentDemand.createdAt.toISOString(),
+        exitedAt: isoNow
+      });
+    } else if (currentDemand.stageId && currentDemand.stageMovedAt) {
+      // If there's a current stage, mark it as exited
       updatedHistory = updatedHistory.map(entry => {
         if (entry.stageId === currentDemand.stageId && !entry.exitedAt) {
           return { ...entry, exitedAt: isoNow };
