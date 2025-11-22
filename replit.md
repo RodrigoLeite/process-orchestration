@@ -76,3 +76,40 @@ This system provides live monitoring of critical bottlenecks with a dedicated da
 -   **Supabase**: Storage client configured but not actively used, can be repurposed for file storage or additional authentication.
 -   **Twilio**: SMS notification interface (requires API key).
 -   **SendGrid**: Email notification interface (requires API key).
+## Specialized LangChain Agents (NEW - Nov 2025)
+
+**3 production-ready agents extending BaseAgent**:
+
+1. **WorkflowBuilderAgent** (`server/lib/ai/lc/agents/workflowBuilder.ts`)
+   - Input: `{ title, description, area, demandId? }`
+   - Output: Structured workflow with stages, responsibilities, estimated hours
+   - API: `POST /api/ai/workflow-builder`
+   - Uses: createPrompt() with few-shot examples, writeLog() for monitoring
+
+2. **BottleneckDetectorAgent** (`server/lib/ai/lc/agents/bottleneckDetector.ts`)
+   - Input: `{ workflows[], movementHistory?, slaBreaches? }`
+   - Output: Identified bottlenecks with severity, reason, recommended actions
+   - API: `POST /api/ai/bottleneck-detector`
+   - Uses: Analyzes workflow state, detects congestion, calculates risk scores
+
+3. **InsightsAgent** (`server/lib/ai/lc/agents/insights.ts`)
+   - Input: `{ demandStats, areaPerformance[], trendData? }`
+   - Output: Business insights, recommendations, improvement opportunities
+   - API: `POST /api/ai/insights`
+   - Uses: Compares areas, analyzes trends, generates actionable recommendations
+
+**All agents**:
+- Extend BaseAgent (inherit `execute()` and `executeStream()` methods)
+- Use GPT-4 Turbo with temperature 0.7
+- Include PostgreSQL tools (demand, workflow, area, logging)
+- Support streaming responses for real-time output
+- Include detailed few-shot examples in prompts
+- No memory/cache - stateless operations
+
+**Integration Points**:
+- Replace old agent implementations in `server/lib/agents/`
+- Connect to existing agent supervisor for orchestration
+- Integrate with scheduler for periodic bottleneck/insights detection
+- Trigger on demand creation/updates via webhook system
+
+**Testing Status**: ✅ All 3 agents tested and working correctly
