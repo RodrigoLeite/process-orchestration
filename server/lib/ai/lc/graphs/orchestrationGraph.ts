@@ -380,11 +380,14 @@ export async function executeOrchestrationGraph(
   demand: DemandInput,
   demand_id?: string
 ): Promise<any> {
+  const startTime = Date.now();
+  
   try {
     const graph = buildOrchestrationGraph(storage);
 
+    const demandIdFinal = demand_id || `demand_${Date.now()}`;
     const initialState = {
-      demand_id: demand_id || `demand_${Date.now()}`,
+      demand_id: demandIdFinal,
       demand,
       workflow: null,
       bottlenecks: [],
@@ -395,13 +398,62 @@ export async function executeOrchestrationGraph(
 
     console.log(`[ORCHESTRATION] Starting graph execution for demand: ${initialState.demand_id}`);
 
+    // Log orchestration start event
+    await storage.createSystemEvent({
+      type: "orchestration_started",
+      agentKey: "orchestrateFromDatabase",
+      demandId: demandIdFinal,
+      metadata: {
+        demand_title: demand.titulo,
+        demand_area: demand.area,
+        demand_urgencia: demand.urgencia
+      },
+      status: "started",
+      durationMs: 0
+    });
+
     const result = await graph.invoke(initialState);
 
-    console.log(`[ORCHESTRATION] Graph execution complete`);
+    const duration = Date.now() - startTime;
+    console.log(`[ORCHESTRATION] Graph execution complete in ${duration}ms`);
+
+    // Log orchestration completion event
+    await storage.createSystemEvent({
+      type: "orchestration_completed",
+      agentKey: "orchestrateFromDatabase",
+      demandId: demandIdFinal,
+      metadata: {
+        status: result.status,
+        duration_ms: duration,
+        workflow_created: !!result.workflow,
+        bottlenecks_found: result.bottlenecks?.length || 0,
+        insights_generated: !!result.insights
+      },
+      status: result.status || "success",
+      durationMs: duration
+    });
 
     return result;
   } catch (error) {
     console.error("[ORCHESTRATION] Graph execution error:", error);
+    
+    // Log error event
+    try {
+      await storage.createSystemEvent({
+        type: "orchestration_failed",
+        agentKey: "orchestrateFromDatabase",
+        demandId: demand_id,
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+          duration_ms: Date.now() - startTime
+        },
+        status: "failed",
+        durationMs: Date.now() - startTime
+      });
+    } catch (logError) {
+      console.error("[ORCHESTRATION] Error logging orchestration failure:", logError);
+    }
+    
     return {
       error: `Orchestration error: ${error instanceof Error ? error.message : String(error)}`,
       status: "failed"
