@@ -81,27 +81,25 @@ export default function InsightsPage() {
     }
   });
 
-  const isLoading = bottleneckLoading || overloadLoading || reportsLoading || insightsLoading;
+  // Fetch AI predictions
+  const { data: predictionsData, isLoading: predictionsLoading } = useQuery({
+    queryKey: ["ai-predictions"],
+    queryFn: async () => {
+      const res = await fetch("/api/predictions?days=7");
+      if (!res.ok) throw new Error("Failed to fetch predictions");
+      const json = await res.json();
+      return json.data?.predictions || [];
+    }
+  });
+
+  const isLoading = bottleneckLoading || overloadLoading || reportsLoading || insightsLoading || predictionsLoading;
 
   // Get latest reports
   const latestBottleneckReport = bottleneckReports[0];
   const latestInsightsReport = insightsReports[0];
 
-  // Generate prediction data
-  const generatePredictions = () => {
-    const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"];
-    const trendOptions: Array<"up" | "down" | "stable"> = ["up", "down", "stable"];
-    const statusOptions: Array<"good" | "warning" | "critical"> = ["good", "warning", "critical"];
-    
-    return days.map((day, idx) => {
-      const value = Math.floor(Math.random() * 80) + 20;
-      const trend = trendOptions[idx % 3];
-      const status = value > 70 ? "critical" as const : value > 50 ? "warning" as const : ("good" as const);
-      return { day, value, trend, status };
-    });
-  };
-
-  const predictions = generatePredictions();
+  // Use AI predictions or fallback to empty if loading
+  const predictions = predictionsData || [];
   const bottlenecks = bottleneckData?.data?.bottlenecks || [];
   const overloaded = overloadData?.data?.areas?.filter(a => a.isOverloaded) || [];
 
