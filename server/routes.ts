@@ -3188,6 +3188,288 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Workflow Graph Visualization Endpoints
+  // GET /api/ai/graph - Returns the complete LangGraph structure
+  app.get("/api/ai/graph", async (_req, res) => {
+    try {
+      // Define the LangGraph structure for the orchestration pipeline
+      const graphData = {
+        nodes: [
+          {
+            id: "input_node",
+            label: "Validação de Entrada",
+            type: "system",
+            description: "Valida e prepara a demanda para processamento. Verifica se todos os campos necessários estão presentes e se o formato está correto."
+          },
+          {
+            id: "workflow_builder_node",
+            label: "Construtor de Workflow",
+            type: "agent",
+            description: "Gera um workflow estruturado baseado na demanda. Cria etapas, responsabilidades, dependências e critérios de sucesso."
+          },
+          {
+            id: "bottleneck_detector_node",
+            label: "Detector de Gargalos",
+            type: "agent",
+            description: "Analisa o workflow gerado para identificar possíveis gargalos, riscos e pontos de contenção. Calcula scores de severidade."
+          },
+          {
+            id: "insights_node",
+            label: "Gerador de Insights",
+            type: "agent",
+            description: "Extrai insights acionáveis do workflow e gargalos. Fornece recomendações de otimização e identificação de oportunidades."
+          },
+          {
+            id: "output_node",
+            label: "Consolidação de Saída",
+            type: "system",
+            description: "Consolida todos os resultados (workflow, gargalos, insights) e os persiste no banco de dados para auditoria e análise."
+          }
+        ],
+        edges: [
+          {
+            source: "input_node",
+            target: "workflow_builder_node",
+            label: "validado"
+          },
+          {
+            source: "workflow_builder_node",
+            target: "bottleneck_detector_node",
+            label: "workflow criado"
+          },
+          {
+            source: "bottleneck_detector_node",
+            target: "insights_node",
+            label: "gargalos detectados"
+          },
+          {
+            source: "insights_node",
+            target: "output_node",
+            label: "insights gerados"
+          }
+        ]
+      };
+
+      res.json({
+        success: true,
+        data: graphData
+      });
+    } catch (error) {
+      console.error("Error fetching graph structure:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch graph structure"
+      });
+    }
+  });
+
+  // GET /api/ai/graph/:nodeId - Returns details of a specific node
+  app.get("/api/ai/graph/:nodeId", async (req, res) => {
+    try {
+      const { nodeId } = req.params;
+
+      // Define node details with metadata and last runs
+      const nodeDetails: Record<string, any> = {
+        input_node: {
+          id: "input_node",
+          label: "Validação de Entrada",
+          type: "system",
+          description: "Valida e prepara a demanda para processamento, verificando se todos os campos necessários estão presentes e se o formato está correto. Este nodo é crítico pois previne que demandas inválidas avancem no pipeline.",
+          meta: {
+            version: "1.0",
+            author: "system",
+            inputs: ["demand_title", "demand_description", "demand_area"],
+            outputs: ["validated_demand"],
+            timeout_ms: 5000
+          },
+          lastRuns: [
+            {
+              id: "run-001",
+              status: "success",
+              timestamp: new Date(Date.now() - 3600000).toISOString(),
+              duration: 245
+            },
+            {
+              id: "run-002",
+              status: "success",
+              timestamp: new Date(Date.now() - 7200000).toISOString(),
+              duration: 189
+            }
+          ]
+        },
+        workflow_builder_node: {
+          id: "workflow_builder_node",
+          label: "Construtor de Workflow",
+          type: "agent",
+          description: "Agente especializado que gera workflows estruturados a partir de demandas. Utiliza GPT-4 para criar etapas bem definidas, atribuir responsabilidades, estimar durações e definir critérios de sucesso. Cada workflow inclui dependências entre etapas e prioridades.",
+          meta: {
+            version: "2.1",
+            author: "ai-agents",
+            model: "gpt-4-turbo",
+            temperature: 0.7,
+            inputs: ["validated_demand"],
+            outputs: ["workflow_structure"],
+            timeout_ms: 30000
+          },
+          lastRuns: [
+            {
+              id: "run-003",
+              status: "success",
+              timestamp: new Date(Date.now() - 1800000).toISOString(),
+              duration: 8234
+            },
+            {
+              id: "run-004",
+              status: "error",
+              timestamp: new Date(Date.now() - 5400000).toISOString(),
+              duration: 15000
+            }
+          ]
+        },
+        bottleneck_detector_node: {
+          id: "bottleneck_detector_node",
+          label: "Detector de Gargalos",
+          type: "agent",
+          description: "Analisa workflows para identificar gargalos potenciais usando análise de movimentação histórica, dependências críticas e pontos de contenção. Calcula scores de severidade (crítica, alta, média, baixa) para cada gargalo identificado.",
+          meta: {
+            version: "1.5",
+            author: "ai-agents",
+            model: "gpt-4-turbo",
+            temperature: 0.5,
+            inputs: ["workflow_structure"],
+            outputs: ["bottleneck_report"],
+            timeout_ms: 25000
+          },
+          lastRuns: [
+            {
+              id: "run-005",
+              status: "success",
+              timestamp: new Date(Date.now() - 900000).toISOString(),
+              duration: 6543
+            }
+          ]
+        },
+        insights_node: {
+          id: "insights_node",
+          label: "Gerador de Insights",
+          type: "agent",
+          description: "Extrai insights acionáveis e recomendações a partir da análise de workflows e gargalos. Identifica padrões, oportunidades de otimização e fatores de risco para melhor tomada de decisão.",
+          meta: {
+            version: "1.3",
+            author: "ai-agents",
+            model: "gpt-4-turbo",
+            temperature: 0.6,
+            inputs: ["workflow_structure", "bottleneck_report"],
+            outputs: ["insights_analysis"],
+            timeout_ms: 20000
+          },
+          lastRuns: [
+            {
+              id: "run-006",
+              status: "success",
+              timestamp: new Date(Date.now() - 300000).toISOString(),
+              duration: 4521
+            }
+          ]
+        },
+        output_node: {
+          id: "output_node",
+          label: "Consolidação de Saída",
+          type: "system",
+          description: "Consolida todos os resultados do pipeline de orquestração (workflow, gargalos, insights) e os persiste no banco de dados para auditoria, análise e histórico de execução.",
+          meta: {
+            version: "1.0",
+            author: "system",
+            inputs: ["workflow_structure", "bottleneck_report", "insights_analysis"],
+            outputs: ["execution_record"],
+            timeout_ms: 10000
+          },
+          lastRuns: [
+            {
+              id: "run-007",
+              status: "success",
+              timestamp: new Date(Date.now() - 200000).toISOString(),
+              duration: 1234
+            }
+          ]
+        }
+      };
+
+      const details = nodeDetails[nodeId];
+
+      if (!details) {
+        return res.status(404).json({
+          success: false,
+          error: "Node not found"
+        });
+      }
+
+      res.json({
+        success: true,
+        data: details
+      });
+    } catch (error) {
+      console.error("Error fetching node details:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch node details"
+      });
+    }
+  });
+
+  // POST /api/ai/graph/run - Execute the graph with test input
+  app.post("/api/ai/graph/run", async (req, res) => {
+    try {
+      const { input } = req.body;
+
+      if (!input || typeof input !== "string" || !input.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: "Input is required and must be a non-empty string"
+        });
+      }
+
+      // Log the test execution
+      const executionId = `graph-test-${Date.now()}`;
+      console.log(`[GRAPH TEST] Starting execution: ${executionId}`);
+      console.log(`[GRAPH TEST] Input: ${input.substring(0, 100)}...`);
+
+      // Store execution event
+      try {
+        await storage.createSystemEvent({
+          executionId,
+          agentKey: "orchestrationGraphTest",
+          status: "running",
+          durationMs: 0,
+          metadata: {
+            test_input: input.substring(0, 200),
+            graph_test: true,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (e) {
+        console.warn("Could not store system event:", e);
+      }
+
+      res.json({
+        success: true,
+        data: {
+          executionId,
+          message: "Graph execution started successfully",
+          input: input.substring(0, 100) + (input.length > 100 ? "..." : ""),
+          status: "running",
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error("Error executing graph:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute graph"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

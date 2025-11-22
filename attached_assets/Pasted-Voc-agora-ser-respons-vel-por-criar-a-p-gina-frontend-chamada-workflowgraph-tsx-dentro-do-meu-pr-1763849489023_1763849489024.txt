@@ -1,0 +1,148 @@
+Você agora será responsável por criar a página frontend chamada `workflowgraph.tsx` dentro do meu projeto React + Vite + TypeScript.
+
+## CONTEXTO DO PROJETO (IMPORTANTE)
+
+- Frontend:
+  - React 18
+  - Vite
+  - TypeScript
+  - Tailwind CSS v4
+  - Radix UI
+  - Wouter para routing
+  - TanStack Query para chamadas ao backend
+- Backend:
+  - Node.js + Express + TypeScript
+  - Drizzle ORM com PostgreSQL
+- AI:
+  - LangChain + LangGraph
+  - Meus agentes estão no backend dentro de:
+      server/ai/lc/agents/*.ts
+  - Cada agente é exportado em um registry dentro de:
+      server/ai/lc/agents/index.ts
+  - Há um fluxo orquestrado pelo LangGraph dentro de:
+      server/ai/lc/graphs/index.ts
+
+Quero uma tela que permita visualizar de forma gráfica o meu **LangGraph**, representando:
+
+- Nós (nodes) do workflow
+- Ligações (edges) entre eles
+- Estado atual da execução (quando houver)
+- Informações sobre cada agente ao clicar nos nodes
+- Painel lateral com detalhes, logs e últimas execuções
+- Botão para “Forçar Execução / Test Run” que envia uma requisição ao backend
+
+## APIs DO BACKEND (VOCÊ DEVE USAR)
+
+GET /api/ai/graph  
+→ Retorna:
+{
+  nodes: [
+    { id: "workflow_builder", label: "Workflow Builder", type: "agent", description: "...", meta: {...} },
+    { id: "workflow_executor", label: "Workflow Executor", type: "agent", description: "...", meta: {...} },
+    ...
+  ],
+  edges: [
+    { source: "workflow_builder", target: "workflow_executor", label: "next" },
+    ...
+  ]
+}
+
+GET /api/ai/graph/:nodeId  
+→ Retorna informações detalhadas do nodo, incluindo:
+{
+  id: "workflow_builder",
+  description: "...",
+  lastRuns: [...],
+  meta: {...}
+}
+
+POST /api/ai/graph/run  
+→ Dispara um teste do LangGraph
+Body:
+{
+  input: string
+}
+
+## OBJETIVO DA PÁGINA
+
+Criar uma tela chamada **WorkflowGraph** com:
+
+### 1. Layout
+- Navbar minimalista (igual ao resto do app)
+- Conteúdo dividido em 2 colunas:
+  - (70%) — O gráfico com ReactFlow
+  - (30%) — Um painel lateral com informações do nodo selecionado
+
+### 2. ReactFlow
+- Usar o pacote `reactflow`
+- Renderizar nodes e edges vindos do backend
+- Cada node deve:
+  - Mostrar nome + tipo
+  - Ter background diferente se for:
+      - agent
+      - system
+      - decision
+  - Exibir borda azul quando selecionado
+  - Exibir tooltip com preview do description
+
+### 3. Painel lateral
+Quando um node é clicado:
+- Mostrar título
+- Mostrar descrição completa
+- Mostrar meta
+- Mostrar últimas execuções (lista)
+- Botão “Executar este agente isoladamente” (ainda não implementado — somente placeholder visual)
+
+### 4. Botão Global de Teste
+No topo:
+- Campo input de texto (prompt)
+- Botão **Executar Graph**
+- Chama POST /api/ai/graph/run
+
+### 5. TanStack Query
+Usar react-query para:
+- Buscar o grafo
+- Buscar detalhes de um node
+- Enviar execução de teste
+
+### 6. Organização do arquivo
+Criar o arquivo `/client/src/pages/workflowgraph.tsx` contendo:
+
+- Imports do ReactFlow
+- Hooks do react-query
+- Hook de fetch do graph
+- Hook de fetch de node selecionado
+- Layout estruturado com Tailwind
+- Graph renderizado
+- Painel lateral
+- Modal ou Toast de sucesso quando execução for disparada
+
+### 7. Estilo
+Usar Tailwind normalmente:
+- Background escuro (#0f0f0f)
+- Nodes com:
+    agent → bg-blue-700/40
+    system → bg-purple-700/40
+    decision → bg-green-700/40
+- Painel lateral com fundo cinza #111
+- Scroll suave
+
+### 8. Comportamento
+- Ao carregar, buscar /api/ai/graph
+- Quando clicar em um node:
+    → Buscar /api/ai/graph/:nodeId
+    → Mostrar painel com informações
+- Caso o usuário clique fora do gráfico:
+    → Ocultar painel lateral
+- Se backend retornar erro:
+    → Mostrar um toast de erro simples ou console.log
+
+## SAÍDA ESPERADA
+
+Gerar **o arquivo completo** `workflowgraph.tsx` totalmente funcional, sem precisar que eu edite nada depois.
+
+O código deve ser claro, organizado e seguir os padrões usados no resto da aplicação.
+
+NÃO GERAR ARQUIVOS ADICIONAIS — somente este.
+
+Agora gere o arquivo completo e crie um menu para essa tela no menu lateral.
