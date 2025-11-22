@@ -85,7 +85,7 @@ export async function createWorkflowForDemand(
       };
 
       await saveAgentLog(
-        "AgenteCriadorDeWorkflow",
+        "Gerador de Workflow",
         input,
         output,
         "success"
@@ -107,7 +107,7 @@ export async function createWorkflowForDemand(
       };
 
       await saveAgentLog(
-        "AgenteCriadorDeWorkflow",
+        "Gerador de Workflow",
         input,
         output,
         "success"
@@ -123,7 +123,7 @@ export async function createWorkflowForDemand(
     };
 
     await saveAgentLog(
-      "AgenteCriadorDeWorkflow",
+      "Gerador de Workflow",
       input,
       errorOutput,
       "error"
