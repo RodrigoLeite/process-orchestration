@@ -111,9 +111,9 @@ export default function AreaDetailsPage() {
   }
 
   // Calculate metrics
-  const completed = demands.filter(d => d.status === "completed").length;
+  const completed = demands.filter(d => d.status === "completed" || d.status === "concluido" || d.status === "done").length;
   const blocked = demands.filter(d => d.status === "blocked").length;
-  const inProgress = demands.filter(d => d.status === "in_progress").length;
+  const inProgress = demands.filter(d => d.status === "in_progress" || d.status === "em_andamento").length;
   const avgRisk = demands.length > 0
     ? Math.floor(
         demands.reduce((sum, d) => {
