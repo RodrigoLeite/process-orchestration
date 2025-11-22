@@ -2529,6 +2529,100 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ LangChain AI Agents Endpoints ============
+  // Import LangChain utilities
+  const { createBaseAgent } = await import("./lib/ai/lc/agents");
+
+  // Test BaseAgent endpoint
+  app.post("/api/ai/test-agent", async (req, res) => {
+    try {
+      const { query, demandId, areaId, workflowId } = req.body;
+
+      if (!query) {
+        return res.status(400).json({
+          success: false,
+          error: "query is required"
+        });
+      }
+
+      // Create and execute base agent
+      const agent = createBaseAgent(storage);
+      const output = await agent.execute({
+        query,
+        demandId: demandId || undefined,
+        areaId: areaId || undefined,
+        workflowId: workflowId || undefined
+      });
+
+      res.json({
+        success: output.success,
+        response: output.response,
+        reasoning: output.reasoning,
+        data: output.data,
+        error: output.error
+      });
+    } catch (error) {
+      console.error("Error executing test agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute test agent",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Stream test agent endpoint
+  app.post("/api/ai/test-agent-stream", async (req, res) => {
+    try {
+      const { query, demandId, areaId, workflowId } = req.body;
+
+      if (!query) {
+        return res.status(400).json({
+          success: false,
+          error: "query is required"
+        });
+      }
+
+      // Set up streaming response
+      res.setHeader("Content-Type", "application/x-ndjson");
+      res.setHeader("Transfer-Encoding", "chunked");
+
+      // Create and execute base agent with streaming
+      const agent = createBaseAgent(storage);
+      const output = await agent.executeStream(
+        {
+          query,
+          demandId: demandId || undefined,
+          areaId: areaId || undefined,
+          workflowId: workflowId || undefined
+        },
+        (chunk) => {
+          res.write(JSON.stringify({ chunk }) + "\n");
+        }
+      );
+
+      res.write(
+        JSON.stringify({
+          success: output.success,
+          response: output.response,
+          data: output.data,
+          error: output.error
+        }) + "\n"
+      );
+      res.end();
+    } catch (error) {
+      console.error("Error executing stream test agent:", error);
+      res.write(
+        JSON.stringify({
+          success: false,
+          error: "Failed to execute test agent",
+          details: error instanceof Error ? error.message : String(error)
+        }) + "\n"
+      );
+      res.end();
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
