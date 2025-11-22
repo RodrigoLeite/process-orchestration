@@ -379,6 +379,32 @@ export class DatabaseStorage implements IStorage {
       .where(eq(agentLogs.agentId, agentId))
       .orderBy(desc(agentLogs.createdAt));
   }
+
+  async createBottleneckReport(report: InsertBottleneckReport): Promise<BottleneckReport> {
+    const result = await this.db.insert(bottleneckReports).values(report).returning();
+    return result[0];
+  }
+
+  async getBottleneckReports(limit: number = 100): Promise<BottleneckReport[]> {
+    return await this.db
+      .select()
+      .from(bottleneckReports)
+      .orderBy(desc(bottleneckReports.createdAt))
+      .limit(limit);
+  }
+
+  async createInsightsReport(report: InsertInsightsReport): Promise<InsightsReport> {
+    const result = await this.db.insert(insightsReports).values(report).returning();
+    return result[0];
+  }
+
+  async getInsightsReports(limit: number = 100): Promise<InsightsReport[]> {
+    return await this.db
+      .select()
+      .from(insightsReports)
+      .orderBy(desc(insightsReports.createdAt))
+      .limit(limit);
+  }
 }
 
 export const storage = new DatabaseStorage();
