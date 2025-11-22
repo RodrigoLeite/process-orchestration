@@ -33,8 +33,35 @@ interface OverloadData {
   };
 }
 
+interface Report {
+  id: string;
+  agentKey: string;
+  data: Record<string, any>;
+  createdAt: string;
+}
+
 export default function InsightsPage() {
-  // Fetch bottlenecks
+  // Fetch saved bottleneck reports
+  const { data: bottleneckReports = [], isLoading: reportsLoading } = useQuery<Report[]>({
+    queryKey: ["bottleneck-reports"],
+    queryFn: async () => {
+      const res = await fetch("/api/bottleneck-reports");
+      if (!res.ok) throw new Error("Failed to fetch bottleneck reports");
+      return res.json();
+    }
+  });
+
+  // Fetch saved insights reports
+  const { data: insightsReports = [], isLoading: insightsLoading } = useQuery<Report[]>({
+    queryKey: ["insights-reports"],
+    queryFn: async () => {
+      const res = await fetch("/api/insights-reports");
+      if (!res.ok) throw new Error("Failed to fetch insights reports");
+      return res.json();
+    }
+  });
+
+  // Fetch live bottlenecks for real-time updates
   const { data: bottleneckData, isLoading: bottleneckLoading } = useQuery<BottleneckData>({
     queryKey: ["insights-bottlenecks"],
     queryFn: async () => {
@@ -54,7 +81,11 @@ export default function InsightsPage() {
     }
   });
 
-  const isLoading = bottleneckLoading || overloadLoading;
+  const isLoading = bottleneckLoading || overloadLoading || reportsLoading || insightsLoading;
+
+  // Get latest reports
+  const latestBottleneckReport = bottleneckReports[0];
+  const latestInsightsReport = insightsReports[0];
 
   // Generate prediction data
   const generatePredictions = () => {

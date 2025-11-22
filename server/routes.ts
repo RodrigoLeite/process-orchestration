@@ -1845,6 +1845,28 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Bottleneck reports endpoint
+  app.get("/api/bottleneck-reports", async (req, res) => {
+    try {
+      const reports = await storage.getBottleneckReports(100);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching bottleneck reports:", error);
+      res.status(500).json({ error: "Failed to fetch bottleneck reports" });
+    }
+  });
+
+  // Insights reports endpoint
+  app.get("/api/insights-reports", async (req, res) => {
+    try {
+      const reports = await storage.getInsightsReports(100);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching insights reports:", error);
+      res.status(500).json({ error: "Failed to fetch insights reports" });
+    }
+  });
+
   // Agent execution by internal key
   app.post("/api/agents/run", async (req, res) => {
     try {
