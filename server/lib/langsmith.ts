@@ -54,13 +54,12 @@ export async function createLangSmithRun(
   try {
     const run = await client.createRun({
       name,
-      run_type: runType,
+      run_type: runType as any,
       inputs: input,
       project_name: langsmithConfig.projectName,
-      tags: ["process-orchestration"],
       extra: { metadata },
     });
-    console.log(`[LangSmith] Run created: ${run.id}`);
+    console.log(`[LangSmith] Run created: ${(run as any).id}`);
     return run;
   } catch (error) {
     console.error("[LangSmith] Failed to create run:", error);
@@ -84,8 +83,8 @@ export async function updateLangSmithRun(
   try {
     await client.updateRun(runId, {
       outputs,
-      status,
-    });
+      error: status === "error" ? "Error occurred" : undefined,
+    } as any);
     console.log(`[LangSmith] Run ${runId} updated with status: ${status}`);
     return true;
   } catch (error) {
