@@ -9,6 +9,7 @@ import { getInternalAgents, getInternalAgent } from "./lib/agents/registry";
 import { getCustomAgents, getCustomAgent } from "./lib/agents/customAgentsRegistry";
 import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/workflowAgentService";
 import { executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
+import { getLangsmithClient } from "./lib/langsmith";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -2039,6 +2040,35 @@ Texto original: ${demand.rawText}`;
     } catch (error) {
       console.error("Error executing agents:", error);
       res.status(500).json({ 
+        success: false,
+        error: String(error)
+      });
+    }
+  });
+
+  // LangSmith health check and test
+  app.get("/api/langsmith/health", async (req, res) => {
+    try {
+      const client = getLangsmithClient();
+      
+      if (!client) {
+        return res.status(503).json({
+          success: false,
+          message: "LangSmith client not initialized - check LANGSMITH_API_KEY"
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "LangSmith client initialized successfully",
+        config: {
+          projectName: process.env.LANGSMITH_PROJECT || "process-orchestration",
+          endpoint: process.env.LANGSMITH_ENDPOINT || "https://api.smith.langchain.com"
+        }
+      });
+    } catch (error) {
+      console.error("LangSmith health check error:", error);
+      res.status(500).json({
         success: false,
         error: String(error)
       });

@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { registerWorkflowRoutes } from "./lib/workflow-api";
 import { seedAgents } from "./lib/seeds";
 import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
+import { getLangsmithClient } from "./lib/langsmith";
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -67,6 +68,9 @@ export default async function runApp(
   await registerWorkflowRoutes(app);
   await seedAgents();
   startScheduler();
+  
+  // Initialize LangSmith client
+  const langsmithClient = getLangsmithClient();
   
   // Execute agents once on startup to generate initial history
   setTimeout(async () => {
