@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { saveAgentLog } from "./lib/agents/logging";
 
 export const SYSTEM_PROMPT = `You are an AI Process Orchestrator specialized in classifying and structuring internal business demands between departments in medium and large companies.
 
@@ -180,16 +181,20 @@ const FEW_SHOT_EXAMPLES = [
 
 export async function parseDemand(text: string): Promise<any> {
   const apiKey = process.env.OPENAI_API_KEY;
+  const inputPayload = { text, timestamp: new Date().toISOString() };
   
   if (!apiKey) {
     console.warn("Missing OPENAI_API_KEY");
-    return {
+    const fallbackOutput = {
       area: "TI",
       tipo: "incidente",
       prioridade: "média",
       descricao_estruturada: "Demanda simulada (API Key ausente): " + text,
       sugestao_proximo_passo: "Configurar chave da API OpenAI."
     };
+    
+    await saveAgentLog("parse-demand", inputPayload, fallbackOutput, "success");
+    return fallbackOutput;
   }
 
   const openai = new OpenAI({ apiKey });
@@ -208,13 +213,27 @@ export async function parseDemand(text: string): Promise<any> {
     const content = response.choices[0].message.content;
     if (!content) throw new Error("No content returned");
 
+    let output: any;
     try {
-      return JSON.parse(content);
+      output = JSON.parse(content);
     } catch (e) {
       const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim();
-      return JSON.parse(cleanContent);
+      output = JSON.parse(cleanContent);
     }
+
+    // Log successful execution
+    await saveAgentLog("parse-demand", inputPayload, output, "success");
+    return output;
   } catch (error) {
+    const errorOutput = {
+      error: String(error),
+      message: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    };
+    
+    // Log failed execution
+    await saveAgentLog("parse-demand", inputPayload, errorOutput, "error");
+    
     console.error("Error parsing demand:", error);
     throw error;
   }
