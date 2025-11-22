@@ -14,6 +14,7 @@ import { runInstrumentedAgent } from "./lib/instrumentedAgent";
 import * as workflowBuilderAgent from "./lib/agents/workflow_builder";
 import * as insightsAIAgent from "./lib/agents/insights_ai";
 import * as bottleneckAIAgent from "./lib/agents/bottleneck_ai";
+import * as gargaloDetectorAgent from "./lib/agents/gargalo_detector";
 import {
   processSupervisorEvent,
   validateSupervisorEvent,
@@ -1898,6 +1899,8 @@ Texto original: ${demand.rawText}`;
         handler = insightsAIAgent.execute;
       } else if (agent_key === "bottleneck_ai") {
         handler = bottleneckAIAgent.execute;
+      } else if (agent_key === "gargalo_detector") {
+        handler = gargaloDetectorAgent.execute;
       } else {
         return res.status(404).json({ error: `Unknown agent: ${agent_key}` });
       }
