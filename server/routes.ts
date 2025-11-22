@@ -2623,6 +2623,120 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ Specialized LangChain Agents ============
+  // Import specialized agents
+  const { 
+    createWorkflowBuilderAgent, 
+    createBottleneckDetectorAgent, 
+    createInsightsAgent 
+  } = await import("./lib/ai/lc/agents");
+
+  // Workflow Builder Agent endpoint
+  app.post("/api/ai/workflow-builder", async (req, res) => {
+    try {
+      const { title, description, area, demandId } = req.body;
+
+      if (!title || !description || !area) {
+        return res.status(400).json({
+          success: false,
+          error: "title, description, and area are required"
+        });
+      }
+
+      const agent = createWorkflowBuilderAgent(storage);
+      const output = await agent.buildWorkflow({
+        title,
+        description,
+        area,
+        demandId
+      });
+
+      res.json({
+        success: output.success,
+        response: output.response,
+        data: output.data,
+        error: output.error
+      });
+    } catch (error) {
+      console.error("Error executing workflow builder agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute workflow builder",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Bottleneck Detector Agent endpoint
+  app.post("/api/ai/bottleneck-detector", async (req, res) => {
+    try {
+      const { workflows, movementHistory, slaBreaches } = req.body;
+
+      if (!workflows || !Array.isArray(workflows)) {
+        return res.status(400).json({
+          success: false,
+          error: "workflows array is required"
+        });
+      }
+
+      const agent = createBottleneckDetectorAgent(storage);
+      const output = await agent.detectBottlenecks({
+        workflows,
+        movementHistory,
+        slaBreaches
+      });
+
+      res.json({
+        success: output.success,
+        response: output.response,
+        data: output.data,
+        error: output.error
+      });
+    } catch (error) {
+      console.error("Error executing bottleneck detector agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute bottleneck detector",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Insights Agent endpoint
+  app.post("/api/ai/insights", async (req, res) => {
+    try {
+      const { demandStats, areaPerformance, trendData } = req.body;
+
+      if (!demandStats || !areaPerformance) {
+        return res.status(400).json({
+          success: false,
+          error: "demandStats and areaPerformance are required"
+        });
+      }
+
+      const agent = createInsightsAgent(storage);
+      const output = await agent.generateInsights({
+        demandStats,
+        areaPerformance,
+        trendData
+      });
+
+      res.json({
+        success: output.success,
+        response: output.response,
+        data: output.data,
+        error: output.error
+      });
+    } catch (error) {
+      console.error("Error executing insights agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute insights agent",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
