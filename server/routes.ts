@@ -339,6 +339,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Demand automatically routed and workflow created", 
         metadata: { demandId: demand.id, workflowId: workflowResult.workflowId } 
       });
+
+      // 6. Trigger LangGraph orchestration asynchronously (fire and forget)
+      console.log("[LANGGRAPH] Triggering orchestration pipeline for demand:", demand.id);
+      (async () => {
+        try {
+          const result = await fetch("http://localhost:5000/api/ai/orchestrate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ demandId: demand.id, manual: false })
+          });
+          if (!result.ok) {
+            console.error("[LANGGRAPH] Orchestration failed:", result.status, await result.text());
+          } else {
+            console.log("[LANGGRAPH] Orchestration triggered successfully for demand:", demand.id);
+          }
+        } catch (error) {
+          console.error("[LANGGRAPH] Error triggering orchestration:", error);
+        }
+      })();
       
       res.status(201).json({ 
         id: demand.id, 
@@ -2926,13 +2945,14 @@ Texto original: ${demand.rawText}`;
       }
 
       // Convert database demand to DemandInput format
+      const parsed = demandRecord.parsed || {};
       const demandInput = {
-        titulo: demandRecord.title || demandRecord.summary || "Unknown",
-        descricao: demandRecord.description || "",
-        area: demandRecord.assignedTo?.toUpperCase() || "TECH",
-        urgencia: demandRecord.priority as any || "média",
-        resultadosEsperados: demandRecord.goals ? JSON.parse(demandRecord.goals) : [],
-        slaHoras: demandRecord.slaHours
+        titulo: parsed.titulo || parsed.area || demandRecord.rawText?.substring(0, 100) || "Unknown",
+        descricao: parsed.descricao_estruturada || demandRecord.rawText || "",
+        area: (parsed.area || demandRecord.assignedTo || "TECH").toUpperCase(),
+        urgencia: (parsed.prioridade || "média") as any,
+        resultadosEsperados: parsed.resultados_esperados || [],
+        slaHoras: 24
       };
 
       console.log(`[ORCHESTRATE] Loaded demand: ${demandInput.titulo}`);
@@ -2986,14 +3006,16 @@ Texto original: ${demand.rawText}`;
       if (orchestrationResult.insights) {
         try {
           const insightsData = {
-            demandId,
-            workflow: orchestrationResult.workflow?.titulo || "Unknown",
-            insights: JSON.stringify(orchestrationResult.insights),
-            generatedAt: new Date(),
-            status: "active"
+            agentKey: "insights-ai-orchestration",
+            data: {
+              demandId,
+              workflow: orchestrationResult.workflow?.titulo || "Unknown",
+              insights: orchestrationResult.insights,
+              generatedAt: new Date().toISOString()
+            }
           };
           
-          await storage.createInsightsReport(insightsData as any);
+          await storage.createInsightsReport(insightsData);
           console.log(`[ORCHESTRATE] Saved insights report`);
         } catch (error) {
           console.error("[ORCHESTRATE] Error saving insights:", error);
