@@ -3135,8 +3135,21 @@ Texto original: ${demand.rawText}`;
 
       // Get demand details
       let demandData = null;
-      if (demandId) {
-        demandData = await storage.getDemand(demandId);
+      if (demandId && demandId !== "unknown") {
+        try {
+          demandData = await storage.getDemand(demandId);
+        } catch (e) {
+          // Demand not found - use metadata from event
+          demandData = {
+            id: demandId,
+            summary: event.metadata?.demand_title || "Unknown",
+            description: "",
+            parsed: {
+              area: event.metadata?.demand_area,
+              prioridade: event.metadata?.demand_urgencia
+            }
+          };
+        }
       }
 
       // Get workflow(s) for this demand
