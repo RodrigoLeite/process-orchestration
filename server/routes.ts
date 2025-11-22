@@ -5,6 +5,7 @@ import { insertDemandSchema } from "@shared/schema";
 import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
 import { buildAgentPrompt } from "./lib/agents/system_prompts";
+import { getInternalAgents, getInternalAgent } from "./lib/agents/registry";
 
 // Webhook event dispatcher
 async function dispatchWebhookEvent(
@@ -1815,8 +1816,20 @@ Texto original: ${demand.rawText}`;
 
   app.get("/api/agents", async (req, res) => {
     try {
-      const agents = await storage.getAgents();
-      res.json(agents);
+      const internalAgents = getInternalAgents().map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        type: agent.type,
+        active: agent.active,
+        createdAt: agent.createdAt
+      }));
+      
+      const dbAgents = await storage.getAgents();
+      
+      // Combine internal agents with database agents
+      const allAgents = [...internalAgents, ...dbAgents];
+      res.json(allAgents);
     } catch (error) {
       console.error("Error fetching agents:", error);
       res.status(500).json({ error: "Failed to fetch agents" });
@@ -1826,13 +1839,27 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const agent = await storage.getAgent(id);
       
-      if (!agent) {
-        return res.status(404).json({ error: "Agent not found" });
+      // Check internal agents first
+      const internalAgent = getInternalAgent(id);
+      if (internalAgent) {
+        return res.json({
+          id: internalAgent.id,
+          name: internalAgent.name,
+          description: internalAgent.description,
+          type: internalAgent.type,
+          active: internalAgent.active,
+          createdAt: internalAgent.createdAt
+        });
       }
       
-      res.json(agent);
+      // Check database agents
+      const dbAgent = await storage.getAgent(id);
+      if (dbAgent) {
+        return res.json(dbAgent);
+      }
+      
+      res.status(404).json({ error: "Agent not found" });
     } catch (error) {
       console.error("Error fetching agent:", error);
       res.status(500).json({ error: "Failed to fetch agent" });
