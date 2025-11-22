@@ -227,7 +227,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       {/* Test Modal */}
       {showTestModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl">
+          <Card className="w-full max-w-2xl bg-white">
             <CardHeader>
               <CardTitle>Testar Agente: {agent.name}</CardTitle>
               <CardDescription>Execute o agente com um JSON de entrada personalizado</CardDescription>
