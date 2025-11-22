@@ -1830,7 +1830,16 @@ Texto original: ${demand.rawText}`;
       const { id } = req.params;
       const { input } = req.body;
 
-      const agent = await storage.getAgent(id);
+      // Check if it's an internal agent first
+      const internalAgent = getInternalAgent(id);
+      let agent: any = internalAgent;
+
+      // If not internal, check database
+      if (!agent) {
+        const dbAgent = await storage.getAgent(id);
+        agent = dbAgent;
+      }
+
       if (!agent) {
         return res.status(404).json({ error: "Agent not found" });
       }
@@ -1842,9 +1851,28 @@ Texto original: ${demand.rawText}`;
         inputReceived: input
       };
 
+      // For internal agents, find the corresponding DB agent to log
+      let logAgentId = id;
+      if (internalAgent) {
+        const allDbAgents = await storage.getAgents();
+        const dbAgent = allDbAgents.find(a => a.name === internalAgent.name);
+        if (dbAgent) {
+          logAgentId = dbAgent.id;
+        } else {
+          // Create the agent if it doesn't exist
+          const newAgent = await storage.createAgent({
+            name: internalAgent.name,
+            description: internalAgent.description,
+            type: "system",
+            active: "true"
+          });
+          logAgentId = newAgent.id;
+        }
+      }
+
       // Save execution log
       await storage.createAgentLog({
-        agentId: id,
+        agentId: logAgentId,
         inputJson: input,
         outputJson: output,
         status: "success"
@@ -1859,9 +1887,21 @@ Texto original: ${demand.rawText}`;
 
       try {
         const { id } = req.params;
+        
+        // Try to find agent for logging
+        let logAgentId = id;
+        const internalAgent = getInternalAgent(id);
+        if (internalAgent) {
+          const allDbAgents = await storage.getAgents();
+          const dbAgent = allDbAgents.find(a => a.name === internalAgent.name);
+          if (dbAgent) {
+            logAgentId = dbAgent.id;
+          }
+        }
+
         await storage.createAgentLog({
-          agentId: id,
-          inputJson: req.body.input,
+          agentId: logAgentId,
+          inputJson: req.body?.input,
           outputJson: errorOutput,
           status: "error"
         });
