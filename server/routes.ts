@@ -3064,25 +3064,39 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      const demandId = foundLog.metadata?.demandId || foundLog.metadata?.demand_id || foundLog.metadata?.area;
+      // Extract demand ID from metadata - prioritize demandId first
+      const demandId = foundLog.metadata?.demandId;
 
       // Get demand details
       let demandData = null;
-      if (demandId && demandId !== "unknown") {
+      if (demandId) {
         try {
           demandData = await storage.getDemand(demandId);
         } catch (e) {
-          // Demand not found - use metadata from log
+          console.warn("Error fetching demand:", demandId, e);
+          // Fallback: create basic demand data from metadata
           demandData = {
             id: demandId,
-            summary: foundLog.metadata?.demand_title || "Unknown",
+            summary: "Demanda",
             description: "",
             parsed: {
-              area: foundLog.metadata?.demand_area || demandId,
-              prioridade: foundLog.metadata?.demand_urgencia
+              area: foundLog.metadata?.area || "TI",
+              prioridade: foundLog.metadata?.prioridade || "normal"
             }
           };
         }
+      } else {
+        // No demand ID found, use area if available
+        const area = foundLog.metadata?.area || "Unknown";
+        demandData = {
+          id: area,
+          summary: "Execução da Área: " + area,
+          description: "",
+          parsed: {
+            area: area,
+            prioridade: "normal"
+          }
+        };
       }
 
       // Get workflow(s) for this demand
