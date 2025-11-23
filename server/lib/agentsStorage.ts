@@ -71,7 +71,7 @@ export async function loadAgent(agentId: string): Promise<AgentStorage | null> {
   }
 }
 
-// Helper to build execution order from nodes and edges
+// Helper to build execution order from nodes and edges (topological sort)
 function getExecutionOrder(nodes: any[], edges: any[]): any[] {
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const visited = new Set<string>();
@@ -81,21 +81,24 @@ function getExecutionOrder(nodes: any[], edges: any[]): any[] {
     if (visited.has(nodeId)) return;
     visited.add(nodeId);
 
-    // Find incoming edges
-    const incomingEdges = edges.filter(e => e.target === nodeId);
-    
-    // Visit all source nodes first (topological sort)
-    incomingEdges.forEach(edge => visit(edge.source));
+    const node = nodeMap.get(nodeId);
+    if (node) {
+      result.push(node);
+    }
 
-    result.push(nodeMap.get(nodeId));
+    // Find outgoing edges (visit children/successors)
+    const outgoingEdges = edges.filter(e => e.source === nodeId);
+    outgoingEdges.forEach(edge => visit(edge.target));
   }
 
-  // Start from nodes with no incoming edges
-  nodes.forEach(node => {
+  // Start from nodes with no incoming edges (root/source nodes)
+  const rootNodes = nodes.filter(node => {
     const hasIncomingEdge = edges.some(e => e.target === node.id);
-    if (!hasIncomingEdge) {
-      visit(node.id);
-    }
+    return !hasIncomingEdge;
+  });
+  
+  rootNodes.forEach(node => {
+    visit(node.id);
   });
 
   return result;
@@ -130,6 +133,7 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
   const traces: any[] = [];
   const nodeOutputs = new Map<string, any>();
   let finalOutput: any = null;
+  let lastPromptOutput: any = null; // Track last prompt output for final result
   let totalTokensUsed = 0;
 
   try {
@@ -148,12 +152,8 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
         nodeInput = getNodeInput(node.id, nodeOutputs, graph.edges);
 
         if (node.type === 'chatInput') {
-          // ChatInputNode - passes input through
-          nodeOutput = {
-            type: 'chatInput',
-            value: nodeInput,
-            message: 'User input received',
-          };
+          // ChatInputNode - passes input through directly to next node
+          nodeOutput = nodeInput;
         } else if (node.type === 'prompt') {
           // Execute PromptNode - call OpenAI with the node's temperature
           const { systemPrompt = '', temperature = 0.7, maxTokens = 2000 } = node.data;
@@ -192,6 +192,13 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
             },
           };
 
+          // Save this as potential final output (will be overridden by OutputNode if present)
+          try {
+            lastPromptOutput = JSON.parse(response.choices[0]?.message?.content || '{}');
+          } catch (e) {
+            lastPromptOutput = { raw_response: response.choices[0]?.message?.content || '' };
+          }
+
           totalTokensUsed += response.usage?.total_tokens || 0;
         } else if (node.type === 'logic') {
           // Execute LogicNode - process the condition/logic
@@ -217,14 +224,27 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
 
           try {
             const parsedSchema = JSON.parse(schema);
+            
+            // Try to parse the input (which should be the output from PromptNode)
+            let parsedResult: any = nodeInput;
+            if (typeof nodeInput === 'object' && nodeInput.text) {
+              try {
+                // If the input has a 'text' field (from PromptNode), try to parse it as JSON
+                parsedResult = JSON.parse(nodeInput.text);
+              } catch (e) {
+                // If parsing fails, keep the raw text
+                parsedResult = { raw_response: nodeInput.text };
+              }
+            }
+            
             nodeOutput = {
               schema: parsedSchema,
-              input: nodeInput,
+              result: parsedResult,
               formatted: true,
             };
 
-            // This is the final output
-            finalOutput = nodeOutput;
+            // This is the final output - return the parsed result
+            finalOutput = parsedResult;
           } catch (e) {
             nodeOutput = {
               schema: {},
@@ -271,7 +291,7 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
     return {
       success: true,
       traces,
-      finalOutput: finalOutput || {
+      finalOutput: finalOutput || lastPromptOutput || {
         message: 'Execution completed',
         nodesExecuted: graph.nodes.length,
       },
