@@ -14,27 +14,60 @@ export interface WorkflowStep {
 
 /**
  * Generate a unique hash for a workflow based on its steps
- * Two workflows with identical steps (regardless of order) will produce different hashes
- * as order matters in the workflow
+ * Focus on structural elements only, ignore volatile fields like descriptions and assignees
+ * This makes workflows deduplicate properly even if minor wording differs
  */
 export function generateWorkflowHash(steps: WorkflowStep[]): string {
-  // Normalize and canonicalize the steps
+  // Map stage names to standard names for deterministic hashing
+  const standardStageNames: Record<string, string> = {
+    "planejamento": "Planejamento e Análise",
+    "análise": "Planejamento e Análise",
+    "implementação": "Implementação",
+    "desenvolvimento": "Implementação",
+    "testes": "Testes e Validação",
+    "teste": "Testes e Validação",
+    "validação": "Testes e Validação",
+    "revisão": "Revisão e Aprovação",
+    "aprovação": "Revisão e Aprovação",
+    "review": "Revisão e Aprovação",
+    "deployment": "Deployment e Implementação em Produção",
+    "deploy": "Deployment e Implementação em Produção",
+    "produção": "Deployment e Implementação em Produção",
+    "monitoramento": "Monitoramento e Ajustes",
+    "monitor": "Monitoramento e Ajustes",
+    "ajustes": "Monitoramento e Ajustes"
+  };
+
+  // Function to map a stage name to standard name
+  function normalizeStepName(name: string): string {
+    const normalized = name.toLowerCase().replace(/[áàâãäéèêëíìîïóòôõöúùûüç\s\-_]/g, "");
+    
+    for (const [key, standard] of Object.entries(standardStageNames)) {
+      if (normalized.includes(key)) {
+        return standard;
+      }
+    }
+    
+    // If no match, return the original name trimmed and normalized
+    return name.trim().toLowerCase();
+  }
+
+  // Normalize and canonicalize - only include structural info, not volatile fields
   const normalized = steps
     .sort((a, b) => a.order - b.order)
     .map(step => ({
       order: step.order,
-      name: step.name?.trim() || "",
-      type: step.type?.trim() || "",
-      description: step.description?.trim() || "",
-      priority: step.priority?.trim() || "",
-      assignee: step.assignee?.trim() || "",
-      dependencies: (step.dependencies || []).sort(),
-      acceptanceCriteria: step.acceptanceCriteria?.trim() || "",
-      duration: step.duration?.trim() || ""
+      name: normalizeStepName(step.name || ""),
+      type: step.type?.trim().toLowerCase() || "processamento",
+      // Omit: description (too variable), assignee (team can vary), duration (estimate can change)
+      // Only include dependencies and priority if they exist and are meaningful
+      priority: (step.priority?.trim() || "média").toLowerCase(),
+      dependencies: (step.dependencies || []).filter(d => d).map(d => normalizeStepName(d)).sort()
     }));
 
   // Create canonical JSON string
   const canonicalJson = JSON.stringify(normalized);
+  console.log(`[HASH] Normalized structure:`, JSON.stringify(normalized, null, 2));
 
   // Generate SHA-256 hash
   return crypto.createHash("sha256").update(canonicalJson).digest("hex");
