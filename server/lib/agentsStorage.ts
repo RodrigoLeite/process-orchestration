@@ -141,6 +141,8 @@ export async function executeAgent(agentId: string, graph: AgentGraph, initialIn
   let totalTokensUsed = 0;
 
   try {
+    console.log(`[AGENTS] Executing agent ${agentId}, initialInput:`, initialInput ? `"${initialInput.substring(0, 50)}..."` : 'undefined');
+    
     const executionOrder = getExecutionOrder(graph.nodes, graph.edges);
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
