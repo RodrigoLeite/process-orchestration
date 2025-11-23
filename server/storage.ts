@@ -20,6 +20,8 @@ export interface IStorage {
   createLog(log: InsertLog): Promise<Log>;
   createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
   createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
+  getWorkflowFromDb(id: string): Promise<Workflow | undefined>;
+  getAllWorkflowsFromDb(): Promise<Workflow[]>;
 
   getWorkgraphNodes(): Promise<WorkgraphNode[]>;
   getWorkgraphNode(id: string): Promise<WorkgraphNode | undefined>;
@@ -47,6 +49,8 @@ export interface IStorage {
 
   getAreaWorkflow(areaName: string): Promise<AreaWorkflow | undefined>;
   getWorkflowById(workflowId: string): Promise<AreaWorkflow | undefined>;
+  getWorkflow(workflowId: string): Promise<AreaWorkflow | undefined>;
+  getAllWorkflows(): Promise<AreaWorkflow[]>;
   createAreaWorkflow(workflow: InsertAreaWorkflow): Promise<AreaWorkflow>;
   createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStage>;
   getWorkflowStages(workflowId: string): Promise<WorkflowStage[]>;
@@ -195,6 +199,22 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getWorkflowFromDb(id: string): Promise<Workflow | undefined> {
+    const result = await this.db
+      .select()
+      .from(workflows)
+      .where(eq(workflows.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllWorkflowsFromDb(): Promise<Workflow[]> {
+    return await this.db
+      .select()
+      .from(workflows)
+      .orderBy(desc(workflows.createdAt));
+  }
+
   async getWorkgraphNodes(): Promise<WorkgraphNode[]> {
     return await this.db.select().from(workgraphNodes).orderBy(workgraphNodes.name);
   }
@@ -308,6 +328,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(areaWorkflows.id, workflowId))
       .limit(1);
     return result[0];
+  }
+
+  async getWorkflow(workflowId: string): Promise<AreaWorkflow | undefined> {
+    return this.getWorkflowById(workflowId);
+  }
+
+  async getAllWorkflows(): Promise<AreaWorkflow[]> {
+    return await this.db
+      .select()
+      .from(areaWorkflows)
+      .orderBy(desc(areaWorkflows.createdAt));
   }
 
   async createAreaWorkflow(insertWorkflow: InsertAreaWorkflow): Promise<AreaWorkflow> {
