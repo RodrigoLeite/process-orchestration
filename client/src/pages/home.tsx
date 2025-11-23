@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   const recentDemands = demands.slice(0, 5);
   const totalDemands = demands.length;
-  const newDemands = demands.filter(d => d.status === "new").length;
+  const newDemands = demands.filter(d => d.status === "new" || d.status === "pending" || d.status === "routed").length;
   const inProgressDemands = demands.filter(d => d.status === "in_progress").length;
   const completedDemands = demands.filter(d => d.status === "completed").length;
   const blockedDemands = demands.filter(d => d.status === "blocked").length;
@@ -166,7 +166,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-600">{newDemands}</div>
-            <p className="text-xs text-muted-foreground mt-1">status: new</p>
+            <p className="text-xs text-muted-foreground mt-1">new/pending/routed</p>
           </CardContent>
         </Card>
         <Card>
@@ -215,8 +215,8 @@ export default function Dashboard() {
           <CardContent>
             <Button 
               onClick={handleProcessNewDemands}
-              disabled={isProcessing || newDemands === 0}
-              className="gap-2"
+              disabled={isProcessing}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
               data-testid="button-process-demands"
             >
               {isProcessing ? (
