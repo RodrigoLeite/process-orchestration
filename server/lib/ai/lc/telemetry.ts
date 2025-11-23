@@ -32,8 +32,7 @@ export function initLangSmith(): Client | null {
     const projectName = process.env.LANGSMITH_PROJECT || "demand-management-system";
 
     langsmithClient = new Client({
-      apiKey,
-      projectName
+      apiKey
     });
 
     console.log(`[TELEMETRY] LangSmith initialized - Project: ${projectName}`);
