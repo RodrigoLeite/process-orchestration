@@ -313,8 +313,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateDemandStatus(demand.id, "routed");
       await storage.createLog({ 
         level: "info", 
-        message: "Demand automatically routed and workflow created", 
-        metadata: { demandId: demand.id, workflowId: workflowResult.workflowId } 
+        message: "Demand automatically routed. LangGraph orchestration triggered.", 
+        metadata: { demandId: demand.id } 
       });
 
       // 6. Trigger LangGraph orchestration asynchronously (fire and forget)
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: demand.id, 
         parsed: demand.parsed, 
         route_to: demand.routeTo,
-        workflow_id: workflowResult.workflowId
+        status: "routed"
       });
     } catch (error) {
       console.error("Error creating demand:", error);
