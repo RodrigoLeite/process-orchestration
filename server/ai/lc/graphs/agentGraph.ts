@@ -60,22 +60,22 @@ async function saveBottlenecksToDb(
       const etapaIndex = gargalo.etapa_index ?? -1;
       const stage = etapaIndex >= 0 ? workflow.etapas[etapaIndex] : null;
       
-      // Get stage ID from database if stage exists
-      let stageId: string | undefined;
-      if (stage) {
-        // This will be set by the orchestration when it creates workflow stages
-        // For now, save with stageName for later correlation
+      // Note: stageId will be null initially since stages are created after workflow generation
+      // Stage-bottleneck correlation will happen after workflow stages are created
+      try {
+        await storage.createStageBottleneck({
+          demandId,
+          stageId: null as any, // Will be updated later when stages are created
+          stageName: gargalo.etapa || stage?.nome || "Desconhecida",
+          severity: gargalo.severidade || "média",
+          reason: gargalo.motivo,
+          recommendedAction: gargalo.acao_recomendada,
+          estimatedResolutionTime: gargalo.tempo_resolucao_estimado
+        });
+      } catch (insertError: any) {
+        // If stageId constraint fails, log but continue
+        console.warn("[GRAPH] Error saving bottleneck (constraint issue):", insertError.message);
       }
-
-      await storage.createStageBottleneck({
-        demandId,
-        stageId: stageId || null as any,
-        stageName: gargalo.etapa || stage?.nome || "Desconhecida",
-        severity: gargalo.severidade || "média",
-        reason: gargalo.motivo,
-        recommendedAction: gargalo.acao_recomendada,
-        estimatedResolutionTime: gargalo.tempo_resolucao_estimado
-      });
     }
   } catch (error) {
     console.warn("[GRAPH] Error saving bottlenecks:", error);
@@ -99,20 +99,22 @@ async function saveInsightsToDb(
       const etapaIndex = insight.etapa_index ?? -1;
       const stage = etapaIndex >= 0 ? workflow?.etapas?.[etapaIndex] : null;
 
-      let stageId: string | undefined;
-      if (stage) {
-        // This will be set by the orchestration when it creates workflow stages
+      // Note: stageId will be null initially since stages are created after workflow generation
+      // Stage-insight correlation will happen after workflow stages are created
+      try {
+        await storage.createStageInsight({
+          demandId,
+          stageId: null as any, // Will be updated later when stages are created
+          stageName: insight.etapa || stage?.nome || null as any,
+          title: insight.titulo,
+          description: insight.descricao,
+          impact: insight.impacto || "médio",
+          recommendation: insight.recomendacao
+        });
+      } catch (insertError: any) {
+        // If stageId constraint fails, log but continue
+        console.warn("[GRAPH] Error saving insight (constraint issue):", insertError.message);
       }
-
-      await storage.createStageInsight({
-        demandId,
-        stageId: stageId || null as any,
-        stageName: insight.etapa || stage?.nome || null as any,
-        title: insight.titulo,
-        description: insight.descricao,
-        impact: insight.impacto || "médio",
-        recommendation: insight.recomendacao
-      });
     }
   } catch (error) {
     console.warn("[GRAPH] Error saving insights:", error);

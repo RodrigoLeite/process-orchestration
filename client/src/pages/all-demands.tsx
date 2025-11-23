@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, ListIcon, Zap } from "lucide-react";
+import { Loader2, MapPin, ListIcon, Zap, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Demand } from "@/lib/types";
 
@@ -27,6 +29,7 @@ const areaColors: Record<string, string> = {
 };
 
 export default function AllDemands() {
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { data: demands = [], isLoading } = useQuery<(Demand & { routeTo?: string })[]>({
     queryKey: ["all-demands"],
@@ -145,7 +148,9 @@ export default function AllDemands() {
                         return (
                           <Card 
                             key={demand.id}
-                            className={`border-l-4 hover:shadow-md transition-all duration-300 ${colorClass.split(' ')[0].replace('bg-', 'border-l-')}`}
+                            className={`border-l-4 hover:shadow-md transition-all duration-300 cursor-pointer ${colorClass.split(' ')[0].replace('bg-', 'border-l-')}`}
+                            onClick={() => navigate(`/app/demands/${demand.id}`)}
+                            data-testid={`card-demand-${demand.id}`}
                           >
                             <CardContent className="pt-4">
                               <div className="space-y-3">
@@ -176,6 +181,7 @@ export default function AllDemands() {
                                       )}
                                     </div>
                                   </div>
+                                  <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-1" />
                                 </div>
 
                                 {/* Metadata and Actions */}
