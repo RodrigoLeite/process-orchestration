@@ -175,7 +175,7 @@ export default function KanbanAreaDetail() {
                       ) : (
                         statusDemands.map((demand) => {
                           const parsed = demand.parsed as any;
-                          const description = parsed?.descricao_estruturada || demand.raw_text || "Sem descrição";
+                          const description = parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição";
                           const category = parsed?.tipo || "Sem categoria";
                           const priority = parsed?.prioridade || "média";
 

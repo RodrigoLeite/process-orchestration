@@ -108,15 +108,15 @@ export default function DemandsManager() {
                     <tr key={demand.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">
-                          {truncateText(parsed?.descricao_estruturada || demand.raw_text || "Sem descrição")}
+                          {truncateText(parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição")}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           ID: {demand.id.slice(0, 8)}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {demand.assigned_to ? (
-                          <Badge color="blue">{demand.assigned_to}</Badge>
+                        {(demand.assignedTo || demand.assigned_to) ? (
+                          <Badge color="blue">{demand.assignedTo || demand.assigned_to}</Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}

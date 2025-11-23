@@ -91,7 +91,7 @@ export default function DemandDetail() {
   }
 
   const parsed = demand.parsed as any;
-  const title = parsed?.descricao_estruturada || demand.raw_text || "Sem título";
+  const title = parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem título";
   const area = parsed?.area || "—";
   const priority = parsed?.prioridade || "média";
   const type = parsed?.tipo || "—";
@@ -251,11 +251,11 @@ export default function DemandDetail() {
             </div>
           )}
 
-          {demand.raw_text && (
+          {(demand.rawText || demand.raw_text) && (
             <div>
               <p className="text-xs text-gray-600 mb-2 font-semibold">Texto Original</p>
               <p className="text-foreground/80 bg-gray-100 p-4 rounded-lg italic">
-                {demand.raw_text}
+                {demand.rawText || demand.raw_text}
               </p>
             </div>
           )}

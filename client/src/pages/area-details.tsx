@@ -266,7 +266,7 @@ export default function AreaDetailsPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <p className="font-medium text-foreground line-clamp-2">
-                        {(demand.parsed as any)?.descricao_estruturada || demand.raw_text || "Sem descrição"}
+                        {(demand.parsed as any)?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição"}
                       </p>
                       <div className="flex gap-2 mt-2 flex-wrap">
                         <Badge color="blue">

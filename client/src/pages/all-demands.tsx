@@ -153,15 +153,15 @@ export default function AllDemands() {
                                 <div className="flex items-start justify-between gap-4">
                                   <div className="flex-1 space-y-2">
                                     <h3 className="font-semibold text-foreground line-clamp-2">
-                                      {parsed?.descricao_estruturada || demand.raw_text}
+                                      {parsed?.descricao_estruturada || demand.rawText || demand.raw_text}
                                     </h3>
                                     <div className="flex gap-2 flex-wrap">
                                       <Badge variant="outline" className="text-xs">
                                         {demand.status}
                                       </Badge>
-                                      {demand.assigned_to && (
+                                      {(demand.assignedTo || demand.assigned_to) && (
                                         <Badge className="text-xs bg-blue-500/20 text-blue-700">
-                                          👤 {demand.assigned_to}
+                                          👤 {demand.assignedTo || demand.assigned_to}
                                         </Badge>
                                       )}
                                       {parsed?.tipo && (
@@ -183,7 +183,7 @@ export default function AllDemands() {
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <span>ID: {demand.id.slice(0, 8)}</span>
                                     <span className="text-border/50">•</span>
-                                    <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                                    <span>Criado: {(demand.createdAt || demand.created_at) ? new Date(demand.createdAt || demand.created_at || '').toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
                                   </div>
                                 </div>
                               </div>

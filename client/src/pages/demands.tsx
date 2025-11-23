@@ -205,9 +205,9 @@ export default function Demands() {
                         <Badge className={`${statusColor} border font-semibold`}>
                           {statusLabels[demand.status as keyof typeof statusLabels]}
                         </Badge>
-                        {demand.assigned_to && (
+                        {(demand.assignedTo || demand.assigned_to) && (
                           <Badge variant="outline" className="font-semibold">
-                            👤 Responsável: {demand.assigned_to}
+                            👤 Responsável: {demand.assignedTo || demand.assigned_to}
                           </Badge>
                         )}
                         {parsed?.area && (
@@ -229,17 +229,17 @@ export default function Demands() {
 
                       {/* Title */}
                       <CardTitle className="text-xl leading-relaxed">
-                        {parsed?.descricao_estruturada || demand.raw_text}
+                        {parsed?.descricao_estruturada || demand.rawText}
                       </CardTitle>
                     </div>
                   </CardHeader>
 
                   <CardContent className="space-y-5">
                     {/* Original Text */}
-                    {demand.raw_text && parsed?.descricao_estruturada && (
+                    {demand.rawText && parsed?.descricao_estruturada && (
                       <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
                         <p className="text-sm font-semibold text-muted-foreground mb-2">📝 Texto Original</p>
-                        <p className="text-foreground/80 italic">{demand.raw_text}</p>
+                        <p className="text-foreground/80 italic">{demand.rawText}</p>
                       </div>
                     )}
                     
@@ -267,7 +267,7 @@ export default function Demands() {
                     {/* Metadata */}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border/50">
                       <span>ID: {demand.id.slice(0, 8)}...</span>
-                      <span>Criado: {demand.created_at ? new Date(demand.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                      <span>Criado: {(demand.createdAt || demand.created_at) ? new Date(demand.createdAt || demand.created_at || '').toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
                     </div>
                   </CardContent>
                 </Card>
