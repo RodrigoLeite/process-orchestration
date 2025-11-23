@@ -460,6 +460,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ Workflow Endpoints ============
+
+  // Get all workflows
+  app.get("/api/workflows", async (req, res) => {
+    try {
+      const workflows = await storage.getAllWorkflowsFromDb();
+      res.json(workflows);
+    } catch (error) {
+      console.error("Error fetching workflows:", error);
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  // Get a single workflow
+  app.get("/api/workflows/:id", async (req, res) => {
+    try {
+      const workflow = await storage.getWorkflowFromDb(req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error fetching workflow:", error);
+      res.status(500).json({ error: "Failed to fetch workflow" });
+    }
+  });
+
+  // Get workflow stages
+  app.get("/api/workflows/:id/stages", async (req, res) => {
+    try {
+      const stages = await storage.getWorkflowStages(req.params.id);
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching workflow stages:", error);
+      res.status(500).json({ error: "Failed to fetch workflow stages" });
+    }
+  });
+
+  // Get demands associated with a workflow
+  app.get("/api/workflows/:id/demands", async (req, res) => {
+    try {
+      const demands = await storage.getDemands();
+      const workflowDemands = demands.filter((d: any) => d.workflowId === req.params.id);
+      res.json(workflowDemands);
+    } catch (error) {
+      console.error("Error fetching workflow demands:", error);
+      res.status(500).json({ error: "Failed to fetch workflow demands" });
+    }
+  });
+
   // Legacy agent endpoint (deprecated - use POST /api/ai/orchestrate instead)
   app.post("/api/agent/:area", async (req, res) => {
     return res.status(410).json({ 
