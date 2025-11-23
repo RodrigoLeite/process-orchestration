@@ -1,26 +1,120 @@
 import React, { useEffect, useState } from 'react';
-import { useRoute } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 import Canvas from '@/components/AgentsStudio/Canvas';
 import Sidebar from '@/components/AgentsStudio/Sidebar';
 import Toolbar from '@/components/AgentsStudio/Toolbar';
 import ExecutionPanel from '@/components/AgentsStudio/ExecutionPanel';
 import { ReactFlowProvider } from 'reactflow';
+import { Button } from '@/components/ui/button';
+import { Bot, Sparkles } from 'lucide-react';
+
+const SAMPLE_AGENTS = [
+  {
+    id: 'workflow-generator',
+    name: 'Gerador de Workflow',
+    description: 'Gera workflows automáticos a partir de demandas',
+    icon: '⚙️'
+  },
+  {
+    id: 'workflow-normalizer',
+    name: 'Normalizador de Workflow',
+    description: 'Normaliza estruturas de workflow para formato padrão',
+    icon: '📏'
+  },
+  {
+    id: 'workflow-monitor',
+    name: 'Monitor de Gargalos',
+    description: 'Monitora e identifica bottlenecks em workflows',
+    icon: '⚠️'
+  }
+];
 
 export default function AgentsStudio() {
-  const [, params] = useRoute('/agents/studio/:agentId');
+  const [, navigate] = useLocation();
   const { loadGraph, currentAgentId, setCurrentAgentId, isLoading } = useAgentsStore();
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [splitSize, setSplitSize] = useState(30);
 
-  const agentId = params?.agentId || 'workflow-generator';
-
+  // Get agentId from URL search params or use selected agent
   useEffect(() => {
-    if (agentId && agentId !== currentAgentId) {
-      setCurrentAgentId(agentId);
-      loadGraph(agentId).catch(console.error);
+    const params = new URLSearchParams(window.location.search);
+    const agentId = params.get('agentId');
+    
+    if (agentId && SAMPLE_AGENTS.some(a => a.id === agentId)) {
+      setSelectedAgent(agentId);
+      if (agentId !== currentAgentId) {
+        setCurrentAgentId(agentId);
+        loadGraph(agentId).catch(console.error);
+      }
     }
-  }, [agentId, currentAgentId, setCurrentAgentId, loadGraph]);
+  }, [currentAgentId, setCurrentAgentId, loadGraph]);
 
+  const handleSelectAgent = (agentId: string) => {
+    setSelectedAgent(agentId);
+    setCurrentAgentId(agentId);
+    loadGraph(agentId).catch(console.error);
+    window.history.replaceState({}, '', `/app/agents-studio?agentId=${agentId}`);
+  };
+
+  const handleBackToList = () => {
+    setSelectedAgent(null);
+    window.history.replaceState({}, '', `/app/agents-studio`);
+  };
+
+  // Show agent selector if no agent is selected
+  if (!selectedAgent) {
+    return (
+      <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-950 to-slate-900 overflow-hidden">
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="max-w-3xl w-full">
+            <div className="text-center mb-12">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Sparkles className="w-8 h-8 text-purple-400" />
+                <h1 className="text-3xl font-bold text-white">Agent Studio</h1>
+              </div>
+              <p className="text-slate-400 text-lg">
+                Selecione um agente para visualizar e editar sua estrutura
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {SAMPLE_AGENTS.map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => handleSelectAgent(agent.id)}
+                  className="group relative bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-purple-500 hover:from-slate-700 hover:to-slate-800 transition-all duration-200 text-left"
+                  data-testid={`button-select-agent-${agent.id}`}
+                >
+                  <div className="mb-4 text-4xl">{agent.icon}</div>
+                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                    {agent.name}
+                  </h3>
+                  <p className="text-sm text-slate-400 mb-4">
+                    {agent.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-sm font-medium">Abrir</span>
+                    <span>→</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-12 p-6 bg-slate-800 rounded-lg border border-slate-700">
+              <h3 className="text-white font-bold mb-2">💡 Dica</h3>
+              <p className="text-slate-400 text-sm">
+                Clique em um agente para visualizar sua estrutura com nodes, conexões e propriedades.
+                Você pode editar, executar e salvar alterações diretamente no editor visual.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show agent editor if agent is selected
   if (isLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-slate-950">
@@ -32,7 +126,7 @@ export default function AgentsStudio() {
   return (
     <ReactFlowProvider>
       <div className="w-full h-full flex flex-col bg-slate-950 overflow-hidden">
-        <Toolbar />
+        <Toolbar onBack={handleBackToList} />
 
         <div className="flex-1 flex overflow-hidden gap-0">
           {/* Sidebar */}

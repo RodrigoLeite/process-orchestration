@@ -1,9 +1,13 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 import { Button } from '@/components/ui/button';
-import { Save, Play, RotateCcw, RotateCw, ZoomIn, Undo, Redo } from 'lucide-react';
+import { Save, Play, RotateCcw, RotateCw, ZoomIn, Undo, Redo, ArrowLeft } from 'lucide-react';
 
-export default function Toolbar() {
+interface ToolbarProps {
+  onBack?: () => void;
+}
+
+export default function Toolbar({ onBack }: ToolbarProps) {
   const {
     saveGraph,
     executeGraph,
@@ -39,6 +43,18 @@ export default function Toolbar() {
   return (
     <div className="h-16 bg-slate-900 border-b border-slate-700 flex items-center justify-between px-4">
       <div className="flex gap-2">
+        {onBack && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onBack}
+            className="bg-slate-800 hover:bg-slate-700 border-slate-600"
+            data-testid="button-back-to-agents"
+          >
+            <ArrowLeft size={16} className="mr-2" />
+            Voltar
+          </Button>
+        )}
         <Button
           size="sm"
           variant="outline"
