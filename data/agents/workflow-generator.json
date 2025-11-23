@@ -5,50 +5,25 @@
       {
         "id": "prompt-1",
         "type": "prompt",
-        "position": { "x": 0, "y": 0 },
+        "position": {
+          "x": 0,
+          "y": 0
+        },
         "data": {
-          "label": "Demand Parser",
-          "systemPrompt": "Você é um analisador de demandas. Analise a demanda e extraia informações estruturadas.",
-          "temperature": 0.3,
-          "maxTokens": 1024
-        }
-      },
-      {
-        "id": "logic-1",
-        "type": "logic",
-        "position": { "x": 400, "y": 0 },
-        "data": {
-          "label": "Route by Area",
-          "stepName": "Route by Area",
-          "logicType": "routing",
-          "condition": "if area in ['TI', 'VENDAS', 'RH', 'FINANCEIRO'] then continue else error"
-        }
-      },
-      {
-        "id": "output-1",
-        "type": "output",
-        "position": { "x": 800, "y": 0 },
-        "data": {
-          "label": "Workflow Output",
-          "outputName": "Workflow Output",
-          "schema": "{\"workflows\": [{\"id\": \"string\", \"name\": \"string\", \"stages\": []}]}"
+          "label": "Modified Prompt",
+          "systemPrompt": "Test prompt",
+          "temperature": 1.5,
+          "maxTokens": 3000
         }
       }
     ],
-    "edges": [
-      {
-        "id": "e1-2",
-        "source": "prompt-1",
-        "target": "logic-1"
-      },
-      {
-        "id": "e2-3",
-        "source": "logic-1",
-        "target": "output-1"
-      }
-    ],
-    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    "edges": [],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
   },
-  "createdAt": "2025-11-23T16:00:00Z",
-  "updatedAt": "2025-11-23T16:00:00Z"
+  "createdAt": "2025-11-23T16:45:37.637Z",
+  "updatedAt": "2025-11-23T16:45:37.637Z"
 }
