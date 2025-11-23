@@ -1,0 +1,192 @@
+Você é um engenheiro de software sênior responsável por corrigir toda a arquitetura de workflows do meu SaaS.  
+O sistema foi implementado errado: ele está usando um único workflow por área, mas a lógica correta é Workflow Por Demanda com Deduplicação Inteligente.
+
+Abaixo está a especificação detalhada CORRETA que você deve implementar ou ajustar no código existente.
+
+====================================================================
+🧠 1. VISÃO CORRETA DO PRODUTO
+====================================================================
+
+Cada demanda deve gerar seus próprios steps, criados pela IA.  
+O sistema deve:
+
+1. Receber os steps gerados pela IA para aquela demanda  
+2. Criar um hash único baseado na estrutura do workflow
+3. Verificar se já existe workflow IDÊNTICO no banco  
+4. Se existir ➜ reutilizar  
+5. Se não existir ➜ criar novo  
+6. Associar a demanda ao workflow encontrado/criado  
+7. Kanban deve mostrar SOMENTE as etapas daquele workflow  
+8. NUNCA usar workflow por área. Apenas workflows por demanda.
+
+====================================================================
+🧠 2. DEFINIÇÃO DE "WORKFLOW IGUAL"
+====================================================================
+
+Dois workflows são iguais se:
+
+- possuem o mesmo número de steps  
+- steps estão na mesma ordem  
+- cada step possui exatamente:
+  * nome
+  * tipo
+  * descrição
+  * prioridade
+  * responsável
+  * dependências  
+  * critérios de aceitação  
+  * duração (em horas/dias)
+
+O sistema deve gerar um HASH baseado no JSON canonicalizado dos steps.
+
+====================================================================
+🧠 3. MODELO DE DADOS (Drizzle)
+====================================================================
+
+Ajuste/valide as seguintes tabelas:
+
+TABLE workflows  
+- id (pk)  
+- areaId (opcional)  
+- workflowHash (unique)  
+- createdAt  
+
+TABLE workflowSteps  
+- id (pk)  
+- workflowId (fk)  
+- order (int)
+- name  
+- type  
+- description  
+- priority  
+- assignee  
+- dependencies (json array)
+- acceptanceCriteria  
+- duration  
+
+TABLE demands  
+- id (pk)
+- title
+- description
+- areaId (fk)
+- workflowId (fk)
+- createdAt
+
+====================================================================
+🧠 4. FLUXO CORRETO DO BACKEND
+====================================================================
+
+Quando uma nova demanda é criada:
+
+1. O agente gera steps em JSON
+2. Normalizar JSON (ordenar keys, remover caracteres desnecessários)
+3. Gerar hash SHA-256 dos steps
+4. Consultar tabela workflows WHERE workflowHash = hash
+5. Se existir:
+     - workflowId = existente
+   Se não existir:
+     - criar workflow
+     - criar steps
+     - salvar hash
+6. Atualizar demanda.workflowId = workflowId
+7. Retornar demanda + workflow + steps
+
+====================================================================
+🧠 5. CORRIGIR O ERRO ATUAL
+====================================================================
+
+Erro atual:  
+O sistema ignora os steps gerados pela IA e sempre usa o workflow fixo da área.
+
+Correção obrigatória:
+
+- REMOVER lógica de “workflow padrão por área”
+- REMOVER carregamento automático de workflow único da área
+- A área serve apenas como categoria, NÃO como definidor de workflow.
+
+====================================================================
+🧠 6. FRONTEND (React / Next / TS) – Regras
+====================================================================
+
+Página da demanda:
+- Deve carregar a demanda pelo ID
+- Deve buscar workflowId ligado à demanda
+- Deve renderizar o Kanban SOMENTE com os steps deste workflow
+
+Botão “Ver no Kanban”:
+- Deve navegar para /kanban/[workflowId]
+
+Kanban Page:
+- Recebe workflowId via URL
+- Carrega workflow + steps
+- Renderiza colunas baseadas nos steps
+- Não deve carregar workflows de área
+- Não deve misturar demandas diferentes
+
+====================================================================
+🧠 7. API ENDPOINTS — DEFINIÇÃO
+====================================================================
+
+POST /api/demands  
+Body: { title, description, areaId, stepsIA }  
+Fluxo:
+  - Executar deduplicação
+  - Criar ou reutilizar workflow
+  - Associar demanda ao workflow
+
+GET /api/workflows/[workflowId]
+GET /api/workflows/[workflowId]/steps
+
+GET /api/demands/[id]
+  - incluir steps do workflow associado
+
+====================================================================
+🧠 8. REGRAS DE HASH
+====================================================================
+
+Função hash(workflowSteps):
+  - converter steps em JSON canonicalizado
+  - ordenar por `order`
+  - serializar com ordenação de keys
+  - gerar SHA-256
+  - salvar em workflow.workflowHash
+
+====================================================================
+🧠 9. REFACTORED WORKFLOW ENGINE — RESUMO
+====================================================================
+
+✔ Workflow por demanda  
+✔ Deduplicação via hash  
+✔ Nunca workflow por área  
+✔ IA define steps  
+✔ Reutiliza só quando etapas são 100% idênticas  
+✔ Kanban por workflow (não por área)  
+✔ UI e API corrigidas para essa lógica
+
+====================================================================
+🧠 10. SUA TAREFA
+====================================================================
+
+Com base em tudo acima:
+
+➡ Ajuste o backend (Drizzle + API)  
+➡ Ajuste o frontend (Kanban, página da demanda)  
+➡ Remova todo vestígio de workflow fixo por área  
+➡ Implemente deduplicação inteligente por hash  
+➡ Torne o sistema aderente ao modelo definido
+
+IMPORTANTE:
+- É permitido modificar schema
+- É permitido refatorar tabelas
+- É permitido reescrever endpoints
+- Priorize manter o código limpo e escalável
+
+Finalize entregando os arquivos ajustados:
+- Models Drizzle
+- APIs (routes)
+- Funções de hash
+- Services de workflow
+- Componentes React afetados
+====================================================================
+
+Após concluir, retorne o código atualizado.

@@ -39,13 +39,40 @@ PostgreSQL, via Neon serverless connector, is used for persistent storage, manag
 **Core Data Models:**
 
 -   `demands`: Main entity for requests, including metadata, workflows, and SLA.
--   `workflows` / `area_workflows`: Define workflow structures.
+-   `workflows`: Workflow definitions with UNIQUE workflowHash for intelligent deduplication (workflow-per-demand architecture)
+-   `workflow_stages`: Stages within each workflow with ordering
 -   `workgraph_nodes` / `workgraph_edges`: Represent graph-based workflow execution paths.
 -   `agents` / `agent_logs`: AI agent registry and execution history.
 -   `webhooks` / `webhook_events`: External integration event system.
 -   `demand_history`: Audit trail for demand state changes.
 -   `langflow_agents`: Stores LangFlow agent definitions, compiled code, and versioning.
 -   `system_events`: Records all agent executions with metadata for internal observability.
+-   `stage_bottlenecks` / `stage_insights`: Bottleneck and insight analysis linked to specific workflow stages.
+
+## Workflow Architecture - REFACTORED (Nov 23, 2025)
+
+**IMPORTANT: Migrated from area-based workflows to demand-based workflows with intelligent deduplication**
+
+### Key Changes:
+1. **Workflow-Per-Demand Pattern**: Each demand generates its own workflow steps via AI, no longer fixed per-area
+2. **Intelligent Deduplication**: Uses SHA-256 hash of workflow steps to automatically reuse identical workflows across multiple demands
+3. **Hash Function**: `generateWorkflowHash(steps)` canonicalizes and hashes workflow step JSON for comparison
+4. **Deduplication Service**: `getOrCreateWorkflow(etapas)` handles the lookup and creation with automatic step normalization
+
+### Workflow Generation Flow:
+1. Demand is created and routed to orchestration
+2. LangGraph executes WorkflowBuilder agent which generates AI-customized steps
+3. Steps are normalized to standard format via `convertEtapasToSteps()`
+4. Hash is generated from normalized steps
+5. System checks if workflow with this hash already exists
+6. If exists → reuse; If not → create new workflow with stages
+7. Demand is linked to the found/created workflow
+
+### Removed Components:
+- `areaWorkflows` table (no longer used)
+- Area-based workflow creation logic in `/api/parse-demand`
+- Fixed workflow templates per area
+- `getAreaWorkflow()` storage method (replaced with `getWorkflowByHash()`)
 
 ## Authentication & Authorization
 
@@ -58,6 +85,27 @@ An admin-only internal monitoring system tracks agent execution and system event
 ## Critical Bottleneck Alerts & Auto-Escalation System
 
 This system provides live monitoring of critical bottlenecks with a dedicated dashboard for tracking alert status and severity. It integrates with notification stubs and an auto-escalation engine that triggers tiered responses based on bottleneck severity scores.
+
+# API Endpoints (Updated)
+
+## Workflow Endpoints
+
+- **GET /api/workflows** - List all workflows (demand-based)
+- **GET /api/workflows/:id** - Get specific workflow with steps
+- **GET /api/workflows/:id/stages** - Get all stages for a workflow
+- **GET /api/workflows/:id/demands** - Get all demands using this workflow
+
+## Demand Endpoints
+
+- **GET /api/demands** - List all demands
+- **GET /api/demands/:id** - Get demand with included workflow steps
+- **POST /api/demands** - Create new demand (triggers orchestration with workflow deduplication)
+- **PATCH /api/demands/:id** - Update demand status
+- **PATCH /api/demands/:id/stage** - Move demand to different stage
+
+## Orchestration Endpoint
+
+- **POST /api/ai/orchestrate** - Execute full orchestration pipeline with deduplication
 
 # External Dependencies
 

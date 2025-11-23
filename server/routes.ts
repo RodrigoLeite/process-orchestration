@@ -180,59 +180,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignedTo,
         status: "pending"
       });
-
-      // Check if area already has a workflow
-      let workflowId: string | undefined;
-      let firstStageId: string | undefined;
-      const existingWorkflow = await storage.getAreaWorkflow(assignedTo);
       
-      if (!existingWorkflow && assignedTo !== "unknown") {
-        // Create default workflow for this area
-        const areaName = assignedTo.toLowerCase();
-        const workflowName = `Workflow - ${parsed.area || "Área"}`;
-        
-        const newWorkflow = await storage.createAreaWorkflow({
-          areaName,
-          name: workflowName
-        });
-        workflowId = newWorkflow.id;
-
-        // Create default stages based on area type
-        const defaultStages: Record<string, string[]> = {
-          "financeiro": ["Recebida", "Em análise", "Aprovação", "Processamento", "Concluída"],
-          "ti": ["Triagem", "Análise Técnica", "Implementação", "Testes", "Concluído"],
-          "rh": ["Recebimento", "Análise", "Entrevista/Reunião", "Decisão", "Concluído"],
-          "juridico": ["Protocolo", "Análise Jurídica", "Parecer", "Ação/Resposta", "Concluído"],
-          "operacoes": ["Recebimento", "Planejamento", "Execução", "Monitoramento", "Concluído"],
-          "facilities": ["Solicitação", "Análise", "Orçamento", "Execução", "Concluído"],
-          "vendas": ["Prospecção", "Qualificação", "Proposta", "Negociação", "Concluído"]
-        };
-
-        const stages = defaultStages[areaName] || ["Recebida", "Em análise", "Concluída"];
-        
-        for (let i = 0; i < stages.length; i++) {
-          const stage = await storage.createWorkflowStage({
-            workflowId: newWorkflow.id,
-            name: stages[i],
-            orderIndex: String(i)
-          });
-          if (i === 0) firstStageId = stage.id;
-        }
-
-        await logInfo("Default workflow created for area", { area: assignedTo, workflowId: newWorkflow.id });
-      } else if (existingWorkflow) {
-        workflowId = existingWorkflow.id;
-        const stages = await storage.getWorkflowStages(existingWorkflow.id);
-        if (stages.length > 0) firstStageId = stages[0].id;
-      }
-
-      // Update demand with workflow_id and stage_id
-      if (workflowId && firstStageId) {
-        await storage.updateDemandWithSLA(demand.id, {
-          workflowId,
-          stageId: firstStageId
-        });
-      }
+      // Note: Workflow is now created by orchestration based on AI-generated steps
+      // No default area-based workflow is created here
       
       await logInfo("Demand successfully created", { id: demand.id, route_to: routeTo });
       await storage.createLog({ level: "info", message: "Demand created", metadata: { demandId: demand.id, area: parsed.area, routeTo } });
@@ -267,9 +217,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!demand) {
         return res.status(404).json({ error: "Demand not found" });
       }
+      
+      // Include workflow steps if demand has a workflow
+      let workflowSteps = null;
+      if (demand.workflowId) {
+        const workflow = await storage.getWorkflowFromDb(demand.workflowId);
+        if (workflow) {
+          workflowSteps = workflow.steps;
+        }
+      }
+      
       // Calculate delay risk
       const demandWithRisk = {
         ...demand,
+        workflowSteps,
         delayRisk: demand.delayRisk || calculateDelayRisk(demand),
         delay_risk: demand.delayRisk || calculateDelayRisk(demand)
       };
@@ -462,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ Workflow Endpoints ============
 
-  // Get all workflows (from demands)
+  // Get all workflows (demand-based, not area-based)
   app.get("/api/workflows", async (req, res) => {
     try {
       const workflows = await storage.getAllWorkflowsFromDb();
@@ -473,45 +434,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all area workflows (for kanban board)
-  app.get("/api/area-workflows", async (req, res) => {
+  // Get a single workflow by ID
+  app.get("/api/workflows/:id", async (req, res) => {
     try {
-      // Get all area workflows from database
-      const allNodes = await storage.getWorkgraphNodes();
-      const areaWorkflows = [];
-      
-      for (const node of allNodes) {
-        const workflow = await storage.getAreaWorkflow(node.name);
-        if (workflow) {
-          areaWorkflows.push({
-            id: workflow.id,
-            name: workflow.name,
-            areaName: workflow.areaName,
-            description: `Workflow da área ${workflow.areaName}`
-          });
-        }
+      const workflow = await storage.getWorkflowFromDb(req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
       }
-      
-      res.json(areaWorkflows);
+      res.json(workflow);
     } catch (error) {
-      console.error("Error fetching area workflows:", error);
-      res.status(500).json({ error: "Failed to fetch area workflows" });
+      console.error("Error fetching workflow:", error);
+      res.status(500).json({ error: "Failed to fetch workflow" });
     }
   });
 
-  // Get a single area workflow by ID
+  // Get stages for a workflow
+  app.get("/api/workflows/:id/stages", async (req, res) => {
+    try {
+      const stages = await storage.getWorkflowStages(req.params.id);
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching workflow stages:", error);
+      res.status(500).json({ error: "Failed to fetch workflow stages" });
+    }
+  });
+
+  // Get a single area workflow by ID (LEGACY - redirects to workflow)
   app.get("/api/area-workflows/:id", async (req, res) => {
     try {
-      // Try to find the workflow by ID
-      const workflow = await storage.getWorkflowById(req.params.id);
+      // Try to find the workflow by ID (both old and new style)
+      let workflow = await storage.getWorkflowById(req.params.id);
       if (!workflow) {
-        return res.status(404).json({ error: "Area workflow not found" });
+        workflow = await storage.getWorkflowFromDb(req.params.id) as any;
+      }
+      
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
       }
       res.json({
         id: workflow.id,
-        name: workflow.name,
-        areaName: workflow.areaName,
-        description: `Workflow da área ${workflow.areaName}`
+        name: workflow.name || "Workflow",
+        areaName: workflow.areaName || "unknown",
+        description: `Workflow`
       });
     } catch (error) {
       console.error("Error fetching area workflow:", error);
@@ -519,10 +483,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get stages for an area workflow
+  // Get stages for an area workflow (LEGACY)
   app.get("/api/area-workflows/:id/stages", async (req, res) => {
     try {
-      // Get the workflow to find its area
+      // Get stages for either area workflow or demand-based workflow
       const workflow = await storage.getWorkflowById(req.params.id);
       if (!workflow) {
         return res.json([]);
@@ -536,46 +500,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get demands for an area workflow
+  // Get demands for an area workflow (LEGACY - returns demands by workflow ID)
   app.get("/api/area-workflows/:id/demands", async (req, res) => {
     try {
-      // Get the workflow to find its area
-      const workflow = await storage.getWorkflowById(req.params.id);
-      if (!workflow) {
-        return res.json([]);
-      }
-      // Get all demands for this area
-      const allDemands = await storage.getDemands();
-      const areaDemands = allDemands.filter((d: any) => d.assignedTo === workflow.areaName);
-      res.json(areaDemands);
+      // Returns demands associated with this workflow ID
+      const demands = await storage.getDemands();
+      const workflowDemands = demands.filter((d: any) => d.workflowId === req.params.id);
+      res.json(workflowDemands);
     } catch (error) {
-      console.error("Error fetching area workflow demands:", error);
-      res.status(500).json({ error: "Failed to fetch area workflow demands" });
-    }
-  });
-
-  // Get a single workflow (area workflow)
-  app.get("/api/workflows/:id", async (req, res) => {
-    try {
-      const workflow = await storage.getWorkflowById(req.params.id);
-      if (!workflow) {
-        return res.status(404).json({ error: "Workflow not found" });
-      }
-      res.json(workflow);
-    } catch (error) {
-      console.error("Error fetching workflow:", error);
-      res.status(500).json({ error: "Failed to fetch workflow" });
-    }
-  });
-
-  // Get workflow stages
-  app.get("/api/workflows/:id/stages", async (req, res) => {
-    try {
-      const stages = await storage.getWorkflowStages(req.params.id);
-      res.json(stages);
-    } catch (error) {
-      console.error("Error fetching workflow stages:", error);
-      res.status(500).json({ error: "Failed to fetch workflow stages" });
+      console.error("Error fetching workflow demands:", error);
+      res.status(500).json({ error: "Failed to fetch workflow demands" });
     }
   });
 
@@ -1695,22 +1629,36 @@ Texto original: ${demand.rawText}`;
         return res.status(500).json({ error: "Failed to parse workflow response" });
       }
 
-      const savedWorkflow = await storage.createWorkflow({
-        demandId: id,
-        steps
-      });
+      // Use workflow service for deduplication
+      const { getOrCreateWorkflow, convertEtapasToSteps } = await import("./lib/workflowService");
+      const { generateWorkflowHash } = await import("./lib/workflowHash");
+      
+      // Convert to standard steps format
+      const standardSteps = convertEtapasToSteps(steps);
+      const hash = generateWorkflowHash(standardSteps);
+
+      // Get or create workflow (with deduplication)
+      const savedWorkflow = await storage.getWorkflowByHash(hash);
+      let workflow = savedWorkflow;
+      
+      if (!workflow) {
+        workflow = await storage.createWorkflow({
+          workflowHash: hash,
+          steps: standardSteps
+        });
+      }
 
       await storage.createLog({ 
         level: "info", 
         message: "Workflow generated and saved", 
-        metadata: { demandId: id, workflowId: savedWorkflow.id, stepCount: steps.length } 
+        metadata: { demandId: id, workflowId: workflow.id, stepCount: standardSteps.length, isNew: !savedWorkflow } 
       });
 
       res.json({
-        id: savedWorkflow.id,
-        demand_id: savedWorkflow.demandId,
-        steps: savedWorkflow.steps,
-        created_at: savedWorkflow.createdAt
+        id: workflow.id,
+        workflowHash: workflow.workflowHash,
+        steps: workflow.steps,
+        created_at: workflow.createdAt
       });
     } catch (error) {
       console.error("Error in suggest-workflow endpoint:", error);
@@ -2711,6 +2659,7 @@ Texto original: ${demand.rawText}`;
 
   // ============ AI Orchestration Endpoint (from database) ============
   // Orchestrate demand from database with full persistence
+  // Implements workflow-per-demand with deduplication via hash
   app.post("/api/ai/orchestrate", async (req, res) => {
     const startTime = Date.now();
     
@@ -2743,7 +2692,8 @@ Texto original: ${demand.rawText}`;
         area: (parsed.area || demandRecord.assignedTo || "TECH").toUpperCase(),
         urgencia: (parsed.prioridade || "média") as any,
         resultadosEsperados: parsed.resultados_esperados || [],
-        slaHoras: 24
+        slaHoras: 24,
+        demandId: demandId
       };
 
       console.log(`[ORCHESTRATE] Loaded demand: ${demandInput.titulo}`);
@@ -2754,57 +2704,36 @@ Texto original: ${demand.rawText}`;
         return await executeAgentGraph(demandInput);
       }, { demand_id: demandId, demand_title: demandInput.titulo, manual });
 
-      // Save workflow if generated successfully
+      // Save workflow if generated successfully - USING DEDUPLICATION
       let createdWorkflowId: string | null = null;
       const resultData = orchestrationResult.data || orchestrationResult;
       
       if (resultData.workflow) {
         try {
-          // Get area from demand
-          const areaName = (parsed.area || demandRecord.assignedTo || "tech").toLowerCase();
+          // Import workflow service for deduplication
+          const { getOrCreateWorkflow, createWorkflowStages } = await import("./lib/workflowService");
           
-          // Get or create area workflow
-          let areaWorkflow = await storage.getAreaWorkflow(areaName);
-          if (!areaWorkflow) {
-            // Create new area workflow if it doesn't exist
-            areaWorkflow = await storage.createAreaWorkflow({
-              areaName,
-              name: areaName.charAt(0).toUpperCase() + areaName.slice(1)
-            });
-            console.log(`[ORCHESTRATE] Created area workflow: ${areaWorkflow.id} for area: ${areaName}`);
+          // Get or create workflow using deduplication (by hash)
+          const workflow = await getOrCreateWorkflow(resultData.workflow.etapas);
+          console.log(`[ORCHESTRATE] Using workflow: ${workflow.id} (hash: ${workflow.workflowHash})`);
+
+          // Create workflow stages if this is a new workflow
+          let stages = await storage.getWorkflowStages(workflow.id);
+          if (stages.length === 0) {
+            console.log(`[ORCHESTRATE] Creating stages for new workflow: ${workflow.id}`);
+            const stageIds = await createWorkflowStages(workflow.id, workflow.steps);
+            stages = await storage.getWorkflowStages(workflow.id);
+            console.log(`[ORCHESTRATE] Created ${stageIds.length} stages for workflow`);
           }
-          
-          // Generate a valid UUID for demand workflow (internal tracking)
-          const workflowId = crypto.randomUUID();
-          const workflowData = {
-            id: workflowId,
-            demandId,
-            title: resultData.workflow.titulo,
-            description: resultData.workflow.descricao,
-            stages: JSON.stringify(resultData.workflow.etapas),
-            totalDurationHours: resultData.workflow.duracao_total_horas,
-            priority: resultData.workflow.prioridade_workflow,
-            status: "created"
-          };
-          
-          await storage.createWorkflow(workflowData as any);
-          console.log(`[ORCHESTRATE] Saved demand workflow: ${workflowId}`);
-          
-          // Update demand with AREA workflow ID (not demand workflow ID)
-          try {
-            // Get the first stage of the area workflow to assign to the demand
-            const stages = await storage.getWorkflowStages(areaWorkflow.id);
-            const firstStageId = stages.length > 0 ? stages[0].id : undefined;
-            
-            await storage.updateDemandWithSLA(demandId, { 
-              workflowId: areaWorkflow.id,
-              stageId: firstStageId
-            });
-            console.log(`[ORCHESTRATE] Updated demand with areaWorkflowId: ${areaWorkflow.id}, stageId: ${firstStageId}`);
-            createdWorkflowId = areaWorkflow.id;
-          } catch (error) {
-            console.error("[ORCHESTRATE] Error updating demand with workflowId:", error);
-          }
+
+          // Update demand with workflow ID and first stage
+          const firstStageId = stages.length > 0 ? stages[0].id : undefined;
+          await storage.updateDemandWithSLA(demandId, {
+            workflowId: workflow.id,
+            stageId: firstStageId
+          });
+          console.log(`[ORCHESTRATE] Updated demand with workflowId: ${workflow.id}, stageId: ${firstStageId}`);
+          createdWorkflowId = workflow.id;
         } catch (error) {
           console.error("[ORCHESTRATE] Error saving workflow:", error);
         }
