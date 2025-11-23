@@ -8,6 +8,7 @@ import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import { createWorkflowBuilderAgent } from "../agents/workflowBuilder";
 import { createInsightsAgent } from "../agents/insights";
 import { createBottleneckDetectorAgent } from "../agents/bottleneckDetector";
+import { saveAgentLog } from "../../lib/agents/logging";
 
 /**
  * State schema for the agent orchestration graph
@@ -58,6 +59,19 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
 
     if (result.success && result.data) {
       console.log("[GRAPH:WorkflowBuilder] Workflow generated successfully");
+      
+      // Save agent log
+      await saveAgentLog(
+        "Gerador de Workflow",
+        {
+          area: state.demandInput?.area,
+          demandId: state.demandInput?.demandId,
+          demandDescription: state.demandInput?.descricao
+        },
+        result.data,
+        "success"
+      );
+      
       return {
         ...state,
         workflow: result.data
@@ -65,6 +79,19 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
     } else {
       const errorMsg = result.error || "Failed to generate workflow";
       console.error("[GRAPH:WorkflowBuilder] Error:", errorMsg);
+      
+      // Save error log
+      await saveAgentLog(
+        "Gerador de Workflow",
+        {
+          area: state.demandInput?.area,
+          demandId: state.demandInput?.demandId,
+          demandDescription: state.demandInput?.descricao
+        },
+        { error: errorMsg },
+        "error"
+      );
+      
       return {
         ...state,
         error: errorMsg
@@ -73,6 +100,19 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
   } catch (error) {
     const errorMsg = `Workflow Builder error: ${error instanceof Error ? error.message : String(error)}`;
     console.error("[GRAPH:WorkflowBuilder]", errorMsg);
+    
+    // Save error log
+    await saveAgentLog(
+      "Gerador de Workflow",
+      {
+        area: state.demandInput?.area,
+        demandId: state.demandInput?.demandId,
+        demandDescription: state.demandInput?.descricao
+      },
+      { error: errorMsg },
+      "error"
+    );
+    
     return {
       ...state,
       error: errorMsg
@@ -103,17 +143,59 @@ async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
 
     if (result.success && result.data) {
       console.log("[GRAPH:Insights] Insights generated successfully");
+      
+      // Save agent log
+      await saveAgentLog(
+        "Insights Inteligentes",
+        {
+          area: state.demandInput?.area,
+          demandId: state.demandInput?.demandId,
+          workflowStages: state.workflow?.etapas?.length,
+          bottlenecksIdentified: state.bottlenecks?.length || 0
+        },
+        result.data,
+        "success"
+      );
+      
       return {
         ...state,
         insights: result.data
       };
     } else {
       console.warn("[GRAPH:Insights] Warning:", result.error);
+      
+      // Save warning log
+      await saveAgentLog(
+        "Insights Inteligentes",
+        {
+          area: state.demandInput?.area,
+          demandId: state.demandInput?.demandId,
+          workflowStages: state.workflow?.etapas?.length,
+          bottlenecksIdentified: state.bottlenecks?.length || 0
+        },
+        { warning: result.error },
+        "success"
+      );
+      
       // Don't treat insights failure as critical - return state with warning
       return state;
     }
   } catch (error) {
     console.warn("[GRAPH:Insights] Non-critical error:", error);
+    
+    // Save error log
+    await saveAgentLog(
+      "Insights Inteligentes",
+      {
+        area: state.demandInput?.area,
+        demandId: state.demandInput?.demandId,
+        workflowStages: state.workflow?.etapas?.length,
+        bottlenecksIdentified: state.bottlenecks?.length || 0
+      },
+      { error: String(error) },
+      "error"
+    );
+    
     // Don't fail the graph on insights errors
     return state;
   }
@@ -141,17 +223,56 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
 
     if (result.success && result.data) {
       console.log("[GRAPH:BottleneckDetector] Bottlenecks detected");
+      
+      // Save agent log
+      await saveAgentLog(
+        "Monitor de Gargalos",
+        {
+          area: state.demandInput?.area,
+          demandId: state.demandInput?.demandId,
+          workflowStages: state.workflow?.etapas?.length
+        },
+        result.data,
+        "success"
+      );
+      
       return {
         ...state,
         bottlenecks: result.data
       };
     } else {
       console.warn("[GRAPH:BottleneckDetector] Warning:", result.error);
+      
+      // Save warning log
+      await saveAgentLog(
+        "Monitor de Gargalos",
+        {
+          area: state.demandInput?.area,
+          demandId: state.demandInput?.demandId,
+          workflowStages: state.workflow?.etapas?.length
+        },
+        { warning: result.error },
+        "success"
+      );
+      
       // Don't treat bottleneck detection failure as critical
       return state;
     }
   } catch (error) {
     console.warn("[GRAPH:BottleneckDetector] Non-critical error:", error);
+    
+    // Save error log
+    await saveAgentLog(
+      "Monitor de Gargalos",
+      {
+        area: state.demandInput?.area,
+        demandId: state.demandInput?.demandId,
+        workflowStages: state.workflow?.etapas?.length
+      },
+      { error: String(error) },
+      "error"
+    );
+    
     // Don't fail the graph on bottleneck errors
     return state;
   }
