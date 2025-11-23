@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 import { Button } from '@/components/ui/button';
-import { Zap, Settings, Database, MessageSquare, Plug } from 'lucide-react';
+import { Zap, Settings, Database, MessageSquare, Plug, Bot } from 'lucide-react';
 
 export default function Sidebar() {
   const { setNodes, nodes } = useAgentsStore();
@@ -72,6 +72,19 @@ export default function Sidebar() {
             <span>Chat Input Node</span>
           </div>
           <p className="text-xs text-gray-600 mt-1">Nó de entrada para dados do usuário</p>
+        </div>
+
+        {/* Agent Node */}
+        <div
+          draggable
+          onDragStart={(e) => onDragStart(e, 'agent', 'Agent Executor')}
+          className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg cursor-grab hover:bg-indigo-100 transition"
+        >
+          <div className="flex items-center gap-2 text-indigo-600 font-semibold">
+            <Bot size={16} />
+            <span>Agent Node</span>
+          </div>
+          <p className="text-xs text-gray-600 mt-1">Executor de IA com prompt, lógica e temperatura configuráveis</p>
         </div>
 
         {/* Prompt Node */}

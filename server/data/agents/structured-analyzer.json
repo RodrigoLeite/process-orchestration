@@ -1,0 +1,42 @@
+{
+  "id": "structured-analyzer",
+  "name": "Analisador Estruturado",
+  "description": "Demo completo: ChatInputNode → AgentNode com lógica → OutputNode",
+  "graph": {
+    "nodes": [
+      {
+        "id": "input-node",
+        "type": "chatInput",
+        "position": { "x": 50, "y": 50 },
+        "data": { "label": "Entrada de Dados" }
+      },
+      {
+        "id": "ai-agent",
+        "type": "agent",
+        "position": { "x": 250, "y": 50 },
+        "data": {
+          "label": "Processador Inteligente",
+          "systemPrompt": "Analise a entrada e gere uma resposta estruturada. Se possível, extraia dados principais, categorie-os e forneca insights. Retorne como JSON.",
+          "temperature": 0.6,
+          "maxTokens": 1500,
+          "logicType": "validation",
+          "condition": "data"
+        }
+      },
+      {
+        "id": "output-node",
+        "type": "output",
+        "position": { "x": 500, "y": 50 },
+        "data": {
+          "label": "Resultado Final",
+          "schema": "{\"analise\": \"object\", \"insights\": \"array\"}"
+        }
+      }
+    ],
+    "edges": [
+      { "source": "input-node", "target": "ai-agent", "id": "e1" },
+      { "source": "ai-agent", "target": "output-node", "id": "e2" }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+  }
+}
