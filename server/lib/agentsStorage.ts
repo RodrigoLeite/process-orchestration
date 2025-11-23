@@ -293,15 +293,33 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
             // Parse headers
             const parsedHeaders = JSON.parse(headers);
             
-            // Parse body template and replace "input" with actual input
-            let bodyStr = bodyTemplate;
-            if (typeof nodeInput === 'object') {
-              // Replace "input" placeholder with the actual input value
-              bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+            // Handle body template
+            let parsedBody: any;
+            
+            // If bodyTemplate is literally "input", use nodeInput directly
+            if (bodyTemplate.trim() === 'input') {
+              // If nodeInput is already an object with text (from AgentNode), extract and parse the text
+              if (nodeInput && typeof nodeInput === 'object' && nodeInput.text) {
+                try {
+                  // Try to parse the text as JSON
+                  parsedBody = JSON.parse(nodeInput.text);
+                } catch (e) {
+                  // If parsing fails, use nodeInput as-is
+                  parsedBody = nodeInput;
+                }
+              } else {
+                parsedBody = nodeInput;
+              }
             } else {
-              bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+              // Otherwise, template-replace "input" with actual input
+              let bodyStr = bodyTemplate;
+              if (typeof nodeInput === 'object') {
+                bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+              } else {
+                bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+              }
+              parsedBody = JSON.parse(bodyStr);
             }
-            const parsedBody = JSON.parse(bodyStr);
 
             // Make HTTP request
             const response = await fetch(`http://localhost:5000${endpoint}`, {
