@@ -112,11 +112,14 @@ export default function Canvas() {
         },
       };
 
-      setNodes((prevNodes) => [...prevNodes, newNode]);
+      // Update both local state and store
+      const updatedNodes = [...nodes, newNode];
+      setNodes(updatedNodes);
+      setStoreNodes(updatedNodes);
     } catch (err) {
       console.error('Drop error:', err);
     }
-  }, []);
+  }, [nodes, setNodes, setStoreNodes]);
 
   return (
     <div 
