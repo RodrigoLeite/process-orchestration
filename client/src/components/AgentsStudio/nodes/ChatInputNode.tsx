@@ -10,7 +10,6 @@ export default function ChatInputNode({ data, id }: any) {
   
   const [isExpanded, setIsExpanded] = useState(true);
   const [title, setTitle] = useState(data.label || 'Chat Input');
-  const [placeholder, setPlaceholder] = useState(data.placeholder || 'Digite sua mensagem aqui...');
   const [inputValue, setInputValue] = useState(data.value || '');
 
   const updateNodeData = useCallback((newData: any) => {
@@ -28,12 +27,6 @@ export default function ChatInputNode({ data, id }: any) {
     const newTitle = e.target.value;
     setTitle(newTitle);
     updateNodeData({ label: newTitle });
-  };
-
-  const handlePlaceholderChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newPlaceholder = e.target.value;
-    setPlaceholder(newPlaceholder);
-    updateNodeData({ placeholder: newPlaceholder });
   };
 
   const handleInputValueChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -73,25 +66,14 @@ export default function ChatInputNode({ data, id }: any) {
               <textarea
                 value={inputValue}
                 onChange={handleInputValueChange}
-                placeholder={placeholder}
-                className="w-full bg-green-50 border border-green-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-green-500 focus:bg-white h-20"
+                placeholder="Digite aqui a demanda, pergunta ou comando..."
+                className="w-full bg-green-50 border border-green-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-green-500 focus:bg-white h-24"
                 data-testid={`textarea-chat-input-value-${id}`}
               />
             </div>
 
-            <div>
-              <label className="text-xs text-gray-600 block mb-1">Placeholder de Input (config)</label>
-              <textarea
-                value={placeholder}
-                onChange={handlePlaceholderChange}
-                placeholder="Texto que aparece como sugestão..."
-                className="w-full bg-white border border-gray-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-green-500 h-12"
-                data-testid={`textarea-chat-input-placeholder-${id}`}
-              />
-            </div>
-
             <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-              💬 Este nó recebe input do usuário e passa para o próximo nó
+              💬 Digite aqui o que deseja que o agente processe
             </div>
           </div>
         )}
