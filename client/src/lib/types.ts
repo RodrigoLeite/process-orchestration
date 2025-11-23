@@ -2,7 +2,8 @@ export type DemandStatus = 'pending' | 'routed' | 'in_progress' | 'done' | 'new'
 
 export interface Demand {
   id: string;
-  raw_text: string | null;
+  raw_text?: string | null;
+  rawText?: string | null;
   parsed: {
     area?: string;
     tipo?: string;
@@ -11,8 +12,11 @@ export interface Demand {
     sugestao_proximo_passo?: string;
   } | null;
   route_to?: string | null;
+  routeTo?: string | null;
   assigned_to?: string | null;
   assignedTo?: string | null;
+  workflowId?: string | null;
+  stageId?: string | null;
   status: DemandStatus;
   current_status_description?: string | null;
   currentStatusDescription?: string | null;
@@ -23,8 +27,8 @@ export interface Demand {
   slaRemaining?: string | null;
   delay_risk?: string | null;
   delayRisk?: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   createdAt?: string;
   updatedAt?: string;
 }
