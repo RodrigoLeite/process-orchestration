@@ -7,6 +7,12 @@ interface ToolbarProps {
   onBack?: () => void;
 }
 
+const SAMPLE_AGENTS = [
+  { id: 'workflow-generator', name: 'Gerador de Workflow' },
+  { id: 'insights-inteligentes', name: 'Insights Inteligentes' },
+  { id: 'monitor-gargalos', name: 'Monitor de Gargalos' }
+];
+
 export default function Toolbar({ onBack }: ToolbarProps) {
   const {
     saveGraph,
@@ -17,7 +23,10 @@ export default function Toolbar({ onBack }: ToolbarProps) {
     isExecuting,
     setNodes,
     setEdges,
+    currentAgentId,
   } = useAgentsStore();
+
+  const currentAgent = SAMPLE_AGENTS.find(a => a.id === currentAgentId);
 
   const handleSave = async () => {
     try {
@@ -41,8 +50,17 @@ export default function Toolbar({ onBack }: ToolbarProps) {
   };
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
-      <div className="flex gap-2">
+    <div className="bg-white border-b border-gray-200">
+      {/* Agent Name Header */}
+      <div className="h-12 px-4 flex items-center border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
+        <h2 className="text-sm font-semibold text-gray-900">
+          {currentAgent ? `📋 ${currentAgent.name}` : 'Agente Desconhecido'}
+        </h2>
+      </div>
+
+      {/* Toolbar */}
+      <div className="h-16 flex items-center justify-between px-4">
+        <div className="flex gap-2">
         {onBack && (
           <Button
             size="sm"
@@ -106,6 +124,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           <RotateCcw size={16} />
         </Button>
       </div>
-    </div>
+        </div>
+      </div>
   );
 }
