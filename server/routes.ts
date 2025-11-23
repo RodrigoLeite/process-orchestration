@@ -2591,18 +2591,20 @@ Texto original: ${demand.rawText}`;
 
       // Save workflow if generated successfully
       let createdWorkflowId: string | null = null;
-      if (orchestrationResult.workflow) {
+      const resultData = orchestrationResult.data || orchestrationResult;
+      
+      if (resultData.workflow) {
         try {
           // Generate a valid UUID for workflow ID
           const workflowId = crypto.randomUUID();
           const workflowData = {
             id: workflowId,
             demandId,
-            title: orchestrationResult.workflow.titulo,
-            description: orchestrationResult.workflow.descricao,
-            stages: JSON.stringify(orchestrationResult.workflow.etapas),
-            totalDurationHours: orchestrationResult.workflow.duracao_total_horas,
-            priority: orchestrationResult.workflow.prioridade_workflow,
+            title: resultData.workflow.titulo,
+            description: resultData.workflow.descricao,
+            stages: JSON.stringify(resultData.workflow.etapas),
+            totalDurationHours: resultData.workflow.duracao_total_horas,
+            priority: resultData.workflow.prioridade_workflow,
             status: "created"
           };
           
@@ -2620,38 +2622,40 @@ Texto original: ${demand.rawText}`;
         } catch (error) {
           console.error("[ORCHESTRATE] Error saving workflow:", error);
         }
+      } else {
+        console.warn(`[ORCHESTRATE] No workflow generated. Result data:`, resultData);
       }
 
       // Save bottleneck report if identified
-      if (orchestrationResult.bottlenecks && orchestrationResult.bottlenecks.length > 0) {
+      if (resultData.bottlenecks && resultData.bottlenecks.length > 0) {
         try {
           const bottleneckData = {
             agentKey: "bottleneck-detector-orchestration",
             data: {
               demandId,
-              workflow: orchestrationResult.workflow?.titulo || "Unknown",
-              bottlenecks: orchestrationResult.bottlenecks,
-              severity: orchestrationResult.bottlenecks[0]?.severity || "média",
+              workflow: resultData.workflow?.titulo || "Unknown",
+              bottlenecks: resultData.bottlenecks,
+              severity: resultData.bottlenecks[0]?.severity || "média",
               detectedAt: new Date().toISOString()
             }
           };
           
           await storage.createBottleneckReport(bottleneckData);
-          console.log(`[ORCHESTRATE] Saved ${orchestrationResult.bottlenecks.length} bottlenecks`);
+          console.log(`[ORCHESTRATE] Saved ${resultData.bottlenecks.length} bottlenecks`);
         } catch (error) {
           console.error("[ORCHESTRATE] Error saving bottlenecks:", error);
         }
       }
 
       // Save insights report if generated
-      if (orchestrationResult.insights) {
+      if (resultData.insights) {
         try {
           const insightsData = {
             agentKey: "insights-ai-orchestration",
             data: {
               demandId,
-              workflow: orchestrationResult.workflow?.titulo || "Unknown",
-              insights: orchestrationResult.insights,
+              workflow: resultData.workflow?.titulo || "Unknown",
+              insights: resultData.insights,
               generatedAt: new Date().toISOString()
             }
           };
@@ -2675,17 +2679,18 @@ Texto original: ${demand.rawText}`;
 
       // Return consolidated result
       res.json({
-        success: orchestrationResult.status === "success",
+        success: orchestrationResult.success || orchestrationResult.status === "success",
         data: {
           demand_id: demandId,
           demand: demandInput,
-          workflow: orchestrationResult.workflow || null,
-          bottlenecks: orchestrationResult.bottlenecks || [],
-          insights: orchestrationResult.insights || null,
-          error: orchestrationResult.error || null,
+          workflow: resultData.workflow || null,
+          bottlenecks: resultData.bottlenecks || [],
+          insights: resultData.insights || null,
+          error: resultData.error || null,
           timestamp: new Date().toISOString(),
           duration_ms: duration,
-          status: orchestrationResult.status || "unknown"
+          workflow_id: createdWorkflowId,
+          status: "success"
         }
       });
     } catch (error) {
