@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 import { Button } from '@/components/ui/button';
-import { Zap, Settings, Database } from 'lucide-react';
+import { Zap, Settings, Database, MessageSquare } from 'lucide-react';
 
 export default function Sidebar() {
   const { setNodes, nodes } = useAgentsStore();
@@ -28,6 +28,9 @@ export default function Sidebar() {
         position: { x: Math.random() * 250, y: Math.random() * 250 },
         data: {
           label: nodeLabel,
+          ...(nodeType === 'chatInput' && {
+            placeholder: 'Digite sua mensagem aqui...',
+          }),
           ...(nodeType === 'prompt' && {
             systemPrompt: '',
             temperature: 0.7,
@@ -58,6 +61,21 @@ export default function Sidebar() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Chat Input Node */}
+        <div
+          draggable
+          onDragStart={(e) => onDragStart(e, 'chatInput', 'Chat Input')}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-grab hover:bg-green-100 transition"
+        >
+          <div className="flex items-center gap-2 text-green-600 font-semibold">
+            <MessageSquare size={16} />
+            <span>Chat Input Node</span>
+          </div>
+          <p className="text-xs text-gray-600 mt-1">Nó de entrada para dados do usuário</p>
+        </div>
+
         {/* Prompt Node */}
         <div
           draggable

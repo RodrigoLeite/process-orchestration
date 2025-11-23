@@ -13,11 +13,13 @@ import { useAgentsStore } from '@/lib/store/agentsStore';
 import PromptNode from './nodes/PromptNode';
 import LogicNode from './nodes/LogicNode';
 import OutputNode from './nodes/OutputNode';
+import ChatInputNode from './nodes/ChatInputNode';
 
 const nodeTypes = {
   prompt: PromptNode,
   logic: LogicNode,
   output: OutputNode,
+  chatInput: ChatInputNode,
 };
 
 export default function Canvas() {
