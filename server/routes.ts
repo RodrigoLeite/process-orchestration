@@ -2972,26 +2972,30 @@ Texto original: ${demand.rawText}`;
       const agents = await storage.getAgents();
       
       // Get logs from all agents and group by execution (by timestamp and demand)
-      const allLogs: any[] = [];
       const executionMap = new Map<string, any>();
       
       for (const agent of agents) {
         try {
           const agentLogs = await storage.getAgentLogs(agent.id);
           for (const log of agentLogs) {
-            // Extract demand ID from log metadata
-            const demandId = log.metadata?.demandId || log.metadata?.demand_id || log.metadata?.area;
+            // Extract demand ID from log metadata - ONLY include demand-specific logs
+            const demandId = log.metadata?.demandId;
+            
+            // Skip scheduler-only logs (those without demandId)
+            if (!demandId) {
+              continue;
+            }
             
             // Create execution key based on timestamp and demand
             const logTime = new Date(log.createdAt).getTime();
             const roundedTime = Math.floor(logTime / 60000) * 60000; // Round to nearest minute
-            const executionKey = `${demandId || 'unknown'}-${roundedTime}`;
+            const executionKey = `${demandId}-${roundedTime}`;
             
             if (!executionMap.has(executionKey)) {
               executionMap.set(executionKey, {
                 id: log.id,
                 executionId: log.id,
-                demandId: demandId || 'unknown',
+                demandId: demandId,
                 timestamp: log.createdAt,
                 duration_ms: log.durationMs || 0,
                 status: log.status === 'success' ? 'success' : 'error',
