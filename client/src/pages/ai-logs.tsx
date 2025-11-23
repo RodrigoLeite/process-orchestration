@@ -29,7 +29,9 @@ export default function AILogsPage() {
       if (!res.ok) throw new Error("Failed to fetch logs");
       return res.json();
     },
-    refetchInterval: 10000 // Update every 10 seconds
+    refetchInterval: 5000, // Update every 5 seconds
+    staleTime: 0,
+    gcTime: 0
   });
 
   const allLogs: ExecutionLog[] = logsData?.data || [];

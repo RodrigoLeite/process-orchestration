@@ -54,7 +54,9 @@ export default function AILogsDetailPage() {
       if (!res.ok) throw new Error("Failed to fetch execution details");
       return res.json();
     },
-    enabled: !!params?.id
+    enabled: !!params?.id,
+    staleTime: 0,
+    gcTime: 0
   });
 
   const detail = detailData?.data;
