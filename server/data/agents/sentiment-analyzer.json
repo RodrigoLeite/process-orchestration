@@ -6,13 +6,20 @@
         "id": "chat-input",
         "type": "chatInput",
         "position": {
-          "x": 0,
-          "y": 150
+          "x": -98,
+          "y": 152
         },
         "data": {
           "label": "Chat Input",
           "placeholder": "Digite um texto para analisar o sentimento..."
-        }
+        },
+        "width": 320,
+        "height": 231,
+        "positionAbsolute": {
+          "x": -98,
+          "y": 152
+        },
+        "dragging": true
       },
       {
         "id": "prompt-analyze",
@@ -26,7 +33,9 @@
           "systemPrompt": "Você é um especialista em análise de sentimento. Analise o texto fornecido e retorne um JSON com: 1) sentiment (positive/negative/neutral), 2) confidence (0-100), 3) keywords (array de palavras-chave), 4) summary (resumo em 1 linha). Responda APENAS com JSON válido.",
           "temperature": 0.5,
           "maxTokens": 300
-        }
+        },
+        "width": 320,
+        "height": 353
       },
       {
         "id": "logic-validate",
@@ -40,7 +49,9 @@
           "stepName": "Validar Resultado",
           "logicType": "validation",
           "condition": "confidence > 50 && sentiment in [positive, negative, neutral]"
-        }
+        },
+        "width": 320,
+        "height": 274
       },
       {
         "id": "output-format",
@@ -53,7 +64,9 @@
           "label": "Formato Final",
           "outputName": "Resultado da Análise",
           "schema": "{\"sentiment\": \"string\", \"confidence\": \"number\", \"keywords\": \"array\", \"summary\": \"string\", \"timestamp\": \"string\"}"
-        }
+        },
+        "width": 150,
+        "height": 249
       }
     ],
     "edges": [
@@ -79,6 +92,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T00:00:00Z",
-  "updatedAt": "2025-11-23T00:00:00Z"
+  "createdAt": "2025-11-23T17:52:17.343Z",
+  "updatedAt": "2025-11-23T17:52:17.343Z"
 }
