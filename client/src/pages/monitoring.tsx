@@ -117,35 +117,91 @@ export default function MonitoringPage() {
               Progresso Geral
             </CardTitle>
             <CardDescription>
-              {data.byStatus.completed + data.byStatus.done} de {data.total} demandas processadas
+              {data.byStatus.completed + data.byStatus.done} processadas • {data.byStatus.in_progress + data.byStatus.routed} aguardando • {data.total} total
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Main Progress Bar */}
             <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">Conclusão</span>
-                <span className="text-sm font-bold text-blue-600">{data.completionPercentage}%</span>
+              <div className="flex justify-between mb-3">
+                <span className="text-sm font-semibold">Status de Processamento</span>
+                <div className="flex gap-2 text-xs">
+                  <span className="text-green-600 font-bold">{data.byStatus.completed + data.byStatus.done} ✓</span>
+                  <span className="text-blue-600 font-bold">{data.byStatus.in_progress + data.byStatus.routed} ⏳</span>
+                  <span className="text-gray-600">{data.total}</span>
+                </div>
               </div>
-              <Progress value={data.completionPercentage} className="h-3" data-testid="progress-completion" />
+              <div className="w-full h-8 bg-gray-100 rounded-lg overflow-hidden flex border border-gray-300">
+                {/* Completed */}
+                <div
+                  style={{
+                    width: `${(data.byStatus.completed + data.byStatus.done) / data.total * 100}%`,
+                    minWidth: data.byStatus.completed + data.byStatus.done > 0 ? '4px' : '0'
+                  }}
+                  className="bg-gradient-to-r from-green-400 to-green-600 transition-all duration-300 flex items-center justify-center"
+                  title={`Processadas: ${data.byStatus.completed + data.byStatus.done}`}
+                />
+                {/* In Progress */}
+                <div
+                  style={{
+                    width: `${(data.byStatus.in_progress + data.byStatus.routed) / data.total * 100}%`,
+                    minWidth: data.byStatus.in_progress + data.byStatus.routed > 0 ? '4px' : '0'
+                  }}
+                  className="bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-300 flex items-center justify-center animate-pulse"
+                  title={`Aguardando: ${data.byStatus.in_progress + data.byStatus.routed}`}
+                />
+              </div>
+              <div className="flex gap-4 mt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span>Processadas</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded animate-pulse"></div>
+                  <span>Em Processamento</span>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Total de Demandas</p>
-                <p className="text-2xl font-bold" data-testid="text-total-demands">{data.total}</p>
-              </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-3">
               <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-gray-600">Processadas</p>
+                <p className="text-xs text-gray-600">Processadas</p>
                 <p className="text-2xl font-bold text-green-600" data-testid="text-processed">
                   {data.byStatus.completed + data.byStatus.done}
                 </p>
               </div>
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-gray-600">Aguardando</p>
+                <p className="text-2xl font-bold text-blue-600" data-testid="text-pending">
+                  {data.byStatus.in_progress + data.byStatus.routed}
+                </p>
+              </div>
               <div className="p-3 bg-purple-50 rounded-lg">
-                <p className="text-sm text-gray-600">Tempo Médio (min)</p>
+                <p className="text-xs text-gray-600">Tempo Médio</p>
                 <p className="text-2xl font-bold text-purple-600" data-testid="text-avg-time">
-                  {data.averageProcessingTime}
+                  {data.averageProcessingTime}m
+                </p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-600">Total</p>
+                <p className="text-2xl font-bold text-gray-600" data-testid="text-total-demands">
+                  {data.total}
                 </p>
               </div>
             </div>
+
+            {/* ETA Info */}
+            {data.byStatus.routed + data.byStatus.in_progress > 0 && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-900">
+                  <span className="font-semibold">⏳ Processando:</span> {data.byStatus.routed + data.byStatus.in_progress} demandas em fila
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Estimado: {Math.ceil((data.byStatus.routed + data.byStatus.in_progress) * 0.4)} minutos (baseado em ~24s por demanda)
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
