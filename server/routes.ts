@@ -1805,6 +1805,32 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Stage bottlenecks endpoint
+  app.get("/api/demands/:id/bottlenecks", async (req, res) => {
+    try {
+      const { id } = req.params;
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const bottlenecks = await storage.getStageBottlenecksByDemand(id);
+      res.json(bottlenecks);
+    } catch (error) {
+      console.error("Error fetching stage bottlenecks:", error);
+      res.status(500).json({ error: "Failed to fetch stage bottlenecks" });
+    }
+  });
+
+  // Stage insights endpoint
+  app.get("/api/demands/:id/insights", async (req, res) => {
+    try {
+      const { id } = req.params;
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const insights = await storage.getStageInsightsByDemand(id);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching stage insights:", error);
+      res.status(500).json({ error: "Failed to fetch stage insights" });
+    }
+  });
+
   // Custom Agents endpoint (legacy agents removed - all agents are LangGraph-managed)
   app.get("/api/custom-agents", async (req, res) => {
     try {

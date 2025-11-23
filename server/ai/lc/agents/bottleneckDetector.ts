@@ -15,6 +15,7 @@ Return ONLY valid JSON matching this exact structure:
   "gargalos": [
     {{
       "etapa": "string - stage name",
+      "etapa_index": number - stage index (0-based),
       "severidade": "string - severity (baixa, média, alta, crítica)",
       "motivo": "string - reason for bottleneck",
       "acao_recomendada": "string - recommended action",

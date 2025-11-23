@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, type StageBottleneck, type InsertStageBottleneck, type StageInsight, type InsertStageInsight, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents, stageBottlenecks, stageInsights } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -80,6 +80,14 @@ export interface IStorage {
   createLangflowAgent(agent: InsertLangflowAgent): Promise<LangflowAgent>;
   updateLangflowAgent(id: string, updates: Partial<LangflowAgent>): Promise<LangflowAgent | undefined>;
   deleteLangflowAgent(id: string): Promise<void>;
+
+  createStageBottleneck(bottleneck: InsertStageBottleneck): Promise<StageBottleneck>;
+  getStageBottlenecksByDemand(demandId: string): Promise<StageBottleneck[]>;
+  getStageBottlenecksByStage(stageId: string): Promise<StageBottleneck[]>;
+
+  createStageInsight(insight: InsertStageInsight): Promise<StageInsight>;
+  getStageInsightsByDemand(demandId: string): Promise<StageInsight[]>;
+  getStageInsightsByStage(stageId: string): Promise<StageInsight[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -583,6 +591,54 @@ export class DatabaseStorage implements IStorage {
     await this.db
       .delete(langflowAgents)
       .where(eq(langflowAgents.id, id));
+  }
+
+  async createStageBottleneck(bottleneck: InsertStageBottleneck): Promise<StageBottleneck> {
+    const result = await this.db
+      .insert(stageBottlenecks)
+      .values(bottleneck)
+      .returning();
+    return result[0];
+  }
+
+  async getStageBottlenecksByDemand(demandId: string): Promise<StageBottleneck[]> {
+    return await this.db
+      .select()
+      .from(stageBottlenecks)
+      .where(eq(stageBottlenecks.demandId, demandId))
+      .orderBy(desc(stageBottlenecks.createdAt));
+  }
+
+  async getStageBottlenecksByStage(stageId: string): Promise<StageBottleneck[]> {
+    return await this.db
+      .select()
+      .from(stageBottlenecks)
+      .where(eq(stageBottlenecks.stageId, stageId))
+      .orderBy(desc(stageBottlenecks.createdAt));
+  }
+
+  async createStageInsight(insight: InsertStageInsight): Promise<StageInsight> {
+    const result = await this.db
+      .insert(stageInsights)
+      .values(insight)
+      .returning();
+    return result[0];
+  }
+
+  async getStageInsightsByDemand(demandId: string): Promise<StageInsight[]> {
+    return await this.db
+      .select()
+      .from(stageInsights)
+      .where(eq(stageInsights.demandId, demandId))
+      .orderBy(desc(stageInsights.createdAt));
+  }
+
+  async getStageInsightsByStage(stageId: string): Promise<StageInsight[]> {
+    return await this.db
+      .select()
+      .from(stageInsights)
+      .where(eq(stageInsights.stageId, stageId))
+      .orderBy(desc(stageInsights.createdAt));
   }
 }
 

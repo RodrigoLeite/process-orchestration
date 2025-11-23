@@ -18,6 +18,23 @@ interface AreaWorkflow {
   name: string;
 }
 
+interface StageBottleneck {
+  id: string;
+  stageName: string;
+  severity: string;
+  reason: string;
+  recommendedAction?: string;
+}
+
+interface StageInsight {
+  id: string;
+  title: string;
+  description: string;
+  impact: string;
+  recommendation?: string;
+  stageName?: string;
+}
+
 export default function DemandDetail() {
   const [match, params] = useRoute("/app/demands/:id");
   const [, navigate] = useLocation();
@@ -55,6 +72,34 @@ export default function DemandDetail() {
       return res.json();
     },
     enabled: !!workflow?.id
+  });
+
+  // Fetch stage bottlenecks
+  const { data: bottlenecks = [] } = useQuery<StageBottleneck[]>({
+    queryKey: ["demand-bottlenecks", params?.id],
+    queryFn: async () => {
+      if (!params?.id) return [];
+      const res = await fetch(`/api/demands/${params.id}/bottlenecks`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!params?.id,
+    staleTime: 0,
+    gcTime: 0
+  });
+
+  // Fetch stage insights
+  const { data: insights = [] } = useQuery<StageInsight[]>({
+    queryKey: ["demand-insights", params?.id],
+    queryFn: async () => {
+      if (!params?.id) return [];
+      const res = await fetch(`/api/demands/${params.id}/insights`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!params?.id,
+    staleTime: 0,
+    gcTime: 0
   });
 
   if (!match) return null;
@@ -270,6 +315,75 @@ export default function DemandDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Stage Bottlenecks */}
+      {bottlenecks.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-900">Gargalos Identificados</CardTitle>
+            <CardDescription className="text-red-800">Problemas encontrados em etapas do fluxo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {bottlenecks.map(bottleneck => (
+                <div key={bottleneck.id} className="border border-red-200 bg-white p-3 rounded-lg" data-testid={`bottleneck-${bottleneck.id}`}>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="font-semibold text-red-900">{bottleneck.stageName}</p>
+                    <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                      bottleneck.severity === 'crítica' ? 'bg-red-600 text-white' :
+                      bottleneck.severity === 'alta' ? 'bg-orange-600 text-white' :
+                      bottleneck.severity === 'média' ? 'bg-yellow-600 text-white' :
+                      'bg-green-600 text-white'
+                    }`}>
+                      {bottleneck.severity?.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-2">💡 {bottleneck.reason}</p>
+                  {bottleneck.recommendedAction && (
+                    <p className="text-sm text-blue-700 bg-blue-100 p-2 rounded">✓ {bottleneck.recommendedAction}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stage Insights */}
+      {insights.length > 0 && (
+        <Card className="border-purple-200 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="text-purple-900">Insights & Recomendações</CardTitle>
+            <CardDescription className="text-purple-800">Análises inteligentes sobre o fluxo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {insights.map(insight => (
+                <div key={insight.id} className="border border-purple-200 bg-white p-3 rounded-lg" data-testid={`insight-${insight.id}`}>
+                  <p className="font-semibold text-purple-900 mb-1">{insight.title}</p>
+                  {insight.stageName && (
+                    <p className="text-xs text-gray-500 mb-1">📍 {insight.stageName}</p>
+                  )}
+                  <p className="text-sm text-gray-700 mb-2">{insight.description}</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                      insight.impact === 'crítico' ? 'bg-red-100 text-red-800' :
+                      insight.impact === 'alto' ? 'bg-orange-100 text-orange-800' :
+                      insight.impact === 'médio' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {insight.impact?.toUpperCase()}
+                    </span>
+                  </div>
+                  {insight.recommendation && (
+                    <p className="text-sm text-green-700 bg-green-100 p-2 rounded mt-2">➜ {insight.recommendation}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Kanban Button */}
       {workflow && (
