@@ -68,22 +68,23 @@ export default function Canvas() {
     [edges, onEdgesChange, setStoreEdges]
   );
 
-  const handleDragOver = (event: React.DragEvent) => {
+  const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-  };
+  }, []);
 
-  const handleDrop = (event: React.DragEvent) => {
+  const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     try {
-      const data = JSON.parse(event.dataTransfer.getData('application/reactflow'));
+      const rawData = event.dataTransfer.getData('application/reactflow');
+      if (!rawData) return;
+      
+      const data = JSON.parse(rawData);
       const { nodeType, nodeLabel } = data;
 
-      // Get canvas coordinates relative to the canvas container
-      const canvas = event.currentTarget as HTMLElement;
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      // Get canvas coordinates - use event.clientX/Y directly
+      const x = event.clientX;
+      const y = event.clientY;
 
       const newNode = {
         id: `${nodeType}-${Date.now()}`,
@@ -111,11 +112,11 @@ export default function Canvas() {
         },
       };
 
-      setNodes([...nodes, newNode]);
+      setNodes((prevNodes) => [...prevNodes, newNode]);
     } catch (err) {
       console.error('Drop error:', err);
     }
-  };
+  }, []);
 
   return (
     <div 
