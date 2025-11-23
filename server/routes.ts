@@ -476,20 +476,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all area workflows (for kanban board)
   app.get("/api/area-workflows", async (req, res) => {
     try {
-      // Get all area workflows
-      const nodes = await storage.getWorkgraphNodes();
-      const areaWorkflows = await Promise.all(
-        nodes.map(async (node) => {
-          const workflow = await storage.getAreaWorkflow(node.name);
-          return {
-            id: node.id,
-            name: node.name.charAt(0).toUpperCase() + node.name.slice(1),
-            areaName: node.name,
-            description: node.description || `Workflow da área ${node.name}`
-          };
-        })
-      );
-      res.json(areaWorkflows.filter((w) => w !== null));
+      // Get all area workflows from database
+      const allNodes = await storage.getWorkgraphNodes();
+      const areaWorkflows = [];
+      
+      for (const node of allNodes) {
+        const workflow = await storage.getAreaWorkflow(node.name);
+        if (workflow) {
+          areaWorkflows.push({
+            id: workflow.id,
+            name: workflow.name,
+            areaName: workflow.areaName,
+            description: `Workflow da área ${workflow.areaName}`
+          });
+        }
+      }
+      
+      res.json(areaWorkflows);
     } catch (error) {
       console.error("Error fetching area workflows:", error);
       res.status(500).json({ error: "Failed to fetch area workflows" });
@@ -499,15 +502,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get a single area workflow by ID
   app.get("/api/area-workflows/:id", async (req, res) => {
     try {
-      const node = await storage.getWorkgraphNode(req.params.id);
-      if (!node) {
+      // Try to find the workflow by ID
+      const workflow = await storage.getWorkflowById(req.params.id);
+      if (!workflow) {
         return res.status(404).json({ error: "Area workflow not found" });
       }
       res.json({
-        id: node.id,
-        name: node.name.charAt(0).toUpperCase() + node.name.slice(1),
-        areaName: node.name,
-        description: node.description || `Workflow da área ${node.name}`
+        id: workflow.id,
+        name: workflow.name,
+        areaName: workflow.areaName,
+        description: `Workflow da área ${workflow.areaName}`
       });
     } catch (error) {
       console.error("Error fetching area workflow:", error);
@@ -518,16 +522,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get stages for an area workflow
   app.get("/api/area-workflows/:id/stages", async (req, res) => {
     try {
-      const node = await storage.getWorkgraphNode(req.params.id);
-      if (!node) {
-        return res.status(404).json({ error: "Area workflow not found" });
-      }
-      // Get workflow stages for this area
-      const areaWorkflow = await storage.getAreaWorkflow(node.name);
-      if (!areaWorkflow) {
+      // Get the workflow to find its area
+      const workflow = await storage.getWorkflowById(req.params.id);
+      if (!workflow) {
         return res.json([]);
       }
-      const stages = await storage.getWorkflowStages(areaWorkflow.id);
+      // Get workflow stages for this area workflow
+      const stages = await storage.getWorkflowStages(workflow.id);
       res.json(stages);
     } catch (error) {
       console.error("Error fetching area workflow stages:", error);
@@ -538,13 +539,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get demands for an area workflow
   app.get("/api/area-workflows/:id/demands", async (req, res) => {
     try {
-      const node = await storage.getWorkgraphNode(req.params.id);
-      if (!node) {
-        return res.status(404).json({ error: "Area workflow not found" });
+      // Get the workflow to find its area
+      const workflow = await storage.getWorkflowById(req.params.id);
+      if (!workflow) {
+        return res.json([]);
       }
       // Get all demands for this area
       const allDemands = await storage.getDemands();
-      const areaDemands = allDemands.filter((d: any) => d.assignedTo === node.name);
+      const areaDemands = allDemands.filter((d: any) => d.assignedTo === workflow.areaName);
       res.json(areaDemands);
     } catch (error) {
       console.error("Error fetching area workflow demands:", error);

@@ -2,7 +2,7 @@ import { type Server } from "node:http";
 import express, { type Express, type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { registerWorkflowRoutes } from "./lib/workflow-api";
-import { seedAgents } from "./lib/seeds";
+import { seedAgents, initializeDefaultAreas } from "./lib/seeds";
 import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
 
@@ -67,6 +67,7 @@ export default async function runApp(
   const server = await registerRoutes(app);
   await registerWorkflowRoutes(app);
   await seedAgents();
+  await initializeDefaultAreas();
   startScheduler();
   
   // Initialize LangSmith client
