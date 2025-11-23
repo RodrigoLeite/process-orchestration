@@ -1,18 +1,21 @@
 import React from "react";
 import Navigation from "./Navigation";
+import { useUIStore } from "@/lib/store/uiStore";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { isSidebarCollapsed } = useUIStore();
+
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
       {/* Sidebar Navigation */}
       <Navigation />
 
-      {/* Main content - adjust margin based on sidebar state (handled via CSS variable or default) */}
-      <div className="flex-1 flex flex-col lg:ml-64" style={{ transition: "margin-left 0.2s" }}>
+      {/* Main content - adjust margin based on sidebar state */}
+      <div className="flex-1 flex flex-col transition-all duration-200" style={{ marginLeft: isSidebarCollapsed ? '5rem' : '16rem' }}>
         <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
           <div className="px-4 h-16 flex items-center">
             <h2 className="text-lg font-semibold">Sistema de Orquestração de Demandas</h2>
