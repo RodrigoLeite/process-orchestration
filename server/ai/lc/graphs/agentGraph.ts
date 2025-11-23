@@ -8,7 +8,7 @@ import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import { createWorkflowBuilderAgent } from "../agents/workflowBuilder";
 import { createInsightsAgent } from "../agents/insights";
 import { createBottleneckDetectorAgent } from "../agents/bottleneckDetector";
-import { saveAgentLog } from "../../lib/agents/logging";
+import { saveAgentLog } from "../../../lib/agents/logging";
 
 /**
  * State schema for the agent orchestration graph
