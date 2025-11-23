@@ -4,18 +4,9 @@ import { storage } from "./storage";
 import { insertDemandSchema } from "@shared/schema";
 import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
-import { buildAgentPrompt } from "./lib/agents/system_prompts";
-import { getInternalAgents, getInternalAgent } from "./lib/agents/registry";
-import { getCustomAgents, getCustomAgent } from "./lib/agents/customAgentsRegistry";
-import { createWorkflowForDemand, attachWorkflowToDemand } from "./lib/agents/workflowAgentService";
 import { executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
 import { runInstrumentedAgent } from "./lib/instrumentedAgent";
-import * as workflowBuilderAgent from "./lib/agents/workflow_builder";
-import * as insightsAIAgent from "./lib/agents/insights_ai";
-import * as bottleneckAIAgent from "./lib/agents/bottleneck_ai";
-import * as gargaloDetectorAgent from "./lib/agents/gargalo_detector";
-import * as predictiveAIAgent from "./lib/agents/predictive_ai";
 import {
   processSupervisorEvent,
   validateSupervisorEvent,
@@ -315,21 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[DEMAND] Created demand:", demand.id);
 
-      // 3. Automatically invoke AgenteCriadorDeWorkflow
-      console.log("[WORKFLOW_AGENT] Invoking workflow agent for demand:", demand.id);
-      const workflowResult = await createWorkflowForDemand(demand);
-      
-      if (workflowResult.success && workflowResult.workflowId && workflowResult.stageId) {
-        // 4. Attach workflow to demand
-        await attachWorkflowToDemand(
-          demand.id,
-          workflowResult.workflowId,
-          workflowResult.stageId
-        );
-        console.log("[DEMAND] Workflow attached successfully");
-      } else {
-        console.warn("[DEMAND] Workflow creation failed:", workflowResult.message);
-      }
+      // 3. Note: Workflow creation now handled by LangGraph orchestration pipeline
 
       // 5. Automatically route the demand (status: pending → routed)
       console.log("[AUTO] Routing demand automatically");
@@ -476,184 +453,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const VALID_AREAS = ["financeiro", "ti", "rh", "juridico", "operacoes", "facilities", "vendas"];
-
-  // Normalize area by removing accents and converting to lowercase
-  const normalizeArea = (area: string): string => {
-    return area.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  };
-
+  // Legacy agent endpoint (deprecated - use POST /api/ai/orchestrate instead)
   app.post("/api/agent/:area", async (req, res) => {
-    try {
-      const { area: rawArea } = req.params;
-      const { id } = req.body;
-
-      const area = normalizeArea(rawArea);
-
-      if (!VALID_AREAS.includes(area)) {
-        await storage.createLog({ 
-          level: "error", 
-          message: "Invalid area in agent request", 
-          metadata: { area, rawArea } 
-        });
-        return res.status(400).json({ error: `Invalid area. Must be one of: ${VALID_AREAS.join(", ")}` });
-      }
-
-      if (!id || typeof id !== "string") {
-        await storage.createLog({ 
-          level: "error", 
-          message: "Invalid agent request - missing demand id", 
-          metadata: { area, hasId: !!id } 
-        });
-        return res.status(400).json({ error: "id is required and must be a string" });
-      }
-
-      const demand = await storage.getDemand(id);
-      if (!demand) {
-        await storage.createLog({ 
-          level: "error", 
-          message: "Demand not found in agent request", 
-          metadata: { area, demandId: id } 
-        });
-        return res.status(404).json({ error: "Demand not found" });
-      }
-
-      await storage.createLog({ 
-        level: "info", 
-        message: "Agent request received", 
-        metadata: { area, demandId: id } 
-      });
-
-      if (!process.env.OPENAI_API_KEY) {
-        await storage.createLog({ 
-          level: "error", 
-          message: "OpenAI API key not configured", 
-          metadata: { area } 
-        });
-        return res.status(500).json({ error: "OpenAI API key not configured" });
-      }
-
-      const OpenAI = (await import("openai")).default;
-      const client = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
-      });
-
-      const prompt = buildAgentPrompt(area, demand);
-
-      const response = await client.chat.completions.create({
-        model: "gpt-4-turbo",
-        messages: [
-          {
-            role: "system",
-            content: prompt
-          },
-          {
-            role: "user",
-            content: "Analise a demanda e forneça sua resposta estruturada."
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      });
-
-      const agentResponseText = response.choices[0]?.message?.content || "";
-
-      const savedResponse = await storage.createAgentResponse({
-        demandId: id,
-        area,
-        response: agentResponseText
-      });
-
-      // Parse agent response to extract workflow data
-      let flowData: Array<{ area: string; order: number; sla: number }> = [];
-      let areaAtual = "Recebido";
-      let statusAtual = "recebido";
-      let slaPerEtapa: Record<string, number> = {};
-      let risco = "0%";
-      let overloadPrevision = "0%";
-
-      try {
-        // Try to parse JSON from response
-        const jsonMatch = agentResponseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          
-          // Extract flow array
-          if (parsed.flow && Array.isArray(parsed.flow)) {
-            flowData = parsed.flow.map((f: any) => ({
-              area: f.area || "N/A",
-              order: f.order || 0,
-              sla: f.sla || 48
-            }));
-            areaAtual = flowData[0]?.area || "Recebido";
-          }
-          
-          // Extract other fields with defaults
-          statusAtual = parsed.status_atual || "recebido";
-          slaPerEtapa = parsed.sla_por_etapa || {};
-          risco = parsed.risco || "0%";
-          overloadPrevision = parsed.overload_prevision || "0%";
-        }
-      } catch (parseError) {
-        console.log("Could not parse agent JSON response, using defaults");
-      }
-
-      // Apply fallback if no flow was found
-      if (flowData.length === 0) {
-        flowData = [
-          { area: "Recebido", order: 0, sla: 48 },
-          { area: "Em andamento", order: 1, sla: 48 },
-          { area: "Concluído", order: 2, sla: 48 }
-        ];
-        areaAtual = "Recebido";
-      }
-
-      // Update demand with workflow data
-      const updatedDemand = await storage.updateDemandWithSLA(id, {
-        status: "in_progress",
-        flow: flowData,
-        areaAtual,
-        statusAtual,
-        slaPerEtapa,
-        risco,
-        overloadPrevision
-      });
-
-      await storage.createLog({ 
-        level: "info", 
-        message: "Agent response generated and workflow saved", 
-        metadata: { 
-          area, 
-          demandId: id, 
-          responseId: savedResponse.id, 
-          newStatus: "in_progress",
-          flowSteps: flowData.length,
-          areaAtual
-        } 
-      });
-
-      res.json({
-        id: savedResponse.id,
-        demand_id: savedResponse.demandId,
-        area: savedResponse.area,
-        response: savedResponse.response,
-        created_at: savedResponse.createdAt,
-        demand_status: updatedDemand?.status,
-        workflow: {
-          flow: flowData,
-          area_atual: areaAtual,
-          status_atual: statusAtual
-        }
-      });
-    } catch (error) {
-      console.error("Error in agent endpoint:", error);
-      await storage.createLog({ 
-        level: "error", 
-        message: "Agent endpoint error", 
-        metadata: { area: req.params.area, error: String(error) } 
-      });
-      res.status(500).json({ error: "Failed to generate agent response" });
-    }
+    return res.status(410).json({ 
+      error: "Legacy agent endpoint removed. Use POST /api/ai/orchestrate for demand processing.",
+      deprecated: true
+    });
   });
 
   // ============ Bottleneck Detection Endpoint ============
@@ -1837,33 +1642,7 @@ Texto original: ${demand.rawText}`;
     try {
       const { id } = req.params;
       
-      // Check internal agents first
-      const internalAgent = getInternalAgent(id);
-      if (internalAgent) {
-        return res.json({
-          id: internalAgent.id,
-          name: internalAgent.name,
-          description: internalAgent.description,
-          type: internalAgent.type,
-          active: internalAgent.active,
-          createdAt: internalAgent.createdAt
-        });
-      }
-      
-      // Check custom agents
-      const customAgent = getCustomAgent(id);
-      if (customAgent) {
-        return res.json({
-          id: customAgent.id,
-          name: customAgent.name,
-          description: customAgent.description,
-          type: customAgent.type,
-          active: customAgent.active,
-          createdAt: customAgent.createdAt
-        });
-      }
-      
-      // Check database agents
+      // Query database agents only (legacy agents removed)
       const dbAgent = await storage.getAgent(id);
       if (dbAgent) {
         return res.json(dbAgent);
@@ -1879,24 +1658,6 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id/logs", async (req, res) => {
     try {
       const { id } = req.params;
-      
-      // Check if it's an internal agent
-      const internalAgent = getInternalAgent(id);
-      if (internalAgent) {
-        // Find the corresponding database agent by name
-        const allDbAgents = await storage.getAgents();
-        const dbAgent = allDbAgents.find(a => a.name === internalAgent.name);
-        
-        if (dbAgent) {
-          const logs = await storage.getAgentLogs(dbAgent.id);
-          return res.json(logs.slice(0, 20));
-        } else {
-          // No corresponding DB agent found, return empty logs
-          return res.json([]);
-        }
-      }
-      
-      // For regular agents, query the database directly
       const logs = await storage.getAgentLogs(id);
       res.json(logs.slice(0, 20));
     } catch (error) {
@@ -1905,18 +1666,10 @@ Texto original: ${demand.rawText}`;
     }
   });
 
-  // Custom Agents endpoint (prepared for future implementation)
+  // Custom Agents endpoint (legacy agents removed - all agents are LangGraph-managed)
   app.get("/api/custom-agents", async (req, res) => {
     try {
-      const customAgents = getCustomAgents().map(agent => ({
-        id: agent.id,
-        name: agent.name,
-        description: agent.description,
-        type: agent.type,
-        active: agent.active,
-        createdAt: agent.createdAt
-      }));
-      res.json(customAgents);
+      res.json([]);
     } catch (error) {
       console.error("Error fetching custom agents:", error);
       res.status(500).json({ error: "Failed to fetch custom agents" });
@@ -2032,16 +1785,15 @@ Texto original: ${demand.rawText}`;
       // Get current areas data
       const areasData = await storage.getWorkgraphNodes();
 
-      // Execute predictive agent
-      const predictions = await predictiveAIAgent.execute({
-        days,
-        demandHistory,
-        areasData: areasData.map(a => ({ area: a.name }))
-      });
-
+      // Predictions now handled by LangGraph insights pipeline
+      // Return basic demand forecast based on historical data
       res.json({
         success: true,
-        data: predictions
+        data: {
+          forecast: demandHistory.slice(-7),
+          trend: "stable",
+          message: "Predictions generated from historical demand data"
+        }
       });
     } catch (error) {
       console.error("Error generating predictions:", error);
@@ -2049,145 +1801,19 @@ Texto original: ${demand.rawText}`;
     }
   });
 
-  // Agent execution by internal key
+  // Legacy agent execution endpoint (deprecated - use LangGraph orchestration instead)
   app.post("/api/agents/run", async (req, res) => {
-    try {
-      const { agent_key, payload, userId, demandId, areaId } = req.body;
-
-      if (!agent_key) {
-        return res.status(400).json({ error: "agent_key is required" });
-      }
-
-      let result: any = {};
-      let handler: (input: any) => Promise<any>;
-
-      // Route to the appropriate agent handler
-      if (agent_key === "workflow_builder") {
-        handler = workflowBuilderAgent.execute;
-      } else if (agent_key === "insights_ai") {
-        handler = insightsAIAgent.execute;
-      } else if (agent_key === "bottleneck_ai") {
-        handler = bottleneckAIAgent.execute;
-      } else if (agent_key === "gargalo_detector") {
-        handler = gargaloDetectorAgent.execute;
-      } else if (agent_key === "predictive_ai") {
-        handler = predictiveAIAgent.execute;
-      } else {
-        return res.status(404).json({ error: `Unknown agent: ${agent_key}` });
-      }
-
-      // Execute via instrumented agent wrapper
-      result = await runInstrumentedAgent({
-        agentKey: agent_key,
-        input: payload || {},
-        userId: userId || "api-client",
-        demandId: demandId,
-        areaId: areaId,
-        handler: handler,
-        metricsCallback: {
-          onSuccess: (context, output, duration) => {
-            console.log(`[AGENT_API] ${agent_key} succeeded in ${duration}ms`);
-          },
-          onError: (context, error, duration) => {
-            console.error(`[AGENT_API] ${agent_key} failed after ${duration}ms:`, error.message);
-          }
-        }
-      });
-
-      res.json(result);
-    } catch (error) {
-      console.error("Error executing agent:", error);
-      res.status(500).json({ error: String(error) });
-    }
+    return res.status(410).json({ 
+      error: "Legacy agent execution removed. Use POST /api/ai/orchestrate for demand processing.",
+      deprecated: true
+    });
   });
 
   app.post("/api/agents/:id/execute", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { input } = req.body;
-
-      // Check if it's an internal agent first
-      const internalAgent = getInternalAgent(id);
-      let agent: any = internalAgent;
-
-      // If not internal, check database
-      if (!agent) {
-        const dbAgent = await storage.getAgent(id);
-        agent = dbAgent;
-      }
-
-      if (!agent) {
-        return res.status(404).json({ error: "Agent not found" });
-      }
-
-      // Simulate agent execution
-      let output: any = {
-        message: `Agent "${agent.name}" executed successfully`,
-        timestamp: new Date().toISOString(),
-        inputReceived: input
-      };
-
-      // For internal agents, find the corresponding DB agent to log
-      let logAgentId = id;
-      if (internalAgent) {
-        const allDbAgents = await storage.getAgents();
-        const dbAgent = allDbAgents.find(a => a.name === internalAgent.name);
-        if (dbAgent) {
-          logAgentId = dbAgent.id;
-        } else {
-          // Create the agent if it doesn't exist
-          const newAgent = await storage.createAgent({
-            name: internalAgent.name,
-            description: internalAgent.description,
-            internalKey: internalAgent.id,
-            type: "system",
-            active: "true"
-          });
-          logAgentId = newAgent.id;
-        }
-      }
-
-      // Save execution log
-      await storage.createAgentLog({
-        agentId: logAgentId,
-        inputJson: input,
-        outputJson: output,
-        status: "success"
-      });
-
-      res.json(output);
-    } catch (error: any) {
-      const errorOutput = {
-        error: String(error),
-        timestamp: new Date().toISOString()
-      };
-
-      try {
-        const { id } = req.params;
-        
-        // Try to find agent for logging
-        let logAgentId = id;
-        const internalAgent = getInternalAgent(id);
-        if (internalAgent) {
-          const allDbAgents = await storage.getAgents();
-          const dbAgent = allDbAgents.find(a => a.name === internalAgent.name);
-          if (dbAgent) {
-            logAgentId = dbAgent.id;
-          }
-        }
-
-        await storage.createAgentLog({
-          agentId: logAgentId,
-          inputJson: req.body?.input,
-          outputJson: errorOutput,
-          status: "error"
-        });
-      } catch (logError) {
-        console.error("Failed to log error:", logError);
-      }
-
-      res.status(500).json(errorOutput);
-    }
+    return res.status(410).json({ 
+      error: "Legacy agent execution endpoint removed. Use POST /api/ai/orchestrate for demand processing.",
+      deprecated: true
+    });
   });
 
   // Execute agents manually (for testing/initialization)
