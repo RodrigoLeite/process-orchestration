@@ -55,7 +55,7 @@ export class WorkflowBuilderAgent extends BaseAgent {
     const llm = new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
       modelName: "gpt-4-turbo",
-      temperature: 0.2, // Lower temperature for more deterministic, consistent results
+      temperature: 0.5, // Balanced temperature for varied, creative workflow generation per-demand
       maxTokens: 2048
     });
     super("WorkflowBuilder", WORKFLOW_BUILDER_SYSTEM_PROMPT, llm);
