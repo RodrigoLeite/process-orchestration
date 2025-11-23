@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card } from '@/components/ui/card';
 import { Zap, ChevronDown } from 'lucide-react';
+import { useAgentsStore } from '@/lib/store/agentsStore';
 
 export default function PromptNode({ data, id }: any) {
   const { setNodes } = useReactFlow();
+  const { updateNode } = useAgentsStore();
   
   const [isExpanded, setIsExpanded] = useState(true);
   const [title, setTitle] = useState(data.label || 'Prompt');
@@ -15,12 +17,15 @@ export default function PromptNode({ data, id }: any) {
   const [maxTokens, setMaxTokens] = useState(data.maxTokens || 2000);
 
   const updateNodeData = useCallback((newData: any) => {
+    // Update ReactFlow local state
     setNodes((nodes: any[]) =>
       nodes.map((n: any) =>
         n.id === id ? { ...n, data: { ...n.data, ...newData } } : n
       )
     );
-  }, [id, setNodes]);
+    // Also update Zustand global store
+    updateNode(id, newData);
+  }, [id, setNodes, updateNode]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;

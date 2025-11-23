@@ -47,6 +47,7 @@ interface AgentsStore {
   edges: Edge[];
   setNodes: (nodes: AgentNode[]) => void;
   setEdges: (edges: Edge[]) => void;
+  updateNode: (nodeId: string, nodeData: any) => void;
 
   viewport: { x: number; y: number; zoom: number };
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
@@ -98,6 +99,23 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
     };
     set((prev) => ({
       nodes,
+      history: [...prev.history.slice(0, prev.historyIndex + 1), newGraph],
+      historyIndex: prev.historyIndex + 1,
+    }));
+  },
+
+  updateNode: (nodeId, nodeData) => {
+    const state = get();
+    const updatedNodes = state.nodes.map((n) =>
+      n.id === nodeId ? { ...n, data: { ...n.data, ...nodeData } } : n
+    );
+    const newGraph: AgentGraph = {
+      nodes: updatedNodes,
+      edges: state.edges,
+      viewport: state.viewport,
+    };
+    set((prev) => ({
+      nodes: updatedNodes,
       history: [...prev.history.slice(0, prev.historyIndex + 1), newGraph],
       historyIndex: prev.historyIndex + 1,
     }));

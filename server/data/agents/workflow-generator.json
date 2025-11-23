@@ -5,33 +5,60 @@
       {
         "id": "prompt-1",
         "type": "prompt",
-        "position": { "x": 0, "y": 0 },
+        "position": {
+          "x": 0,
+          "y": 0
+        },
         "data": {
           "label": "Demand Parser",
           "systemPrompt": "Você é um analisador de demandas. Analise a demanda e extraia informações estruturadas.",
-          "temperature": 0.3,
+          "temperature": 0.7,
           "maxTokens": 1024
+        },
+        "width": 320,
+        "height": 353,
+        "positionAbsolute": {
+          "x": 0,
+          "y": 0
         }
       },
       {
         "id": "logic-1",
         "type": "logic",
-        "position": { "x": 400, "y": 0 },
+        "position": {
+          "x": 400,
+          "y": 0
+        },
         "data": {
           "label": "Route by Area",
           "stepName": "Route by Area",
           "logicType": "routing",
           "condition": "if area in ['TI', 'VENDAS', 'RH', 'FINANCEIRO'] then continue else error"
+        },
+        "width": 320,
+        "height": 274,
+        "positionAbsolute": {
+          "x": 400,
+          "y": 0
         }
       },
       {
         "id": "output-1",
         "type": "output",
-        "position": { "x": 800, "y": 0 },
+        "position": {
+          "x": 800,
+          "y": 0
+        },
         "data": {
           "label": "Workflow Output",
           "outputName": "Workflow Output",
           "schema": "{\"workflows\": [{\"id\": \"string\", \"name\": \"string\", \"stages\": []}]}"
+        },
+        "width": 150,
+        "height": 249,
+        "positionAbsolute": {
+          "x": 800,
+          "y": 0
         }
       }
     ],
@@ -47,8 +74,12 @@
         "target": "output-1"
       }
     ],
-    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
   },
-  "createdAt": "2025-11-23T16:00:00Z",
-  "updatedAt": "2025-11-23T16:00:00Z"
+  "createdAt": "2025-11-23T17:02:16.821Z",
+  "updatedAt": "2025-11-23T17:02:16.821Z"
 }
