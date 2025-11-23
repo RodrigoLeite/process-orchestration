@@ -297,13 +297,13 @@ export default function DemandDetail() {
       <Card className="border-gray-200 bg-gray-50">
         <CardContent className="pt-6">
           <p className="text-xs text-gray-600">
-            Criado em: {new Date(demand.created_at).toLocaleString("pt-BR", {
+            Criado em: {demand.createdAt ? new Date(demand.createdAt).toLocaleString("pt-BR", {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",
               hour: "2-digit",
               minute: "2-digit"
-            })}
+            }) : "—"}
           </p>
         </CardContent>
       </Card>
