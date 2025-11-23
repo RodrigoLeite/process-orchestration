@@ -47,25 +47,25 @@ export default function PromptNode({ data, id }: any) {
   };
 
   return (
-    <Card className="w-80 bg-slate-900 border-blue-500/50 shadow-xl">
+    <Card className="w-80 bg-white border-2 border-blue-200 shadow-md">
       <Handle type="target" position={Position.Left} />
 
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Zap size={18} className="text-blue-400" />
+            <Zap size={18} className="text-blue-500" />
             <input
               type="text"
               value={title}
               onChange={handleTitleChange}
-              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm font-semibold outline-none focus:border-blue-500"
+              className="bg-gray-50 border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm font-semibold outline-none focus:border-blue-500"
               placeholder="Node Title"
               data-testid={`input-prompt-node-title-${id}`}
             />
           </div>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-slate-400 hover:text-white"
+            className="text-gray-400 hover:text-gray-600"
             data-testid={`button-toggle-expand-${id}`}
           >
             <ChevronDown size={18} className={`transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
@@ -76,19 +76,19 @@ export default function PromptNode({ data, id }: any) {
           <>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-slate-400 block mb-1">System Prompt</label>
+                <label className="text-xs text-gray-600 block mb-1">System Prompt</label>
                 <textarea
                   value={systemPrompt}
                   onChange={handlePromptChange}
                   placeholder="Enter system prompt..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-2 text-white text-xs resize-none outline-none focus:border-blue-500 h-20"
+                  className="w-full bg-white border border-gray-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-blue-500 h-20"
                   data-testid={`textarea-system-prompt-${id}`}
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 block mb-2">
-                  Temperature: <span className="text-blue-400">{temperature.toFixed(2)}</span>
+                <label className="text-xs text-gray-600 block mb-2">
+                  Temperature: <span className="text-blue-600">{temperature.toFixed(2)}</span>
                 </label>
                 <Slider
                   value={[temperature]}
@@ -99,18 +99,18 @@ export default function PromptNode({ data, id }: any) {
                   className="w-full"
                   data-testid={`slider-temperature-${id}`}
                 />
-                <div className="text-xs text-slate-500 mt-1">
+                <div className="text-xs text-gray-500 mt-1">
                   {temperature < 0.5 ? 'Determinístico' : temperature < 1 ? 'Equilibrado' : 'Criativo'}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Max Tokens</label>
+                <label className="text-xs text-gray-600 block mb-1">Max Tokens</label>
                 <input
                   type="number"
                   value={maxTokens}
                   onChange={handleTokensChange}
-                  className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm outline-none focus:border-blue-500"
+                  className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm outline-none focus:border-blue-500"
                   data-testid={`input-max-tokens-${id}`}
                 />
               </div>
@@ -118,7 +118,7 @@ export default function PromptNode({ data, id }: any) {
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full bg-blue-500/20 hover:bg-blue-500/30 border-blue-500/50 text-blue-400 text-xs"
+                className="w-full bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-600 text-xs"
                 data-testid={`button-test-node-${id}`}
               >
                 Testar Nó

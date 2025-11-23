@@ -67,7 +67,7 @@ export default function Canvas() {
   );
 
   return (
-    <div className="w-full h-full bg-slate-950">
+    <div className="w-full h-full bg-white">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -77,7 +77,7 @@ export default function Canvas() {
         nodeTypes={nodeTypes}
         fitView
       >
-        <Background color="#334155" gap={12} />
+        <Background color="#e5e7eb" gap={12} />
         <Controls />
         <MiniMap
           nodeColor={(node) => {
@@ -89,11 +89,11 @@ export default function Canvas() {
               case 'output':
                 return '#10b981';
               default:
-                return '#64748b';
+                return '#d1d5db';
             }
           }}
-          maskColor="rgba(0, 0, 0, 0.5)"
-          className="bg-slate-900 border border-slate-700"
+          maskColor="rgba(0, 0, 0, 0.05)"
+          className="bg-white border border-gray-300"
         />
       </ReactFlow>
     </div>

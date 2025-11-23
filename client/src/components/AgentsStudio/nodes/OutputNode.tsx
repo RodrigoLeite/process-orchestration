@@ -32,25 +32,25 @@ export default function OutputNode({ data, id }: any) {
   };
 
   return (
-    <Card className="w-80 bg-slate-900 border-emerald-500/50 shadow-xl">
+    <Card className="w-80 bg-white border-2 border-emerald-200 shadow-md">
       <Handle type="target" position={Position.Left} />
 
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Database size={18} className="text-emerald-400" />
+            <Database size={18} className="text-emerald-500" />
             <input
               type="text"
               value={name}
               onChange={handleNameChange}
-              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm font-semibold outline-none focus:border-emerald-500"
+              className="bg-gray-50 border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm font-semibold outline-none focus:border-emerald-500"
               placeholder="Output Name"
               data-testid={`input-output-node-name-${id}`}
             />
           </div>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-slate-400 hover:text-white"
+            className="text-gray-400 hover:text-gray-600"
             data-testid={`button-toggle-expand-${id}`}
           >
             <ChevronDown size={18} className={`transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
@@ -60,12 +60,12 @@ export default function OutputNode({ data, id }: any) {
         {isExpanded && (
           <>
             <div className="mb-3">
-              <label className="text-xs text-slate-400 block mb-1">Schema JSON</label>
+              <label className="text-xs text-gray-600 block mb-1">Schema JSON</label>
               <textarea
                 value={schema}
                 onChange={handleSchemaChange}
                 placeholder='{"key": "type"}'
-                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-2 text-white text-xs resize-none outline-none focus:border-emerald-500 font-mono h-20"
+                className="w-full bg-white border border-gray-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-emerald-500 font-mono h-20"
                 data-testid={`textarea-schema-${id}`}
               />
             </div>
