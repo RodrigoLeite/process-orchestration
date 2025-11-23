@@ -97,13 +97,18 @@ export type AgentResponse = typeof agentResponses.$inferSelect;
 
 export const workflows = pgTable("workflows", {
   id: uuid("id").primaryKey().defaultRandom(),
-  demandId: uuid("demand_id").notNull(),
+  workflowHash: text("workflow_hash").notNull().unique(),
   steps: jsonb("steps").$type<Array<{
-    step: number;
-    title: string;
-    responsible: string;
-    description: string;
-  }>>(),
+    order: number;
+    name: string;
+    type?: string;
+    description?: string;
+    priority?: string;
+    assignee?: string;
+    dependencies?: string[];
+    acceptanceCriteria?: string;
+    duration?: string;
+  }>>().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
