@@ -19,7 +19,7 @@
           "endpoint": "/api/demands",
           "method": "POST",
           "headers": "{}",
-          "bodyTemplate": "{\"rawText\": input}"
+          "bodyTemplate": "{\"rawText\": \"PLACEHOLDER\"}"
         }
       },
       {
