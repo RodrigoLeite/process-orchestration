@@ -61,9 +61,8 @@ export function generateWorkflowHash(steps: WorkflowStep[], area: string = "unkn
         order: step.order,
         name: normalizeStepName(step.name || ""),
         type: step.type?.trim().toLowerCase() || "processamento",
-        // Omit: description (too variable), assignee (team can vary), duration (estimate can change)
-        // Only include dependencies and priority if they exist and are meaningful
-        priority: (step.priority?.trim() || "média").toLowerCase(),
+        // Omit volatile fields: description, assignee, duration, priority (all can vary between agent runs)
+        // Include only: order, name (normalized), type, and dependencies (structural elements)
         dependencies: (step.dependencies || []).filter(d => d).map(d => normalizeStepName(d)).sort()
       }))
   };
