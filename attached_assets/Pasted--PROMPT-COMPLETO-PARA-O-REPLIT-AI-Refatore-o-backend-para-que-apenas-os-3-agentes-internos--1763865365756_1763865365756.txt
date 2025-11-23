@@ -1,0 +1,234 @@
+# 🧠 PROMPT COMPLETO PARA O REPLIT AI  
+Refatore o backend para que **apenas os 3 agentes internos** (Workflow Builder, Insights Inteligentes e Monitor de Gargalos) passem a usar **LangChain + LangGraph + LangSmith**, mantendo todo o resto do sistema intacto.
+
+---
+
+## 🎯 Objetivo
+Converter meus agentes internos para uma arquitetura de IA moderna baseada em:
+
+- LangChain (RunnableSequence)
+- LangGraph (StateGraph)
+- LangSmith (Tracing + observabilidade)
+
+Os 3 agentes afetados são:
+
+1. **Workflow Builder Agent**
+2. **Insights Inteligentes Agent**
+3. **Monitor de Gargalos Agent**
+
+❗ O usuário final **não deve saber** que LangChain/LangGraph/LangSmith existem.  
+❗ Não adicionar criação de agentes pelo usuário.  
+❗ Não alterar UX, endpoints ou comportamentos originais.
+
+---
+
+## 🧩 Minha Stack Atual (não alterar)
+### Frontend:
+- React 18 + Vite + TypeScript  
+- Radix UI + Tailwind CSS  
+- Wouter  
+- TanStack Query  
+
+### Backend:
+- Node.js + Express + TS (ESM)  
+- esbuild, tsx  
+- PostgreSQL + Drizzle ORM  
+
+---
+
+## 🗂️ Arquivos Originais dos Agentes (importante)
+Você **não deve reescrever prompts**, apenas refatorar estrutura:
+
+### Workflow Builder:
+- `server/lib/agents/workflow_builder.ts`
+- `server/ai/agents/workflow-builder-agent.ts`
+
+### Insights:
+- `server/lib/agents/insights_ai.ts`
+- `server/ai/agents/demand-agent.ts`
+
+### Gargalos:
+- `server/lib/agents/gargalo_detector.ts`
+- `server/ai/agents/workflow-executor-agent.ts`
+
+---
+
+# 🔧 O que implementar (passo a passo)
+
+---
+
+## 1. Criar estrutura LangChain/LangGraph/LangSmith
+
+Criar a pasta:
+
+```
+server/ai/lc/
+  agents/
+    base-agent.ts
+    workflowBuilder.ts
+    insights.ts
+    bottleneckDetector.ts
+  graphs/
+    agentGraph.ts
+    index.ts
+```
+
+---
+
+## 2. Criar `BaseAgent` (fundamental)
+
+Em `server/ai/lc/agents/base-agent.ts`:
+
+- Criar classe `BaseAgent`
+- Construtor recebe:
+  - name
+  - systemPrompt
+  - model (OpenAI)
+- Criar RunnableSequence dentro da classe
+- Incluir:
+  - LangSmith tracing (`withConfig({ runName })`)
+  - Formatação de input/output
+  - Método `async run(input: any)`
+
+---
+
+## 3. Criar subclasses para os 3 agentes
+
+Criar:
+
+### workflowBuilder.ts
+- Importar BaseAgent
+- Manter o prompt do agente original
+- Output deve continuar sendo:
+  ```json
+  {
+    "area": "",
+    "etapas": [],
+    "regras": [],
+    "criticidade": ""
+  }
+  ```
+
+### insights.ts
+- Manter lógica existente
+- Transformar em RunnableSequence
+- Output deve ser lista de insights em JSON
+
+### bottleneckDetector.ts
+- Analisar workflow + demandas
+- Retornar lista de gargalos
+- Usar BaseAgent + RunnableSequence
+
+❗ Preserve prompts e comportamento.  
+❗ Apenas troque engine → LangChain.
+
+---
+
+## 4. Criar LangGraph com 3 nós
+
+Criar arquivo `server/ai/lc/graphs/agentGraph.ts`
+
+O grafo deve conter:
+
+- Nó `workflowBuilder`
+- Nó `insights`
+- Nó `bottleneck`
+
+Fluxo:
+
+```
+workflowBuilder → insights → bottleneck
+```
+
+StateGraph deve receber:
+
+```ts
+{
+  demand: string;
+  workflow?: any;
+  insights?: any;
+  bottlenecks?: any;
+}
+```
+
+---
+
+## 5. Criar endpoint unificado `/api/ai/graph`
+
+Criar:
+
+```
+POST /api/ai/graph
+```
+
+Entrada:
+
+```json
+{
+  "demand": "texto da demanda"
+}
+```
+
+Fluxo do endpoint:
+
+1. Chamar o grafo
+2. Executar os 3 agentes via LangGraph
+3. Logar execução no LangSmith
+4. Retornar JSON final:
+
+```json
+{
+  "workflow": {...},
+  "insights": [...],
+  "bottlenecks": [...]
+}
+```
+
+---
+
+## 6. Integrar LangSmith (obrigatório)
+
+Usar:
+
+```ts
+import { traceable } from "@langchain/core/tracers";
+```
+
+Cada agente deve aparecer no LangSmith como:
+
+- Run completo (não “incomplete”)
+- Com nome do agente
+- Com input/output renderizado
+
+---
+
+## 7. Validação (checklist obrigatório)
+
+- [ ] Os 3 agentes são subclasses de BaseAgent  
+- [ ] Cada agente usa RunnableSequence  
+- [ ] Cada agente tem tracing LangSmith  
+- [ ] LangGraph configurado com 3 nós  
+- [ ] Endpoint `/api/ai/graph` usando LangGraph  
+- [ ] Retornos preservam formato original  
+- [ ] Nada na UI foi quebrado  
+- [ ] Nada no backend fora dos agentes foi alterado  
+- [ ] Execuções aparecem corretamente no LangSmith  
+
+---
+
+## ❌ NÃO MEXER:
+
+- UI  
+- Rotas existentes  
+- TanStack Query  
+- Modelo de dados Drizzle  
+- Movimentação manual de cards  
+- Permissões  
+- Workflows existentes  
+- Comportamento dos agentes  
+- Permitir usuário criar agentes  
+
+---
+
+## 🎉 Fim do prompt.  
+Implementar exatamente como instruído acima.

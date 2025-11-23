@@ -2700,6 +2700,73 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // ============ Agent Orchestration Graph Endpoint ============
+  // New endpoint using LangChain + LangGraph architecture
+  // Executes the 3 agents in sequence: Workflow Builder → Bottleneck Detector → Insights
+  app.post("/api/ai/graph", async (req, res) => {
+    const startTime = Date.now();
+    
+    try {
+      const { demandInput } = req.body;
+
+      if (!demandInput || !demandInput.titulo || !demandInput.area) {
+        return res.status(400).json({
+          success: false,
+          error: "demandInput with titulo and area is required"
+        });
+      }
+
+      // Import and execute the agent graph
+      const { executeAgentGraph } = await import("./ai/lc/graphs");
+      
+      console.log("[API:GRAPH] Executing agent graph for:", demandInput.titulo);
+      
+      const result = await executeAgentGraph(demandInput);
+      
+      const duration = Date.now() - startTime;
+      console.log(`[API:GRAPH] Graph execution completed in ${duration}ms`);
+
+      // Log execution to system events if needed
+      try {
+        if (result.success) {
+          await storage.createSystemEvent({
+            type: "agent_graph_execution",
+            agentKey: "agent_graph",
+            demandId: demandInput.titulo,
+            metadata: {
+              demand_title: demandInput.titulo,
+              demand_area: demandInput.area,
+              workflow_generated: !!result.data?.workflow,
+              bottlenecks_detected: !!result.data?.bottlenecks,
+              insights_generated: !!result.data?.insights
+            },
+            status: result.success ? "success" : "failed",
+            durationMs: duration
+          });
+        }
+      } catch (logError) {
+        console.warn("[API:GRAPH] Error logging execution:", logError);
+      }
+
+      res.json({
+        success: result.success,
+        data: result.data,
+        error: result.error || null,
+        duration_ms: duration
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error("[API:GRAPH] Error:", error);
+      
+      res.status(500).json({
+        success: false,
+        error: "Agent graph execution failed",
+        details: error instanceof Error ? error.message : String(error),
+        duration_ms: duration
+      });
+    }
+  });
+
   // ============ AI Logs Endpoints ============
   // Get orchestration execution logs
   app.get("/api/ai/logs", async (req, res) => {
