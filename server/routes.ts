@@ -2589,10 +2589,13 @@ Texto original: ${demand.rawText}`;
       }, { demand_id: demandId, demand_title: demandInput.titulo, manual });
 
       // Save workflow if generated successfully
+      let createdWorkflowId: string | null = null;
       if (orchestrationResult.workflow) {
         try {
-          const workflowId = `wf_${demandId}_${Date.now()}`;
+          // Generate a valid UUID for workflow ID
+          const workflowId = crypto.randomUUID();
           const workflowData = {
+            id: workflowId,
             demandId,
             title: orchestrationResult.workflow.titulo,
             description: orchestrationResult.workflow.descricao,
@@ -2603,7 +2606,16 @@ Texto original: ${demand.rawText}`;
           };
           
           await storage.createWorkflow(workflowData as any);
+          createdWorkflowId = workflowId;
           console.log(`[ORCHESTRATE] Saved workflow: ${workflowId}`);
+          
+          // Update demand with workflow ID
+          try {
+            await storage.updateDemandWithSLA(demandId, { workflowId });
+            console.log(`[ORCHESTRATE] Updated demand with workflowId: ${workflowId}`);
+          } catch (error) {
+            console.error("[ORCHESTRATE] Error updating demand with workflowId:", error);
+          }
         } catch (error) {
           console.error("[ORCHESTRATE] Error saving workflow:", error);
         }
