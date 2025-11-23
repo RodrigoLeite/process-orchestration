@@ -49,7 +49,7 @@ export default function KanbanWorkflow() {
     enabled: !!workflowId
   });
 
-  // Fetch demands for this workflow (with auto-polling every 3 seconds)
+  // Fetch demands for this workflow
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
     queryKey: ["workflow-demands", workflowId],
     queryFn: async () => {
@@ -58,8 +58,7 @@ export default function KanbanWorkflow() {
       return res.json();
     },
     enabled: !!workflowId,
-    refetchInterval: 3000, // Auto-refresh every 3 seconds
-    refetchIntervalInBackground: true
+    refetchOnMount: true // Always refetch when entering the page
   });
 
   if (!match) return null;
