@@ -22,6 +22,7 @@ export interface IStorage {
   createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
   getWorkflowFromDb(id: string): Promise<Workflow | undefined>;
   getAllWorkflowsFromDb(): Promise<Workflow[]>;
+  getWorkflowByHash(hash: string): Promise<Workflow | undefined>;
 
   getWorkgraphNodes(): Promise<WorkgraphNode[]>;
   getWorkgraphNode(id: string): Promise<WorkgraphNode | undefined>;
@@ -221,6 +222,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(workflows)
       .orderBy(desc(workflows.createdAt));
+  }
+
+  async getWorkflowByHash(hash: string): Promise<Workflow | undefined> {
+    const result = await this.db
+      .select()
+      .from(workflows)
+      .where(eq(workflows.workflowHash, hash))
+      .limit(1);
+    return result[0];
   }
 
   async getWorkgraphNodes(): Promise<WorkgraphNode[]> {
