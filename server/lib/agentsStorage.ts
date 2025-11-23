@@ -304,26 +304,31 @@ export async function executeAgent(agentId: string, graph: AgentGraph, initialIn
             
             // If bodyTemplate is literally "input", use nodeInput directly
             if (bodyTemplate.trim() === 'input') {
-              // If nodeInput is already an object with text (from AgentNode), extract and parse the text
-              if (nodeInput && typeof nodeInput === 'object' && nodeInput.text) {
-                try {
-                  // Try to parse the text as JSON
-                  parsedBody = JSON.parse(nodeInput.text);
-                } catch (e) {
-                  // If parsing fails, use nodeInput as-is
-                  parsedBody = nodeInput;
-                }
-              } else {
-                parsedBody = nodeInput;
-              }
+              parsedBody = nodeInput;
             } else {
-              // Otherwise, template-replace "input" with actual input
+              // Otherwise, template-replace "PLACEHOLDER" or "input" with actual input
               let bodyStr = bodyTemplate;
-              if (typeof nodeInput === 'object') {
-                bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
-              } else {
-                bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+              
+              // Replace PLACEHOLDER with the actual input (properly quoted)
+              if (bodyStr.includes('PLACEHOLDER')) {
+                if (typeof nodeInput === 'string') {
+                  bodyStr = bodyStr.replace('"PLACEHOLDER"', JSON.stringify(nodeInput));
+                } else if (typeof nodeInput === 'object') {
+                  // If input is an object, just use its JSON stringified value
+                  bodyStr = bodyStr.replace('"PLACEHOLDER"', JSON.stringify(nodeInput));
+                } else {
+                  bodyStr = bodyStr.replace('"PLACEHOLDER"', JSON.stringify(nodeInput));
+                }
               }
+              // Also support "input" placeholder for backwards compatibility
+              else if (bodyStr.includes('"input"')) {
+                if (typeof nodeInput === 'string') {
+                  bodyStr = bodyStr.replace('"input"', JSON.stringify(nodeInput));
+                } else {
+                  bodyStr = bodyStr.replace('"input"', JSON.stringify(nodeInput));
+                }
+              }
+              
               parsedBody = JSON.parse(bodyStr);
             }
 
