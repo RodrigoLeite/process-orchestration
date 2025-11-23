@@ -13,11 +13,11 @@ export interface WorkflowStep {
 }
 
 /**
- * Generate a unique hash for a workflow based on its steps
+ * Generate a unique hash for a workflow based on its steps and area
  * Focus on structural elements only, ignore volatile fields like descriptions and assignees
- * This makes workflows deduplicate properly even if minor wording differs
+ * Area is included to prevent cross-area deduplication (Vendas != TI)
  */
-export function generateWorkflowHash(steps: WorkflowStep[]): string {
+export function generateWorkflowHash(steps: WorkflowStep[], area: string = "unknown"): string {
   // Map stage names to standard names for deterministic hashing
   const standardStageNames: Record<string, string> = {
     "planejamento": "Planejamento e Análise",
@@ -53,21 +53,24 @@ export function generateWorkflowHash(steps: WorkflowStep[]): string {
   }
 
   // Normalize and canonicalize - only include structural info, not volatile fields
-  const normalized = steps
-    .sort((a, b) => a.order - b.order)
-    .map(step => ({
-      order: step.order,
-      name: normalizeStepName(step.name || ""),
-      type: step.type?.trim().toLowerCase() || "processamento",
-      // Omit: description (too variable), assignee (team can vary), duration (estimate can change)
-      // Only include dependencies and priority if they exist and are meaningful
-      priority: (step.priority?.trim() || "média").toLowerCase(),
-      dependencies: (step.dependencies || []).filter(d => d).map(d => normalizeStepName(d)).sort()
-    }));
+  const normalized = {
+    area: area.toLowerCase().trim(),
+    steps: steps
+      .sort((a, b) => a.order - b.order)
+      .map(step => ({
+        order: step.order,
+        name: normalizeStepName(step.name || ""),
+        type: step.type?.trim().toLowerCase() || "processamento",
+        // Omit: description (too variable), assignee (team can vary), duration (estimate can change)
+        // Only include dependencies and priority if they exist and are meaningful
+        priority: (step.priority?.trim() || "média").toLowerCase(),
+        dependencies: (step.dependencies || []).filter(d => d).map(d => normalizeStepName(d)).sort()
+      }))
+  };
 
   // Create canonical JSON string
   const canonicalJson = JSON.stringify(normalized);
-  console.log(`[HASH] Normalized structure:`, JSON.stringify(normalized, null, 2));
+  console.log(`[HASH] Normalized structure for area ${area}:`, JSON.stringify(normalized, null, 2));
 
   // Generate SHA-256 hash
   return crypto.createHash("sha256").update(canonicalJson).digest("hex");

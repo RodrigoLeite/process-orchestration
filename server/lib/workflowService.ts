@@ -22,16 +22,18 @@ export function convertEtapasToSteps(etapas: any[]): WorkflowStep[] {
 /**
  * Get or create workflow based on steps (with deduplication via hash)
  * Returns existing workflow if steps match, otherwise creates new one
+ * Area is included in hash to prevent cross-area deduplication
  */
 export async function getOrCreateWorkflow(
   etapas: any[],
-  workflowName: string = "Workflow"
+  workflowName: string = "Workflow",
+  area: string = "unknown"
 ): Promise<Workflow> {
   // Convert etapas to standard steps
   const steps = convertEtapasToSteps(etapas);
 
-  // Generate hash for deduplication
-  const hash = generateWorkflowHash(steps);
+  // Generate hash for deduplication (includes area to prevent cross-area deduplication)
+  const hash = generateWorkflowHash(steps, area);
   console.log(`[WORKFLOW] Generated hash: ${hash}`);
 
   // Check if workflow with this hash already exists

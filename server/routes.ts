@@ -2713,9 +2713,9 @@ Texto original: ${demand.rawText}`;
           // Import workflow service for deduplication
           const { getOrCreateWorkflow, createWorkflowStages } = await import("./lib/workflowService");
           
-          // Get or create workflow using deduplication (by hash)
+          // Get or create workflow using deduplication (by hash, including area)
           const workflowName = resultData.workflow?.titulo || demandInput.titulo || "Workflow";
-          const workflow = await getOrCreateWorkflow(resultData.workflow.etapas, workflowName);
+          const workflow = await getOrCreateWorkflow(resultData.workflow.etapas, workflowName, demandInput.area);
           console.log(`[ORCHESTRATE] Using workflow: ${workflow.id} (hash: ${workflow.workflowHash}, name: ${workflow.name})`);
 
           // Create workflow stages if this is a new workflow
