@@ -6,28 +6,20 @@
         "id": "chat-input",
         "type": "chatInput",
         "position": {
-          "x": -30.48102632388668,
-          "y": 83.90379473522262
+          "x": -30.48,
+          "y": 83.9
         },
         "data": {
           "label": "Demanda",
           "value": ""
-        },
-        "width": 320,
-        "height": 263,
-        "selected": true,
-        "positionAbsolute": {
-          "x": -30.48102632388668,
-          "y": 83.90379473522262
-        },
-        "dragging": true
+        }
       },
       {
         "id": "api-create-demand",
         "type": "api",
         "position": {
-          "x": 337.63489533045436,
-          "y": -66.3274544026992
+          "x": 337.63,
+          "y": -66.32
         },
         "data": {
           "label": "Criar Demanda",
@@ -35,14 +27,7 @@
           "method": "POST",
           "headers": "{}",
           "bodyTemplate": "{\"rawText\": \"PLACEHOLDER\"}"
-        },
-        "width": 200,
-        "height": 56,
-        "positionAbsolute": {
-          "x": 337.63489533045436,
-          "y": -66.3274544026992
-        },
-        "dragging": true
+        }
       },
       {
         "id": "prompt-generator",
@@ -53,57 +38,36 @@
         },
         "data": {
           "label": "Instruções para Workflow",
-          "systemPrompt": "Você é um especialista em gestão de processos. Receba uma demanda criada no sistema e gere um workflow detalhado com etapas customizadas baseadas na área (TI, Vendas, RH, Financeiro, etc). Retorne JSON com: {\"workflowName\": \"nome\", \"area\": \"area\", \"stages\": [{\"name\": \"nome\", \"type\": \"tipo\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"duration_hours\": 2}]}",
-          "temperature": 1,
-          "maxTokens": 3000
-        },
-        "width": 320,
-        "height": 353,
-        "dragging": false
+          "systemPrompt": "Você é um especialista em gestão de processos. Receba uma demanda criada no sistema e gere um workflow detalhado com etapas customizadas baseadas na área (TI, Vendas, RH, Financeiro, etc). Retorne JSON com: {\"workflowName\": \"nome\", \"area\": \"area\", \"stages\": [{\"name\": \"nome\", \"type\": \"tipo\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"duration_hours\": 2}]}"
+        }
       },
       {
         "id": "agent-generate-workflow",
         "type": "agent",
         "position": {
-          "x": 837.682619518841,
-          "y": -363.7070021963098
+          "x": 861.68,
+          "y": -363.7
         },
         "data": {
           "label": "Gerar Workflow",
-          "temperature": 0.5,
+          "temperature": 0.3,
           "maxTokens": 3000,
           "logicType": "none",
           "modelProvider": "OpenAI",
           "modelName": "gpt-4o-mini"
-        },
-        "width": 320,
-        "height": 577,
-        "positionAbsolute": {
-          "x": 837.682619518841,
-          "y": -363.7070021963098
-        },
-        "dragging": false,
-        "selected": false
+        }
       },
       {
         "id": "output-workflow",
         "type": "output",
         "position": {
-          "x": 1075.2965730654296,
-          "y": 298.5198649322539
+          "x": 1075.29,
+          "y": 298.51
         },
         "data": {
           "label": "Workflow Gerado",
           "schema": "{\"workflowName\": \"string\", \"area\": \"string\", \"stages\": \"array\"}"
-        },
-        "width": 150,
-        "height": 249,
-        "selected": false,
-        "positionAbsolute": {
-          "x": 1075.2965730654296,
-          "y": 298.5198649322539
-        },
-        "dragging": true
+        }
       }
     ],
     "edges": [
@@ -134,6 +98,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T19:13:31.035Z",
-  "updatedAt": "2025-11-23T19:13:31.035Z"
+  "createdAt": "2025-11-23T19:26:13.204Z",
+  "updatedAt": "2025-11-23T19:26:13.204Z"
 }
