@@ -2978,13 +2978,8 @@ Texto original: ${demand.rawText}`;
         try {
           const agentLogs = await storage.getAgentLogs(agent.id);
           for (const log of agentLogs) {
-            // Extract demand ID from log metadata - ONLY include demand-specific logs
-            const demandId = log.metadata?.demandId;
-            
-            // Skip scheduler-only logs (those without demandId)
-            if (!demandId) {
-              continue;
-            }
+            // Extract demand ID from log metadata
+            const demandId = log.metadata?.demandId || log.metadata?.area || 'scheduler';
             
             // Create execution key based on timestamp and demand
             const logTime = new Date(log.createdAt).getTime();
