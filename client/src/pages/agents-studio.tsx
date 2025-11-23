@@ -13,56 +13,20 @@ const SAMPLE_AGENTS = [
   {
     id: 'workflow-generator',
     name: 'Gerador de Workflow',
-    description: 'Gera workflows automáticos a partir de demandas',
+    description: 'Gera workflows customizados: ChatInputNode → APINode → AgentNode → OutputNode',
     icon: '⚙️'
   },
   {
-    id: 'workflow-normalizer',
-    name: 'Normalizador de Workflow',
-    description: 'Normaliza estruturas de workflow para formato padrão',
-    icon: '📏'
-  },
-  {
-    id: 'insights-ia',
+    id: 'insights-inteligentes',
     name: 'Insights Inteligentes',
-    description: 'Gera insights acionáveis a partir de dados de execução',
+    description: 'Analisa demandas e gera insights: ChatInputNode → AgentNode → OutputNode',
     icon: '💡'
   },
   {
-    id: 'workflow-monitor',
+    id: 'monitor-gargalos',
     name: 'Monitor de Gargalos',
-    description: 'Monitora e identifica bottlenecks em workflows',
-    icon: '⚠️'
-  },
-  {
-    id: 'sentiment-analyzer',
-    name: 'Analisador de Sentimento',
-    description: 'Demo: Analisa sentimento de textos com PromptNode, LogicNode e OutputNode',
-    icon: '😊'
-  },
-  {
-    id: 'demand-processor',
-    name: 'Processador de Demandas',
-    description: 'Cria demandas e gera workflows automáticos - Demo com ChatInputNode + APINode',
-    icon: '📝'
-  },
-  {
-    id: 'workflow-parser',
-    name: 'Parser de Demandas',
-    description: 'Converte texto em etapas estruturadas - Demo com ChatInputNode → AgentNode → OutputNode',
-    icon: '⚙️'
-  },
-  {
-    id: 'structured-analyzer',
-    name: 'Analisador Estruturado',
-    description: 'Demo completo: ChatInputNode → AgentNode (com lógica) → OutputNode',
-    icon: '📊'
-  },
-  {
-    id: 'demand-creator',
-    name: 'Criador de Demandas',
-    description: 'Cria demanda real: ChatInputNode → AgentNode → APINode → OutputNode',
-    icon: '✨'
+    description: 'Detecta gargalos: ChatInputNode → APINode → AgentNode → OutputNode',
+    icon: '🚨'
   }
 ];
 
