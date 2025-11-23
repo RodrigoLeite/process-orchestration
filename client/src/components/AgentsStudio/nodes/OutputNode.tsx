@@ -3,21 +3,26 @@ import { Handle, Position, useReactFlow } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Database, ChevronDown } from 'lucide-react';
+import { useAgentsStore } from '@/lib/store/agentsStore';
 
 export default function OutputNode({ data, id }: any) {
   const { setNodes } = useReactFlow();
+  const { updateNode } = useAgentsStore();
   
   const [isExpanded, setIsExpanded] = useState(true);
   const [name, setName] = useState(data.outputName || 'Output');
   const [schema, setSchema] = useState(data.schema || '{}');
 
   const updateNodeData = useCallback((newData: any) => {
+    // Update ReactFlow local state
     setNodes((nodes: any[]) =>
       nodes.map((n: any) =>
         n.id === id ? { ...n, data: { ...n.data, ...newData } } : n
       )
     );
-  }, [id, setNodes]);
+    // Also update Zustand global store
+    updateNode(id, newData);
+  }, [id, setNodes, updateNode]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
