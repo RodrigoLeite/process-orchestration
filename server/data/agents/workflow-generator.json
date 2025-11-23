@@ -12,7 +12,7 @@
         "data": {
           "label": "Demand Parser",
           "systemPrompt": "Você é um analisador de demandas. Analise a demanda e extraia informações estruturadas.",
-          "temperature": 0.7,
+          "temperature": 0.5,
           "maxTokens": 1024
         },
         "width": 320,
@@ -80,6 +80,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T17:02:16.821Z",
-  "updatedAt": "2025-11-23T17:02:16.821Z"
+  "createdAt": "2025-11-23T17:42:59.925Z",
+  "updatedAt": "2025-11-23T17:42:59.925Z"
 }
