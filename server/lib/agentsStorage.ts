@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const AGENTS_DIR = path.join(process.cwd(), 'data', 'agents');
+const AGENTS_DIR = path.join(process.cwd(), 'server', 'data', 'agents');
 
 export interface AgentGraph {
   nodes: any[];
@@ -51,8 +51,11 @@ export async function loadAgent(agentId: string): Promise<AgentStorage | null> {
   
   try {
     const data = await fs.readFile(filepath, 'utf-8');
-    return JSON.parse(data);
-  } catch {
+    const parsed = JSON.parse(data);
+    console.log(`[AGENTS STORAGE] Loaded agent: ${agentId}, nodes: ${parsed.graph?.nodes?.length || 0}`);
+    return parsed;
+  } catch (error) {
+    console.error(`[AGENTS STORAGE] Error loading agent ${agentId}:`, error);
     // Return empty graph if not found
     return {
       agentId,

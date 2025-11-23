@@ -23,6 +23,12 @@ const SAMPLE_AGENTS = [
     icon: '📏'
   },
   {
+    id: 'insights-ia',
+    name: 'Insights Inteligentes',
+    description: 'Gera insights acionáveis a partir de dados de execução',
+    icon: '💡'
+  },
+  {
     id: 'workflow-monitor',
     name: 'Monitor de Gargalos',
     description: 'Monitora e identifica bottlenecks em workflows',
