@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 import { Button } from '@/components/ui/button';
-import { Zap, Settings, Database, MessageSquare } from 'lucide-react';
+import { Zap, Settings, Database, MessageSquare, Plug } from 'lucide-react';
 
 export default function Sidebar() {
   const { setNodes, nodes } = useAgentsStore();
@@ -111,6 +111,19 @@ export default function Sidebar() {
             <span>Output Node</span>
           </div>
           <p className="text-xs text-gray-600 mt-1">Nó de saída com schema JSON</p>
+        </div>
+
+        {/* API Node */}
+        <div
+          draggable
+          onDragStart={(e) => onDragStart(e, 'api', 'API Call')}
+          className="p-3 bg-orange-50 border border-orange-200 rounded-lg cursor-grab hover:bg-orange-100 transition"
+        >
+          <div className="flex items-center gap-2 text-orange-600 font-semibold">
+            <Plug size={16} />
+            <span>API Node</span>
+          </div>
+          <p className="text-xs text-gray-600 mt-1">Nó para chamadas HTTP a APIs</p>
         </div>
       </div>
 

@@ -39,6 +39,12 @@ const SAMPLE_AGENTS = [
     name: 'Analisador de Sentimento',
     description: 'Demo: Analisa sentimento de textos com PromptNode, LogicNode e OutputNode',
     icon: '😊'
+  },
+  {
+    id: 'demand-processor',
+    name: 'Processador de Demandas',
+    description: 'Cria demandas e gera workflows automáticos - Demo com ChatInputNode + APINode',
+    icon: '📝'
   }
 ];
 
