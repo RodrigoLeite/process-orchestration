@@ -57,6 +57,12 @@ const SAMPLE_AGENTS = [
     name: 'Analisador Estruturado',
     description: 'Demo completo: ChatInputNode → AgentNode (com lógica) → OutputNode',
     icon: '📊'
+  },
+  {
+    id: 'demand-creator',
+    name: 'Criador de Demandas',
+    description: 'Cria demanda real: ChatInputNode → AgentNode → APINode → OutputNode',
+    icon: '✨'
   }
 ];
 
