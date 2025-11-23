@@ -255,10 +255,10 @@ export default function WorkflowGraph() {
               nodeTypes={nodeTypes}
             >
               <Background
-                color="#e5e7eb"
-                gap={12}
-                size={1}
-                style={{ backgroundColor: "#ffffff" }}
+                color="#9ca3af"
+                gap={20}
+                size={2}
+                style={{ backgroundColor: "#f3f4f6" }}
               />
               <Controls />
               <MiniMap
