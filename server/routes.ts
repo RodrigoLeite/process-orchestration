@@ -554,10 +554,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get a single workflow
+  // Get a single workflow (area workflow)
   app.get("/api/workflows/:id", async (req, res) => {
     try {
-      const workflow = await storage.getWorkflowFromDb(req.params.id);
+      const workflow = await storage.getWorkflowById(req.params.id);
       if (!workflow) {
         return res.status(404).json({ error: "Workflow not found" });
       }
