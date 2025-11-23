@@ -496,6 +496,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get a single area workflow by ID
+  app.get("/api/area-workflows/:id", async (req, res) => {
+    try {
+      const node = await storage.getWorkgraphNode(req.params.id);
+      if (!node) {
+        return res.status(404).json({ error: "Area workflow not found" });
+      }
+      res.json({
+        id: node.id,
+        name: node.name.charAt(0).toUpperCase() + node.name.slice(1),
+        areaName: node.name,
+        description: node.description || `Workflow da área ${node.name}`
+      });
+    } catch (error) {
+      console.error("Error fetching area workflow:", error);
+      res.status(500).json({ error: "Failed to fetch area workflow" });
+    }
+  });
+
+  // Get stages for an area workflow
+  app.get("/api/area-workflows/:id/stages", async (req, res) => {
+    try {
+      const node = await storage.getWorkgraphNode(req.params.id);
+      if (!node) {
+        return res.status(404).json({ error: "Area workflow not found" });
+      }
+      // Get workflow stages for this area
+      const areaWorkflow = await storage.getAreaWorkflow(node.name);
+      if (!areaWorkflow) {
+        return res.json([]);
+      }
+      const stages = await storage.getWorkflowStages(areaWorkflow.id);
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching area workflow stages:", error);
+      res.status(500).json({ error: "Failed to fetch area workflow stages" });
+    }
+  });
+
+  // Get demands for an area workflow
+  app.get("/api/area-workflows/:id/demands", async (req, res) => {
+    try {
+      const node = await storage.getWorkgraphNode(req.params.id);
+      if (!node) {
+        return res.status(404).json({ error: "Area workflow not found" });
+      }
+      // Get all demands for this area
+      const allDemands = await storage.getDemands();
+      const areaDemands = allDemands.filter((d: any) => d.assignedTo === node.name);
+      res.json(areaDemands);
+    } catch (error) {
+      console.error("Error fetching area workflow demands:", error);
+      res.status(500).json({ error: "Failed to fetch area workflow demands" });
+    }
+  });
+
   // Get a single workflow
   app.get("/api/workflows/:id", async (req, res) => {
     try {
