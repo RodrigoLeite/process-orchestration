@@ -2866,19 +2866,19 @@ Texto original: ${demand.rawText}`;
           },
           {
             id: "workflow_builder_node",
-            label: "Construtor de Workflow",
+            label: "Gerador de Workflow",
             type: "agent",
             description: "Gera um workflow estruturado baseado na demanda. Cria etapas, responsabilidades, dependências e critérios de sucesso."
           },
           {
             id: "bottleneck_detector_node",
-            label: "Detector de Gargalos",
+            label: "Monitor de Gargalos",
             type: "agent",
             description: "Analisa o workflow gerado para identificar possíveis gargalos, riscos e pontos de contenção. Calcula scores de severidade."
           },
           {
             id: "insights_node",
-            label: "Gerador de Insights",
+            label: "Insights Inteligentes",
             type: "agent",
             description: "Extrai insights acionáveis do workflow e gargalos. Fornece recomendações de otimização e identificação de oportunidades."
           },
@@ -2962,7 +2962,7 @@ Texto original: ${demand.rawText}`;
         },
         workflow_builder_node: {
           id: "workflow_builder_node",
-          label: "Construtor de Workflow",
+          label: "Gerador de Workflow",
           type: "agent",
           description: "Agente especializado que gera workflows estruturados a partir de demandas. Utiliza GPT-4 para criar etapas bem definidas, atribuir responsabilidades, estimar durações e definir critérios de sucesso. Cada workflow inclui dependências entre etapas e prioridades.",
           meta: {
@@ -2991,7 +2991,7 @@ Texto original: ${demand.rawText}`;
         },
         bottleneck_detector_node: {
           id: "bottleneck_detector_node",
-          label: "Detector de Gargalos",
+          label: "Monitor de Gargalos",
           type: "agent",
           description: "Analisa workflows para identificar gargalos potenciais usando análise de movimentação histórica, dependências críticas e pontos de contenção. Calcula scores de severidade (crítica, alta, média, baixa) para cada gargalo identificado.",
           meta: {
@@ -3014,7 +3014,7 @@ Texto original: ${demand.rawText}`;
         },
         insights_node: {
           id: "insights_node",
-          label: "Gerador de Insights",
+          label: "Insights Inteligentes",
           type: "agent",
           description: "Extrai insights acionáveis e recomendações a partir da análise de workflows e gargalos. Identifica padrões, oportunidades de otimização e fatores de risco para melhor tomada de decisão.",
           meta: {
