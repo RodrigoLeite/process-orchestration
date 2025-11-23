@@ -35,7 +35,9 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       if (!res.ok) return [];
       return res.json();
     },
-    enabled: !!id
+    enabled: !!id,
+    staleTime: 0,
+    gcTime: 0
   });
 
   const handleTestAgent = async () => {
