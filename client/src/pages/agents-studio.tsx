@@ -33,6 +33,12 @@ const SAMPLE_AGENTS = [
     name: 'Monitor de Gargalos',
     description: 'Monitora e identifica bottlenecks em workflows',
     icon: '⚠️'
+  },
+  {
+    id: 'sentiment-analyzer',
+    name: 'Analisador de Sentimento',
+    description: 'Demo: Analisa sentimento de textos com PromptNode, LogicNode e OutputNode',
+    icon: '😊'
   }
 ];
 
