@@ -71,15 +71,15 @@ export default function AgentsStudio() {
   // Show agent selector if no agent is selected
   if (!selectedAgent) {
     return (
-      <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-950 to-slate-900 overflow-hidden">
+      <div className="w-full h-full flex flex-col bg-white overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="max-w-3xl w-full">
             <div className="text-center mb-12">
               <div className="flex items-center justify-center gap-3 mb-4">
-                <Sparkles className="w-8 h-8 text-purple-400" />
-                <h1 className="text-3xl font-bold text-white">Agent Studio</h1>
+                <Sparkles className="w-8 h-8 text-blue-500" />
+                <h1 className="text-3xl font-bold text-gray-900">Agent Studio</h1>
               </div>
-              <p className="text-slate-400 text-lg">
+              <p className="text-gray-600 text-lg">
                 Selecione um agente para visualizar e editar sua estrutura
               </p>
             </div>
@@ -89,17 +89,17 @@ export default function AgentsStudio() {
                 <button
                   key={agent.id}
                   onClick={() => handleSelectAgent(agent.id)}
-                  className="group relative bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-purple-500 hover:from-slate-700 hover:to-slate-800 transition-all duration-200 text-left"
+                  className="group relative bg-white border border-gray-300 rounded-xl p-6 hover:border-blue-500 hover:shadow-lg hover:bg-blue-50 transition-all duration-200 text-left"
                   data-testid={`button-select-agent-${agent.id}`}
                 >
                   <div className="mb-4 text-4xl">{agent.icon}</div>
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                     {agent.name}
                   </h3>
-                  <p className="text-sm text-slate-400 mb-4">
+                  <p className="text-sm text-gray-600 mb-4">
                     {agent.description}
                   </p>
-                  <div className="flex items-center gap-2 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-sm font-medium">Abrir</span>
                     <span>→</span>
                   </div>
@@ -107,9 +107,9 @@ export default function AgentsStudio() {
               ))}
             </div>
 
-            <div className="mt-12 p-6 bg-slate-800 rounded-lg border border-slate-700">
-              <h3 className="text-white font-bold mb-2">💡 Dica</h3>
-              <p className="text-slate-400 text-sm">
+            <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-300">
+              <h3 className="text-gray-900 font-bold mb-2">💡 Dica</h3>
+              <p className="text-gray-600 text-sm">
                 Clique em um agente para visualizar sua estrutura com nodes, conexões e propriedades.
                 Você pode editar, executar e salvar alterações diretamente no editor visual.
               </p>
@@ -123,15 +123,15 @@ export default function AgentsStudio() {
   // Show agent editor if agent is selected
   if (isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-slate-950">
-        <div className="text-slate-400">Carregando agente...</div>
+      <div className="w-full h-full flex items-center justify-center bg-white">
+        <div className="text-gray-600">Carregando agente...</div>
       </div>
     );
   }
 
   return (
     <ReactFlowProvider>
-      <div className="w-full h-full flex flex-col bg-slate-950 overflow-hidden">
+      <div className="w-full h-full flex flex-col bg-white overflow-hidden">
         <Toolbar onBack={handleBackToList} />
 
         <div className="flex-1 flex overflow-hidden gap-0">
@@ -144,15 +144,15 @@ export default function AgentsStudio() {
           </div>
 
           {/* Divider */}
-          <div className="w-1 bg-slate-700 hover:bg-slate-600 cursor-col-resize transition-colors" />
+          <div className="w-1 bg-gray-300 hover:bg-gray-400 cursor-col-resize transition-colors" />
 
           {/* Execution Panel */}
           <div
             style={{ width: `${splitSize}%` }}
-            className="bg-slate-900 border-l border-slate-700 overflow-hidden flex flex-col"
+            className="bg-gray-50 border-l border-gray-300 overflow-hidden flex flex-col"
           >
-            <div className="p-3 border-b border-slate-700 bg-slate-800">
-              <h2 className="text-sm font-bold text-white">Execução</h2>
+            <div className="p-3 border-b border-gray-300 bg-gray-100">
+              <h2 className="text-sm font-bold text-gray-900">Execução</h2>
             </div>
             <ExecutionPanel />
           </div>
