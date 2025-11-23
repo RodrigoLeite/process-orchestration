@@ -6,16 +6,13 @@ export default function AgentNode({ data, id }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const {
     label = 'Agent Executor',
-    systemPrompt = '',
     temperature = 0.7,
     maxTokens = 2000,
     logicType = 'none',
     condition = '',
+    modelProvider = 'OpenAI',
+    modelName = 'gpt-4o-mini',
   } = data;
-
-  const truncateText = (text: string, maxLen: number) => {
-    return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
-  };
 
   return (
     <div className="px-4 py-3 bg-indigo-50 border-2 border-indigo-400 rounded-lg shadow-lg min-w-[240px]">
@@ -33,7 +30,7 @@ export default function AgentNode({ data, id }: any) {
 
       {!isOpen && (
         <div className="text-xs text-indigo-600 space-y-1">
-          <div>📝 Prompt: {truncateText(systemPrompt, 40)}</div>
+          <div>📦 {modelProvider}/{modelName}</div>
           <div>🌡️ Temp: {temperature}</div>
           {logicType !== 'none' && (
             <div>⚙️ Logic: {logicType}</div>
@@ -43,10 +40,14 @@ export default function AgentNode({ data, id }: any) {
 
       {isOpen && (
         <div className="text-xs space-y-2 mt-2 pt-2 border-t border-indigo-200">
-          <div>
-            <label className="text-indigo-700 font-semibold">System Prompt:</label>
-            <div className="bg-white p-2 rounded text-gray-800 text-xs break-words max-h-24 overflow-y-auto">
-              {systemPrompt || '(vazio)'}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-indigo-700 font-semibold">Provider:</label>
+              <div className="bg-white p-2 rounded text-gray-800">{modelProvider}</div>
+            </div>
+            <div>
+              <label className="text-indigo-700 font-semibold">Model:</label>
+              <div className="bg-white p-2 rounded text-gray-800">{modelName}</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">

@@ -1,7 +1,7 @@
 {
   "id": "workflow-generator",
   "name": "Gerador de Workflow",
-  "description": "Gera workflows customizados: ChatInputNode (demanda) → APINode (cria) → AgentNode (analisa) → OutputNode (resultado)",
+  "description": "Gera workflows customizados: ChatInputNode → APINode → PromptNode → AgentNode → OutputNode",
   "graph": {
     "nodes": [
       {
@@ -23,21 +23,33 @@
         }
       },
       {
-        "id": "agent-generate-workflow",
-        "type": "agent",
-        "position": { "x": 500, "y": 100 },
+        "id": "prompt-generator",
+        "type": "prompt",
+        "position": { "x": 450, "y": 100 },
         "data": {
-          "label": "Gerar Workflow",
+          "label": "Instruções para Workflow",
           "systemPrompt": "Você é um especialista em gestão de processos. Receba uma demanda criada no sistema e gere um workflow detalhado com etapas customizadas baseadas na área (TI, Vendas, RH, Financeiro, etc). Retorne JSON com: {\"workflowName\": \"nome\", \"area\": \"area\", \"stages\": [{\"name\": \"nome\", \"type\": \"tipo\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"duration_hours\": 2}]}",
           "temperature": 0.5,
+          "maxTokens": 3000
+        }
+      },
+      {
+        "id": "agent-generate-workflow",
+        "type": "agent",
+        "position": { "x": 650, "y": 100 },
+        "data": {
+          "label": "Gerar Workflow",
+          "temperature": 0.5,
           "maxTokens": 3000,
-          "logicType": "none"
+          "logicType": "none",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4o-mini"
         }
       },
       {
         "id": "output-workflow",
         "type": "output",
-        "position": { "x": 750, "y": 100 },
+        "position": { "x": 850, "y": 100 },
         "data": {
           "label": "Workflow Gerado",
           "schema": "{\"workflowName\": \"string\", \"area\": \"string\", \"stages\": \"array\"}"
@@ -46,8 +58,9 @@
     ],
     "edges": [
       { "source": "chat-input", "target": "api-create-demand", "id": "e1" },
-      { "source": "api-create-demand", "target": "agent-generate-workflow", "id": "e2" },
-      { "source": "agent-generate-workflow", "target": "output-workflow", "id": "e3" }
+      { "source": "api-create-demand", "target": "prompt-generator", "id": "e2" },
+      { "source": "prompt-generator", "target": "agent-generate-workflow", "id": "e3" },
+      { "source": "agent-generate-workflow", "target": "output-workflow", "id": "e4" }
     ],
     "viewport": { "x": 0, "y": 0, "zoom": 1 }
   }

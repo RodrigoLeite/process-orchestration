@@ -1,7 +1,7 @@
 {
   "id": "monitor-gargalos",
   "name": "Monitor de Gargalos",
-  "description": "Monitora e detecta gargalos: ChatInputNode (workflows) → APINode (busca dados) → AgentNode (detecta) → OutputNode (alertas)",
+  "description": "Monitora e detecta gargalos: ChatInputNode → APINode → PromptNode → AgentNode → OutputNode",
   "graph": {
     "nodes": [
       {
@@ -23,22 +23,34 @@
         }
       },
       {
+        "id": "prompt-bottleneck",
+        "type": "prompt",
+        "position": { "x": 450, "y": 100 },
+        "data": {
+          "label": "Instruções de Detecção",
+          "systemPrompt": "Você é um especialista em detecção de gargalos em processos. Analise os workflows fornecidos e identifique etapas que estão atrasadas, sobre-carregadas ou problemáticas. Retorne JSON com: {\"bottlenecks\": [{\"workflow_id\": \"id\", \"stage\": \"nome\", \"severity\": \"crítica/alta/média\", \"duration_minutes\": número, \"status\": \"atrasada/bloqueada/lenta\", \"recommendation\": \"ação corretiva\"}], \"total_severity_score\": número, \"requires_escalation\": boolean}",
+          "temperature": 0.3,
+          "maxTokens": 2500
+        }
+      },
+      {
         "id": "agent-detect-bottlenecks",
         "type": "agent",
-        "position": { "x": 500, "y": 100 },
+        "position": { "x": 650, "y": 100 },
         "data": {
           "label": "Detector de Gargalos",
-          "systemPrompt": "Você é um especialista em detecção de gargalos em processos. Analise os workflows fornecidos e identifique etapas que estão atrasadas, sobre-carregadas ou problemáticas. Retorne JSON com: {\"bottlenecks\": [{\"workflow_id\": \"id\", \"stage\": \"nome\", \"severity\": \"crítica/alta/média\", \"duration_minutes\": número, \"status\": \"atrasada/bloqueada/lenta\", \"recommendation\": \"ação corretiva\"}], \"total_severity_score\": número, \"requires_escalation\": boolean}",
           "temperature": 0.3,
           "maxTokens": 2500,
           "logicType": "filter",
-          "condition": "severity in ['crítica', 'alta']"
+          "condition": "severity in ['crítica', 'alta']",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4o-mini"
         }
       },
       {
         "id": "output-bottlenecks",
         "type": "output",
-        "position": { "x": 750, "y": 100 },
+        "position": { "x": 850, "y": 100 },
         "data": {
           "label": "Alertas de Gargalos",
           "schema": "{\"bottlenecks\": \"array\", \"total_severity_score\": \"number\", \"requires_escalation\": \"boolean\"}"
@@ -47,8 +59,9 @@
     ],
     "edges": [
       { "source": "chat-input-bottleneck", "target": "api-fetch-workflows", "id": "e1" },
-      { "source": "api-fetch-workflows", "target": "agent-detect-bottlenecks", "id": "e2" },
-      { "source": "agent-detect-bottlenecks", "target": "output-bottlenecks", "id": "e3" }
+      { "source": "api-fetch-workflows", "target": "prompt-bottleneck", "id": "e2" },
+      { "source": "prompt-bottleneck", "target": "agent-detect-bottlenecks", "id": "e3" },
+      { "source": "agent-detect-bottlenecks", "target": "output-bottlenecks", "id": "e4" }
     ],
     "viewport": { "x": 0, "y": 0, "zoom": 1 }
   }
