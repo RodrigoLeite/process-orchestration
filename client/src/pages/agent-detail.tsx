@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
     enabled: !!id
   });
 
-  const { data: logs = [], isLoading: logsLoading } = useQuery<AgentLog[]>({
+  const { data: logs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery<AgentLog[]>({
     queryKey: ["agent-logs", id],
     queryFn: async () => {
       const res = await fetch(`/api/agents/${id}/logs`);
@@ -39,6 +39,13 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
     staleTime: 0,
     gcTime: 0
   });
+
+  // Force refetch logs when ID changes
+  useEffect(() => {
+    if (id) {
+      refetchLogs();
+    }
+  }, [id, refetchLogs]);
 
   const handleTestAgent = async () => {
     try {
