@@ -115,7 +115,7 @@ export default function KanbanList() {
                 {/* Badges */}
                 <div className="flex gap-2 flex-wrap">
                   <Badge color="blue" data-testid="badge-area">
-                    {workflow.areaName.toUpperCase()}
+                    {workflow.areaName ? workflow.areaName.toUpperCase() : "DESCONHECIDA"}
                   </Badge>
                 </div>
 
@@ -127,7 +127,7 @@ export default function KanbanList() {
 
                 {/* Descrição */}
                 <div className="text-sm text-muted-foreground">
-                  Workflow para a área <span className="font-semibold">{workflow.areaName}</span>
+                  Workflow para a área <span className="font-semibold">{workflow.areaName || "desconhecida"}</span>
                 </div>
 
                 {/* ID */}

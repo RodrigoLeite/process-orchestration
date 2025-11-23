@@ -2675,7 +2675,21 @@ Texto original: ${demand.rawText}`;
       
       if (resultData.workflow) {
         try {
-          // Generate a valid UUID for workflow ID
+          // Get area from demand
+          const areaName = (parsed.area || demandRecord.assignedTo || "tech").toLowerCase();
+          
+          // Get or create area workflow
+          let areaWorkflow = await storage.getAreaWorkflow(areaName);
+          if (!areaWorkflow) {
+            // Create new area workflow if it doesn't exist
+            areaWorkflow = await storage.createAreaWorkflow({
+              areaName,
+              name: areaName.charAt(0).toUpperCase() + areaName.slice(1)
+            });
+            console.log(`[ORCHESTRATE] Created area workflow: ${areaWorkflow.id} for area: ${areaName}`);
+          }
+          
+          // Generate a valid UUID for demand workflow (internal tracking)
           const workflowId = crypto.randomUUID();
           const workflowData = {
             id: workflowId,
@@ -2689,13 +2703,13 @@ Texto original: ${demand.rawText}`;
           };
           
           await storage.createWorkflow(workflowData as any);
-          createdWorkflowId = workflowId;
-          console.log(`[ORCHESTRATE] Saved workflow: ${workflowId}`);
+          console.log(`[ORCHESTRATE] Saved demand workflow: ${workflowId}`);
           
-          // Update demand with workflow ID
+          // Update demand with AREA workflow ID (not demand workflow ID)
           try {
-            await storage.updateDemandWithSLA(demandId, { workflowId });
-            console.log(`[ORCHESTRATE] Updated demand with workflowId: ${workflowId}`);
+            await storage.updateDemandWithSLA(demandId, { workflowId: areaWorkflow.id });
+            console.log(`[ORCHESTRATE] Updated demand with areaWorkflowId: ${areaWorkflow.id}`);
+            createdWorkflowId = areaWorkflow.id;
           } catch (error) {
             console.error("[ORCHESTRATE] Error updating demand with workflowId:", error);
           }
