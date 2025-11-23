@@ -15,6 +15,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
     redo,
     isSaving,
     isExecuting,
+    unsavedChanges,
     setNodes,
     setEdges,
   } = useAgentsStore();
@@ -60,10 +61,11 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-white hover:bg-gray-100 border-gray-300"
+          className={`relative ${unsavedChanges ? 'bg-blue-50 border-blue-300 hover:bg-blue-100' : 'bg-white hover:bg-gray-100 border-gray-300'}`}
         >
           <Save size={16} className="mr-2" />
           {isSaving ? 'Salvando...' : 'Salvar'}
+          {unsavedChanges && <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full" />}
         </Button>
 
         <Button
