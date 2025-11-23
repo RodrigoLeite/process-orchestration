@@ -14,7 +14,8 @@ import {
   Bot,
   Bell,
   Activity,
-  GitBranch
+  GitBranch,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const navItems = [
   { label: "Workflows", href: "/app/workflows", icon: LayoutGrid },
   { label: "Áreas", href: "/app/areas", icon: BarChart3 },
   { label: "Agentes IA", href: "/app/agents", icon: Bot },
+  { label: "Agent Studio", href: "/app/agents-studio", icon: Sparkles },
   { label: "Grafo de Execução", href: "/app/workflow-graph", icon: GitBranch },
   { label: "Alertas Críticos", href: "/app/alerts", icon: Bell },
   { label: "Gargalos (IA)", href: "/app/bottlenecks", icon: AlertTriangle },
