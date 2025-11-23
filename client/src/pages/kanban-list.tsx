@@ -6,8 +6,14 @@ import Badge from "@/components/Badge";
 
 interface AreaWorkflow {
   id: string;
-  areaName: string;
-  name: string;
+  workflowHash: string;
+  steps: Array<{
+    name: string;
+    type?: string;
+    order: number;
+    description?: string;
+  }>;
+  createdAt?: string;
 }
 
 interface WorkflowStats {
@@ -21,10 +27,12 @@ export default function KanbanList() {
   const { data: workflows, isLoading, error } = useQuery<AreaWorkflow[]>({
     queryKey: ["workflows"],
     queryFn: async () => {
-      const res = await fetch("/api/area-workflows");
+      const res = await fetch("/api/workflows");
       if (!res.ok) throw new Error("Failed to fetch workflows");
       return res.json();
-    }
+    },
+    staleTime: 0,
+    gcTime: 0
   });
 
   // Fetch stats for each workflow
@@ -107,32 +115,39 @@ export default function KanbanList() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                    {workflow.name}
+                    Workflow {workflow.id.slice(0, 8)}
                   </CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Badges */}
                 <div className="flex gap-2 flex-wrap">
-                  <Badge color="blue" data-testid="badge-area">
-                    {workflow.areaName ? workflow.areaName.toUpperCase() : "DESCONHECIDA"}
+                  <Badge color="blue" data-testid="badge-stage-count">
+                    {workflow.steps?.length || 0} Etapas
+                  </Badge>
+                  <Badge color="purple" data-testid="badge-demand-count">
+                    {stats.demandCount} Demandas
                   </Badge>
                 </div>
 
-                {/* Demandas */}
+                {/* Primeiras etapas */}
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Demandas</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.demandCount}</p>
-                </div>
-
-                {/* Descrição */}
-                <div className="text-sm text-muted-foreground">
-                  Workflow para a área <span className="font-semibold">{workflow.areaName || "desconhecida"}</span>
+                  <p className="text-xs text-muted-foreground mb-2">Etapas</p>
+                  <div className="space-y-1">
+                    {workflow.steps?.slice(0, 3).map((step, idx) => (
+                      <div key={idx} className="text-sm text-foreground">
+                        <span className="font-medium">{step.order + 1}.</span> {step.name}
+                      </div>
+                    ))}
+                    {workflow.steps && workflow.steps.length > 3 && (
+                      <p className="text-xs text-muted-foreground italic">+{workflow.steps.length - 3} mais...</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* ID */}
                 <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                  ID: {workflow.id.slice(0, 8)}
+                  Hash: {workflow.workflowHash.slice(0, 12)}...
                 </p>
               </CardContent>
             </Card>
