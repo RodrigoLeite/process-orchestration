@@ -32,7 +32,7 @@ const SAMPLE_AGENTS = [
 
 export default function AgentsStudio() {
   const [, navigate] = useLocation();
-  const { loadGraph, currentAgentId, setCurrentAgentId, isLoading } = useAgentsStore();
+  const { loadGraph, currentAgentId, setCurrentAgentId, isLoading, isSidebarOpen } = useAgentsStore();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [splitSize, setSplitSize] = useState(30);
 
@@ -129,8 +129,8 @@ export default function AgentsStudio() {
         <Toolbar onBack={handleBackToList} />
 
         <div className="flex-1 flex overflow-hidden gap-0">
-          {/* Sidebar */}
-          <Sidebar />
+          {/* Sidebar - conditional render */}
+          {isSidebarOpen && <Sidebar />}
 
           {/* Canvas */}
           <div className="flex-1 flex flex-col overflow-hidden">
