@@ -2036,6 +2036,24 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Process all new demands (status: "new") - Manual trigger for processing pending demands
+  app.post("/api/process-new-demands", async (req, res) => {
+    try {
+      const { processNewDemands } = await import("./lib/scheduler");
+      await processNewDemands();
+      res.json({ 
+        success: true,
+        message: "Started processing new demands"
+      });
+    } catch (error) {
+      console.error("Error processing new demands:", error);
+      res.status(500).json({ 
+        success: false,
+        error: String(error)
+      });
+    }
+  });
+
   // LangSmith health check and test
   app.get("/api/langsmith/health", async (req, res) => {
     try {

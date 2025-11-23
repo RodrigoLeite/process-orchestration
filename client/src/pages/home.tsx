@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [demandText, setDemandText] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [createStatus, setCreateStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch demands
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
@@ -67,6 +68,20 @@ export default function Dashboard() {
   const handleViewKanban = () => navigate("/app/workflows");
   const handleViewInsights = () => navigate("/app/insights");
   const handleViewBottlenecks = () => navigate("/app/bottlenecks");
+
+  const handleProcessNewDemands = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch("/api/process-new-demands", { method: "POST" });
+      if (!res.ok) throw new Error("Falha ao processar");
+      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+      setCreateStatus({ type: "success", message: "Processamento iniciado! As demandas serão orquestradas..." });
+    } catch (error) {
+      setCreateStatus({ type: "error", message: "Erro ao processar demandas. Tente novamente." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -184,6 +199,41 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+
+      {/* Process Pending Demands Section */}
+      {newDemands > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-900">
+              <Zap className="w-5 h-5" />
+              Demandas Aguardando Processamento
+            </CardTitle>
+            <CardDescription className="text-blue-700">
+              Você tem {newDemands} demanda(s) aguardando orquestração. Clique no botão abaixo para processar agora.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleProcessNewDemands}
+              disabled={isProcessing || newDemands === 0}
+              className="gap-2"
+              data-testid="button-process-demands"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Processar {newDemands} Demanda{newDemands !== 1 ? 's' : ''}
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Demands Section */}
       <Card>
