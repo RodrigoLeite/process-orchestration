@@ -16,8 +16,14 @@ interface WorkflowStage {
 
 interface AreaWorkflow {
   id: string;
-  areaName: string;
-  name: string;
+  workflowHash: string;
+  steps: Array<{
+    name: string;
+    type?: string;
+    order: number;
+    description?: string;
+  }>;
+  createdAt?: string;
 }
 
 export default function KanbanWorkflow() {
@@ -31,29 +37,33 @@ export default function KanbanWorkflow() {
   const { data: workflow, isLoading: workflowLoading } = useQuery<AreaWorkflow>({
     queryKey: ["workflow", workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/area-workflows/${workflowId}`);
+      const res = await fetch(`/api/workflows/${workflowId}`);
       if (!res.ok) throw new Error("Failed to fetch workflow");
       return res.json();
     },
-    enabled: !!workflowId
+    enabled: !!workflowId,
+    staleTime: 0,
+    gcTime: 0
   });
 
   // Fetch stages
   const { data: stages = [], isLoading: stagesLoading } = useQuery<WorkflowStage[]>({
     queryKey: ["workflow-stages", workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/area-workflows/${workflowId}/stages`);
+      const res = await fetch(`/api/workflows/${workflowId}/stages`);
       if (!res.ok) throw new Error("Failed to fetch stages");
       return res.json();
     },
-    enabled: !!workflowId
+    enabled: !!workflowId,
+    staleTime: 0,
+    gcTime: 0
   });
 
   // Fetch demands for this workflow
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
     queryKey: ["workflow-demands", workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/area-workflows/${workflowId}/demands`);
+      const res = await fetch(`/api/workflows/${workflowId}/demands`);
       if (!res.ok) throw new Error("Failed to fetch demands");
       return res.json();
     },
@@ -122,10 +132,13 @@ export default function KanbanWorkflow() {
 
           <div className="space-y-2">
             <h1 className="text-4xl font-bold" data-testid="text-workflow-title">
-              {workflow.name}
+              Workflow {workflow.id.slice(0, 8)}
             </h1>
             <p className="text-muted-foreground">
-              Área: <span className="font-semibold">{workflow.areaName ? workflow.areaName.toUpperCase() : "—"}</span>
+              Hash: <span className="font-semibold font-mono text-sm">{workflow.workflowHash.slice(0, 20)}...</span>
+            </p>
+            <p className="text-muted-foreground">
+              Etapas: <span className="font-semibold">{workflow.steps?.length || 0}</span>
             </p>
           </div>
         </div>
