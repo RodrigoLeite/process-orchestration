@@ -60,6 +60,26 @@
           "x": 800,
           "y": 0
         }
+      },
+      {
+        "id": "chatInput-1763921560395",
+        "type": "chatInput",
+        "position": {
+          "x": -449.08957654723133,
+          "y": -35.017915309446266
+        },
+        "data": {
+          "label": "Chat Input",
+          "placeholder": "Digite sua mensagem aqui..."
+        },
+        "width": 320,
+        "height": 231,
+        "positionAbsolute": {
+          "x": -449.08957654723133,
+          "y": -35.017915309446266
+        },
+        "dragging": true,
+        "selected": true
       }
     ],
     "edges": [
@@ -72,6 +92,13 @@
         "id": "e2-3",
         "source": "logic-1",
         "target": "output-1"
+      },
+      {
+        "source": "chatInput-1763921560395",
+        "sourceHandle": null,
+        "target": "prompt-1",
+        "targetHandle": null,
+        "id": "reactflow__edge-chatInput-1763921560395-prompt-1"
       }
     ],
     "viewport": {
@@ -80,6 +107,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T17:42:59.925Z",
-  "updatedAt": "2025-11-23T17:42:59.925Z"
+  "createdAt": "2025-11-23T18:13:17.563Z",
+  "updatedAt": "2025-11-23T18:13:17.563Z"
 }

@@ -218,6 +218,50 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
           } else if (logicType === 'routing') {
             nodeOutput.routedTo = 'default_path';
           }
+        } else if (node.type === 'api') {
+          // Execute APINode - make HTTP request
+          const { endpoint = '', method = 'POST', headers = '{}', bodyTemplate = '{}' } = node.data;
+
+          try {
+            // Parse headers
+            const parsedHeaders = JSON.parse(headers);
+            
+            // Parse body template and replace "input" with actual input
+            let bodyStr = bodyTemplate;
+            if (typeof nodeInput === 'object') {
+              // Replace "input" placeholder with the actual input value
+              bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+            } else {
+              bodyStr = bodyTemplate.replace(/"input"/g, JSON.stringify(nodeInput));
+            }
+            const parsedBody = JSON.parse(bodyStr);
+
+            // Make HTTP request
+            const response = await fetch(`http://localhost:5000${endpoint}`, {
+              method,
+              headers: {
+                'Content-Type': 'application/json',
+                ...parsedHeaders,
+              },
+              body: method !== 'GET' ? JSON.stringify(parsedBody) : undefined,
+            });
+
+            const responseData = await response.json();
+            
+            nodeOutput = {
+              endpoint,
+              method,
+              status: response.status,
+              data: responseData,
+            };
+
+            // If response contains workflow data, extract and save as last output
+            if (responseData && typeof responseData === 'object') {
+              lastPromptOutput = responseData;
+            }
+          } catch (err) {
+            throw new Error(`API call failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          }
         } else if (node.type === 'output') {
           // Execute OutputNode - format the output
           const { schema = '{}' } = node.data;

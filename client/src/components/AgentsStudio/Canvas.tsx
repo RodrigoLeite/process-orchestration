@@ -14,12 +14,14 @@ import PromptNode from './nodes/PromptNode';
 import LogicNode from './nodes/LogicNode';
 import OutputNode from './nodes/OutputNode';
 import ChatInputNode from './nodes/ChatInputNode';
+import APINode from './nodes/APINode';
 
 const nodeTypes = {
   prompt: PromptNode,
   logic: LogicNode,
   output: OutputNode,
   chatInput: ChatInputNode,
+  api: APINode,
 };
 
 export default function Canvas() {
@@ -109,6 +111,12 @@ export default function Canvas() {
             outputName: '',
             schema: '{}',
           }),
+          ...(nodeType === 'api' && {
+            endpoint: '/api/demands',
+            method: 'POST',
+            headers: '{}',
+            bodyTemplate: '{"titulo": "input", "descricao": "input"}',
+          }),
         },
       };
 
@@ -149,6 +157,8 @@ export default function Canvas() {
                 return '#10b981';
               case 'chatInput':
                 return '#16a34a';
+              case 'api':
+                return '#ea580c';
               default:
                 return '#d1d5db';
             }
