@@ -218,6 +218,73 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
           } else if (logicType === 'routing') {
             nodeOutput.routedTo = 'default_path';
           }
+        } else if (node.type === 'agent') {
+          // Execute AgentNode - orchestrate input through LLM with logic
+          const { systemPrompt = '', temperature = 0.7, maxTokens = 2000, logicType = 'none', condition = '' } = node.data;
+
+          if (!openaiApiKey) {
+            throw new Error('OPENAI_API_KEY not configured');
+          }
+
+          // Apply logic if specified
+          let processedInput = nodeInput;
+          if (logicType === 'validation' && condition) {
+            // Simple validation: check if input matches condition
+            const inputStr = JSON.stringify(nodeInput);
+            processedInput = {
+              original: nodeInput,
+              validationApplied: true,
+              condition,
+              passedValidation: inputStr.includes(condition),
+            };
+          } else if (logicType === 'filter') {
+            processedInput = {
+              original: nodeInput,
+              filtered: true,
+            };
+          }
+
+          // Call OpenAI with the processed input
+          const openai = new OpenAI({ apiKey: openaiApiKey });
+          const response = await openai.chat.completions.create({
+            model: 'gpt-4-turbo',
+            temperature,
+            max_tokens: maxTokens,
+            messages: [
+              {
+                role: 'system',
+                content: systemPrompt || 'You are a helpful assistant.',
+              },
+              {
+                role: 'user',
+                content: JSON.stringify(processedInput),
+              },
+            ],
+          });
+
+          const responseText = response.choices[0]?.message?.content || '';
+          
+          nodeOutput = {
+            text: responseText,
+            input: processedInput,
+            temperature,
+            logicApplied: logicType !== 'none',
+            model: response.model,
+            usage: {
+              prompt_tokens: response.usage?.prompt_tokens || 0,
+              completion_tokens: response.usage?.completion_tokens || 0,
+              total_tokens: response.usage?.total_tokens || 0,
+            },
+          };
+
+          // Save as potential final output
+          try {
+            lastPromptOutput = JSON.parse(responseText);
+          } catch (e) {
+            lastPromptOutput = { raw_response: responseText };
+          }
+
+          totalTokensUsed += response.usage?.total_tokens || 0;
         } else if (node.type === 'api') {
           // Execute APINode - make HTTP request
           const { endpoint = '', method = 'POST', headers = '{}', bodyTemplate = '{}' } = node.data;

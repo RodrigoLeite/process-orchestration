@@ -15,6 +15,7 @@ import LogicNode from './nodes/LogicNode';
 import OutputNode from './nodes/OutputNode';
 import ChatInputNode from './nodes/ChatInputNode';
 import APINode from './nodes/APINode';
+import AgentNode from './nodes/AgentNode';
 
 const nodeTypes = {
   prompt: PromptNode,
@@ -22,6 +23,7 @@ const nodeTypes = {
   output: OutputNode,
   chatInput: ChatInputNode,
   api: APINode,
+  agent: AgentNode,
 };
 
 export default function Canvas() {
@@ -117,6 +119,13 @@ export default function Canvas() {
             headers: '{}',
             bodyTemplate: '{"titulo": "input", "descricao": "input"}',
           }),
+          ...(nodeType === 'agent' && {
+            systemPrompt: 'Você é um assistente helpful. Processe a entrada e retorne uma resposta estruturada.',
+            temperature: 0.7,
+            maxTokens: 2000,
+            logicType: 'none',
+            condition: '',
+          }),
         },
       };
 
@@ -159,6 +168,8 @@ export default function Canvas() {
                 return '#16a34a';
               case 'api':
                 return '#ea580c';
+              case 'agent':
+                return '#4f46e5';
               default:
                 return '#d1d5db';
             }

@@ -45,6 +45,18 @@ const SAMPLE_AGENTS = [
     name: 'Processador de Demandas',
     description: 'Cria demandas e gera workflows automáticos - Demo com ChatInputNode + APINode',
     icon: '📝'
+  },
+  {
+    id: 'workflow-parser',
+    name: 'Parser de Demandas',
+    description: 'Converte texto em etapas estruturadas - Demo com ChatInputNode → AgentNode → OutputNode',
+    icon: '⚙️'
+  },
+  {
+    id: 'structured-analyzer',
+    name: 'Analisador Estruturado',
+    description: 'Demo completo: ChatInputNode → AgentNode (com lógica) → OutputNode',
+    icon: '📊'
   }
 ];
 
