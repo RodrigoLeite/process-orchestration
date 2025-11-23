@@ -1,7 +1,7 @@
 {
   "id": "insights-inteligentes",
   "name": "Insights Inteligentes",
-  "description": "Analisa demandas e gera insights: ChatInputNode (dados) → AgentNode (analisa) → OutputNode (recomendações)",
+  "description": "Analisa demandas e gera insights: ChatInputNode → PromptNode → AgentNode → OutputNode",
   "graph": {
     "nodes": [
       {
@@ -11,22 +11,34 @@
         "data": { "label": "Dados para Análise" }
       },
       {
+        "id": "prompt-insights",
+        "type": "prompt",
+        "position": { "x": 250, "y": 100 },
+        "data": {
+          "label": "Instruções de Insights",
+          "systemPrompt": "Você é um especialista em análise de processos de negócio. Analise os dados fornecidos e gere insights acionáveis sobre: tendências, gargalos, oportunidades de melhoria, áreas críticas. Retorne JSON com: {\"insights\": [{\"type\": \"tendência/gargalo/oportunidade\", \"area\": \"TI/Vendas/RH/Financeiro\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"recommendation\": \"recomendação acionável\", \"impact_score\": número 1-10}], \"summary\": \"resumo executivo\"}",
+          "temperature": 0.5,
+          "maxTokens": 3000
+        }
+      },
+      {
         "id": "agent-insights",
         "type": "agent",
-        "position": { "x": 300, "y": 100 },
+        "position": { "x": 450, "y": 100 },
         "data": {
           "label": "Analisador de Insights",
-          "systemPrompt": "Você é um especialista em análise de processos de negócio. Analise os dados fornecidos e gere insights acionáveis sobre: tendências, gargalos, oportunidades de melhoria, áreas críticas. Retorne JSON com: {\"insights\": [{\"type\": \"tendência/gargalo/oportunidade\", \"area\": \"TI/Vendas/RH/Financeiro\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"recommendation\": \"recomendação acionável\", \"impact_score\": número 1-10}], \"summary\": \"resumo executivo\"}",
           "temperature": 0.5,
           "maxTokens": 3000,
           "logicType": "filter",
-          "condition": "priority in ['alta', 'medium']"
+          "condition": "priority in ['alta', 'medium']",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4o-mini"
         }
       },
       {
         "id": "output-insights",
         "type": "output",
-        "position": { "x": 600, "y": 100 },
+        "position": { "x": 650, "y": 100 },
         "data": {
           "label": "Relatório de Insights",
           "schema": "{\"insights\": \"array\", \"summary\": \"string\"}"
@@ -34,8 +46,9 @@
       }
     ],
     "edges": [
-      { "source": "chat-input-insights", "target": "agent-insights", "id": "e1" },
-      { "source": "agent-insights", "target": "output-insights", "id": "e2" }
+      { "source": "chat-input-insights", "target": "prompt-insights", "id": "e1" },
+      { "source": "prompt-insights", "target": "agent-insights", "id": "e2" },
+      { "source": "agent-insights", "target": "output-insights", "id": "e3" }
     ],
     "viewport": { "x": 0, "y": 0, "zoom": 1 }
   }
