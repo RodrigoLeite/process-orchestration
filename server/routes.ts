@@ -3490,6 +3490,74 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // GET /api/monitoring/status - Real-time monitoring of demand processing
+  app.get("/api/monitoring/status", async (req, res) => {
+    try {
+      const demands = await storage.getDemands();
+      
+      const stats = {
+        total: demands.length,
+        byStatus: {
+          pending: demands.filter(d => d.status === "pending").length,
+          routed: demands.filter(d => d.status === "routed").length,
+          in_progress: demands.filter(d => d.status === "in_progress").length,
+          completed: demands.filter(d => d.status === "completed").length,
+          done: demands.filter(d => d.status === "done").length,
+          blocked: demands.filter(d => d.status === "blocked").length,
+        },
+        byArea: {} as Record<string, number>,
+        recentDemands: [] as any[],
+        completionPercentage: 0,
+        averageProcessingTime: 0
+      };
+
+      // Count by area
+      demands.forEach(d => {
+        const area = d.area || "Unknown";
+        stats.byArea[area] = (stats.byArea[area] || 0) + 1;
+      });
+
+      // Get recent demands (last 5 processed)
+      const processed = demands.filter(d => d.status === "completed" || d.status === "done");
+      stats.recentDemands = processed
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
+        .map(d => ({
+          id: d.id,
+          title: d.rawText?.substring(0, 50) || "Sem título",
+          area: d.area,
+          status: d.status,
+          createdAt: d.createdAt
+        }));
+
+      // Calculate completion percentage
+      const processed_count = stats.byStatus.completed + stats.byStatus.done;
+      stats.completionPercentage = Math.round((processed_count / stats.total) * 100);
+
+      // Calculate average processing time
+      const processing_times = processed.map(d => {
+        const created = new Date(d.createdAt).getTime();
+        const now = new Date().getTime();
+        return (now - created) / 1000 / 60; // minutes
+      });
+      stats.averageProcessingTime = processing_times.length > 0
+        ? Math.round(processing_times.reduce((a, b) => a + b) / processing_times.length)
+        : 0;
+
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        data: stats
+      });
+    } catch (error) {
+      console.error("Error fetching monitoring status:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch monitoring status"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
