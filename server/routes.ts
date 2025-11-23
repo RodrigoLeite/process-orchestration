@@ -462,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ Workflow Endpoints ============
 
-  // Get all workflows
+  // Get all workflows (from demands)
   app.get("/api/workflows", async (req, res) => {
     try {
       const workflows = await storage.getAllWorkflowsFromDb();
@@ -470,6 +470,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching workflows:", error);
       res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  // Get all area workflows (for kanban board)
+  app.get("/api/area-workflows", async (req, res) => {
+    try {
+      // Get all area workflows
+      const nodes = await storage.getWorkgraphNodes();
+      const areaWorkflows = await Promise.all(
+        nodes.map(async (node) => {
+          const workflow = await storage.getAreaWorkflow(node.name);
+          return {
+            id: node.id,
+            name: node.name.charAt(0).toUpperCase() + node.name.slice(1),
+            areaName: node.name,
+            description: node.description || `Workflow da área ${node.name}`
+          };
+        })
+      );
+      res.json(areaWorkflows.filter((w) => w !== null));
+    } catch (error) {
+      console.error("Error fetching area workflows:", error);
+      res.status(500).json({ error: "Failed to fetch area workflows" });
     }
   });
 
