@@ -38,6 +38,25 @@ export function generateWorkflowHash(steps: WorkflowStep[], area: string = "unkn
     "ajustes": "Monitoramento e Ajustes"
   };
 
+  // Map stage types to standard types (agent is inconsistent with these)
+  const standardStageTypes: Record<string, string> = {
+    "inicio": "inicio",
+    "start": "inicio",
+    "beginning": "inicio",
+    "processamento": "processamento",
+    "process": "processamento",
+    "processing": "processamento",
+    "revisao": "processamento", // Revisão is also processing
+    "review": "processamento",
+    "approval": "processamento",
+    "aprovacao": "processamento",
+    "fim": "fim",
+    "end": "fim",
+    "finish": "fim",
+    "final": "fim",
+    "conclusion": "fim"
+  };
+
   // Function to map a stage name to standard name
   function normalizeStepName(name: string): string {
     const normalized = name.toLowerCase().replace(/[áàâãäéèêëíìîïóòôõöúùûüç\s\-_]/g, "");
@@ -52,6 +71,12 @@ export function generateWorkflowHash(steps: WorkflowStep[], area: string = "unkn
     return name.trim().toLowerCase();
   }
 
+  // Function to normalize stage type
+  function normalizeStepType(type: string): string {
+    const normalized = type.toLowerCase().trim();
+    return standardStageTypes[normalized] || "processamento";
+  }
+
   // Normalize and canonicalize - only include structural info, not volatile fields
   const normalized = {
     area: area.toLowerCase().trim(),
@@ -60,9 +85,9 @@ export function generateWorkflowHash(steps: WorkflowStep[], area: string = "unkn
       .map(step => ({
         order: step.order,
         name: normalizeStepName(step.name || ""),
-        type: step.type?.trim().toLowerCase() || "processamento",
+        type: normalizeStepType(step.type || "processamento"),
         // Omit volatile fields: description, assignee, duration, priority (all can vary between agent runs)
-        // Include only: order, name (normalized), type, and dependencies (structural elements)
+        // Include only: order, name (normalized), type (normalized), and dependencies (structural elements)
         dependencies: (step.dependencies || []).filter(d => d).map(d => normalizeStepName(d)).sort()
       }))
   };
