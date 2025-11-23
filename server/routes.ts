@@ -14,6 +14,7 @@ import {
   type SupervisorEvent
 } from "./lib/agentSupervisor";
 import { requireAdmin, logAdminAccess } from "./lib/adminAuthMiddleware";
+import { saveAgent, loadAgent, executeAgent } from "./lib/agentsStorage";
 
 // Calculate delay risk based on SLA
 function calculateDelayRisk(demand: any): string {
@@ -1723,6 +1724,94 @@ Texto original: ${demand.rawText}`;
       res.status(500).json({ error: "Failed to fetch agents" });
     }
   });
+
+  // === AGENTS STUDIO ROUTES - must be before /:id route ===
+  
+  // POST /api/agents/save - Save agent graph
+  app.post("/api/agents/save", async (req, res) => {
+    try {
+      const { agentId, graph } = req.body;
+
+      if (!agentId || !graph) {
+        return res.status(400).json({
+          success: false,
+          error: "agentId and graph are required"
+        });
+      }
+
+      console.log(`[AGENTS STUDIO] Saving agent: ${agentId}`);
+      const agentStorage = await saveAgent(agentId, graph);
+
+      res.json({
+        success: true,
+        data: agentStorage
+      });
+    } catch (error) {
+      console.error("Error saving agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to save agent"
+      });
+    }
+  });
+
+  // GET /api/agents/load - Load agent graph
+  app.get("/api/agents/load", async (req, res) => {
+    try {
+      const { agentId } = req.query;
+
+      if (!agentId || typeof agentId !== "string") {
+        return res.status(400).json({
+          success: false,
+          error: "agentId is required"
+        });
+      }
+
+      console.log(`[AGENTS STUDIO] Loading agent: ${agentId}`);
+      const agentData = await loadAgent(agentId);
+
+      res.json({
+        success: true,
+        graph: agentData?.graph || { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
+      });
+    } catch (error) {
+      console.error("Error loading agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to load agent"
+      });
+    }
+  });
+
+  // POST /api/agents/execute - Execute agent graph
+  app.post("/api/agents/execute", async (req, res) => {
+    try {
+      const { agentId, graph } = req.body;
+
+      if (!agentId || !graph) {
+        return res.status(400).json({
+          success: false,
+          error: "agentId and graph are required"
+        });
+      }
+
+      console.log(`[AGENTS STUDIO] Executing agent: ${agentId}`);
+      const result = await executeAgent(agentId, graph);
+
+      res.json({
+        success: true,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error executing agent:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to execute agent"
+      });
+    }
+  });
+
+  // === END AGENTS STUDIO ROUTES ===
 
   app.get("/api/agents/:id", async (req, res) => {
     try {
