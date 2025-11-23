@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,8 +58,16 @@ export default function KanbanWorkflow() {
       return res.json();
     },
     enabled: !!workflowId,
-    refetchOnMount: true // Always refetch when entering the page
+    staleTime: 0, // Data is always considered stale
+    gcTime: 0 // Don't cache in garbage collector
   });
+
+  // Invalidate and refetch queries when entering this page
+  useEffect(() => {
+    if (workflowId) {
+      queryClient.invalidateQueries({ queryKey: ["workflow-demands", workflowId] });
+    }
+  }, [workflowId, queryClient]);
 
   if (!match) return null;
 
