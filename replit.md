@@ -72,7 +72,32 @@ PostgreSQL, via Neon serverless connector, is used for persistent storage, manag
 8. WorkflowBuilder agent also generates a human-readable name for the workflow
 
 ### Area-Specific Stage Names (Nov 23, 2025 Update):
-The WorkflowBuilder agent now tailors stage names to each area:
+The WorkflowBuilder agent now tailors stage names to each area and DEMAND TYPE.
+
+### Demand-Type Customization (Nov 23, 2025 - CRITICAL FIX):
+**Problem Fixed**: WorkflowBuilder was generating identical workflow structures for all demands in the same area, causing "Cancelar acesso de funcionário" to reuse "Implementação OAuth2" workflow.
+
+**Solution Implemented**:
+1. **Flexible Prompt**: Changed from rigid 6-stage template to flexible guidelines encouraging variation
+2. **Type-Based Structure**: Agent now generates completely different structures based on demand type:
+   - **Security/Access Tasks**: Auditoria → Desativação → Revogação de Acessos → Confirmação (4 stages)
+   - **Development Tasks**: Planejamento → Implementação → Testes → Deployment (4 stages)
+   - **Other Types**: Adapt number and type of stages to actual work needed
+3. **Temperature**: Kept at 0.5 for balanced variation between consistency and diversity
+4. **Result**: Identical demands reuse workflows; different demands create new ones (true workflow-per-demand)
+
+### Example Workflows Now Generated:
+**For "Cancelar acesso do funcionário" (Security):**
+- 4 stages focused on access control and audit
+- Hash: 452378423d3f32bda2ba75ca26ff978484b157cb5fd31be863feb7c12710cc47
+
+**For "Implementar integração Stripe" (Development):**
+- 4 stages focused on development lifecycle
+- Hash: 41b935446cc9af21a3784543a7c31e7dba1c9fc43877623f498dd93cbcaa6ab2
+
+Same area (TI), but completely different structures based on actual work type.
+
+### Area-Specific Stage Names by Demand Type:
 
 **TI/TECH**: Planejamento e Análise → Revisão e Aprovação → Implementação → Testes e Validação → Deployment e Implementação em Produção → Monitoramento e Ajustes
 
