@@ -317,30 +317,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: { demandId: demand.id } 
       });
 
-      // 6. Trigger LangGraph orchestration asynchronously (fire and forget)
-      console.log("[LANGGRAPH] Triggering orchestration pipeline for demand:", demand.id);
-      (async () => {
-        try {
-          const result = await fetch("http://localhost:5000/api/ai/orchestrate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ demandId: demand.id, manual: false })
-          });
-          if (!result.ok) {
-            console.error("[LANGGRAPH] Orchestration failed:", result.status, await result.text());
-          } else {
-            console.log("[LANGGRAPH] Orchestration triggered successfully for demand:", demand.id);
-          }
-        } catch (error) {
-          console.error("[LANGGRAPH] Error triggering orchestration:", error);
+      // 6. Trigger LangGraph orchestration SYNCHRONOUSLY (wait for completion before responding)
+      console.log("[LANGGRAPH] Starting orchestration pipeline for demand:", demand.id);
+      try {
+        const orchestrationStart = Date.now();
+        const orchestrationResult = await fetch("http://localhost:5000/api/ai/orchestrate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ demandId: demand.id, manual: false })
+        });
+        const orchestrationDuration = Date.now() - orchestrationStart;
+        
+        if (!orchestrationResult.ok) {
+          console.error("[LANGGRAPH] Orchestration failed:", orchestrationResult.status);
+          const errorText = await orchestrationResult.text();
+          console.error("[LANGGRAPH] Error details:", errorText);
+        } else {
+          console.log(`[LANGGRAPH] Orchestration completed successfully in ${orchestrationDuration}ms for demand:`, demand.id);
         }
-      })();
+      } catch (error) {
+        console.error("[LANGGRAPH] Error during orchestration:", error);
+      }
+      
+      // 7. Fetch updated demand with workflow info
+      const updatedDemand = await storage.getDemand(demand.id);
       
       res.status(201).json({ 
-        id: demand.id, 
-        parsed: demand.parsed, 
-        route_to: demand.routeTo,
-        status: "routed"
+        id: updatedDemand?.id || demand.id, 
+        parsed: updatedDemand?.parsed || demand.parsed, 
+        route_to: updatedDemand?.routeTo || demand.routeTo,
+        workflowId: updatedDemand?.workflowId || null,
+        status: updatedDemand?.status || "routed"
       });
     } catch (error) {
       console.error("Error creating demand:", error);
