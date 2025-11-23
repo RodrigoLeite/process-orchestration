@@ -2965,6 +2965,7 @@ Texto original: ${demand.rawText}`;
   // Get orchestration execution logs
   app.get("/api/ai/logs", async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
       
       // Get system events related to orchestration
@@ -3017,6 +3018,7 @@ Texto original: ${demand.rawText}`;
   // Get orchestration execution details
   app.get("/api/ai/logs/:executionId", async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const { executionId } = req.params;
 
       // Get the system event
