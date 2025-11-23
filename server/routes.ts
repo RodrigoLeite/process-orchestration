@@ -2511,10 +2511,9 @@ Texto original: ${demand.rawText}`;
 
   // ============ LangGraph Orchestration Endpoint ============
   // Import LangGraph orchestration
-  const { executeOrchestrationGraph } = await import("./lib/ai/lc/graphs");
   const { withTracing, logAgentExecution } = await import("./lib/ai/lc/telemetry");
 
-  // Orchestration endpoint - Execute complete demand pipeline
+  // Orchestration endpoint - Execute complete demand pipeline using NEW agent-based architecture
   app.post("/api/orchestration/process-demand", async (req, res) => {
     try {
       const { demand, demand_id } = req.body;
@@ -2526,12 +2525,13 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      // Execute the full orchestration graph
-      const result = await executeOrchestrationGraph(storage, demand, demand_id);
+      // Execute the full orchestration graph using new agent-based architecture
+      const { executeAgentGraph } = await import("./ai/lc/graphs");
+      const result = await executeAgentGraph(demand);
 
       res.json({
-        success: result.status === "success",
-        data: result,
+        success: result.success,
+        data: result.data,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -2583,9 +2583,10 @@ Texto original: ${demand.rawText}`;
 
       console.log(`[ORCHESTRATE] Loaded demand: ${demandInput.titulo}`);
 
-      // Execute orchestration graph with tracing
+      // Execute orchestration graph with NEW agent-based architecture
       const orchestrationResult = await withTracing("orchestrateFromDatabase", async () => {
-        return await executeOrchestrationGraph(storage, demandInput, demandId);
+        const { executeAgentGraph } = await import("./ai/lc/graphs");
+        return await executeAgentGraph(demandInput);
       }, { demand_id: demandId, demand_title: demandInput.titulo, manual });
 
       // Save workflow if generated successfully
