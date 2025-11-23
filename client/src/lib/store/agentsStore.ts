@@ -248,6 +248,10 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
 
     set({ isExecuting: true, error: null });
     try {
+      // Find ChatInputNode and get its value
+      const chatNode = state.nodes.find((n: AgentNode) => n.type === 'chatInput');
+      const initialInput = chatNode?.data?.value || '';
+
       const response = await fetch('/api/agents/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -257,6 +261,7 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
             nodes: state.nodes,
             edges: state.edges,
           },
+          initialInput, // Pass the user's input text
         }),
       });
 

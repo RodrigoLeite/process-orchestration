@@ -105,10 +105,14 @@ function getExecutionOrder(nodes: any[], edges: any[]): any[] {
 }
 
 // Helper to get input data for a node from previous nodes
-function getNodeInput(nodeId: string, nodeOutputs: Map<string, any>, edges: any[]): any {
+function getNodeInput(nodeId: string, nodeOutputs: Map<string, any>, edges: any[], initialInput?: string): any {
   const incomingEdges = edges.filter(e => e.target === nodeId);
   
   if (incomingEdges.length === 0) {
+    // No incoming edges - use initialInput if provided
+    if (initialInput) {
+      return initialInput;
+    }
     return { test: 'input' };
   }
 
@@ -128,7 +132,7 @@ function getNodeInput(nodeId: string, nodeOutputs: Map<string, any>, edges: any[
   return merged;
 }
 
-export async function executeAgent(agentId: string, graph: AgentGraph) {
+export async function executeAgent(agentId: string, graph: AgentGraph, initialInput?: string) {
   const startTime = Date.now();
   const traces: any[] = [];
   const nodeOutputs = new Map<string, any>();
@@ -149,7 +153,7 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
       let nodeInput: any;
 
       try {
-        nodeInput = getNodeInput(node.id, nodeOutputs, graph.edges);
+        nodeInput = getNodeInput(node.id, nodeOutputs, graph.edges, initialInput);
 
         if (node.type === 'chatInput') {
           // ChatInputNode - passes input through directly to next node

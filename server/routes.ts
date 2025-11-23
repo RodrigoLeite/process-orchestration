@@ -1786,7 +1786,7 @@ Texto original: ${demand.rawText}`;
   // POST /api/agents/execute - Execute agent graph
   app.post("/api/agents/execute", async (req, res) => {
     try {
-      const { agentId, graph } = req.body;
+      const { agentId, graph, initialInput } = req.body;
 
       if (!agentId || !graph) {
         return res.status(400).json({
@@ -1796,7 +1796,7 @@ Texto original: ${demand.rawText}`;
       }
 
       console.log(`[AGENTS STUDIO] Executing agent: ${agentId}`);
-      const result = await executeAgent(agentId, graph);
+      const result = await executeAgent(agentId, graph, initialInput);
 
       res.json({
         success: true,
