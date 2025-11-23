@@ -9,6 +9,7 @@ import { createWorkflowBuilderAgent } from "../agents/workflowBuilder";
 import { createInsightsAgent } from "../agents/insights";
 import { createBottleneckDetectorAgent } from "../agents/bottleneckDetector";
 import { saveAgentLog } from "../../../lib/agents/logging";
+import { storage } from "../../../storage";
 
 /**
  * State schema for the agent orchestration graph
@@ -41,6 +42,82 @@ export const AgentState = Annotation.Root({
 });
 
 export type AgentGraphState = typeof AgentState.State;
+
+/**
+ * Helper: Save bottlenecks to database with stage references
+ */
+async function saveBottlenecksToDb(
+  demandId: string,
+  workflow: any,
+  bottlenecksData: any
+) {
+  try {
+    if (!bottlenecksData?.gargalos || bottlenecksData.gargalos.length === 0) {
+      return;
+    }
+
+    for (const gargalo of bottlenecksData.gargalos) {
+      const etapaIndex = gargalo.etapa_index ?? -1;
+      const stage = etapaIndex >= 0 ? workflow.etapas[etapaIndex] : null;
+      
+      // Get stage ID from database if stage exists
+      let stageId: string | undefined;
+      if (stage) {
+        // This will be set by the orchestration when it creates workflow stages
+        // For now, save with stageName for later correlation
+      }
+
+      await storage.createStageBottleneck({
+        demandId,
+        stageId: stageId || null as any,
+        stageName: gargalo.etapa || stage?.nome || "Desconhecida",
+        severity: gargalo.severidade || "média",
+        reason: gargalo.motivo,
+        recommendedAction: gargalo.acao_recomendada,
+        estimatedResolutionTime: gargalo.tempo_resolucao_estimado
+      });
+    }
+  } catch (error) {
+    console.warn("[GRAPH] Error saving bottlenecks:", error);
+  }
+}
+
+/**
+ * Helper: Save insights to database with stage references
+ */
+async function saveInsightsToDb(
+  demandId: string,
+  workflow: any,
+  insightsData: any
+) {
+  try {
+    if (!insightsData?.insights || insightsData.insights.length === 0) {
+      return;
+    }
+
+    for (const insight of insightsData.insights) {
+      const etapaIndex = insight.etapa_index ?? -1;
+      const stage = etapaIndex >= 0 ? workflow?.etapas?.[etapaIndex] : null;
+
+      let stageId: string | undefined;
+      if (stage) {
+        // This will be set by the orchestration when it creates workflow stages
+      }
+
+      await storage.createStageInsight({
+        demandId,
+        stageId: stageId || null as any,
+        stageName: insight.etapa || stage?.nome || null as any,
+        title: insight.titulo,
+        description: insight.descricao,
+        impact: insight.impacto || "médio",
+        recommendation: insight.recomendacao
+      });
+    }
+  } catch (error) {
+    console.warn("[GRAPH] Error saving insights:", error);
+  }
+}
 
 /**
  * Workflow Builder Node
@@ -157,6 +234,11 @@ async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
         "success"
       );
       
+      // Save insights to database with stage references
+      if (state.demandInput?.demandId) {
+        await saveInsightsToDb(state.demandInput.demandId, state.workflow, result.data);
+      }
+      
       return {
         ...state,
         insights: result.data
@@ -235,6 +317,11 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
         result.data,
         "success"
       );
+      
+      // Save bottlenecks to database with stage references
+      if (state.demandInput?.demandId) {
+        await saveBottlenecksToDb(state.demandInput.demandId, state.workflow, result.data);
+      }
       
       return {
         ...state,

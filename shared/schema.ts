@@ -348,3 +348,43 @@ export const insertLangflowAgentSchema = createInsertSchema(langflowAgents).omit
 
 export type InsertLangflowAgent = z.infer<typeof insertLangflowAgentSchema>;
 export type LangflowAgent = typeof langflowAgents.$inferSelect;
+
+export const stageBottlenecks = pgTable("stage_bottlenecks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  demandId: uuid("demand_id").notNull(),
+  stageId: uuid("stage_id").notNull(),
+  stageName: text("stage_name").notNull(),
+  severity: text("severity").notNull(),
+  reason: text("reason").notNull(),
+  recommendedAction: text("recommended_action"),
+  estimatedResolutionTime: text("estimated_resolution_time"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertStageBottleneckSchema = createInsertSchema(stageBottlenecks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertStageBottleneck = z.infer<typeof insertStageBottleneckSchema>;
+export type StageBottleneck = typeof stageBottlenecks.$inferSelect;
+
+export const stageInsights = pgTable("stage_insights", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  demandId: uuid("demand_id").notNull(),
+  stageId: uuid("stage_id"),
+  stageName: text("stage_name"),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  impact: text("impact").notNull(),
+  recommendation: text("recommendation"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertStageInsightSchema = createInsertSchema(stageInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertStageInsight = z.infer<typeof insertStageInsightSchema>;
+export type StageInsight = typeof stageInsights.$inferSelect;

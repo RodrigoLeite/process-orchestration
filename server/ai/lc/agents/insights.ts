@@ -10,12 +10,16 @@ const INSIGHTS_SYSTEM_PROMPT = `You are a business intelligence specialist and p
 Your task is to analyze demand management metrics and generate actionable insights for process improvement.
 Focus on data-driven recommendations that can improve efficiency, reduce SLA breaches, and optimize resource allocation.
 
+When an insight relates to a specific stage, include the stage name and index.
+
 Return ONLY valid JSON matching this exact structure:
 {{
   "insights": [
     {{
       "titulo": "string - insight title",
       "descricao": "string - detailed finding",
+      "etapa": "string - related stage name (optional, null if not stage-specific)",
+      "etapa_index": number - related stage index 0-based (optional, null if not stage-specific),
       "impacto": "string - impact level (baixo, médio, alto, crítico)",
       "recomendacao": "string - actionable recommendation"
     }}
