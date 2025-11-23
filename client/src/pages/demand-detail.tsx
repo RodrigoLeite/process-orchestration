@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, ExternalLink } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useEffect } from "react";
 import type { Demand } from "@/lib/types";
 
 interface WorkflowStage {
@@ -23,7 +24,7 @@ export default function DemandDetail() {
   const [, navigate] = useLocation();
 
   // Fetch demand
-  const { data: demand, isLoading, error } = useQuery<Demand>({
+  const { data: demand, isLoading, error, refetch } = useQuery<Demand>({
     queryKey: ["demand-detail", params?.id],
     queryFn: async () => {
       const res = await fetch(`/api/demands/${params?.id}`);
@@ -32,6 +33,17 @@ export default function DemandDetail() {
     },
     enabled: !!params?.id
   });
+
+  // Auto-refresh demand while orchestration is running (no workflow yet)
+  useEffect(() => {
+    if (!demand || demand.workflowId) return; // Stop polling once workflow is created
+    
+    const pollInterval = setInterval(() => {
+      refetch();
+    }, 2000); // Poll every 2 seconds
+    
+    return () => clearInterval(pollInterval);
+  }, [demand?.workflowId, refetch]);
 
   // Fetch workflow for this demand
   const { data: workflow } = useQuery<AreaWorkflow>({
