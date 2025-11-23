@@ -83,7 +83,7 @@ export async function processNewDemands(): Promise<void> {
     console.log("[SCHEDULER] Processing new demands...");
     
     const demands = await storage.getDemands();
-    const newDemands = demands.filter(d => d.status === "new");
+    const newDemands = demands.filter(d => d.status === "new" || d.status === "pending" || d.status === "routed");
     
     if (newDemands.length === 0) {
       console.log("[SCHEDULER] No new demands to process");
