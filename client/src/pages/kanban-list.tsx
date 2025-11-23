@@ -21,7 +21,7 @@ export default function KanbanList() {
   const { data: workflows, isLoading, error } = useQuery<AreaWorkflow[]>({
     queryKey: ["workflows"],
     queryFn: async () => {
-      const res = await fetch("/api/workflows");
+      const res = await fetch("/api/area-workflows");
       if (!res.ok) throw new Error("Failed to fetch workflows");
       return res.json();
     }
