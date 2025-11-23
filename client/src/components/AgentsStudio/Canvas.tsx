@@ -10,7 +10,6 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useAgentsStore } from '@/lib/store/agentsStore';
-import { useAutoSave } from '@/lib/hooks/useAutoSave';
 import PromptNode from './nodes/PromptNode';
 import LogicNode from './nodes/LogicNode';
 import OutputNode from './nodes/OutputNode';
@@ -39,9 +38,6 @@ export default function Canvas() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
-
-  // Auto-save on changes
-  useAutoSave();
 
   useEffect(() => {
     setNodes(storeNodes);

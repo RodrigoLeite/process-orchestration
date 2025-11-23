@@ -10,8 +10,12 @@
           "y": 100
         },
         "data": {
-          "label": "Demanda"
-        }
+          "label": "Demanda",
+          "value": "CRIAR SISTEMA DE CRM"
+        },
+        "width": 320,
+        "height": 263,
+        "selected": false
       },
       {
         "id": "api-create-demand",
@@ -26,7 +30,9 @@
           "method": "POST",
           "headers": "{}",
           "bodyTemplate": "{\"rawText\": \"PLACEHOLDER\"}"
-        }
+        },
+        "width": 200,
+        "height": 56
       },
       {
         "id": "prompt-generator",
@@ -38,16 +44,19 @@
         "data": {
           "label": "Instruções para Workflow",
           "systemPrompt": "Você é um especialista em gestão de processos. Receba uma demanda criada no sistema e gere um workflow detalhado com etapas customizadas baseadas na área (TI, Vendas, RH, Financeiro, etc). Retorne JSON com: {\"workflowName\": \"nome\", \"area\": \"area\", \"stages\": [{\"name\": \"nome\", \"type\": \"tipo\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"duration_hours\": 2}]}",
-          "temperature": 0.5,
+          "temperature": 1,
           "maxTokens": 3000
-        }
+        },
+        "width": 320,
+        "height": 353,
+        "dragging": false
       },
       {
         "id": "agent-generate-workflow",
         "type": "agent",
         "position": {
-          "x": 650,
-          "y": 100
+          "x": 728.2899022801303,
+          "y": -136.57166123778504
         },
         "data": {
           "label": "Gerar Workflow",
@@ -56,7 +65,15 @@
           "logicType": "none",
           "modelProvider": "OpenAI",
           "modelName": "gpt-4o-mini"
-        }
+        },
+        "width": 240,
+        "height": 92,
+        "positionAbsolute": {
+          "x": 728.2899022801303,
+          "y": -136.57166123778504
+        },
+        "dragging": true,
+        "selected": true
       },
       {
         "id": "output-workflow",
@@ -68,7 +85,9 @@
         "data": {
           "label": "Workflow Gerado",
           "schema": "{\"workflowName\": \"string\", \"area\": \"string\", \"stages\": \"array\"}"
-        }
+        },
+        "width": 150,
+        "height": 249
       }
     ],
     "edges": [
@@ -99,6 +118,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T19:04:00.996Z",
-  "updatedAt": "2025-11-23T19:04:00.996Z"
+  "createdAt": "2025-11-23T19:07:15.039Z",
+  "updatedAt": "2025-11-23T19:07:15.039Z"
 }
