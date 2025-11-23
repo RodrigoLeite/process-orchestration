@@ -31,7 +31,7 @@ export default function KanbanWorkflow() {
   const { data: workflow, isLoading: workflowLoading } = useQuery<AreaWorkflow>({
     queryKey: ["workflow", workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/workflows/${workflowId}`);
+      const res = await fetch(`/api/area-workflows/${workflowId}`);
       if (!res.ok) throw new Error("Failed to fetch workflow");
       return res.json();
     },
@@ -42,7 +42,7 @@ export default function KanbanWorkflow() {
   const { data: stages = [], isLoading: stagesLoading } = useQuery<WorkflowStage[]>({
     queryKey: ["workflow-stages", workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/workflows/${workflowId}/stages`);
+      const res = await fetch(`/api/area-workflows/${workflowId}/stages`);
       if (!res.ok) throw new Error("Failed to fetch stages");
       return res.json();
     },
@@ -53,7 +53,7 @@ export default function KanbanWorkflow() {
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
     queryKey: ["workflow-demands", workflowId],
     queryFn: async () => {
-      const res = await fetch(`/api/workflows/${workflowId}/demands`);
+      const res = await fetch(`/api/area-workflows/${workflowId}/demands`);
       if (!res.ok) throw new Error("Failed to fetch demands");
       return res.json();
     },
@@ -116,7 +116,7 @@ export default function KanbanWorkflow() {
               {workflow.name}
             </h1>
             <p className="text-muted-foreground">
-              Área: <span className="font-semibold">{workflow.areaName.toUpperCase()}</span>
+              Área: <span className="font-semibold">{workflow.areaName ? workflow.areaName.toUpperCase() : "—"}</span>
             </p>
           </div>
         </div>
