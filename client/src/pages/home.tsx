@@ -26,8 +26,10 @@ export default function Dashboard() {
 
   const recentDemands = demands.slice(0, 5);
   const totalDemands = demands.length;
+  const newDemands = demands.filter(d => d.status === "new").length;
   const inProgressDemands = demands.filter(d => d.status === "in_progress").length;
   const completedDemands = demands.filter(d => d.status === "completed").length;
+  const blockedDemands = demands.filter(d => d.status === "blocked").length;
 
   const handleCreateDemand = async () => {
     if (!demandText.trim()) {
@@ -133,13 +135,23 @@ export default function Dashboard() {
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Demandas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalDemands}</div>
+            <p className="text-xs text-muted-foreground mt-1">todas as demandas</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Aguardando</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-gray-600">{newDemands}</div>
+            <p className="text-xs text-muted-foreground mt-1">status: new</p>
           </CardContent>
         </Card>
         <Card>
@@ -148,6 +160,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600">{inProgressDemands}</div>
+            <p className="text-xs text-muted-foreground mt-1">status: in_progress</p>
           </CardContent>
         </Card>
         <Card>
@@ -156,8 +169,20 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">{completedDemands}</div>
+            <p className="text-xs text-muted-foreground mt-1">status: completed</p>
           </CardContent>
         </Card>
+        {blockedDemands > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Bloqueadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-red-600">{blockedDemands}</div>
+              <p className="text-xs text-muted-foreground mt-1">status: blocked</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Recent Demands Section */}
