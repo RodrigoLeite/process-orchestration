@@ -8,17 +8,29 @@ import { ChatOpenAI } from "@langchain/openai";
 
 const WORKFLOW_BUILDER_SYSTEM_PROMPT = `You are an expert workflow designer for a business demand management system.
 Your task is to convert incoming demands into efficient, structured workflows with clear stages, 
-responsibilities, and estimated durations. Each workflow should be optimal for the given area.
+responsibilities, and estimated durations. Each workflow MUST be optimized specifically for the given AREA.
 
-IMPORTANT: Be consistent in stage naming and descriptions. Always use standard, generic stage names:
-- For starting stages: always use "Planejamento e Análise"
-- For development/implementation: always use "Implementação"
-- For testing: always use "Testes e Validação"
-- For review: always use "Revisão e Aprovação"
-- For deployment: always use "Deployment e Implementação em Produção"
-- For monitoring: always use "Monitoramento e Ajustes"
+CRITICAL: Tailor stage names to the AREA of the demand:
 
-Keep descriptions concise and consistent. Return ONLY valid JSON matching this exact structure:
+**FOR TI/TECH AREA:**
+- Planejamento e Análise → Revisão e Aprovação → Implementação → Testes e Validação → Deployment e Implementação em Produção → Monitoramento e Ajustes
+
+**FOR VENDAS/SALES AREA:**
+- Confirmar Dados do Cliente → Análise de Viabilidade → Gerar Contrato → Revisão e Aprovação → Fechamento da Venda → Onboarding do Cliente
+
+**FOR RH/HR AREA:**
+- Recebimento de Solicitação → Análise e Triagem → Processamento → Aprovação → Implementação → Acompanhamento
+
+**FOR FINANCEIRO/FINANCE AREA:**
+- Recebimento de Solicitação → Análise Financeira → Aprovação → Processamento → Auditoria → Finalização
+
+**FOR OPERACOES/OPERATIONS AREA:**
+- Planejamento → Análise de Recursos → Execução → Monitoramento → Ajustes → Encerramento
+
+**FOR JURIDICO/LEGAL AREA:**
+- Recebimento de Demanda → Análise Jurídica → Parecer Legal → Aprovação → Implementação → Revisão
+
+Use the stage names appropriate for the AREA specified in the demand. Keep descriptions concise and consistent. Return ONLY valid JSON matching this exact structure:
 {{
   "titulo": "string - workflow title",
   "descricao": "string - detailed description",
@@ -59,17 +71,21 @@ export class WorkflowBuilderAgent extends BaseAgent {
     urgencia: string;
     resultadosEsperados?: string[];
   }): Promise<BaseAgentOutput> {
-    const input = `Create a workflow for this demand. Use ONLY standard stage names from the system prompt.
+    const input = `Create a workflow for this demand. ADAPT STAGE NAMES TO THE AREA!
 
+AREA: ${demand.area} (THIS DETERMINES THE STAGE NAMES - use examples from system prompt for this area)
 Title: ${demand.titulo}
 Description: ${demand.descricao}
-Area: ${demand.area}
 Urgency: ${demand.urgencia}
 Expected Results: ${demand.resultadosEsperados?.join(", ") || "Not specified"}
 
-Design a complete workflow with standard stages, responsibilities, and timelines.
-Keep descriptions concise. Use standard duration values (2, 4, 8, 16, 24, 48 hours).
-Return ONLY valid JSON matching the required structure.`;
+CRITICAL:
+- Use stage names appropriate for the ${demand.area} area (see examples in system prompt)
+- Do NOT use IT/Tech stage names for non-IT areas
+- Design workflow with stages specific to how this area works
+- Keep descriptions concise (1-2 sentences)
+- Use realistic duration values (2, 4, 8, 16, 24, 48 hours)
+- Return ONLY valid JSON matching the required structure`;
 
     return this.run(input);
   }
