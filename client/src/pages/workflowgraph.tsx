@@ -63,13 +63,13 @@ interface NodeDetail {
 const getNodeColor = (type: string): string => {
   switch (type) {
     case "agent":
-      return "bg-blue-700/40 border-blue-600";
+      return "bg-blue-100 border-blue-400";
     case "system":
-      return "bg-purple-700/40 border-purple-600";
+      return "bg-purple-100 border-purple-400";
     case "decision":
-      return "bg-green-700/40 border-green-600";
+      return "bg-green-100 border-green-400";
     default:
-      return "bg-gray-700/40 border-gray-600";
+      return "bg-gray-100 border-gray-400";
   }
 };
 
@@ -78,7 +78,7 @@ const CustomNode = ({ data, selected }: NodeProps<GraphNode>) => {
     <div
       className={`px-4 py-3 rounded-lg border-2 transition-all min-w-[150px] ${getNodeColor(
         data.type
-      )} ${selected ? "border-blue-400 shadow-lg shadow-blue-500/50" : ""}`}
+      )} ${selected ? "border-blue-500 shadow-lg shadow-blue-300/50" : ""}`}
       title={data.description}
       data-testid={`node-${data.id}`}
     >
@@ -89,8 +89,8 @@ const CustomNode = ({ data, selected }: NodeProps<GraphNode>) => {
         isConnectable={true}
         style={{ width: 10, height: 10 }}
       />
-      <div className="font-semibold text-sm text-white">{data.label}</div>
-      <div className="text-xs text-gray-300 mt-1">{data.type}</div>
+      <div className="font-semibold text-sm text-gray-900">{data.label}</div>
+      <div className="text-xs text-gray-600 mt-1">{data.type}</div>
       <Handle 
         type="source" 
         position={Position.Bottom}
@@ -202,12 +202,12 @@ export default function WorkflowGraph() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="border-b border-slate-800 bg-slate-900/50 p-4">
+      <div className="border-b border-gray-300 bg-gray-50 p-4">
         <div className="flex gap-4 items-end">
           <div className="flex-1">
-            <label className="text-sm text-slate-400 block mb-2">
+            <label className="text-sm text-gray-700 block mb-2">
               Input para Teste
             </label>
             <div className="flex gap-2">
@@ -215,7 +215,7 @@ export default function WorkflowGraph() {
                 value={testInput}
                 onChange={(e) => setTestInput(e.target.value)}
                 placeholder="Digite o input para testar o graph..."
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
                 data-testid="input-test-graph"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleExecute();
@@ -238,10 +238,10 @@ export default function WorkflowGraph() {
       {/* Main content */}
       <div className="flex flex-1 min-h-0 overflow-hidden gap-0">
         {/* Graph Container (70%) */}
-        <div className="flex-1 bg-slate-950 overflow-hidden">
+        <div className="flex-1 bg-white overflow-hidden">
           {graphLoading ? (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-slate-400">Carregando grafo...</div>
+              <div className="text-gray-500">Carregando grafo...</div>
             </div>
           ) : nodes.length > 0 ? (
             <ReactFlow
@@ -255,52 +255,52 @@ export default function WorkflowGraph() {
               nodeTypes={nodeTypes}
             >
               <Background
-                color="#334155"
+                color="#e5e7eb"
                 gap={12}
                 size={1}
-                style={{ backgroundColor: "#0f172a" }}
+                style={{ backgroundColor: "#ffffff" }}
               />
               <Controls />
               <MiniMap
                 style={{
-                  backgroundColor: "#0f172a",
-                  border: "1px solid #1e293b",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #d1d5db",
                 }}
-                maskColor="rgba(0, 0, 0, 0.3)"
+                maskColor="rgba(0, 0, 0, 0.1)"
               />
             </ReactFlow>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-slate-400">Nenhum nodo encontrado</div>
+              <div className="text-gray-500">Nenhum nodo encontrado</div>
             </div>
           )}
         </div>
 
         {/* Sidebar (30%) */}
-        <div className="w-[30%] bg-slate-900 border-l border-slate-800 overflow-y-auto">
+        <div className="w-[30%] bg-gray-50 border-l border-gray-300 overflow-y-auto">
           {!selectedNodeId ? (
             <div className="h-full flex items-center justify-center p-4">
               <div className="text-center">
-                <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400 text-sm">
+                <Zap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm">
                   Clique em um nodo para ver detalhes
                 </p>
               </div>
             </div>
           ) : nodeLoading ? (
             <div className="p-4">
-              <div className="text-slate-400 text-sm">Carregando...</div>
+              <div className="text-gray-500 text-sm">Carregando...</div>
             </div>
           ) : nodeDetail ? (
             <div className="p-4 space-y-4">
               {/* Node Title */}
               <div>
-                <h3 className="text-lg font-bold text-white mb-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {nodeDetail.label}
                 </h3>
                 <Badge
                   variant="outline"
-                  className="bg-slate-800 text-slate-300 border-slate-700"
+                  className="bg-white text-gray-700 border-gray-300"
                   data-testid="badge-node-type"
                 >
                   {nodeDetail.type}
@@ -309,10 +309,10 @@ export default function WorkflowGraph() {
 
               {/* Node Description */}
               <div>
-                <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
                   Descrição
                 </h4>
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className="text-sm text-gray-600 leading-relaxed">
                   {nodeDetail.description}
                 </p>
               </div>
@@ -320,10 +320,10 @@ export default function WorkflowGraph() {
               {/* Node Metadata */}
               {nodeDetail.meta && Object.keys(nodeDetail.meta).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
                     Metadados
                   </h4>
-                  <div className="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400 max-h-32 overflow-y-auto font-mono">
+                  <div className="bg-white rounded-lg p-3 text-xs text-gray-600 max-h-32 overflow-y-auto font-mono border border-gray-200">
                     {JSON.stringify(nodeDetail.meta, null, 2)}
                   </div>
                 </div>
@@ -332,28 +332,28 @@ export default function WorkflowGraph() {
               {/* Last Runs */}
               {nodeDetail.lastRuns && nodeDetail.lastRuns.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
                     Últimas Execuções
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {nodeDetail.lastRuns.map((run) => (
                       <div
                         key={run.id}
-                        className="bg-slate-800/50 rounded p-2 border border-slate-700"
+                        className="bg-white rounded p-2 border border-gray-200"
                         data-testid={`run-item-${run.id}`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           {run.status === "success" ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
                           ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
+                            <AlertCircle className="w-4 h-4 text-red-600" />
                           )}
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-gray-500">
                             {new Date(run.timestamp).toLocaleString("pt-BR")}
                           </span>
                         </div>
                         {run.duration && (
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-gray-600">
                             ⏱ {(run.duration / 1000).toFixed(2)}s
                           </div>
                         )}
@@ -364,10 +364,10 @@ export default function WorkflowGraph() {
               )}
 
               {/* Actions */}
-              <div className="pt-4 border-t border-slate-700">
+              <div className="pt-4 border-t border-gray-300">
                 <Button
                   variant="outline"
-                  className="w-full gap-2 border-slate-700 hover:bg-slate-800"
+                  className="w-full gap-2 border-gray-300 hover:bg-gray-100"
                   disabled
                   data-testid="button-run-agent"
                   title="Funcionalidade ainda não implementada"
