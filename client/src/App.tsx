@@ -27,6 +27,7 @@ import ObservabilityPage from "@/pages/observability";
 import AILogsPage from "@/pages/ai-logs";
 import AILogsDetailPage from "@/pages/ai-logs-detail";
 import WorkflowGraphPage from "@/pages/workflowgraph";
+import AgentsStudio from "@/pages/agents-studio";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -50,6 +51,7 @@ function Router() {
         <Route path="/app/areas/:id" component={AreaDetailsPage} />
         <Route path="/app/agents" component={AgentsPage} />
         <Route path="/app/agents/:id" component={AgentDetailPage} />
+        <Route path="/agents/studio/:agentId" component={AgentsStudio} />
         <Route path="/app/insights" component={InsightsPage} />
         <Route path="/app/bottlenecks" component={BottlenecksPage} />
         <Route path="/app/alerts" component={AlertsPage} />

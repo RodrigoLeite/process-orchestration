@@ -1,0 +1,54 @@
+{
+  "agentId": "workflow-monitor",
+  "graph": {
+    "nodes": [
+      {
+        "id": "prompt-mon-1",
+        "type": "prompt",
+        "position": { "x": 0, "y": 0 },
+        "data": {
+          "label": "Analyze Bottlenecks",
+          "systemPrompt": "Analyze workflow execution to identify bottlenecks and performance issues.",
+          "temperature": 0.5,
+          "maxTokens": 1500
+        }
+      },
+      {
+        "id": "logic-mon-1",
+        "type": "logic",
+        "position": { "x": 400, "y": 0 },
+        "data": {
+          "label": "Filter Critical",
+          "stepName": "Filter Critical Bottlenecks",
+          "logicType": "filter",
+          "condition": "severity >= 0.7"
+        }
+      },
+      {
+        "id": "output-mon-1",
+        "type": "output",
+        "position": { "x": 800, "y": 0 },
+        "data": {
+          "label": "Monitor Report",
+          "outputName": "Bottleneck Report",
+          "schema": "{\"bottlenecks\": [{\"stageId\": \"string\", \"severity\": \"number\", \"recommendations\": []}]}"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "em1-2",
+        "source": "prompt-mon-1",
+        "target": "logic-mon-1"
+      },
+      {
+        "id": "em2-3",
+        "source": "logic-mon-1",
+        "target": "output-mon-1"
+      }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+  },
+  "createdAt": "2025-11-23T16:00:00Z",
+  "updatedAt": "2025-11-23T16:00:00Z"
+}

@@ -1,0 +1,243 @@
+Quero que você gere **todo o código** de um **Editor Visual de Agentes de IA**, semelhante ao LangFlow ou n8n, 
+A opção para ver o editor visual de agente de IA dever partir de dentro da tela existente chamda Agentes IA usando:
+
+- Next.js 15
+- ReactFlow
+- ShadCN (tema dark)
+- TailwindCSS
+- TypeScript
+- Zustand
+- API Routes
+- Nodes customizados
+- Persistência via API no backend
+- Modo de execução / trace passo-a-passo
+
+O editor deve me permitir criar e editar graficamente 3 agentes internos do meu SaaS:
+
+- Gerador de Workflow
+- Normalizador de Workflow
+- Monitor de Gargalos
+
+Cada agente possui seu próprio grafo salvo no backend.
+
+====================================================
+🎯 OBJETIVO
+====================================================
+
+Criar um editor visual com:
+
+- Canvas baseado em ReactFlow
+- Nós arrastáveis (drag-and-drop)
+- Conexões com setas (edges)
+- Edição completa dentro dos nós
+- Preview de execução do agente
+- Persistência do grafo no backend
+- Ajuste de temperatura por nó
+- Teste de nó individual
+- Execução completa com trace
+- Integração estilo LangGraph Viewer (mock)
+- Estilo moderno baseado no LangFlow
+
+O resultado final deve ser um estúdio visual completo para construção de agentes com nós e conexões.
+
+====================================================
+🧩 ESTRUTURA DO EDITOR
+====================================================
+
+Criar página:
+
+/agents/studio/[agentId]
+
+Componentes obrigatórios:
+
+1. Canvas.tsx  
+   - ReactFlow  
+   - Minimapa  
+   - Controles  
+   - Background  
+   - Snap-to-grid  
+   - Carregar grafo salvo  
+   - Disparar eventos de atualização  
+
+2. Sidebar.tsx  
+   - Lista de nós arrastáveis:  
+     - PromptNode  
+     - LogicNode  
+     - OutputNode  
+
+3. Toolbar.tsx  
+   - Salvar  
+   - Executar workflow  
+   - Undo / Redo  
+   - Reset Zoom  
+
+4. ExecutionPanel.tsx  
+   - Logs  
+   - Trace por etapa  
+   - Input final  
+   - Output final  
+   - Tokens (mock)  
+   - Latência (mock)  
+   - Estilo similar ao LangSmith Trace Viewer  
+
+====================================================
+🧱 TIPOS DE NÓS (IMPLEMENTAR TODOS)
+====================================================
+
+1. PromptNode
+   Campos:
+   - Título
+   - Campo “system prompt”
+   - Slider de Temperatura (0 a 2)
+   - Campo max tokens
+   - Botão “Testar nó”
+   - Uma saída
+
+2. LogicNode
+   Campos:
+   - Nome da etapa
+   - Tipo de lógica (select):
+     - Filtro
+     - Roteamento
+     - Normalização
+     - Validação
+     - Chamada de ferramenta
+   - Campo “condição”
+   - Botão “Testar lógica”
+   - Entrada e saída
+
+3. OutputNode
+   Campos:
+   - Nome da saída
+   - Campo Schema JSON
+   - Botão: Executar Workflow
+   - Entrada única
+
+Todos os nós devem ser implementados como **nós customizados ReactFlow**, usando componentes ShadCN.
+
+====================================================
+📡 PERSISTÊNCIA NO BACKEND
+====================================================
+
+Criar rota:
+
+POST /api/agents/save
+
+Recebe:
+{
+  "agentId": "workflow-generator",
+  "graph": {
+    "nodes": [],
+    "edges": [],
+    "viewport": {}
+  }
+}
+
+Salva o conteúdo em:
+
+/data/agents/<agentId>.json
+
+Criar rota:
+
+GET /api/agents/load?agentId=<id>
+
+Retorna o grafo salvo.
+
+====================================================
+⚙️ EXECUÇÃO DO AGENTE
+====================================================
+
+Criar rota:
+
+POST /api/agents/execute
+
+O backend deve:
+
+1. Ler o grafo completo do agente  
+2. Percorrer os nós na ordem das conexões  
+3. Simular execução de cada etapa  
+4. Gerar trace com logs  
+5. Retornar:  
+   - logs  
+   - passos  
+   - input  
+   - output  
+   - tokens (mock)  
+   - latência (mock)  
+
+Simular execução — NÃO use LLM real.
+
+====================================================
+🎨 ESTILO E TEMA
+====================================================
+
+- Usar tema dark do ShadCN  
+- Nodes estilo card  
+- Bordas arredondadas  
+- Sombra suave  
+- Ícones do lucide-react  
+- Espaço interno grande  
+- Layout responsivo  
+- Visual moderno igual LangFlow  
+
+====================================================
+📁 ARQUITETURA DOS ARQUIVOS
+====================================================
+
+src/
+  app/
+    agents/
+      studio/
+        [agentId]/
+          page.tsx
+  components/
+    AgentsStudio/
+      Canvas.tsx
+      Sidebar.tsx
+      Toolbar.tsx
+      ExecutionPanel.tsx
+      nodes/
+        PromptNode.tsx
+        LogicNode.tsx
+        OutputNode.tsx
+  lib/
+    store/
+      agentsStore.ts
+  app/api/agents/
+    save/route.ts
+    load/route.ts
+    execute/route.ts
+data/
+  agents/
+    workflow-generator.json
+    workflow-normalizer.json
+    workflow-monitor.json
+
+====================================================
+🔥 O QUE DEVE SER GERADO
+====================================================
+
+O Replit deve gerar:
+
+- todo código React
+- todos os nodes
+- Zustand store
+- integrações com ReactFlow
+- persistência
+- API Routes Next.js
+- estilização ShadCN
+- estrutura completa
+- mock de execução
+- trace visual
+- UX incrível igual LangFlow
+
+====================================================
+IMPORTANTE
+====================================================
+
+Esse editor NÃO deve impor lógica fixa de áreas (TI, RH, jurídico, etc).  
+É apenas a ferramenta visual.
+
+====================================================
+FIM DO PROMPT — GERAR TODO O PROJETO AGORA
+====================================================

@@ -27,6 +27,7 @@ The backend is built with Node.js + Express + TypeScript, using esbuild for prod
 -   **LangFlow Integration**: A backend gateway for executing LangFlow-designed agents.
 -   **LangChain AI Agents Foundation**: Provides a robust foundation for building LangChain-based AI agents, including an LLM client (GPT-4 Turbo), a prompt builder, and various tools.
 -   **LangGraph Orchestration System**: A complete demand processing pipeline using LangGraph, integrating `input_node`, `workflow_builder_node`, `bottleneck_detector_node`, `insights_node`, and `output_node` for sequential execution. This system handles demand validation, workflow generation, risk identification, and insight generation.
+-   **Visual AI Agent Editor**: A full-featured, LangFlow-like visual editor for designing, building, and testing AI agents without code. Built with React + ReactFlow for canvas interaction, Zustand for state management, and file-based persistence. Supports PromptNode (LLM calls), LogicNode (conditional routing/filtering), and OutputNode (result formatting). Includes real-time execution tracing, node connection validation, and a dedicated studio interface.
 
 **Architectural Patterns:**
 
@@ -129,6 +130,31 @@ An admin-only internal monitoring system tracks agent execution and system event
 
 This system provides live monitoring of critical bottlenecks with a dedicated dashboard for tracking alert status and severity. It integrates with notification stubs and an auto-escalation engine that triggers tiered responses based on bottleneck severity scores.
 
+## Visual AI Agent Editor (New - Nov 23, 2025)
+
+A **LangFlow-inspired visual editor** for designing and managing AI agents without code. Fully integrated into the UI at `/app/agents-studio`.
+
+**Features:**
+- **Visual Canvas**: Drag-and-drop interface with ReactFlow for composing agent logic
+- **Node Types**:
+  - **PromptNode**: Configure LLM calls with system prompts, temperature, and token limits
+  - **LogicNode**: Implement conditional logic, filtering, validation, and routing between nodes
+  - **OutputNode**: Define structured output schemas for agent results
+- **Execution & Testing**: Execute agents directly from the editor with real-time tracing
+- **Persistence**: Auto-saves agent definitions to JSON files in `server/data/agents/`
+- **State Management**: Zustand store for canvas state, node properties, and execution history
+- **Sample Agents**: Pre-built templates for workflow generation, normalization, and monitoring
+
+**API Endpoints:**
+- `GET /api/agents/load?agentId={agentId}` - Load agent graph definition
+- `POST /api/agents/save` - Save agent graph (body: `{agentId, graph}`)
+- `POST /api/agents/execute` - Execute agent with test input (body: `{agentId, graph}`)
+
+**File Structure:**
+- Frontend: `client/src/components/AgentsStudio/` (Canvas, NodeEditor, ExecutionPanel)
+- Backend: `server/lib/agentsStorage.ts` (file-based persistence)
+- Sample Agents: `server/data/agents/*.json` (workflow-generator, workflow-normalizer, workflow-monitor)
+
 # API Endpoints (Updated)
 
 ## Workflow Endpoints
@@ -149,6 +175,12 @@ This system provides live monitoring of critical bottlenecks with a dedicated da
 ## Orchestration Endpoint
 
 - **POST /api/ai/orchestrate** - Execute full orchestration pipeline with deduplication
+
+## Visual Agent Editor Endpoints (New)
+
+- **GET /api/agents/load** - Load agent graph definition by agentId
+- **POST /api/agents/save** - Save/update agent graph definition
+- **POST /api/agents/execute** - Execute agent graph with input
 
 # External Dependencies
 
