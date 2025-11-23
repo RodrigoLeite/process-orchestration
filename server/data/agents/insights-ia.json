@@ -1,0 +1,54 @@
+{
+  "agentId": "insights-ia",
+  "graph": {
+    "nodes": [
+      {
+        "id": "prompt-insights",
+        "type": "prompt",
+        "position": { "x": 0, "y": 0 },
+        "data": {
+          "label": "Analyser",
+          "systemPrompt": "Você é um analisador de insights. Analise dados de execução e gere insights acionáveis.",
+          "temperature": 0.5,
+          "maxTokens": 1500
+        }
+      },
+      {
+        "id": "logic-insights",
+        "type": "logic",
+        "position": { "x": 400, "y": 0 },
+        "data": {
+          "label": "Filter Insights",
+          "stepName": "Filter Insights",
+          "logicType": "filter",
+          "condition": "priority >= 5"
+        }
+      },
+      {
+        "id": "output-insights",
+        "type": "output",
+        "position": { "x": 800, "y": 0 },
+        "data": {
+          "label": "Insights Report",
+          "outputName": "Insights Report",
+          "schema": "{\"insights\": [{\"type\": \"string\", \"priority\": \"number\", \"recommendation\": \"string\"}]}"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1-2",
+        "source": "prompt-insights",
+        "target": "logic-insights"
+      },
+      {
+        "id": "e2-3",
+        "source": "logic-insights",
+        "target": "output-insights"
+      }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+  },
+  "createdAt": "2025-11-23T16:00:00Z",
+  "updatedAt": "2025-11-23T16:00:00Z"
+}
