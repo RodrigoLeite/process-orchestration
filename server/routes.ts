@@ -2962,45 +2962,62 @@ Texto original: ${demand.rawText}`;
   });
 
   // ============ AI Logs Endpoints ============
-  // Get orchestration execution logs
+  // Get orchestration execution logs (grouped by execution)
   app.get("/api/ai/logs", async (req, res) => {
     try {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
       
-      // Get system events related to orchestration
-      const systemEvents = await storage.getSystemEventsByAgent("orchestrateFromDatabase", limit);
+      // Get all agents
+      const agents = await storage.getAgents();
       
-      // Format response with execution details
-      const logs = await Promise.all(systemEvents.map(async (event: any) => {
-        const demandId = event.metadata?.demand_id;
-        
-        // Get associated workflow
-        let workflow = null;
-        if (demandId) {
-          try {
-            const workflows = await storage.getDemandsByWorkflow(demandId);
-            if (workflows.length > 0) {
-              workflow = { id: workflows[0].workflowId, title: workflows[0].title };
+      // Get logs from all agents and group by execution (by timestamp and demand)
+      const allLogs: any[] = [];
+      const executionMap = new Map<string, any>();
+      
+      for (const agent of agents) {
+        try {
+          const agentLogs = await storage.getAgentLogs(agent.id);
+          for (const log of agentLogs) {
+            // Extract demand ID from log metadata
+            const demandId = log.metadata?.demandId || log.metadata?.demand_id || log.metadata?.area;
+            
+            // Create execution key based on timestamp and demand
+            const logTime = new Date(log.createdAt).getTime();
+            const roundedTime = Math.floor(logTime / 60000) * 60000; // Round to nearest minute
+            const executionKey = `${demandId || 'unknown'}-${roundedTime}`;
+            
+            if (!executionMap.has(executionKey)) {
+              executionMap.set(executionKey, {
+                id: log.id,
+                executionId: log.id,
+                demandId: demandId || 'unknown',
+                timestamp: log.createdAt,
+                duration_ms: log.durationMs || 0,
+                status: log.status === 'success' ? 'success' : 'error',
+                agentLogs: [],
+                workflow: null
+              });
             }
-          } catch (e) {
-            // Workflow not found
+            
+            const execution = executionMap.get(executionKey)!;
+            execution.agentLogs.push({
+              agentName: agent.name,
+              status: log.status,
+              duration_ms: log.durationMs || 0,
+              timestamp: log.createdAt
+            });
           }
+        } catch (e) {
+          // Skip agents with no logs
         }
-
-        return {
-          id: event.id,
-          executionId: event.id,
-          demandId: demandId || "unknown",
-          timestamp: event.createdAt,
-          duration_ms: event.durationMs || 0,
-          status: event.status,
-          agentExecuted: "orchestrateFromDatabase",
-          metadata: event.metadata || {},
-          workflow: workflow
-        };
-      }));
-
+      }
+      
+      // Convert map to array and sort by timestamp descending
+      const logs = Array.from(executionMap.values())
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, limit);
+      
       res.json({
         success: true,
         data: logs,
@@ -3021,18 +3038,33 @@ Texto original: ${demand.rawText}`;
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const { executionId } = req.params;
 
-      // Get the system event
-      const systemEvents = await storage.getSystemEvents(500);
-      const event = systemEvents.find((e: any) => e.id === executionId);
+      // Get all agents and search for the execution log
+      const agents = await storage.getAgents();
+      let foundLog = null;
+      let foundAgent = null;
+      
+      for (const agent of agents) {
+        try {
+          const agentLogs = await storage.getAgentLogs(agent.id);
+          const log = agentLogs.find((l: any) => l.id === executionId);
+          if (log) {
+            foundLog = log;
+            foundAgent = agent;
+            break;
+          }
+        } catch (e) {
+          // Skip agents with no logs
+        }
+      }
 
-      if (!event) {
+      if (!foundLog) {
         return res.status(404).json({
           success: false,
           error: "Execution not found"
         });
       }
 
-      const demandId = event.metadata?.demand_id;
+      const demandId = foundLog.metadata?.demandId || foundLog.metadata?.demand_id || foundLog.metadata?.area;
 
       // Get demand details
       let demandData = null;
@@ -3040,14 +3072,14 @@ Texto original: ${demand.rawText}`;
         try {
           demandData = await storage.getDemand(demandId);
         } catch (e) {
-          // Demand not found - use metadata from event
+          // Demand not found - use metadata from log
           demandData = {
             id: demandId,
-            summary: event.metadata?.demand_title || "Unknown",
+            summary: foundLog.metadata?.demand_title || "Unknown",
             description: "",
             parsed: {
-              area: event.metadata?.demand_area,
-              prioridade: event.metadata?.demand_urgencia
+              area: foundLog.metadata?.demand_area || demandId,
+              prioridade: foundLog.metadata?.demand_urgencia
             }
           };
         }
@@ -3095,7 +3127,7 @@ Texto original: ${demand.rawText}`;
       res.json({
         success: true,
         data: {
-          executionId: event.id,
+          executionId: foundLog.id,
           demandId,
           demandData: demandData ? {
             id: demandData.id,
@@ -3106,11 +3138,11 @@ Texto original: ${demand.rawText}`;
             area: demandData.assignedTo || demandData.parsed?.area || "—"
           } : null,
           execution: {
-            timestamp: event.createdAt,
-            duration_ms: event.durationMs || 0,
-            status: event.status,
-            agentKey: event.agentKey,
-            metadata: event.metadata || {}
+            timestamp: foundLog.createdAt,
+            duration_ms: foundLog.durationMs || 0,
+            status: foundLog.status,
+            agentKey: foundAgent?.name || "unknown",
+            metadata: foundLog.metadata || {}
           },
           workflows,
           bottlenecks,
