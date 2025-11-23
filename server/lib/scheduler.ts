@@ -4,8 +4,6 @@
  */
 import { storage } from "../storage";
 import { runInstrumentedAgent } from "./instrumentedAgent";
-import * as bottleneckAIAgent from "./agents/bottleneck_ai";
-import * as insightsAIAgent from "./agents/insights_ai";
 
 export async function executeBottleneckAgent(): Promise<void> {
   const input = {
