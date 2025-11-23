@@ -16,6 +16,7 @@ interface WorkflowStage {
 
 interface AreaWorkflow {
   id: string;
+  name: string;
   workflowHash: string;
   steps: Array<{
     name: string;
@@ -132,7 +133,7 @@ export default function KanbanWorkflow() {
 
           <div className="space-y-2">
             <h1 className="text-4xl font-bold" data-testid="text-workflow-title">
-              Workflow {workflow.id.slice(0, 8)}
+              {workflow.name || `Workflow ${workflow.id.slice(0, 8)}`}
             </h1>
             <p className="text-muted-foreground">
               Hash: <span className="font-semibold font-mono text-sm">{workflow.workflowHash.slice(0, 20)}...</span>

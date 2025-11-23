@@ -98,6 +98,7 @@ export type AgentResponse = typeof agentResponses.$inferSelect;
 export const workflows = pgTable("workflows", {
   id: uuid("id").primaryKey().defaultRandom(),
   workflowHash: text("workflow_hash").notNull().unique(),
+  name: text("name").notNull().default("Workflow"),
   steps: jsonb("steps").$type<Array<{
     order: number;
     name: string;

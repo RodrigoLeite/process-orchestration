@@ -6,6 +6,7 @@ import Badge from "@/components/Badge";
 
 interface AreaWorkflow {
   id: string;
+  name: string;
   workflowHash: string;
   steps: Array<{
     name: string;
@@ -115,7 +116,7 @@ export default function KanbanList() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                    Workflow {workflow.id.slice(0, 8)}
+                    {workflow.name || `Workflow ${workflow.id.slice(0, 8)}`}
                   </CardTitle>
                 </div>
               </CardHeader>
