@@ -41,14 +41,14 @@ export default function Toolbar({ onBack }: ToolbarProps) {
   };
 
   return (
-    <div className="h-16 bg-slate-900 border-b border-slate-700 flex items-center justify-between px-4">
+    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
       <div className="flex gap-2">
         {onBack && (
           <Button
             size="sm"
             variant="outline"
             onClick={onBack}
-            className="bg-slate-800 hover:bg-slate-700 border-slate-600"
+            className="bg-white hover:bg-gray-100 border-gray-300"
             data-testid="button-back-to-agents"
           >
             <ArrowLeft size={16} className="mr-2" />
@@ -60,7 +60,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-slate-800 hover:bg-slate-700 border-slate-600"
+          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Save size={16} className="mr-2" />
           {isSaving ? 'Salvando...' : 'Salvar'}
@@ -71,7 +71,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           variant="outline"
           onClick={handleExecute}
           disabled={isExecuting}
-          className="bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50"
+          className="bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-600"
         >
           <Play size={16} className="mr-2" />
           {isExecuting ? 'Executando...' : 'Executar'}
@@ -83,7 +83,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={undo}
-          className="bg-slate-800 hover:bg-slate-700 border-slate-600"
+          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Undo size={16} />
         </Button>
@@ -92,7 +92,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={redo}
-          className="bg-slate-800 hover:bg-slate-700 border-slate-600"
+          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Redo size={16} />
         </Button>
@@ -101,7 +101,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={handleReset}
-          className="bg-slate-800 hover:bg-slate-700 border-slate-600"
+          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <RotateCcw size={16} />
         </Button>
