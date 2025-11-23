@@ -67,6 +67,9 @@ interface AgentsStore {
   error: string | null;
   setError: (error: string | null) => void;
 
+  unsavedChanges: boolean;
+  setUnsavedChanges: (unsaved: boolean) => void;
+
   undo: () => void;
   redo: () => void;
 
@@ -99,6 +102,7 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
     };
     set((prev) => ({
       nodes,
+      unsavedChanges: true,
       history: [...prev.history.slice(0, prev.historyIndex + 1), newGraph],
       historyIndex: prev.historyIndex + 1,
     }));
@@ -116,6 +120,7 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
     };
     set((prev) => ({
       nodes: updatedNodes,
+      unsavedChanges: true,
       history: [...prev.history.slice(0, prev.historyIndex + 1), newGraph],
       historyIndex: prev.historyIndex + 1,
     }));
@@ -130,6 +135,7 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
     };
     set((prev) => ({
       edges,
+      unsavedChanges: true,
       history: [...prev.history.slice(0, prev.historyIndex + 1), newGraph],
       historyIndex: prev.historyIndex + 1,
     }));
@@ -152,6 +158,9 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
 
   error: null,
   setError: (error) => set({ error }),
+
+  unsavedChanges: false,
+  setUnsavedChanges: (unsaved) => set({ unsavedChanges: unsaved }),
 
   history: [EMPTY_GRAPH],
   historyIndex: 0,
@@ -206,6 +215,7 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
       });
 
       if (!response.ok) throw new Error('Failed to save graph');
+      set({ unsavedChanges: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Save failed' });
       throw err;
@@ -233,6 +243,7 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
         viewport: newGraph.viewport,
         history: [newGraph],
         historyIndex: 0,
+        unsavedChanges: false,
       });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Load failed' });
