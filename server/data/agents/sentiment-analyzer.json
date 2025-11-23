@@ -3,10 +3,22 @@
   "graph": {
     "nodes": [
       {
+        "id": "chat-input",
+        "type": "chatInput",
+        "position": {
+          "x": 0,
+          "y": 150
+        },
+        "data": {
+          "label": "Chat Input",
+          "placeholder": "Digite um texto para analisar o sentimento..."
+        }
+      },
+      {
         "id": "prompt-analyze",
         "type": "prompt",
         "position": {
-          "x": 50,
+          "x": 300,
           "y": 150
         },
         "data": {
@@ -20,7 +32,7 @@
         "id": "logic-validate",
         "type": "logic",
         "position": {
-          "x": 400,
+          "x": 650,
           "y": 150
         },
         "data": {
@@ -34,7 +46,7 @@
         "id": "output-format",
         "type": "output",
         "position": {
-          "x": 750,
+          "x": 1000,
           "y": 150
         },
         "data": {
@@ -45,6 +57,11 @@
       }
     ],
     "edges": [
+      {
+        "id": "e-input-analyze",
+        "source": "chat-input",
+        "target": "prompt-analyze"
+      },
       {
         "id": "e-analyze-validate",
         "source": "prompt-analyze",

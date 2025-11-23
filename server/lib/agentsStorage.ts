@@ -147,7 +147,14 @@ export async function executeAgent(agentId: string, graph: AgentGraph) {
       try {
         nodeInput = getNodeInput(node.id, nodeOutputs, graph.edges);
 
-        if (node.type === 'prompt') {
+        if (node.type === 'chatInput') {
+          // ChatInputNode - passes input through
+          nodeOutput = {
+            type: 'chatInput',
+            value: nodeInput,
+            message: 'User input received',
+          };
+        } else if (node.type === 'prompt') {
           // Execute PromptNode - call OpenAI with the node's temperature
           const { systemPrompt = '', temperature = 0.7, maxTokens = 2000 } = node.data;
 
