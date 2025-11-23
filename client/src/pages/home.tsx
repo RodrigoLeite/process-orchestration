@@ -182,7 +182,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               {recentDemands.map((demand) => {
                 const parsed = demand.parsed as any;
-                const title = parsed?.descricao_estruturada || demand.raw_text || "Sem título";
+                const title = parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem título";
                 return (
                   <div
                     key={demand.id}

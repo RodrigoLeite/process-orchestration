@@ -62,7 +62,7 @@ export default function KanbanCard({ demand, onAdvance }: KanbanCardProps) {
   const priority = demand.parsed?.prioridade || "média";
   const slaRemaining = demand.slaRemaining || demand.sla_remaining || "N/A";
   const eta = demand.eta || "N/A";
-  const description = demand.parsed?.descricao_estruturada || demand.raw_text || "Sem descrição";
+  const description = demand.parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição";
 
   return (
     <div

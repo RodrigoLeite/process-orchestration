@@ -38,7 +38,7 @@ export default function AreaDemandListItem({ demand }: AreaDemandListItemProps) 
   const riskValue = parseInt(riskStr.replace("%", ""));
   const category = demand.parsed?.tipo || "Sem categoria";
   const priority = demand.parsed?.prioridade || "média";
-  const description = demand.parsed?.descricao_estruturada || demand.raw_text || "Sem descrição";
+  const description = demand.parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição";
 
   return (
     <div
