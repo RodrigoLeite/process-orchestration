@@ -2729,10 +2729,12 @@ Texto original: ${demand.rawText}`;
       // Log execution to system events if needed
       try {
         if (result.success) {
+          // Generate a UUID for this graph execution event
+          const graphExecutionId = crypto.randomUUID();
           await storage.createSystemEvent({
             type: "agent_graph_execution",
             agentKey: "agent_graph",
-            demandId: demandInput.titulo,
+            demandId: graphExecutionId,
             metadata: {
               demand_title: demandInput.titulo,
               demand_area: demandInput.area,
