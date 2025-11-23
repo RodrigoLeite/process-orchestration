@@ -2765,8 +2765,15 @@ Texto original: ${demand.rawText}`;
           
           // Update demand with AREA workflow ID (not demand workflow ID)
           try {
-            await storage.updateDemandWithSLA(demandId, { workflowId: areaWorkflow.id });
-            console.log(`[ORCHESTRATE] Updated demand with areaWorkflowId: ${areaWorkflow.id}`);
+            // Get the first stage of the area workflow to assign to the demand
+            const stages = await storage.getWorkflowStages(areaWorkflow.id);
+            const firstStageId = stages.length > 0 ? stages[0].id : undefined;
+            
+            await storage.updateDemandWithSLA(demandId, { 
+              workflowId: areaWorkflow.id,
+              stageId: firstStageId
+            });
+            console.log(`[ORCHESTRATE] Updated demand with areaWorkflowId: ${areaWorkflow.id}, stageId: ${firstStageId}`);
             createdWorkflowId = areaWorkflow.id;
           } catch (error) {
             console.error("[ORCHESTRATE] Error updating demand with workflowId:", error);
