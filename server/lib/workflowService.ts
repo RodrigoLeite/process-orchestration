@@ -24,7 +24,8 @@ export function convertEtapasToSteps(etapas: any[]): WorkflowStep[] {
  * Returns existing workflow if steps match, otherwise creates new one
  */
 export async function getOrCreateWorkflow(
-  etapas: any[]
+  etapas: any[],
+  workflowName: string = "Workflow"
 ): Promise<Workflow> {
   // Convert etapas to standard steps
   const steps = convertEtapasToSteps(etapas);
@@ -44,6 +45,7 @@ export async function getOrCreateWorkflow(
   console.log(`[WORKFLOW] Creating new workflow with hash: ${hash}`);
   const newWorkflow = await storage.createWorkflow({
     workflowHash: hash,
+    name: workflowName,
     steps
   });
 
