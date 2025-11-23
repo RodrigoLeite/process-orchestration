@@ -1796,6 +1796,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id/logs", async (req, res) => {
     try {
       const { id } = req.params;
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const logs = await storage.getAgentLogs(id);
       res.json(logs.slice(0, 20));
     } catch (error) {
