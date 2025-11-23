@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface MonitoringData {
   total: number;
@@ -38,6 +39,7 @@ const statusColors: Record<string, string> = {
 
 export default function MonitoringPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["monitoring-status"],
@@ -56,6 +58,22 @@ export default function MonitoringPage() {
       setLastUpdated(new Date());
     }
   }, [data]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast.success("Dados atualizados com sucesso!", {
+        description: `Última atualização: ${new Date().toLocaleTimeString("pt-BR")}`
+      });
+    } catch (error) {
+      toast.error("Erro ao atualizar dados", {
+        description: "Tente novamente em alguns segundos"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const statusDistribution = [
     { label: "Aguardando", value: data?.byStatus.pending || 0, color: "text-yellow-600" },
@@ -79,12 +97,14 @@ export default function MonitoringPage() {
           </p>
         </div>
         <button
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-500 transition-colors"
           data-testid="button-refresh"
+          title={isRefreshing ? "Atualizando..." : "Atualizar dados"}
         >
-          <RefreshCw className="w-4 h-4" />
-          Atualizar
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          {isRefreshing ? "Atualizando..." : "Atualizar"}
         </button>
       </div>
 
