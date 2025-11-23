@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 import { Button } from '@/components/ui/button';
-import { Save, Play, RotateCcw, RotateCw, ZoomIn, Undo, Redo, ArrowLeft } from 'lucide-react';
+import { Save, Play, RotateCcw, RotateCw, ZoomIn, Undo, Redo, ArrowLeft, Menu } from 'lucide-react';
 
 interface ToolbarProps {
   onBack?: () => void;
@@ -24,6 +24,8 @@ export default function Toolbar({ onBack }: ToolbarProps) {
     setNodes,
     setEdges,
     currentAgentId,
+    toggleSidebar,
+    isSidebarOpen,
   } = useAgentsStore();
 
   const currentAgent = SAMPLE_AGENTS.find(a => a.id === currentAgentId);
@@ -61,6 +63,16 @@ export default function Toolbar({ onBack }: ToolbarProps) {
       {/* Toolbar */}
       <div className="h-16 flex items-center justify-between px-4">
         <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={toggleSidebar}
+          className="bg-white hover:bg-gray-100 border-gray-300"
+          title={isSidebarOpen ? 'Fechar painel' : 'Abrir painel'}
+          data-testid="button-toggle-sidebar"
+        >
+          <Menu size={16} />
+        </Button>
         {onBack && (
           <Button
             size="sm"

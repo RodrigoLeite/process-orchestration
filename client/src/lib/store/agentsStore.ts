@@ -70,6 +70,9 @@ interface AgentsStore {
   unsavedChanges: boolean;
   setUnsavedChanges: (unsaved: boolean) => void;
 
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+
   undo: () => void;
   redo: () => void;
 
@@ -161,6 +164,9 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
 
   unsavedChanges: false,
   setUnsavedChanges: (unsaved) => set({ unsavedChanges: unsaved }),
+
+  isSidebarOpen: true,
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 
   history: [EMPTY_GRAPH],
   historyIndex: 0,
