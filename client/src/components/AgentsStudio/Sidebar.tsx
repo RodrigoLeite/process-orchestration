@@ -65,8 +65,6 @@ export default function Sidebar() {
         <div
           draggable
           onDragStart={(e) => onDragStart(e, 'chatInput', 'Chat Input')}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
           className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-grab hover:bg-green-100 transition"
         >
           <div className="flex items-center gap-2 text-green-600 font-semibold">
@@ -80,8 +78,6 @@ export default function Sidebar() {
         <div
           draggable
           onDragStart={(e) => onDragStart(e, 'prompt', 'Prompt')}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
           className="p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-grab hover:bg-blue-100 transition"
         >
           <div className="flex items-center gap-2 text-blue-600 font-semibold">
@@ -95,8 +91,6 @@ export default function Sidebar() {
         <div
           draggable
           onDragStart={(e) => onDragStart(e, 'logic', 'Logic')}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
           className="p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-grab hover:bg-purple-100 transition"
         >
           <div className="flex items-center gap-2 text-purple-600 font-semibold">
@@ -110,8 +104,6 @@ export default function Sidebar() {
         <div
           draggable
           onDragStart={(e) => onDragStart(e, 'output', 'Output')}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
           className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg cursor-grab hover:bg-emerald-100 transition"
         >
           <div className="flex items-center gap-2 text-emerald-600 font-semibold">

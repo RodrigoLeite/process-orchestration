@@ -68,8 +68,61 @@ export default function Canvas() {
     [edges, onEdgesChange, setStoreEdges]
   );
 
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    try {
+      const data = JSON.parse(event.dataTransfer.getData('application/reactflow'));
+      const { nodeType, nodeLabel } = data;
+
+      // Get canvas coordinates relative to the canvas container
+      const canvas = event.currentTarget as HTMLElement;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const newNode = {
+        id: `${nodeType}-${Date.now()}`,
+        type: nodeType,
+        position: { x, y },
+        data: {
+          label: nodeLabel,
+          ...(nodeType === 'chatInput' && {
+            placeholder: 'Digite sua mensagem aqui...',
+          }),
+          ...(nodeType === 'prompt' && {
+            systemPrompt: '',
+            temperature: 0.7,
+            maxTokens: 2000,
+          }),
+          ...(nodeType === 'logic' && {
+            stepName: '',
+            logicType: 'filter',
+            condition: '',
+          }),
+          ...(nodeType === 'output' && {
+            outputName: '',
+            schema: '{}',
+          }),
+        },
+      };
+
+      setNodes([...nodes, newNode]);
+    } catch (err) {
+      console.error('Drop error:', err);
+    }
+  };
+
   return (
-    <div className="w-full h-full bg-gray-100">
+    <div 
+      className="w-full h-full bg-gray-100"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -90,6 +143,8 @@ export default function Canvas() {
                 return '#8b5cf6';
               case 'output':
                 return '#10b981';
+              case 'chatInput':
+                return '#16a34a';
               default:
                 return '#d1d5db';
             }
