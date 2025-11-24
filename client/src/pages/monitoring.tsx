@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface MonitoringData {
   total: number;
@@ -38,6 +39,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function MonitoringPage() {
+  const t = useTranslation();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -63,11 +65,11 @@ export default function MonitoringPage() {
     setIsRefreshing(true);
     try {
       await refetch();
-      toast.success("Dados atualizados com sucesso!", {
-        description: `Última atualização: ${new Date().toLocaleTimeString("pt-BR")}`
+      toast.success(t("monitoring.generalProgress"), {
+        description: `${t("monitoring.lastUpdate")}: ${new Date().toLocaleTimeString("pt-BR")}`
       });
     } catch (error) {
-      toast.error("Erro ao atualizar dados", {
+      toast.error(t("common.error"), {
         description: "Tente novamente em alguns segundos"
       });
     } finally {
@@ -76,12 +78,12 @@ export default function MonitoringPage() {
   };
 
   const statusDistribution = [
-    { label: "Aguardando", value: data?.byStatus.pending || 0, color: "text-yellow-600" },
-    { label: "Roteadas", value: data?.byStatus.routed || 0, color: "text-blue-600" },
-    { label: "Em Progresso", value: data?.byStatus.in_progress || 0, color: "text-purple-600" },
-    { label: "Completadas", value: data?.byStatus.completed || 0, color: "text-green-600" },
-    { label: "Finalizadas", value: data?.byStatus.done || 0, color: "text-emerald-600" },
-    { label: "Bloqueadas", value: data?.byStatus.blocked || 0, color: "text-red-600" },
+    { label: t("monitoring.waiting"), value: data?.byStatus.pending || 0, color: "text-yellow-600" },
+    { label: t("monitoring.routed"), value: data?.byStatus.routed || 0, color: "text-blue-600" },
+    { label: t("monitoring.inProcessing"), value: data?.byStatus.in_progress || 0, color: "text-purple-600" },
+    { label: t("monitoring.completed"), value: data?.byStatus.completed || 0, color: "text-green-600" },
+    { label: t("monitoring.finished"), value: data?.byStatus.done || 0, color: "text-emerald-600" },
+    { label: t("monitoring.blocked"), value: data?.byStatus.blocked || 0, color: "text-red-600" },
   ];
 
   return (
@@ -90,10 +92,10 @@ export default function MonitoringPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="text-monitoring-title">
-            Monitoramento em Tempo Real
+            {t("monitoring.title")}
           </h1>
           <p className="text-gray-600 mt-1">
-            {lastUpdated && `Última atualização: ${lastUpdated.toLocaleTimeString("pt-BR")}`}
+            {lastUpdated && `${t("monitoring.lastUpdate")}: ${lastUpdated.toLocaleTimeString("pt-BR")}`}
           </p>
         </div>
         <button
@@ -101,10 +103,10 @@ export default function MonitoringPage() {
           disabled={isRefreshing}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-500 transition-colors"
           data-testid="button-refresh"
-          title={isRefreshing ? "Atualizando..." : "Atualizar dados"}
+          title={isRefreshing ? t("monitoring.refreshing") : t("monitoring.refresh")}
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          {isRefreshing ? "Atualizando..." : "Atualizar"}
+          {isRefreshing ? t("monitoring.refreshing") : t("monitoring.refresh")}
         </button>
       </div>
 
@@ -114,17 +116,17 @@ export default function MonitoringPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-600" />
-              Progresso Geral
+              {t("monitoring.generalProgress")}
             </CardTitle>
             <CardDescription>
-              {data.byStatus.completed + data.byStatus.done} processadas • {data.byStatus.in_progress + data.byStatus.routed} aguardando • {data.total} total
+              {data.byStatus.completed + data.byStatus.done} {t("monitoring.processed")} • {data.byStatus.in_progress + data.byStatus.routed} {t("monitoring.waiting")} • {data.total} {t("monitoring.total")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Main Progress Bar */}
             <div>
               <div className="flex justify-between mb-3">
-                <span className="text-sm font-semibold">Status de Processamento</span>
+                <span className="text-sm font-semibold">{t("monitoring.processingStatus")}</span>
                 <div className="flex gap-2 text-xs">
                   <span className="text-green-600 font-bold">{data.byStatus.completed + data.byStatus.done} ✓</span>
                   <span className="text-blue-600 font-bold">{data.byStatus.in_progress + data.byStatus.routed} ⏳</span>
@@ -154,11 +156,11 @@ export default function MonitoringPage() {
               <div className="flex gap-4 mt-2 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span>Processadas</span>
+                  <span>{t("monitoring.processed")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-blue-500 rounded animate-pulse"></div>
-                  <span>Em Processamento</span>
+                  <span>{t("monitoring.inProcessing")}</span>
                 </div>
               </div>
             </div>
@@ -166,25 +168,25 @@ export default function MonitoringPage() {
             {/* Stats Grid */}
             <div className="grid grid-cols-4 gap-3">
               <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xs text-gray-600">Processadas</p>
+                <p className="text-xs text-gray-600">{t("monitoring.processed")}</p>
                 <p className="text-2xl font-bold text-green-600" data-testid="text-processed">
                   {data.byStatus.completed + data.byStatus.done}
                 </p>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-600">Aguardando</p>
+                <p className="text-xs text-gray-600">{t("monitoring.waiting")}</p>
                 <p className="text-2xl font-bold text-blue-600" data-testid="text-pending">
                   {data.byStatus.in_progress + data.byStatus.routed}
                 </p>
               </div>
               <div className="p-3 bg-purple-50 rounded-lg">
-                <p className="text-xs text-gray-600">Tempo Médio</p>
+                <p className="text-xs text-gray-600">{t("monitoring.avgTime")}</p>
                 <p className="text-2xl font-bold text-purple-600" data-testid="text-avg-time">
                   {data.averageProcessingTime}m
                 </p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600">Total</p>
+                <p className="text-xs text-gray-600">{t("monitoring.total")}</p>
                 <p className="text-2xl font-bold text-gray-600" data-testid="text-total-demands">
                   {data.total}
                 </p>
@@ -195,10 +197,10 @@ export default function MonitoringPage() {
             {data.byStatus.routed + data.byStatus.in_progress > 0 && (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-900">
-                  <span className="font-semibold">⏳ Processando:</span> {data.byStatus.routed + data.byStatus.in_progress} demandas em fila
+                  <span className="font-semibold">⏳ {t("monitoring.processing")}:</span> {data.byStatus.routed + data.byStatus.in_progress} {t("monitoring.demandsInQueue")}
                 </p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Estimado: {Math.ceil((data.byStatus.routed + data.byStatus.in_progress) * 0.4)} minutos (baseado em ~24s por demanda)
+                  {t("monitoring.estimatedTime")}: {Math.ceil((data.byStatus.routed + data.byStatus.in_progress) * 0.4)} {t("monitoring.minutesPerDemand")}
                 </p>
               </div>
             )}
@@ -209,7 +211,7 @@ export default function MonitoringPage() {
       {/* Status Distribution */}
       <Card>
         <CardHeader>
-          <CardTitle>Distribuição por Status</CardTitle>
+          <CardTitle>{t("monitoring.statusDistribution")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -229,14 +231,14 @@ export default function MonitoringPage() {
       {data && Object.keys(data.byArea).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Demandas por Área</CardTitle>
+            <CardTitle>{t("monitoring.demandsByArea")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {Object.entries(data.byArea).map(([area, count]) => (
                 <div key={area} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="font-medium">{area}</span>
-                  <Badge variant="outline">{count} demandas</Badge>
+                  <Badge variant="outline">{count} {t("common.demands")}</Badge>
                 </div>
               ))}
             </div>
@@ -250,7 +252,7 @@ export default function MonitoringPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Últimas Demandas Processadas
+              {t("monitoring.lastProcessed")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -266,7 +268,7 @@ export default function MonitoringPage() {
                     <p className="text-sm text-gray-600" data-testid={`text-demand-area-${demand.id}`}>{demand.area}</p>
                   </div>
                   <Badge className={statusColors[demand.status]} data-testid={`badge-status-${demand.id}`}>
-                    {demand.status === "completed" ? "Completada" : "Finalizada"}
+                    {demand.status === "completed" ? t("monitoring.completedStatus") : t("monitoring.finishedStatus")}
                   </Badge>
                 </div>
               ))}
@@ -279,13 +281,13 @@ export default function MonitoringPage() {
       {!isLoading && !data && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-gray-600">Nenhuma informação de monitoramento disponível</p>
+            <p className="text-gray-600">{t("monitoring.noMonitoringData")}</p>
             <button
               onClick={() => refetch()}
               className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
               data-testid="button-retry"
             >
-              Tentar Novamente
+              {t("monitoring.retry")}
             </button>
           </CardContent>
         </Card>
@@ -297,7 +299,7 @@ export default function MonitoringPage() {
           <CardContent className="py-12 text-center">
             <p className="text-gray-600 flex items-center justify-center gap-2">
               <RefreshCw className="w-4 h-4 animate-spin" />
-              Carregando dados de monitoramento...
+              {t("monitoring.loading")}
             </p>
           </CardContent>
         </Card>

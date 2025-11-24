@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Activity, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useState } from "react";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface ExecutionLog {
   id: string;
@@ -20,6 +21,7 @@ interface ExecutionLog {
 
 export default function AILogsPage() {
   const [, navigate] = useLocation();
+  const t = useTranslation();
   const [sortBy, setSortBy] = useState<"newest" | "slowest">("newest");
 
   const { data: logsData, isLoading } = useQuery({
@@ -66,10 +68,10 @@ export default function AILogsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold" data-testid="page-title">
-            📊 Logs de Execução do Grafo
+            📊 {t("aiLogs.title")}
           </h1>
           <p className="text-gray-600 mt-1" data-testid="page-description">
-            Histórico de execuções do pipeline de orquestração de demandas
+            {t("aiLogs.subtitle")}
           </p>
         </div>
         <Activity className="w-8 h-8 text-blue-600" />
@@ -80,7 +82,7 @@ export default function AILogsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total de Execuções
+              {t("aiLogs.totalExecutions")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -93,7 +95,7 @@ export default function AILogsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Taxa de Sucesso
+              {t("aiLogs.successRate")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -108,7 +110,7 @@ export default function AILogsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Duração Média
+              {t("aiLogs.avgDuration")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -131,7 +133,7 @@ export default function AILogsPage() {
           onClick={() => setSortBy("newest")}
           data-testid="sort-newest"
         >
-          Mais Recentes
+          {t("aiLogs.newest")}
         </Button>
         <Button
           variant={sortBy === "slowest" ? "default" : "outline"}
@@ -139,7 +141,7 @@ export default function AILogsPage() {
           onClick={() => setSortBy("slowest")}
           data-testid="sort-slowest"
         >
-          Mais Lentos
+          {t("aiLogs.slowest")}
         </Button>
       </div>
 
@@ -153,7 +155,7 @@ export default function AILogsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">Nenhuma execução registrada</p>
+              <p className="text-gray-600">{t("aiLogs.noLogs")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -177,14 +179,14 @@ export default function AILogsPage() {
                         color={getStatusColor(log.status)}
                         data-testid={`status-${log.executionId}`}
                       >
-                        {log.status === "success" ? "✓ Sucesso" : "✗ Erro"}
+                        {log.status === "success" ? `✓ ${t("aiLogs.success")}` : `✗ ${t("aiLogs.error")}`}
                       </Badge>
                       <Badge color="blue" data-testid={`duration-${log.executionId}`}>
                         ⏱ {formatDuration(log.duration_ms)}
                       </Badge>
                     </div>
                     <CardTitle className="text-base" data-testid={`title-${log.executionId}`}>
-                      Execução #{log.executionId.substring(0, 8)}
+                      {t("aiLogs.execution")} #{log.executionId.substring(0, 8)}
                     </CardTitle>
                     <CardDescription className="text-xs mt-1">
                       {new Date(log.timestamp).toLocaleString()}
@@ -197,14 +199,14 @@ export default function AILogsPage() {
               <CardContent className="space-y-2">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div data-testid={`demand-${log.executionId}`}>
-                    <p className="text-xs font-semibold text-gray-600">Demanda</p>
+                    <p className="text-xs font-semibold text-gray-600">{t("aiLogs.demand")}</p>
                     <p className="font-mono text-xs break-all">
                       {log.demandId === "unknown" ? "—" : log.demandId.substring(0, 12)}...
                     </p>
                   </div>
                   {log.workflow && (
                     <div data-testid={`workflow-${log.executionId}`}>
-                      <p className="text-xs font-semibold text-gray-600">Workflow Gerado</p>
+                      <p className="text-xs font-semibold text-gray-600">{t("aiLogs.generatedWorkflow")}</p>
                       <p className="text-xs text-gray-700 truncate">{log.workflow.title}</p>
                     </div>
                   )}
@@ -212,7 +214,7 @@ export default function AILogsPage() {
 
                 {log.metadata && Object.keys(log.metadata).length > 0 && (
                   <div className="mt-2 p-2 bg-white/50 rounded text-xs" data-testid={`metadata-${log.executionId}`}>
-                    <p className="font-semibold text-gray-700 mb-1">Detalhes:</p>
+                    <p className="font-semibold text-gray-700 mb-1">{t("aiLogs.details")}:</p>
                     <pre className="whitespace-pre-wrap break-words text-xs text-gray-600 max-h-20 overflow-hidden">
                       {JSON.stringify(log.metadata, null, 2).substring(0, 150)}
                       {JSON.stringify(log.metadata, null, 2).length > 150 ? "..." : ""}
