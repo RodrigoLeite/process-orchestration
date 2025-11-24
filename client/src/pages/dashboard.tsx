@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Badge from "@/components/Badge";
 import DashboardKPICard from "@/components/DashboardKPICard";
 import DashboardHeatmap from "@/components/DashboardHeatmap";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface OverloadArea {
   area: string;
@@ -47,6 +48,7 @@ interface Demand {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const [heatmapData, setHeatmapData] = useState<any[]>([]);
 
   // Fetch demands for general metrics
@@ -122,51 +124,51 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-4xl font-bold" data-testid="title-dashboard">
-          Dashboard Operacional
+          {t("dashboard.title")}
         </h1>
         <p className="text-muted-foreground" data-testid="subtitle-dashboard">
-          Visualize KPIs, gargalos e métricas operacionais em tempo real
+          {t("dashboard.subtitle")}
         </p>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">Carregando dashboard...</p>
+          <p className="text-muted-foreground">{t("dashboard.loadingDashboard")}</p>
         </div>
       ) : (
         <>
           {/* KPIs Section */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-kpis">
-              KPIs Principais
+              {t("dashboard.mainKPIs")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <DashboardKPICard
-                title="Demandas Abertas"
+                title={t("dashboard.openDemands")}
                 value={totalDemandsToday}
-                description="Hoje"
+                description={t("dashboard.today")}
                 icon={<AlertCircle className="w-5 h-5" />}
                 color="blue"
               />
               <DashboardKPICard
-                title="SLA Médio"
+                title={t("dashboard.averageSLA")}
                 value={`${avgSLA}h`}
-                description="Tempo médio"
+                description={t("dashboard.averageTime")}
                 icon={<Clock className="w-5 h-5" />}
                 color="green"
               />
               <DashboardKPICard
-                title="Tempo de Resposta"
+                title={t("dashboard.responseTime")}
                 value={`${avgResponseTime}h`}
-                description="Média"
+                description={t("dashboard.average")}
                 icon={<TrendingUp className="w-5 h-5" />}
                 color="purple"
               />
               <DashboardKPICard
-                title="Áreas Sobrecarregadas"
+                title={t("dashboard.overloadedAreas")}
                 value={overloadedAreasCount}
-                description="Em alerta"
+                description={t("dashboard.inAlert")}
                 icon={<Users className="w-5 h-5" />}
                 color={overloadedAreasCount > 0 ? "red" : "green"}
               />
@@ -176,13 +178,13 @@ export default function DashboardPage() {
           {/* Bottlenecks Section */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-bottlenecks">
-              Gargalos Detectados (IA)
+              {t("dashboard.criticalBottlenecks")}
             </h2>
             {bottlenecks.length === 0 ? (
               <Card>
                 <CardContent className="pt-6">
                   <p className="text-center text-gray-400" data-testid="empty-bottlenecks">
-                    Nenhum gargalo crítico detectado
+                    {t("dashboard.noBottlenecks")}
                   </p>
                 </CardContent>
               </Card>
@@ -212,13 +214,13 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <p className="text-xs text-gray-600 mb-1">Motivo</p>
+                        <p className="text-xs text-gray-600 mb-1">{t("dashboard.reason")}</p>
                         <p className="text-sm" data-testid={`bottleneck-reason-${index}`}>
                           {bottleneck.reason}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600 mb-2">Ações Recomendadas</p>
+                        <p className="text-xs text-gray-600 mb-2">{t("dashboard.recommendedActions")}</p>
                         <ul className="space-y-1" data-testid={`bottleneck-actions-${index}`}>
                           {bottleneck.actions.slice(0, 3).map((action, i) => (
                             <li key={i} className="text-sm flex gap-2">
@@ -238,13 +240,13 @@ export default function DashboardPage() {
           {/* Heatmap Section */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-heatmap">
-              Heatmap de Áreas
+              {t("dashboard.operationalHeatmap")}
             </h2>
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Volume • Risco • SLA</CardTitle>
+                <CardTitle className="text-lg">{t("dashboard.volume")} • {t("dashboard.risk")} • {t("dashboard.sla")}</CardTitle>
                 <CardDescription>
-                  Visualização comparativa de todas as áreas
+                  {t("dashboard.heatmapDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>

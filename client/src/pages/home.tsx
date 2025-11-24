@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, FileText, TrendingUp, BarChart3, Zap, Eye, CheckCircle2, AlertCircle } from "lucide-react";
 import Badge from "@/components/Badge";
 import type { Demand } from "@/lib/types";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [demandText, setDemandText] = useState("");
@@ -34,7 +36,7 @@ export default function Dashboard() {
 
   const handleCreateDemand = async () => {
     if (!demandText.trim()) {
-      setCreateStatus({ type: "error", message: "Por favor, descreva a demanda" });
+      setCreateStatus({ type: "error", message: t("home.errorDescribeDemand") });
       return;
     }
 
@@ -59,7 +61,7 @@ export default function Dashboard() {
       await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
       navigate(`/app/demands/${data.id}`);
     } catch (error) {
-      setCreateStatus({ type: "error", message: "Erro ao criar demanda. Tente novamente." });
+      setCreateStatus({ type: "error", message: t("home.errorCreateDemand") });
     } finally {
       setIsCreating(false);
     }
@@ -75,9 +77,9 @@ export default function Dashboard() {
       const res = await fetch("/api/process-new-demands", { method: "POST" });
       if (!res.ok) throw new Error("Falha ao processar");
       await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
-      setCreateStatus({ type: "success", message: "Processamento iniciado! As demandas serão orquestradas..." });
+      setCreateStatus({ type: "success", message: t("home.successCreateDemand") });
     } catch (error) {
-      setCreateStatus({ type: "error", message: "Erro ao processar demandas. Tente novamente." });
+      setCreateStatus({ type: "error", message: t("home.errorProcessDemands") });
     } finally {
       setIsProcessing(false);
     }
@@ -87,8 +89,8 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Bem-vindo ao sistema de orquestração de demandas</p>
+        <h1 className="text-4xl font-bold">{t("home.title")}</h1>
+        <p className="text-muted-foreground">{t("home.subtitle")}</p>
       </div>
 
       {/* Create Demand Section */}
@@ -96,17 +98,17 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Criar Nova Demanda
+            {t("home.createNewDemand")}
           </CardTitle>
           <CardDescription>
-            Descreva sua demanda em linguagem natural. A IA irá classificar e rotear automaticamente.
+            {t("home.describeDemand")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <textarea
             value={demandText}
             onChange={(e) => setDemandText(e.target.value)}
-            placeholder="Descreva sua demanda aqui... (ex: 'Preciso criar uma nova conta no sistema SYMPHONY com emissão de contrato')"
+            placeholder={t("home.demandPlaceholder")}
             className="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             disabled={isCreating}
             data-testid="textarea-demand"
@@ -137,12 +139,12 @@ export default function Dashboard() {
             {isCreating ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Processando...
+                {t("home.processing")}
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4" />
-                Criar Demanda
+                {t("home.createDemand")}
               </>
             )}
           </Button>
@@ -153,16 +155,16 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.total")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalDemands}</div>
-            <p className="text-xs text-muted-foreground mt-1">todas as demandas</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("home.allDemands")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Aguardando</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.waiting")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-600">{newDemands}</div>
@@ -171,7 +173,7 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Em Andamento</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.inProgress")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600">{inProgressDemands}</div>
@@ -180,7 +182,7 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Concluídas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.completed")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">{completedDemands}</div>
@@ -190,7 +192,7 @@ export default function Dashboard() {
         {blockedDemands > 0 && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Bloqueadas</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.blocked")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">{blockedDemands}</div>
@@ -206,10 +208,10 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-900">
               <Zap className="w-5 h-5" />
-              Demandas Aguardando Processamento
+              {t("home.pendingDemands")}
             </CardTitle>
             <CardDescription className="text-blue-700">
-              Você tem {newDemands} demanda(s) aguardando orquestração. Clique no botão abaixo para processar agora.
+              {t("home.pendingDemandsDesc", `Você tem ${newDemands} demanda(s) aguardando orquestração. Clique no botão abaixo para processar agora.`)}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -222,12 +224,12 @@ export default function Dashboard() {
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Processando...
+                  {t("home.processing")}
                 </>
               ) : (
                 <>
                   <Zap className="w-4 h-4" />
-                  Processar {newDemands} Demanda{newDemands !== 1 ? 's' : ''}
+                  {t("home.processButton", `Processar ${newDemands} Demanda${newDemands !== 1 ? 's' : ''}`)}
                 </>
               )}
             </Button>
@@ -238,20 +240,20 @@ export default function Dashboard() {
       {/* Recent Demands Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Minhas Últimas Demandas</CardTitle>
+          <CardTitle>{t("home.recentDemands")}</CardTitle>
           <CardDescription>
-            As 5 demandas mais recentes criadas
+            {t("home.recentDemandsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {demandsLoading ? (
             <div className="flex items-center justify-center py-8 gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-muted-foreground">Carregando demandas...</span>
+              <span className="text-muted-foreground">{t("common.loading")}</span>
             </div>
           ) : recentDemands.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nenhuma demanda criada ainda
+              {t("home.noDemands")}
             </div>
           ) : (
             <div className="space-y-3">
