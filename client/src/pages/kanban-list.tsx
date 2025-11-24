@@ -8,6 +8,7 @@ interface AreaWorkflow {
   id: string;
   name: string;
   workflowHash: string;
+  area: string;
   steps: Array<{
     name: string;
     type?: string;
@@ -21,6 +22,23 @@ interface WorkflowStats {
   stageCount: number;
   demandCount: number;
 }
+
+// Area color mapping
+const areaColors: Record<string, { badge: string; bg: string }> = {
+  "ti": { badge: "blue", bg: "bg-blue-50" },
+  "TI": { badge: "blue", bg: "bg-blue-50" },
+  "vendas": { badge: "green", bg: "bg-green-50" },
+  "VENDAS": { badge: "green", bg: "bg-green-50" },
+  "rh": { badge: "purple", bg: "bg-purple-50" },
+  "RH": { badge: "purple", bg: "bg-purple-50" },
+  "financeiro": { badge: "yellow", bg: "bg-yellow-50" },
+  "FINANCEIRO": { badge: "yellow", bg: "bg-yellow-50" },
+  "operações": { badge: "orange", bg: "bg-orange-50" },
+  "OPERAÇÕES": { badge: "orange", bg: "bg-orange-50" },
+  "jurídico": { badge: "red", bg: "bg-red-50" },
+  "JURÍDICO": { badge: "red", bg: "bg-red-50" },
+  "Unknown": { badge: "gray", bg: "bg-gray-50" }
+};
 
 export default function KanbanList() {
   const [, navigate] = useLocation();
@@ -123,8 +141,8 @@ export default function KanbanList() {
               <CardContent className="space-y-3">
                 {/* Badges */}
                 <div className="flex gap-2 flex-wrap">
-                  <Badge color="blue" data-testid="badge-stage-count">
-                    {workflow.steps?.length || 0} Etapas
+                  <Badge color={areaColors[workflow.area]?.badge as any || "gray"} data-testid="badge-area">
+                    {workflow.area}
                   </Badge>
                   <Badge color="purple" data-testid="badge-demand-count">
                     {stats.demandCount} Demandas
