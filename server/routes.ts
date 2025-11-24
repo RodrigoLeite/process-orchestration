@@ -433,9 +433,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add area info to each workflow
       const workflowsWithArea = workflows.map(workflow => {
         const demand = demands.find(d => d.workflowId === workflow.id);
+        const area = demand?.area || (demand?.parsed as any)?.area || "Unknown";
         return {
           ...workflow,
-          area: demand?.area || "Unknown"
+          area: area
         };
       });
       
