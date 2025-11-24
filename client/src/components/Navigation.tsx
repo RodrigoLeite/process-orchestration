@@ -27,13 +27,13 @@ const navItems = [
   { label: "Demandas", href: "/app/demands", icon: Grid3x3 },
   { label: "Workflows", href: "/app/workflows", icon: LayoutGrid },
   { label: "Áreas", href: "/app/areas", icon: BarChart3 },
-  { label: "Agentes IA", href: "/app/agents", icon: Bot },
-  { label: "Agent Studio", href: "/app/agents-studio", icon: Sparkles },
-  { label: "Monitoramento", href: "/app/monitoring", icon: TrendingUp },
-  { label: "Grafo de Execução", href: "/app/workflow-graph", icon: GitBranch },
-  { label: "Alertas Críticos", href: "/app/alerts", icon: Bell },
   { label: "Gargalos (IA)", href: "/app/bottlenecks", icon: AlertTriangle },
   { label: "Insights IA", href: "/app/insights", icon: Zap },
+  { label: "Agentes IA", href: "/app/agents", icon: Bot },
+  { label: "Agent Studio", href: "/app/agents-studio", icon: Sparkles },
+  { label: "Grafo de Execução", href: "/app/workflow-graph", icon: GitBranch },
+  { label: "Alertas Críticos", href: "/app/alerts", icon: Bell },
+  { label: "Monitoramento", href: "/app/monitoring", icon: TrendingUp },
   { label: "Logs de Orquestração", href: "/app/ai/logs", icon: Activity },
   { label: "Configurações", href: "/settings", icon: Settings }
 ];
