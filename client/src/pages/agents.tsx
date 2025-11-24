@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Bot, Loader2, ArrowRight } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface Agent {
   id: string;
@@ -17,6 +18,7 @@ interface Agent {
 
 export default function AgentsPage() {
   const [, navigate] = useLocation();
+  const t = useTranslation();
 
   const { data: allAgents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["agents"],
@@ -48,11 +50,11 @@ export default function AgentsPage() {
         <div className="flex items-center gap-2">
           <Bot className="w-8 h-8 text-blue-600" />
           <h1 className="text-4xl font-bold" data-testid="title-agents">
-            Agentes de IA
+            {t("agents.title")}
           </h1>
         </div>
         <p className="text-muted-foreground" data-testid="subtitle-agents">
-          Executar e monitorar agentes de inteligência artificial do sistema
+          {t("agents.subtitle")}
         </p>
       </div>
 
@@ -61,8 +63,8 @@ export default function AgentsPage() {
           <CardContent className="py-16 text-center">
             <div className="space-y-3">
               <p className="text-2xl">🤖</p>
-              <p className="text-lg font-semibold">Nenhum agente ativo</p>
-              <p className="text-muted-foreground">Nenhum agente disponível para execução</p>
+              <p className="text-lg font-semibold">{t("agents.noActiveAgents")}</p>
+              <p className="text-muted-foreground">{t("agents.noAgentsAvailable")}</p>
             </div>
           </CardContent>
         </Card>
@@ -84,7 +86,7 @@ export default function AgentsPage() {
                       <span className="truncate">{agent.name}</span>
                     </CardTitle>
                     <CardDescription className="mt-2 line-clamp-2">
-                      {agent.description || "Sem descrição"}
+                      {agent.description || t("agents.noDescription")}
                     </CardDescription>
                   </div>
                 </div>
@@ -94,7 +96,7 @@ export default function AgentsPage() {
                 {/* Internal Key and Status */}
                 <div className="space-y-2">
                   <div className="text-xs">
-                    <p className="text-muted-foreground mb-1">Chave interna:</p>
+                    <p className="text-muted-foreground mb-1">{t("agents.internalKey")}:</p>
                     <p className="font-mono text-sm bg-muted px-2 py-1 rounded" data-testid={`agent-key-${agent.id}`}>
                       {agent.internalKey || "—"}
                     </p>
@@ -107,7 +109,7 @@ export default function AgentsPage() {
                     color={agent.active === 't' || agent.active === true || agent.active === "true" ? "green" : "red"}
                     data-testid={`agent-status-${agent.id}`}
                   >
-                    {agent.active === 't' || agent.active === true || agent.active === "true" ? "✓ Ativo" : "✕ Inativo"}
+                    {agent.active === 't' || agent.active === true || agent.active === "true" ? `✓ ${t("agents.active")}` : `✕ ${t("agents.inactive_")}`}
                   </Badge>
                 </div>
 
@@ -121,7 +123,7 @@ export default function AgentsPage() {
                   data-testid={`button-details-${agent.id}`}
                 >
                   <ArrowRight className="w-4 h-4" />
-                  Ver Detalhes
+                  {t("agents.viewDetails")}
                 </Button>
               </CardContent>
             </Card>
@@ -134,15 +136,15 @@ export default function AgentsPage() {
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground">Total de Agentes</p>
+              <p className="text-muted-foreground">{t("agents.totalAgents")}</p>
               <p className="text-2xl font-bold">{allAgents.length}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Agentes Ativos</p>
+              <p className="text-muted-foreground">{t("agents.activeAgents")}</p>
               <p className="text-2xl font-bold text-green-600">{agents.length}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Inativos</p>
+              <p className="text-muted-foreground">{t("agents.inactive")}</p>
               <p className="text-2xl font-bold text-red-600">
                 {allAgents.filter(a => a.active !== 't' && a.active !== true && a.active !== "true").length}
               </p>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, Bell, CheckCircle2, Clock } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface CriticalAlert {
   id: string;
@@ -27,6 +28,7 @@ interface AlertsData {
 }
 
 export default function AlertsPage() {
+  const t = useTranslation();
   const [filter, setFilter] = useState<"all" | "active" | "acknowledged" | "resolved">("all");
 
   // Fetch critical bottleneck alerts
@@ -91,10 +93,9 @@ export default function AlertsPage() {
             <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
           </div>
           <div>
-            <h3 className="font-semibold text-red-900">Centro de Controle de Crises</h3>
+            <h3 className="font-semibold text-red-900">{t("alerts.crisisCenter")}</h3>
             <p className="text-sm text-red-800 mt-1">
-              Esta página mostra apenas alertas CRÍTICOS em tempo real (score &gt; 70) que exigem ação imediata. 
-              Use para responder rapidamente a problemas operacionais. Para análise técnica e histórico, veja a página de "Gargalos (IA)".
+              {t("alerts.crisiscenterDescription")}
             </p>
           </div>
         </div>
@@ -104,10 +105,10 @@ export default function AlertsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold" data-testid="page-title">
-            🚨 Alertas Críticos
+            🚨 {t("alerts.title")}
           </h1>
           <p className="text-gray-600 mt-1" data-testid="page-description">
-            Monitoramento em tempo real com auto-escalação automática quando score &gt; 80
+            {t("alerts.subtitle")}
           </p>
         </div>
         <Bell className="w-8 h-8 text-red-600" />
@@ -121,11 +122,11 @@ export default function AlertsPage() {
           onClick={() => setFilter("active")}
         >
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Alertas Ativos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("alerts.activeAlerts")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600">{counts.active}</p>
-            <p className="text-xs text-gray-600 mt-1">Requerem ação</p>
+            <p className="text-xs text-gray-600 mt-1">{t("alerts.requireAction")}</p>
           </CardContent>
         </Card>
 
@@ -135,11 +136,11 @@ export default function AlertsPage() {
           onClick={() => setFilter("acknowledged")}
         >
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Reconhecidos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("alerts.acknowledged")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-yellow-600">{counts.acknowledged}</p>
-            <p className="text-xs text-gray-600 mt-1">Em andamento</p>
+            <p className="text-xs text-gray-600 mt-1">{t("alerts.inProgress")}</p>
           </CardContent>
         </Card>
 
@@ -149,11 +150,11 @@ export default function AlertsPage() {
           onClick={() => setFilter("resolved")}
         >
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Resolvidos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("alerts.resolved")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600">{counts.resolved}</p>
-            <p className="text-xs text-gray-600 mt-1">Problema solucionado</p>
+            <p className="text-xs text-gray-600 mt-1">{t("alerts.problemSolved")}</p>
           </CardContent>
         </Card>
       </div>
@@ -166,7 +167,7 @@ export default function AlertsPage() {
           onClick={() => setFilter("all")}
           data-testid="filter-all"
         >
-          Todos ({alerts.length})
+          {t("alerts.all")} ({alerts.length})
         </Button>
         <Button
           variant={filter === "active" ? "default" : "outline"}
@@ -174,7 +175,7 @@ export default function AlertsPage() {
           onClick={() => setFilter("active")}
           data-testid="filter-active"
         >
-          Ativos ({counts.active})
+          {t("alerts.active")} ({counts.active})
         </Button>
         <Button
           variant={filter === "acknowledged" ? "default" : "outline"}
@@ -182,7 +183,7 @@ export default function AlertsPage() {
           onClick={() => setFilter("acknowledged")}
           data-testid="filter-acknowledged"
         >
-          Reconhecidos ({counts.acknowledged})
+          {t("alerts.acknowledged")} ({counts.acknowledged})
         </Button>
         <Button
           variant={filter === "resolved" ? "default" : "outline"}
@@ -190,7 +191,7 @@ export default function AlertsPage() {
           onClick={() => setFilter("resolved")}
           data-testid="filter-resolved"
         >
-          Resolvidos ({counts.resolved})
+          {t("alerts.resolved")} ({counts.resolved})
         </Button>
       </div>
 
@@ -204,7 +205,7 @@ export default function AlertsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
-              <p className="text-gray-600 font-medium">Nenhum alerta nesta categoria</p>
+              <p className="text-gray-600 font-medium">{t("alerts.noAlert")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -254,14 +255,14 @@ export default function AlertsPage() {
 
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm font-semibold mb-1">Causa</p>
+                  <p className="text-sm font-semibold mb-1">{t("alerts.cause")}</p>
                   <p className="text-sm text-gray-700" data-testid={`cause-${alert.id}`}>
                     {alert.causa_provavel}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold mb-1">Recomendação</p>
+                  <p className="text-sm font-semibold mb-1">{t("alerts.recommendation")}</p>
                   <p className="text-sm text-gray-700" data-testid={`recommendation-${alert.id}`}>
                     {alert.sugestao_correcao}
                   </p>
@@ -274,7 +275,7 @@ export default function AlertsPage() {
                       variant="outline"
                       data-testid={`acknowledge-${alert.id}`}
                     >
-                      Reconhecer
+                      {t("alerts.acknowledge")}
                     </Button>
                     <Button
                       size="sm"

@@ -8,33 +8,36 @@ import ExecutionPanel from '@/components/AgentsStudio/ExecutionPanel';
 import { ReactFlowProvider } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Bot, Sparkles } from 'lucide-react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
-const SAMPLE_AGENTS = [
+const getSampleAgents = (t: any) => [
   {
     id: 'workflow-generator',
-    name: 'Gerador de Workflow',
-    description: 'Gera workflows customizados: ChatInputNode → APINode → AgentNode → OutputNode',
+    name: t("agentStudio.workflowGenerator"),
+    description: t("agentStudio.workflowGeneratorDesc"),
     icon: '⚙️'
   },
   {
     id: 'insights-inteligentes',
-    name: 'Insights Inteligentes',
-    description: 'Analisa demandas e gera insights: ChatInputNode → AgentNode → OutputNode',
+    name: t("agentStudio.smartInsights"),
+    description: t("agentStudio.smartInsightsDesc"),
     icon: '💡'
   },
   {
     id: 'monitor-gargalos',
-    name: 'Monitor de Gargalos',
-    description: 'Detecta gargalos: ChatInputNode → APINode → AgentNode → OutputNode',
+    name: t("agentStudio.bottleneckMonitor"),
+    description: t("agentStudio.bottleneckMonitorDesc"),
     icon: '🚨'
   }
 ];
 
 export default function AgentsStudio() {
   const [, navigate] = useLocation();
+  const t = useTranslation();
   const { loadGraph, currentAgentId, setCurrentAgentId, isLoading, isSidebarOpen } = useAgentsStore();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [splitSize, setSplitSize] = useState(30);
+  const SAMPLE_AGENTS = getSampleAgents(t);
 
   // Get agentId from URL search params or use selected agent
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function AgentsStudio() {
         loadGraph(agentId).catch(console.error);
       }
     }
-  }, [currentAgentId, setCurrentAgentId, loadGraph]);
+  }, [currentAgentId, setCurrentAgentId, loadGraph, SAMPLE_AGENTS]);
 
   const handleSelectAgent = (agentId: string) => {
     setSelectedAgent(agentId);
@@ -71,10 +74,10 @@ export default function AgentsStudio() {
             <div className="text-center mb-12">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <Sparkles className="w-8 h-8 text-blue-500" />
-                <h1 className="text-3xl font-bold text-gray-900">Agent Studio</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{t("agentStudio.title")}</h1>
               </div>
               <p className="text-gray-600 text-lg">
-                Selecione um agente para visualizar e editar sua estrutura
+                {t("agentStudio.subtitle")}
               </p>
             </div>
 
@@ -94,7 +97,7 @@ export default function AgentsStudio() {
                     {agent.description}
                   </p>
                   <div className="flex items-center gap-2 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-sm font-medium">Abrir</span>
+                    <span className="text-sm font-medium">{t("agentStudio.selectAgent")}</span>
                     <span>→</span>
                   </div>
                 </button>
@@ -102,10 +105,9 @@ export default function AgentsStudio() {
             </div>
 
             <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-300">
-              <h3 className="text-gray-900 font-bold mb-2">💡 Dica</h3>
+              <h3 className="text-gray-900 font-bold mb-2">💡 {t("agentStudio.tip")}</h3>
               <p className="text-gray-600 text-sm">
-                Clique em um agente para visualizar sua estrutura com nodes, conexões e propriedades.
-                Você pode editar, executar e salvar alterações diretamente no editor visual.
+                {t("agentStudio.tipDescription")}
               </p>
             </div>
           </div>
@@ -118,7 +120,7 @@ export default function AgentsStudio() {
   if (isLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-white">
-        <div className="text-gray-600">Carregando agente...</div>
+        <div className="text-gray-600">{t("agentStudio.loading")}</div>
       </div>
     );
   }
@@ -146,7 +148,7 @@ export default function AgentsStudio() {
             className="bg-gray-50 border-l border-gray-300 overflow-hidden flex flex-col"
           >
             <div className="p-3 border-b border-gray-300 bg-gray-100">
-              <h2 className="text-sm font-bold text-gray-900">Execução</h2>
+              <h2 className="text-sm font-bold text-gray-900">{t("agentStudio.execution")}</h2>
             </div>
             <ExecutionPanel />
           </div>
