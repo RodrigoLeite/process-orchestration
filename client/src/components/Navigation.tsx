@@ -21,27 +21,29 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/lib/store/uiStore";
-
-const navItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Demandas", href: "/app/demands", icon: Grid3x3 },
-  { label: "Workflows", href: "/app/workflows", icon: LayoutGrid },
-  { label: "Áreas", href: "/app/areas", icon: BarChart3 },
-  { label: "Gargalos (IA)", href: "/app/bottlenecks", icon: AlertTriangle },
-  { label: "Insights IA", href: "/app/insights", icon: Zap },
-  { label: "Agentes IA", href: "/app/agents", icon: Bot },
-  { label: "Agent Studio", href: "/app/agents-studio", icon: Sparkles },
-  { label: "Grafo de Execução", href: "/app/workflow-graph", icon: GitBranch },
-  { label: "Alertas Críticos", href: "/app/alerts", icon: Bell },
-  { label: "Monitoramento", href: "/app/monitoring", icon: TrendingUp },
-  { label: "Logs de Orquestração", href: "/app/ai/logs", icon: Activity },
-  { label: "Configurações", href: "/settings", icon: Settings }
-];
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 export default function Navigation() {
   const [location, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { isSidebarCollapsed, toggleSidebarCollapse } = useUIStore();
+  const { t } = useTranslation();
+
+  const navItems = [
+    { label: t("nav.home"), href: "/", icon: Home },
+    { label: t("nav.demands"), href: "/app/demands", icon: Grid3x3 },
+    { label: t("nav.workflows"), href: "/app/workflows", icon: LayoutGrid },
+    { label: t("nav.areas"), href: "/app/areas", icon: BarChart3 },
+    { label: t("nav.bottlenecks"), href: "/app/bottlenecks", icon: AlertTriangle },
+    { label: t("nav.insights"), href: "/app/insights", icon: Zap },
+    { label: t("nav.agents"), href: "/app/agents", icon: Bot },
+    { label: t("nav.agentStudio"), href: "/app/agents-studio", icon: Sparkles },
+    { label: t("nav.executionGraph"), href: "/app/workflow-graph", icon: GitBranch },
+    { label: t("nav.criticalAlerts"), href: "/app/alerts", icon: Bell },
+    { label: t("nav.monitoring"), href: "/app/monitoring", icon: TrendingUp },
+    { label: t("nav.orchestrationLogs"), href: "/app/ai/logs", icon: Activity },
+    { label: t("nav.settings"), href: "/settings", icon: Settings }
+  ];
 
   const isActive = (href: string) => location === href || (typeof location === "string" && location.startsWith(href + "/"));
 

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Users, Loader2, BarChart3, Grid3x3, Settings, Scale, DollarSign, TrendingUp, FileText, ShoppingCart, Circle, User } from "lucide-react";
 import type { AreaWorkflow } from "@/lib/types";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface Area {
   id: string;
@@ -32,6 +33,7 @@ function IconRenderer({ iconName }: { iconName: string }) {
 }
 
 export default function AreasListPage() {
+  const { t } = useTranslation();
   const { data: areas = [], isLoading } = useQuery<Area[]>({
     queryKey: ["areas"],
     queryFn: async () => {
@@ -56,11 +58,11 @@ export default function AreasListPage() {
         <div className="flex items-center gap-2">
           <Users className="w-8 h-8 text-blue-600" />
           <h1 className="text-4xl font-bold" data-testid="title-areas">
-            Áreas Operacionais
+            {t("areas.title")}
           </h1>
         </div>
         <p className="text-muted-foreground" data-testid="subtitle-areas">
-          Gerenciamento e monitoramento por departamento
+          {t("areas.subtitle")}
         </p>
       </div>
 
@@ -85,7 +87,7 @@ export default function AreasListPage() {
               </CardHeader>
               <CardContent>
                 <Button variant="outline" className="w-full gap-2" data-testid={`button-view-${area.id}`}>
-                  Ver Detalhes
+                  {t("areas.viewDetails")}
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </CardContent>
@@ -99,23 +101,23 @@ export default function AreasListPage() {
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground">Total de Áreas</p>
+              <p className="text-muted-foreground">{t("areas.totalAreas")}</p>
               <p className="text-2xl font-bold">{areas.length}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Demandas Ativas</p>
+              <p className="text-muted-foreground">{t("areas.activeDemands")}</p>
               <p className="text-2xl font-bold">24</p>
             </div>
             <div>
-              <p className="text-muted-foreground">SLA Médio</p>
+              <p className="text-muted-foreground">{t("areas.avgSLA")}</p>
               <p className="text-2xl font-bold">8h</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Taxa de Conclusão</p>
+              <p className="text-muted-foreground">{t("areas.completionRate")}</p>
               <p className="text-2xl font-bold">92%</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Áreas Críticas</p>
+              <p className="text-muted-foreground">{t("areas.criticalAreas")}</p>
               <p className="text-2xl font-bold text-red-600">1</p>
             </div>
           </div>

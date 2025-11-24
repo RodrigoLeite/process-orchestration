@@ -3,6 +3,7 @@ import { Loader2, LayoutGrid } from "lucide-react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface AreaWorkflow {
   id: string;
@@ -47,6 +48,7 @@ const areaColors: Record<string, { badge: string; bg: string }> = {
 };
 
 export default function KanbanList() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
 
   const { data: workflows, isLoading, error } = useQuery<AreaWorkflow[]>({
@@ -73,10 +75,10 @@ export default function KanbanList() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-4xl font-bold">Workflows</h1>
+        <h1 className="text-4xl font-bold">{t("workflows.title")}</h1>
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
-            <p className="text-red-700 font-semibold">❌ Erro ao carregar workflows</p>
+            <p className="text-red-700 font-semibold">❌ {t("common.error")}</p>
           </CardContent>
         </Card>
       </div>
@@ -87,7 +89,7 @@ export default function KanbanList() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando workflows...</p>
+        <p className="text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
@@ -95,14 +97,14 @@ export default function KanbanList() {
   if (!workflows || workflows.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-4xl font-bold">Workflows</h1>
+        <h1 className="text-4xl font-bold">{t("workflows.title")}</h1>
         <Card className="border-blue-500/20">
           <CardContent className="pt-6 flex items-start gap-3">
             <span className="text-2xl">📭</span>
             <div>
-              <p className="font-semibold text-foreground">Nenhum workflow criado ainda</p>
+              <p className="font-semibold text-foreground">{t("kanban.noDemands")}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Crie uma demanda e o agente criará workflows automaticamente.
+                {t("workflows.subtitle")}
               </p>
             </div>
           </CardContent>
@@ -123,7 +125,7 @@ export default function KanbanList() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <LayoutGrid className="w-8 h-8" />
-        <h1 className="text-4xl font-bold">Workflows ({workflows.length})</h1>
+        <h1 className="text-4xl font-bold">{t("workflows.title")} ({workflows.length})</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

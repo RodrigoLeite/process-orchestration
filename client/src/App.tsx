@@ -29,6 +29,7 @@ import AILogsDetailPage from "@/pages/ai-logs-detail";
 import WorkflowGraphPage from "@/pages/workflowgraph";
 import AgentsStudio from "@/pages/agents-studio";
 import MonitoringPage from "@/pages/monitoring";
+import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -60,6 +61,7 @@ function Router() {
         <Route path="/app/ai/logs/:id" component={AILogsDetailPage} />
         <Route path="/app/workflow-graph" component={WorkflowGraphPage} />
         <Route path="/app/monitoring" component={MonitoringPage} />
+        <Route path="/settings" component={SettingsPage} />
         <Route path="/observability" component={ObservabilityPage} />
         <Route component={NotFound} />
       </Switch>
