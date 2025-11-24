@@ -78,15 +78,6 @@ export const translations = {
       viewKanban: 'Ver no Kanban',
     },
 
-    // Monitoring
-    monitoring: {
-      title: 'Monitoramento',
-      subtitle: 'Observabilidade em tempo real do sistema',
-      liveEvents: 'Eventos ao Vivo',
-      noEvents: 'Nenhum evento no momento',
-      systemActivity: 'Atividade do Sistema',
-    },
-
     // Home/Dashboard
     home: {
       title: 'Dashboard',
@@ -505,15 +496,6 @@ export const translations = {
       workflowManagementDesc: 'Feature to create and manage multiple workflows per area coming soon.',
       manageWorkflows: 'Manage Workflows',
       viewKanban: 'View in Kanban',
-    },
-
-    // Monitoring
-    monitoring: {
-      title: 'Monitoring',
-      subtitle: 'Real-time system observability',
-      liveEvents: 'Live Events',
-      noEvents: 'No events at this time',
-      systemActivity: 'System Activity',
     },
 
     // Home/Dashboard

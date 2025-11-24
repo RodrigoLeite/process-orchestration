@@ -68,7 +68,7 @@ export async function createLangSmithRun(
 }
 
 /**
- * Update a LangSmith run with outputs
+ * Update a LangSmith run with outputs and end it
  */
 export async function updateLangSmithRun(
   runId: string,
@@ -81,14 +81,21 @@ export async function updateLangSmithRun(
   }
 
   try {
+    // Update run with outputs and error status
     await client.updateRun(runId, {
       outputs,
-      error: status === "error" ? "Error occurred" : undefined,
+      error: status === "error" ? (outputs.error || "Error occurred") : undefined,
     } as any);
-    console.log(`[LangSmith] Run ${runId} updated with status: ${status}`);
+    
+    // End the run to mark it as complete (not incomplete)
+    await client.updateRun(runId, {
+      end_time: new Date().toISOString(),
+    } as any);
+    
+    console.log(`[LangSmith] Run ${runId} completed with status: ${status}`);
     return true;
   } catch (error) {
-    console.error("[LangSmith] Failed to update run:", error);
+    console.error("[LangSmith] Failed to update/end run:", error);
     return false;
   }
 }
