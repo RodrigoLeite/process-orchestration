@@ -71,6 +71,11 @@ export const translations = {
       allWorkflows: 'Todos os Workflows',
       stages: 'Etapas',
       demands: 'Demandas',
+      dailyVisualization: 'Visualização diária',
+      workflowManagement: 'Gerenciamento de Workflows',
+      workflowManagementDesc: 'Funcionalidade para criar e gerenciar múltiplos workflows por área em breve.',
+      manageWorkflows: 'Gerenciar Workflows',
+      viewKanban: 'Ver no Kanban',
     },
 
     // Monitoring
@@ -271,6 +276,11 @@ export const translations = {
       allWorkflows: 'All Workflows',
       stages: 'Stages',
       demands: 'Demands',
+      dailyVisualization: 'Daily visualization',
+      workflowManagement: 'Workflow Management',
+      workflowManagementDesc: 'Feature to create and manage multiple workflows per area coming soon.',
+      manageWorkflows: 'Manage Workflows',
+      viewKanban: 'View in Kanban',
     },
 
     // Monitoring
