@@ -7,6 +7,8 @@ import BottleneckCard from "@/components/BottleneckCard";
 import SeverityGrid from "@/components/SeverityGrid";
 import AreaImpactTable from "@/components/AreaImpactTable";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useI18nStore } from "@/lib/store/i18nStore";
 
 interface Bottleneck {
   area: string;
@@ -47,6 +49,8 @@ interface Demand {
 }
 
 export default function BottlenecksPage() {
+  const { t } = useTranslation();
+  const { language } = useI18nStore();
   const [isReorchestrating, setIsReorchestrating] = useState(false);
 
   // Fetch bottlenecks
@@ -91,7 +95,7 @@ export default function BottlenecksPage() {
       });
 
       if (atRiskDemands.length === 0) {
-        toast.info("Sem demandas para reorquestrar");
+        toast.info(t("bottlenecks.noDemands"));
         return;
       }
 
@@ -104,9 +108,9 @@ export default function BottlenecksPage() {
         });
       }
 
-      toast.success(`✅ ${Math.min(5, atRiskDemands.length)} demandas reorquestradas!`);
+      toast.success(`✅ ${Math.min(5, atRiskDemands.length)} ${t("bottlenecks.reorchestrated")}`);
     } catch (error) {
-      toast.error("Erro ao reorquestrar demandas");
+      toast.error(t("bottlenecks.errorReorchestrate"));
     } finally {
       setIsReorchestrating(false);
     }
@@ -141,10 +145,9 @@ export default function BottlenecksPage() {
             <Brain className="w-6 h-6 text-blue-600 mt-0.5" />
           </div>
           <div>
-            <h3 className="font-semibold text-blue-900">Análise Técnica e Histórico de Gargalos</h3>
+            <h3 className="font-semibold text-blue-900">{t("bottlenecks.technicalAnalysis")}</h3>
             <p className="text-sm text-blue-800 mt-1">
-              Esta página fornece análise técnica detalhada de gargalos, causas raiz e planos de mitigação baseados em IA. 
-              Para tomar ações rápidas sobre alertas críticos em tempo real, acesse "Alertas Críticos".
+              {t("bottlenecks.technicalAnalysisDesc")}
             </p>
           </div>
         </div>
@@ -155,25 +158,25 @@ export default function BottlenecksPage() {
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-8 h-8 text-red-600" />
           <h1 className="text-4xl font-bold" data-testid="title-bottlenecks">
-            Monitor de Gargalos (IA)
+            {t("bottlenecks.title")}
           </h1>
         </div>
         <p className="text-muted-foreground" data-testid="subtitle-bottlenecks">
-          Análise inteligente com recomendações técnicas para resolução de gargalos
+          {t("bottlenecks.subtitle")}
         </p>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">Carregando monitor...</p>
+          <p className="text-muted-foreground">{t("bottlenecks.loading")}</p>
         </div>
       ) : (
         <>
           {/* Section 1: Severity Grid */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-grid">
-              📊 Mapa de Severidade
+              {t("bottlenecks.severityMap")}
             </h2>
             <SeverityGrid
               critical={severityCounts.critical}
@@ -186,12 +189,12 @@ export default function BottlenecksPage() {
           {/* Section 2: Bottlenecks List */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-bottlenecks">
-              🚨 Mapa de Gargalos
+              {t("bottlenecks.bottleneckMap")}
             </h2>
             {bottlenecks.length === 0 ? (
               <Card className="border-green-200 bg-green-50">
                 <CardContent className="pt-6">
-                  <p className="text-center text-green-700">✅ Nenhum gargalo crítico detectado</p>
+                  <p className="text-center text-green-700">{t("bottlenecks.noBottlenecks")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -215,7 +218,7 @@ export default function BottlenecksPage() {
           {/* Section 3: Impact Table */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-impact">
-              📈 Tabelas de Impacto
+              {t("bottlenecks.impactTables")}
             </h2>
             <AreaImpactTable data={impactData} />
           </div>
@@ -223,21 +226,21 @@ export default function BottlenecksPage() {
           {/* Section 4: Quick Actions */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-actions">
-              ⚡ Ações Rápidas
+              {t("bottlenecks.quickActions")}
             </h2>
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Reorquestração em Massa</CardTitle>
+                <CardTitle className="text-lg">{t("bottlenecks.reorchestration")}</CardTitle>
                 <CardDescription>
-                  Realoca automaticamente demandas em risco para otimizar fluxo
+                  {t("bottlenecks.reorchestrationDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-gray-700">
-                  Selecione demandas com risco &gt; 50% para reorquestração automática.
+                  {t("bottlenecks.reorchestrationNote")}
                   {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length > 0 && (
                     <span className="font-bold ml-1">
-                      {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length} demanda(s) encontrada(s).
+                      {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length} {t("bottlenecks.demandsFound")}.
                     </span>
                   )}
                 </p>
@@ -250,23 +253,23 @@ export default function BottlenecksPage() {
                   {isReorchestrating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Reorquestrand...
+                      {t("bottlenecks.reorchestrating")}
                     </>
                   ) : (
                     <>
                       <Zap className="w-4 h-4" />
-                      Reorquestrar Demandas em Risco
+                      {t("bottlenecks.reorchestrateDemands")}
                     </>
                   )}
                 </Button>
 
                 <div className="pt-4 border-t border-gray-200 space-y-2">
-                  <p className="text-xs text-gray-600 font-semibold">Outras Ações Disponíveis:</p>
+                  <p className="text-xs text-gray-600 font-semibold">{t("bottlenecks.otherActions")}</p>
                   <ul className="space-y-1 text-xs">
-                    <li>• Redistribuir carga entre áreas</li>
-                    <li>• Ativar protocolo de fallback</li>
-                    <li>• Ajustar regras de roteamento</li>
-                    <li>• Notificar stakeholders críticos</li>
+                    <li>{t("bottlenecks.redistributeLoad")}</li>
+                    <li>{t("bottlenecks.activateFallback")}</li>
+                    <li>{t("bottlenecks.adjustRouting")}</li>
+                    <li>{t("bottlenecks.notifyStakeholders")}</li>
                   </ul>
                 </div>
               </CardContent>
@@ -277,16 +280,16 @@ export default function BottlenecksPage() {
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="pt-6 space-y-3">
               <p className="text-sm">
-                <strong>Total de Gargalos:</strong> {bottlenecks.length}
+                <strong>{t("bottlenecks.totalBottlenecks")}</strong> {bottlenecks.length}
               </p>
               <p className="text-sm">
-                <strong>Áreas Sobrecarregadas:</strong> {overloadAreas.filter(a => a.isOverloaded).length}
+                <strong>{t("bottlenecks.overloadedAreas")}</strong> {overloadAreas.filter(a => a.isOverloaded).length}
               </p>
               <p className="text-sm">
-                <strong>Demandas em Risco:</strong> {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length}
+                <strong>{t("bottlenecks.demandsAtRisk")}</strong> {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length}
               </p>
               <p className="text-xs text-gray-600 pt-2 border-t border-blue-200">
-                Última atualização: {new Date().toLocaleTimeString("pt-BR")}
+                {t("bottlenecks.lastUpdate")} {new Date().toLocaleTimeString(language)}
               </p>
             </CardContent>
           </Card>
