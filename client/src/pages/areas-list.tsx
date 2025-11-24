@@ -2,15 +2,32 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, Loader2 } from "lucide-react";
+import { ChevronRight, Users, Loader2, BarChart3, Grid3x3, Settings, Scale, DollarSign, TrendingUp, FileText, ShoppingCart, Circle } from "lucide-react";
 import type { AreaWorkflow } from "@/lib/types";
 
 interface Area {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  iconName: string;
   workflowId: string;
+}
+
+const iconMap: Record<string, any> = {
+  BarChart3,
+  Grid3x3,
+  Settings,
+  Scale,
+  DollarSign,
+  TrendingUp,
+  FileText,
+  ShoppingCart,
+  Circle,
+};
+
+function IconRenderer({ iconName }: { iconName: string }) {
+  const Icon = iconMap[iconName] || Circle;
+  return <Icon className="w-6 h-6 text-primary" />;
 }
 
 export default function AreasListPage() {
@@ -55,7 +72,7 @@ export default function AreasListPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-xl flex items-center gap-2">
-                      <span className="text-3xl">{area.icon}</span>
+                      <IconRenderer iconName={area.iconName} />
                       {area.name}
                     </CardTitle>
                     <CardDescription className="mt-2">
