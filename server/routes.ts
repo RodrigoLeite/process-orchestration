@@ -560,6 +560,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Detect bottlenecks using AI analysis
   app.get("/api/bottlenecks", async (req, res) => {
     try {
+      const language = (req.query.language as string) || "pt-BR";
+      
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ success: false, data: null, error: "OpenAI API key not configured" });
       }
@@ -621,24 +623,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Call AI to analyze and identify bottlenecks
-      const analysisPrompt = `Você é um analista de operações corporativas.
+      const isPortuguese = language === "pt-BR";
+      
+      const metricsData = Object.entries(areaMetrics)
+        .map(
+          ([areaName, metrics]: any) => `
+${metrics.label} (${areaName}):
+- ${isPortuguese ? "Total de demandas" : "Total demands"}: ${metrics.totalDemands}
+- ${isPortuguese ? "Taxa de conclusão" : "Completion rate"}: ${(metrics.completionRate * 100).toFixed(1)}%
+- ${isPortuguese ? "Tempo médio de resposta" : "Avg response time"}: ${metrics.avgResponseTimeHours.toFixed(1)}h
+- ${isPortuguese ? "Demandas bloqueadas" : "Blocked demands"}: ${metrics.blocked} (${(metrics.blockagePercentage * 100).toFixed(1)}%)
+- ${isPortuguese ? "Reaberturas" : "Reopenings"}: ${metrics.reopenings}
+- ${isPortuguese ? "Alto risco" : "High risk"}: ${metrics.highRiskCount}
+- ${isPortuguese ? "Carga atual" : "Current load"}: ${metrics.load}
+`
+        )
+        .join("");
+
+      const analysisPrompt = isPortuguese 
+        ? `Você é um analista de operações corporativas. Responda SEMPRE em português brasileiro (pt-BR).
 Analise as métricas de demandas das últimas 7 dias e identifique os principais gargalos.
 
 Dados por área:
-${Object.entries(areaMetrics)
-  .map(
-    ([areaName, metrics]: any) => `
-${metrics.label} (${areaName}):
-- Total de demandas: ${metrics.totalDemandas}
-- Taxa de conclusão: ${(metrics.completionRate * 100).toFixed(1)}%
-- Tempo médio de resposta: ${metrics.avgResponseTimeHours.toFixed(1)}h
-- Demandas bloqueadas: ${metrics.blocked} (${(metrics.blockagePercentage * 100).toFixed(1)}%)
-- Reaberturas: ${metrics.reopenings}
-- Alto risco: ${metrics.highRiskCount}
-- Carga atual: ${metrics.load}
-`
-  )
-  .join("")}
+${metricsData}
 
 Identifique até 5 gargalos CRÍTICOS com base em:
 1. Taxa de conclusão baixa (<50%)
@@ -657,7 +664,31 @@ Retorne APENAS um array JSON (sem markdown):
   }
 ]
 
-Máximo 5 gargalos. Se houver menos, retorne apenas os críticos.`;
+Máximo 5 gargalos. Se houver menos, retorne apenas os críticos.`
+        : `You are a corporate operations analyst. Always respond in English (USA).
+Analyze the demand metrics from the last 7 days and identify the main bottlenecks.
+
+Data by area:
+${metricsData}
+
+Identify up to 5 CRITICAL bottlenecks based on:
+1. Low completion rate (<50%)
+2. High blockages (>30%)
+3. Accumulated queue (load > 15)
+4. Frequent reopenings
+5. Demands at high risk
+
+Return ONLY a JSON array (without markdown):
+[
+  {
+    "area": "Area Name",
+    "severity": "high|medium|low",
+    "reason": "Reason for bottleneck",
+    "actions": ["Action 1", "Action 2"]
+  }
+]
+
+Maximum 5 bottlenecks. If there are fewer, return only the critical ones.`;
 
       const response = await client.chat.completions.create({
         model: "gpt-4-turbo",
@@ -985,6 +1016,7 @@ Máximo 5 gargalos. Se houver menos, retorne apenas os críticos.`;
   // Get overloaded areas
   app.get("/api/areas/overload", async (req, res) => {
     try {
+      const language = (req.query.language as string) || "pt-BR";
       const pendingCounts = await storage.countDemandsByStatus("pending");
       const inProgressCounts = await storage.countDemandsByStatus("in_progress");
 
@@ -1923,6 +1955,7 @@ Texto original: ${demand.rawText}`;
   // Bottleneck reports endpoint
   app.get("/api/bottleneck-reports", async (req, res) => {
     try {
+      const language = (req.query.language as string) || "pt-BR";
       const reports = await storage.getBottleneckReports(100);
       res.json(reports);
     } catch (error) {
@@ -1934,6 +1967,7 @@ Texto original: ${demand.rawText}`;
   // Insights reports endpoint
   app.get("/api/insights-reports", async (req, res) => {
     try {
+      const language = (req.query.language as string) || "pt-BR";
       const reports = await storage.getInsightsReports(100);
       res.json(reports);
     } catch (error) {
@@ -2008,6 +2042,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/predictions", async (req, res) => {
     try {
       const days = Math.min(parseInt(req.query.days as string) || 7, 30);
+      const language = (req.query.language as string) || "pt-BR";
       
       // Get historical demand data
       const last30DaysDemands = await storage.getDemandsFromLastDays(30);

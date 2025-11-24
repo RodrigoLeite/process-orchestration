@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, Brain } from "lucide-react";
+import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useI18nStore } from "@/lib/store/i18nStore";
 import InsightCard from "@/components/InsightCard";
 import PredictionCard from "@/components/PredictionCard";
 import Badge from "@/components/Badge";
@@ -41,11 +43,14 @@ interface Report {
 }
 
 export default function InsightsPage() {
+  const { t } = useTranslation();
+  const language = useI18nStore((state) => state.language);
+
   // Fetch saved bottleneck reports
   const { data: bottleneckReports = [], isLoading: reportsLoading } = useQuery<Report[]>({
-    queryKey: ["bottleneck-reports"],
+    queryKey: ["bottleneck-reports", language],
     queryFn: async () => {
-      const res = await fetch("/api/bottleneck-reports");
+      const res = await fetch(`/api/bottleneck-reports?language=${language}`);
       if (!res.ok) throw new Error("Failed to fetch bottleneck reports");
       return res.json();
     }
@@ -53,9 +58,9 @@ export default function InsightsPage() {
 
   // Fetch saved insights reports
   const { data: insightsReports = [], isLoading: insightsLoading } = useQuery<Report[]>({
-    queryKey: ["insights-reports"],
+    queryKey: ["insights-reports", language],
     queryFn: async () => {
-      const res = await fetch("/api/insights-reports");
+      const res = await fetch(`/api/insights-reports?language=${language}`);
       if (!res.ok) throw new Error("Failed to fetch insights reports");
       return res.json();
     }
@@ -63,9 +68,9 @@ export default function InsightsPage() {
 
   // Fetch live bottlenecks for real-time updates
   const { data: bottleneckData, isLoading: bottleneckLoading } = useQuery<BottleneckData>({
-    queryKey: ["insights-bottlenecks"],
+    queryKey: ["insights-bottlenecks", language],
     queryFn: async () => {
-      const res = await fetch("/api/bottlenecks");
+      const res = await fetch(`/api/bottlenecks?language=${language}`);
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
       return res.json();
     }
@@ -73,9 +78,9 @@ export default function InsightsPage() {
 
   // Fetch overload data
   const { data: overloadData, isLoading: overloadLoading } = useQuery<OverloadData>({
-    queryKey: ["insights-overload"],
+    queryKey: ["insights-overload", language],
     queryFn: async () => {
-      const res = await fetch("/api/areas/overload");
+      const res = await fetch(`/api/areas/overload?language=${language}`);
       if (!res.ok) throw new Error("Failed to fetch overload");
       return res.json();
     }
@@ -83,9 +88,9 @@ export default function InsightsPage() {
 
   // Fetch AI predictions
   const { data: predictionsData, isLoading: predictionsLoading } = useQuery({
-    queryKey: ["ai-predictions"],
+    queryKey: ["ai-predictions", language],
     queryFn: async () => {
-      const res = await fetch("/api/predictions?days=7");
+      const res = await fetch(`/api/predictions?days=7&language=${language}`);
       if (!res.ok) throw new Error("Failed to fetch predictions");
       const json = await res.json();
       return json.data?.predictions || [];
@@ -107,13 +112,14 @@ export default function InsightsPage() {
   const criticalInsights = [];
   
   if (bottlenecks.filter(b => b.severity === "high").length > 2) {
+    const highCountBottlenecks = bottlenecks.filter(b => b.severity === "high").length;
     criticalInsights.push({
-      title: "🔴 Risco de Atraso Generalizado",
-      description: "Detectamos múltiplos gargalos críticos em paralelo. Há risco elevado de atrasos em cascata nas próximas 24h.",
+      title: t("insightsPage.generalizedDelayRisk"),
+      description: t("insightsPage.generalizedDelayRiskDesc"),
       details: [
-        `${bottlenecks.filter(b => b.severity === "high").length} gargalos críticos ativos`,
-        "Fluxo comprometido em mais de 3 áreas",
-        "SLA em deterioração acelerada"
+        `${highCountBottlenecks} ${t("insightsPage.criticalBottlenecks")}`,
+        t("insightsPage.flowCompromised"),
+        t("insightsPage.slaDeterioration")
       ]
     });
   }
@@ -121,12 +127,12 @@ export default function InsightsPage() {
   if (overloaded.length > 0) {
     const area = overloaded[0];
     criticalInsights.push({
-      title: `⚠️ Área ${area.label} Tende a Quebrar o Fluxo Amanhã`,
-      description: `Capacidade em ${area.capacityPercentage}%. Se o volume mantiver a tendência atual, esta área atingirá o limite operacional antes das 14h amanhã.`,
+      title: t("insightsPage.areaBreakFlow").replace("{area}", area.label),
+      description: t("insightsPage.capacityAt").replace("{percentage}", String(area.capacityPercentage)),
       details: [
-        `Volume atual: ${area.total} demandas`,
-        `Capacidade utilizada: ${area.capacityPercentage}%`,
-        "Recomendação: Redistribuir carga imediatamente"
+        `${t("insightsPage.currentVolume")}: ${area.total} ${t("common.demands")}`,
+        `${t("insightsPage.capacityUsed")}: ${area.capacityPercentage}%`,
+        `${t("insightsPage.recommendations")}: ${t("insightsPage.redistributeLoad")}`
       ]
     });
   }
@@ -140,12 +146,12 @@ export default function InsightsPage() {
 
   if (avgRisk > 60) {
     criticalInsights.push({
-      title: "📊 SLA de Contratos se Deteriorando",
-      description: `Risco médio de atraso em ${avgRisk}%. Se a tendência continuar, 40% das demandas não cumprirão SLA em 48h.`,
+      title: t("insightsPage.slaContractDeterioration"),
+      description: t("insightsPage.slaContractDesc").replace("{risk}", String(avgRisk)),
       details: [
-        "Tendência: +12% ao dia",
-        "Limite crítico: 75% de risco",
-        "Ação: Ativar protocolo de escalação"
+        `${t("insightsPage.trend")}: +12% ${t("common.daily")}`,
+        `${t("insightsPage.criticalLimit")}: 75% ${t("common.risk")}`,
+        `${t("insightsPage.action")}: ${t("insightsPage.activateEscalation")}`
       ]
     });
   }
@@ -153,26 +159,28 @@ export default function InsightsPage() {
   // AI Suggestions
   const suggestions = [
     {
-      title: "🔄 Redistribuir Carga",
-      description: "Mover 30% das demandas de ' + overloaded[0]?.label + ' para Operações. Reduz sobrecarga em 35% e melhora SLA.",
+      title: t("insightsPage.redistributeLoadSuggestion"),
+      description: `${t("common.move")} 30% ${t("common.demands")} ${t("common.from")} ${overloaded[0]?.label} ${t("common.to")} Operations. ${t("common.reduces")} 35% ${t("common.overload")} ${t("common.and")} ${t("common.improves")} SLA.`,
       color: "blue" as const
     },
     {
-      title: "⚡ Automatizar Etapa",
-      description: "Etapa de 'triagem' pode ser 80% automatizada via IA. Reduz tempo em 6h por demanda.",
+      title: t("insightsPage.automate"),
+      description: `${t("common.stage")} '${t("common.triage")}' ${t("common.canBe")} 80% ${t("common.automated")} ${t("common.via")} IA. ${t("common.reduces")} ${t("common.time")} 6h/demand.`,
       color: "purple" as const
     },
     {
-      title: "🛡️ Aumentar Fallback",
-      description: "Ativar protocolo de fallback em Operações. Aumenta capacidade de pico em 45%.",
+      title: t("insightsPage.increaseFallback"),
+      description: `${t("common.activate")} ${t("common.fallback")} ${t("common.in")} Operations. ${t("common.increases")} ${t("common.capacity")} 45%.`,
       color: "yellow" as const
     },
     {
-      title: "🎯 Ajustar Roteamento",
-      description: "Reajustar regras de routing para favorecer áreas com <50% de capacidade. Melhor balanceamento.",
+      title: t("insightsPage.adjustRouting"),
+      description: `${t("common.adjust")} routing rules ${t("common.to")} {{favor}} areas with <50% capacity. Better balancing.`,
       color: "blue" as const
     }
   ];
+
+  const randomDays = Math.floor(Math.random() * 7) + 1;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -181,30 +189,30 @@ export default function InsightsPage() {
         <div className="flex items-center gap-2">
           <Brain className="w-8 h-8 text-purple-600" />
           <h1 className="text-4xl font-bold" data-testid="title-insights">
-            Insights de IA
+            {t("insightsPage.title")}
           </h1>
         </div>
         <p className="text-muted-foreground" data-testid="subtitle-insights">
-          Análise estratégica com recomendações baseadas em machine learning
+          {t("insightsPage.subtitle")}
         </p>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">Gerando insights...</p>
+          <p className="text-muted-foreground">{t("insightsPage.generating")}</p>
         </div>
       ) : (
         <>
           {/* Section 1: Critical Insights */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-critical">
-              🚨 Insights Críticos
+              {t("insightsPage.criticalInsights")}
             </h2>
             {criticalInsights.length === 0 ? (
               <Card className="border-green-200 bg-green-50">
                 <CardContent className="pt-6">
-                  <p className="text-center text-green-700">✅ Nenhum insight crítico no momento</p>
+                  <p className="text-center text-green-700">{t("insightsPage.noCriticalInsights")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -226,7 +234,7 @@ export default function InsightsPage() {
           {/* Section 2: AI Suggestions */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-suggestions">
-              💡 Sugestões da IA
+              {t("insightsPage.aiSuggestions")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="suggestions-grid">
               {suggestions.map((suggestion, idx) => (
@@ -244,17 +252,17 @@ export default function InsightsPage() {
           {/* Section 3: Predictive View */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-predictions">
-              📈 Previsões (7 dias)
+              {t("insightsPage.predictions")}
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <PredictionCard
-                title="Carga Total do Sistema"
-                description="Previsão de demandas entrando por dia"
+                title={t("insightsPage.systemLoad")}
+                description={t("insightsPage.loadDescription")}
                 data={predictions}
               />
               <PredictionCard
-                title="Risco de Atraso"
-                description="Percentual de demandas em risco por dia"
+                title={t("insightsPage.delayRisk")}
+                description={t("insightsPage.delayRiskDescription")}
                 data={predictions.map(p => ({
                   day: p.day,
                   value: Math.min(100, Math.floor(Math.random() * 60) + 30),
@@ -268,40 +276,38 @@ export default function InsightsPage() {
           {/* Section 4: AI Explanations */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" data-testid="section-explanations">
-              📖 Explicações Detalhadas
+              {t("insightsPage.explanations")}
             </h2>
             <Card data-testid="explanation-card">
               <CardHeader>
-                <CardTitle>Como o Sistema Chegou a Essas Conclusões</CardTitle>
+                <CardTitle>{t("insightsPage.howSystemWorks")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Análise de Bottlenecks</h3>
+                  <h3 className="font-semibold text-sm">{t("insightsPage.bottleneckAnalysis")}</h3>
                   <p className="text-sm text-gray-700">
-                    O sistema mapeou {bottlenecks.length} gargalos nos últimos 7 dias. Usando análise de tendências,
-                    identificou que {bottlenecks.filter(b => b.severity === "high").length} apresentam padrão de piora acelerada.
-                    Isso indica risco de quebra de fluxo iminente.
+                    {t("insightsPage.bottleneckAnalysisText")
+                      .replace("{count}", String(bottlenecks.length))
+                      .replace("{highCount}", String(bottlenecks.filter(b => b.severity === "high").length))}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Previsão de Carga</h3>
+                  <h3 className="font-semibold text-sm">{t("insightsPage.loadForecast")}</h3>
                   <p className="text-sm text-gray-700">
-                    Baseado em histórico de 30 dias, o modelo prevê picos de demanda nos próximos {Math.floor(Math.random() * 7) + 1} dias.
-                    Recomenda reajuste de capacidade preventivamente para evitar gargalos.
+                    {t("insightsPage.loadForecastText").replace("{days}", String(randomDays))}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Otimizações Propostas</h3>
+                  <h3 className="font-semibold text-sm">{t("insightsPage.proposedOptimizations")}</h3>
                   <p className="text-sm text-gray-700">
-                    Comparando 1.200+ combinações de roteamento e alocação, o engine IA identificou 4 mudanças de baixo risco e alto impacto.
-                    Implementação estimada: 2-4h, com ROI de 35-50% em throughput.
+                    {t("insightsPage.optimizationsText")}
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-gray-200">
-                  <Badge color="blue">Confiança: 94% | Dados: 30 dias | Modelo: GPT-4 Turbo</Badge>
+                  <Badge color="blue">{t("insightsPage.confidence")}: 94% | {t("insightsPage.data")}: 30 days | {t("insightsPage.model")}: GPT-4 Turbo</Badge>
                 </div>
               </CardContent>
             </Card>
