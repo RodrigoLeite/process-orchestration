@@ -7,6 +7,7 @@ import Badge from "@/components/Badge";
 import AreaDemandListItem from "@/components/AreaDemandListItem";
 import SimpleVolumeChart from "@/components/SimpleVolumeChart";
 import DashboardKPICard from "@/components/DashboardKPICard";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface Demand {
   id: string;
@@ -38,6 +39,7 @@ interface BottleneckData {
 }
 
 export default function AreaDetailsPage() {
+  const { t } = useTranslation();
   const [match, params] = useRoute("/app/areas/:id");
   const [, navigate] = useLocation();
   const areaId = params?.id;
@@ -73,7 +75,7 @@ export default function AreaDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando detalhes da área...</p>
+        <p className="text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
@@ -141,14 +143,14 @@ export default function AreaDetailsPage() {
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar
+          {t("areaDetails.back")}
         </Button>
         <div className="space-y-2">
           <h1 className="text-4xl font-bold capitalize" data-testid="title-area">
-            Área: {areaId}
+            {t("areaDetails.area")}: {areaId}
           </h1>
           <p className="text-muted-foreground" data-testid="subtitle-area">
-            Gerenciamento e monitoramento de demandas da área
+            {t("areaDetails.management")}
           </p>
         </div>
       </div>
@@ -157,27 +159,27 @@ export default function AreaDetailsPage() {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardKPICard
-          title="Total de Demandas"
+          title={t("areaDetails.totalDemands")}
           value={demands.length}
-          description="Nesta área"
+          description={t("areaDetails.inThisArea")}
           color="blue"
         />
         <DashboardKPICard
-          title="Concluídas"
+          title={t("areaDetails.completed")}
           value={completed}
           description={`${demands.length > 0 ? Math.floor((completed / demands.length) * 100) : 0}%`}
           color="green"
         />
         <DashboardKPICard
-          title="Bloqueadas"
+          title={t("areaDetails.blocked")}
           value={blocked}
-          description="Aguardando"
+          description={t("areaDetails.waiting")}
           color="red"
         />
         <DashboardKPICard
-          title="Risco Médio"
+          title={t("areaDetails.avgRisk")}
           value={`${avgRisk}%`}
-          description="Atraso previsto"
+          description={t("areaDetails.delayForecast")}
           color={avgRisk > 60 ? "red" : avgRisk > 30 ? "yellow" : "green"}
         />
       </div>
@@ -185,12 +187,12 @@ export default function AreaDetailsPage() {
       {/* Bottlenecks */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold" data-testid="section-bottlenecks">
-          Gargalos Específicos (IA)
+          {t("areaDetails.bottlenecks")}
         </h2>
         {areaBottlenecks.length === 0 ? (
           <Card className="border-green-200 bg-green-50">
             <CardContent className="pt-6">
-              <p className="text-center text-green-700">✅ Nenhum gargalo crítico detectado nesta área</p>
+              <p className="text-center text-green-700">✅ {t("areaDetails.bottlenecksDetected")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -217,7 +219,7 @@ export default function AreaDetailsPage() {
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <p className="text-xs text-gray-600 mb-2">Ações Recomendadas</p>
+                    <p className="text-xs text-gray-600 mb-2">{t("areaDetails.recommendedActions")}</p>
                     <ul className="space-y-1">
                       {bottleneck.actions.map((action, i) => (
                         <li key={i} className="text-sm flex gap-2">
@@ -237,12 +239,12 @@ export default function AreaDetailsPage() {
       {/* Demands List */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold" data-testid="section-demands">
-          Demandas da Área
+          {t("areaDetails.demandsSection")}
         </h2>
         {demands.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
-              <p className="text-center text-gray-400">Nenhuma demanda atribuída a esta área</p>
+              <p className="text-center text-gray-400">{t("areaDetails.noDemands")}</p>
             </CardContent>
           </Card>
         ) : (

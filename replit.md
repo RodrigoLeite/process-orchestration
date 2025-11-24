@@ -5,6 +5,7 @@ This project is an AI-driven process orchestration system designed to classify, 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+- **Internationalization (i18n)**: System now supports Portuguese BR (pt-BR) and English US (en-US). Default language is Portuguese BR. Language selector added in Settings page with persistent storage via Zustand (localStorage).
 
 # System Architecture
 

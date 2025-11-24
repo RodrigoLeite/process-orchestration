@@ -6,6 +6,7 @@ import Badge from "@/components/Badge";
 import { toast } from "sonner";
 import { useLocation, Link } from "wouter";
 import type { Demand } from "@/lib/types";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 const getPriorityColor = (prioridade: string): string => {
   const colorMap: Record<string, string> = {
@@ -38,6 +39,7 @@ const getStatusLabel = (status: string): string => {
 };
 
 export default function DemandsManager() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
 
   const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
@@ -65,24 +67,24 @@ export default function DemandsManager() {
           onClick={() => navigate("/")}
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar
+          {t("areaDetails.back")}
         </Button>
-        <h1 className="text-4xl md:text-5xl font-bold">Gerenciador de Demandas</h1>
+        <h1 className="text-4xl md:text-5xl font-bold">{t("nav.demands")}</h1>
         <p className="text-lg text-muted-foreground">
-          Visualize e gerencie todas as demandas em um único lugar
+          {t("workflows.subtitle")}
         </p>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">Carregando demandas...</p>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
       ) : demands.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center">
           <p className="text-2xl mb-2">📭</p>
-          <p className="font-semibold text-foreground">Nenhuma demanda registrada</p>
-          <p className="text-muted-foreground">Crie uma nova demanda para começar</p>
+          <p className="font-semibold text-foreground">{t("kanban.noDemands")}</p>
+          <p className="text-muted-foreground">{t("workflows.subtitle")}</p>
         </div>
       ) : (
         <div className="rounded-lg border overflow-hidden">
