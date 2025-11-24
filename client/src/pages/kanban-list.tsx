@@ -27,8 +27,8 @@ interface WorkflowStats {
 const areaColors: Record<string, { badge: string; bg: string }> = {
   "ti": { badge: "blue", bg: "bg-blue-50" },
   "TI": { badge: "blue", bg: "bg-blue-50" },
-  "vendas": { badge: "green", bg: "bg-green-50" },
-  "VENDAS": { badge: "green", bg: "bg-green-50" },
+  "vendas": { badge: "rose", bg: "bg-rose-50" },
+  "VENDAS": { badge: "rose", bg: "bg-rose-50" },
   "rh": { badge: "purple", bg: "bg-purple-50" },
   "RH": { badge: "purple", bg: "bg-purple-50" },
   "financeiro": { badge: "yellow", bg: "bg-yellow-50" },
