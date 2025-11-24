@@ -1,6 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface BottleneckCardProps {
   area: string;
@@ -17,6 +18,8 @@ export default function BottleneckCard({
   actions,
   demandCount = 0
 }: BottleneckCardProps) {
+  const { t } = useTranslation();
+
   const getSeverityColor = (sev: string): string => {
     if (sev === "high") return "red";
     if (sev === "medium") return "yellow";
@@ -24,9 +27,9 @@ export default function BottleneckCard({
   };
 
   const getSeverityLabel = (sev: string): string => {
-    if (sev === "high") return "🔴 Crítico";
-    if (sev === "medium") return "🟡 Médio";
-    return "🟢 Baixo";
+    if (sev === "high") return t("bottlenecks.severityCritical");
+    if (sev === "medium") return t("bottlenecks.severityMedium");
+    return t("bottlenecks.severityLow");
   };
 
   const colorClasses: Record<string, string> = {
@@ -57,7 +60,7 @@ export default function BottleneckCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="text-sm font-semibold mb-1">Motivo</p>
+          <p className="text-sm font-semibold mb-1">{t("bottlenecks.reason")}</p>
           <p className="text-sm text-gray-700" data-testid={`bottleneck-reason-${area}`}>
             {reason}
           </p>
@@ -65,12 +68,12 @@ export default function BottleneckCard({
 
         {demandCount > 0 && (
           <div className="text-xs text-gray-600 bg-white/50 p-2 rounded">
-            <strong>{demandCount}</strong> demandas impactadas
+            <strong>{demandCount}</strong> {t("bottlenecks.demandsImpacted")}
           </div>
         )}
 
         <div>
-          <p className="text-sm font-semibold mb-2">Ações Recomendadas</p>
+          <p className="text-sm font-semibold mb-2">{t("bottlenecks.recommendedActions")}</p>
           <ul className="space-y-1">
             {actions.slice(0, 3).map((action, idx) => (
               <li

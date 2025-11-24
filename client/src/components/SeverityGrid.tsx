@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface SeverityGridProps {
   critical: number;
@@ -13,13 +14,14 @@ export default function SeverityGrid({
   moderate,
   normal
 }: SeverityGridProps) {
+  const { t } = useTranslation();
   const total = critical + attention + moderate + normal || 1;
 
   const quadrants = [
-    { label: "🔴 Críticos", value: critical, percent: (critical / total * 100).toFixed(0), color: "bg-red-100 border-red-300" },
-    { label: "🟠 Atenção", value: attention, percent: (attention / total * 100).toFixed(0), color: "bg-orange-100 border-orange-300" },
-    { label: "🟡 Moderado", value: moderate, percent: (moderate / total * 100).toFixed(0), color: "bg-yellow-100 border-yellow-300" },
-    { label: "🟢 Normal", value: normal, percent: (normal / total * 100).toFixed(0), color: "bg-green-100 border-green-300" }
+    { label: t("bottlenecks.critical"), value: critical, percent: (critical / total * 100).toFixed(0), color: "bg-red-100 border-red-300" },
+    { label: t("bottlenecks.attention"), value: attention, percent: (attention / total * 100).toFixed(0), color: "bg-orange-100 border-orange-300" },
+    { label: t("bottlenecks.moderate"), value: moderate, percent: (moderate / total * 100).toFixed(0), color: "bg-yellow-100 border-yellow-300" },
+    { label: t("bottlenecks.normal"), value: normal, percent: (normal / total * 100).toFixed(0), color: "bg-green-100 border-green-300" }
   ];
 
   return (
@@ -32,7 +34,7 @@ export default function SeverityGrid({
               <p className="text-3xl font-bold" data-testid={`severity-value-${idx}`}>
                 {q.value}
               </p>
-              <p className="text-xs text-gray-600">{q.percent}% do total</p>
+              <p className="text-xs text-gray-600">{q.percent}{t("bottlenecks.percentOfTotal")}</p>
             </div>
             {/* Small progress bar */}
             <div className="h-1.5 bg-gray-300 rounded-full overflow-hidden">
