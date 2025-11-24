@@ -126,8 +126,18 @@ export async function processNewDemands(): Promise<void> {
   }
 }
 
+let schedulerInitialized = false;
+
 export function startScheduler(): void {
-  // Execute bottleneck agent every 24 hours
+  // Prevent multiple scheduler initializations
+  if (schedulerInitialized) {
+    console.warn("[SCHEDULER] ⚠️  Already initialized, skipping duplicate startup");
+    return;
+  }
+  
+  schedulerInitialized = true;
+  
+  // Execute bottleneck agent every 24 hours (86400000 ms)
   setInterval(() => executeBottleneckAgent(), 24 * 60 * 60 * 1000);
   
   // Process new demands only when requested manually via API
@@ -145,5 +155,5 @@ export function startScheduler(): void {
     setInterval(() => executeInsightsAgent(), 24 * 60 * 60 * 1000);
   }, msUntilNext);
   
-  console.log("[SCHEDULER] ✓ Initialized (Bottleneck: 24h, Insights: 24h at 2AM, Demands: manual only)");
+  console.log("[SCHEDULER] ✓ Initialized (Bottleneck: every 24h, Insights: daily at 2AM, Demands: manual only)");
 }

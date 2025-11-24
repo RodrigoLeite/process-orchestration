@@ -68,8 +68,7 @@ export default async function runApp(
   await registerWorkflowRoutes(app);
   await seedAgents();
   await initializeDefaultAreas();
-  // DISABLED: Background schedulers (bottleneck_ai, insights_ai) disabled to prevent excessive OpenAI API credit consumption
-  // startScheduler();
+  startScheduler();
   
   // Initialize LangSmith client
   const langsmithClient = getLangsmithClient();
