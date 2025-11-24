@@ -1701,7 +1701,7 @@ Texto original: ${demand.rawText}`;
         vendas: "BarChart3",
         ti: "Grid3x3",
         operacoes: "Settings",
-        rh: "Users",
+        rh: "User",
         juridico: "Scale",
         financeiro: "DollarSign",
         comercial: "TrendingUp",
