@@ -28,7 +28,7 @@ interface AlertsData {
 }
 
 export default function AlertsPage() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<"all" | "active" | "acknowledged" | "resolved">("all");
 
   // Fetch critical bottleneck alerts

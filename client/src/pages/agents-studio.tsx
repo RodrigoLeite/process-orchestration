@@ -33,7 +33,7 @@ const getSampleAgents = (t: any) => [
 
 export default function AgentsStudio() {
   const [, navigate] = useLocation();
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { loadGraph, currentAgentId, setCurrentAgentId, isLoading, isSidebarOpen } = useAgentsStore();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [splitSize, setSplitSize] = useState(30);
