@@ -21,6 +21,7 @@ interface Demand {
   slaRemaining?: string;
   delay_risk?: string;
   delayRisk?: string;
+  createdAt?: string;
 }
 
 
@@ -91,13 +92,26 @@ export default function AreaDetailsPage() {
       )
     : 0;
 
-  // Generate 7-day volume data
+  // Generate 7-day volume data with real data
   const volumeData = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - i));
+    
+    // Count demands created on this date
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const volumeOnDate = demands.filter(d => {
+      if (!d.createdAt) return false;
+      const demandDate = new Date(d.createdAt);
+      return demandDate >= dayStart && demandDate <= dayEnd;
+    }).length;
+    
     return {
       day: date.toLocaleDateString("pt-BR", { weekday: "short" }).substring(0, 3),
-      volume: Math.floor(Math.random() * 10) + demands.length
+      volume: volumeOnDate
     };
   });
 
