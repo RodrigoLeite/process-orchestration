@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface AreaImpact {
   area: string;
@@ -13,6 +14,8 @@ interface AreaImpactTableProps {
 }
 
 export default function AreaImpactTable({ data }: AreaImpactTableProps) {
+  const { t } = useTranslation();
+
   const getRiskColor = (risk: number): string => {
     if (risk > 70) return "red";
     if (risk > 40) return "yellow";
@@ -23,7 +26,7 @@ export default function AreaImpactTable({ data }: AreaImpactTableProps) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-center text-gray-400">Sem dados de impacto</p>
+          <p className="text-center text-gray-400">{t("bottlenecks.noImpactData")}</p>
         </CardContent>
       </Card>
     );
@@ -32,17 +35,17 @@ export default function AreaImpactTable({ data }: AreaImpactTableProps) {
   return (
     <Card data-testid="impact-table-card">
       <CardHeader>
-        <CardTitle className="text-lg">Tabela de Impacto</CardTitle>
+        <CardTitle className="text-lg">{t("bottlenecks.impactTableTitle")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left font-semibold">Área</th>
-                <th className="px-4 py-3 text-left font-semibold">Demandas em Risco</th>
-                <th className="px-4 py-3 text-left font-semibold">SLAs Violados</th>
-                <th className="px-4 py-3 text-left font-semibold">Score de Risco</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnArea")}</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnDemandsAtRisk")}</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnSlaViolations")}</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnRiskScore")}</th>
               </tr>
             </thead>
             <tbody>
