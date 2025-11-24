@@ -300,9 +300,9 @@ export default function Dashboard() {
       {/* Quick Actions Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Botões Rápidos</CardTitle>
+          <CardTitle>{t("home.quickButtons")}</CardTitle>
           <CardDescription>
-            Acesse rapidamente as principais funcionalidades
+            {t("home.quickButtonsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -315,8 +315,8 @@ export default function Dashboard() {
             >
               <Eye className="w-5 h-5" />
               <div className="text-left">
-                <p className="font-medium text-sm">Ver Kanban</p>
-                <p className="text-xs text-muted-foreground">Visualizar workflows</p>
+                <p className="font-medium text-sm">{t("home.viewKanban")}</p>
+                <p className="text-xs text-muted-foreground">{t("home.viewKanbanDesc")}</p>
               </div>
             </Button>
             <Button
@@ -327,8 +327,8 @@ export default function Dashboard() {
             >
               <BarChart3 className="w-5 h-5" />
               <div className="text-left">
-                <p className="font-medium text-sm">Ver Áreas</p>
-                <p className="text-xs text-muted-foreground">Gerencie por departamento</p>
+                <p className="font-medium text-sm">{t("home.viewAreas")}</p>
+                <p className="text-xs text-muted-foreground">{t("home.viewAreasDesc")}</p>
               </div>
             </Button>
             <Button
@@ -339,8 +339,8 @@ export default function Dashboard() {
             >
               <TrendingUp className="w-5 h-5" />
               <div className="text-left">
-                <p className="font-medium text-sm">Ver Insights</p>
-                <p className="text-xs text-muted-foreground">Análises e relatórios</p>
+                <p className="font-medium text-sm">{t("home.viewInsights")}</p>
+                <p className="text-xs text-muted-foreground">{t("home.viewInsightsDesc")}</p>
               </div>
             </Button>
             <Button
@@ -351,8 +351,8 @@ export default function Dashboard() {
             >
               <Zap className="w-5 h-5" />
               <div className="text-left">
-                <p className="font-medium text-sm">Monitor de Gargalos</p>
-                <p className="text-xs text-muted-foreground">Detectar problemas</p>
+                <p className="font-medium text-sm">{t("home.bottleneckMonitor")}</p>
+                <p className="text-xs text-muted-foreground">{t("home.bottleneckMonitorDesc")}</p>
               </div>
             </Button>
           </div>
@@ -362,22 +362,22 @@ export default function Dashboard() {
       {/* Demands by Area Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Demandas da Minha Área</CardTitle>
+          <CardTitle>{t("home.demandsbyArea")}</CardTitle>
           <CardDescription>
-            Demandas classificadas por departamento
+            {t("home.demandsbyAreaDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {demandsLoading ? (
             <div className="flex items-center justify-center py-8 gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-muted-foreground">Carregando...</span>
+              <span className="text-muted-foreground">{t("common.loading")}</span>
             </div>
           ) : (
             <div className="space-y-2">
               {Object.entries(
                 demands.reduce((acc, demand) => {
-                  const area = demand.assignedTo || "Não atribuída";
+                  const area = demand.assignedTo || t("home.unassigned");
                   acc[area] = (acc[area] || 0) + 1;
                   return acc;
                 }, {} as Record<string, number>)
