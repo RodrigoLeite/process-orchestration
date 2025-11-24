@@ -428,7 +428,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/workflows", async (req, res) => {
     try {
       const workflows = await storage.getAllWorkflowsFromDb();
-      res.json(workflows);
+      const demands = await storage.getDemands();
+      
+      // Add area info to each workflow
+      const workflowsWithArea = workflows.map(workflow => {
+        const demand = demands.find(d => d.workflowId === workflow.id);
+        return {
+          ...workflow,
+          area: demand?.area || "Unknown"
+        };
+      });
+      
+      res.json(workflowsWithArea);
     } catch (error) {
       console.error("Error fetching workflows:", error);
       res.status(500).json({ error: "Failed to fetch workflows" });
