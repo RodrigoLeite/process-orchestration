@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, Loader2, BarChart3, Grid3x3, Settings, Scale, DollarSign, TrendingUp, FileText, ShoppingCart, Circle } from "lucide-react";
+import { ChevronRight, Users, Loader2, BarChart3, Grid3x3, Settings, Scale, DollarSign, TrendingUp, FileText, ShoppingCart, Circle, User } from "lucide-react";
 import type { AreaWorkflow } from "@/lib/types";
 
 interface Area {
@@ -17,6 +17,7 @@ const iconMap: Record<string, any> = {
   BarChart3,
   Grid3x3,
   Settings,
+  User,
   Scale,
   DollarSign,
   TrendingUp,
