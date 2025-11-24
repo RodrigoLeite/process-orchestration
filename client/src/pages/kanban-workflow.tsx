@@ -18,6 +18,7 @@ interface AreaWorkflow {
   id: string;
   name: string;
   workflowHash: string;
+  area?: string;
   steps: Array<{
     name: string;
     type?: string;
@@ -26,6 +27,30 @@ interface AreaWorkflow {
   }>;
   createdAt?: string;
 }
+
+const getAreaColor = (area?: string): string => {
+  const areaColorMap: Record<string, string> = {
+    "ti": "blue",
+    "TI": "blue",
+    "Ti": "blue",
+    "vendas": "green",
+    "VENDAS": "green",
+    "Vendas": "green",
+    "rh": "purple",
+    "RH": "purple",
+    "Rh": "purple",
+    "financeiro": "yellow",
+    "FINANCEIRO": "yellow",
+    "Financeiro": "yellow",
+    "operações": "orange",
+    "OPERAÇÕES": "orange",
+    "Operações": "orange",
+    "jurídico": "red",
+    "JURÍDICO": "red",
+    "Jurídico": "red"
+  };
+  return areaColorMap[area || ""] || "gray";
+};
 
 export default function KanbanWorkflow() {
   const [match, params] = useRoute("/app/kanban/workflow/:workflowId");
@@ -138,9 +163,16 @@ export default function KanbanWorkflow() {
             <p className="text-muted-foreground">
               Hash: <span className="font-semibold font-mono text-sm">{workflow.workflowHash.slice(0, 20)}...</span>
             </p>
-            <p className="text-muted-foreground">
-              Etapas: <span className="font-semibold">{workflow.steps?.length || 0}</span>
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-muted-foreground">
+                Etapas: <span className="font-semibold">{workflow.steps?.length || 0}</span>
+              </p>
+              {workflow.area && (
+                <Badge color={getAreaColor(workflow.area) as any} data-testid="badge-workflow-area">
+                  {workflow.area}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </div>
