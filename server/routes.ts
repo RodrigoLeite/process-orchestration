@@ -1721,11 +1721,32 @@ Texto original: ${demand.rawText}`;
         compras: "Procurement e gestão de fornecedores"
       };
 
-      const areasWithMetadata = areaWorkflows.map(area => ({
-        id: area.areaName,
+      // Normalize function to remove accents and convert to lowercase
+      const normalizeAreaName = (name: string): string => {
+        return name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, ""); // Remove diacritics
+      };
+
+      // Deduplicate areas: prefer non-"Workflow -" prefixed names
+      const areaMap = new Map<string, any>();
+      
+      for (const area of areaWorkflows) {
+        const normalizedKey = normalizeAreaName(area.areaName);
+        const existing = areaMap.get(normalizedKey);
+        
+        // If no existing entry, or current entry doesn't have "Workflow -" prefix and existing does
+        if (!existing || (!area.name.startsWith("Workflow -") && existing.name.startsWith("Workflow -"))) {
+          areaMap.set(normalizedKey, area);
+        }
+      }
+
+      const areasWithMetadata = Array.from(areaMap.values()).map(area => ({
+        id: normalizeAreaName(area.areaName),
         name: area.name,
-        icon: areaIcons[area.areaName.toLowerCase()] || "📌",
-        description: areaDescriptions[area.areaName.toLowerCase()] || "Área operacional",
+        icon: areaIcons[normalizeAreaName(area.areaName)] || "📌",
+        description: areaDescriptions[normalizeAreaName(area.areaName)] || "Área operacional",
         workflowId: area.id
       }));
 
