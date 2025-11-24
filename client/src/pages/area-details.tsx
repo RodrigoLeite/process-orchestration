@@ -168,6 +168,58 @@ export default function AreaDetailsPage() {
         />
       </div>
 
+      {/* Bottlenecks */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold" data-testid="section-bottlenecks">
+          Gargalos Específicos (IA)
+        </h2>
+        {areaBottlenecks.length === 0 ? (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <p className="text-center text-green-700">✅ Nenhum gargalo crítico detectado nesta área</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3" data-testid="bottlenecks-list">
+            {areaBottlenecks.map((bottleneck, idx) => (
+              <Card key={idx} className="border-red-200 bg-red-50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-base">{bottleneck.reason}</CardTitle>
+                      <Badge
+                        color={getSeverityColor(bottleneck.severity)}
+                        data-testid={`severity-badge-${idx}`}
+                      >
+                        {bottleneck.severity === "high"
+                          ? "🔴 Crítico"
+                          : bottleneck.severity === "medium"
+                          ? "🟡 Médio"
+                          : "🟢 Baixo"}
+                      </Badge>
+                    </div>
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">Ações Recomendadas</p>
+                    <ul className="space-y-1">
+                      {bottleneck.actions.map((action, i) => (
+                        <li key={i} className="text-sm flex gap-2">
+                          <span className="text-gray-400">•</span>
+                          <span>{action}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Demands List */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold" data-testid="section-demands">
@@ -221,58 +273,6 @@ export default function AreaDetailsPage() {
                         </Button>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bottlenecks */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold" data-testid="section-bottlenecks">
-          Gargalos Específicos (IA)
-        </h2>
-        {areaBottlenecks.length === 0 ? (
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="pt-6">
-              <p className="text-center text-green-700">✅ Nenhum gargalo crítico detectado nesta área</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3" data-testid="bottlenecks-list">
-            {areaBottlenecks.map((bottleneck, idx) => (
-              <Card key={idx} className="border-red-200 bg-red-50">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-base">{bottleneck.reason}</CardTitle>
-                      <Badge
-                        color={getSeverityColor(bottleneck.severity)}
-                        data-testid={`severity-badge-${idx}`}
-                      >
-                        {bottleneck.severity === "high"
-                          ? "🔴 Crítico"
-                          : bottleneck.severity === "medium"
-                          ? "🟡 Médio"
-                          : "🟢 Baixo"}
-                      </Badge>
-                    </div>
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <p className="text-xs text-gray-600 mb-2">Ações Recomendadas</p>
-                    <ul className="space-y-1">
-                      {bottleneck.actions.map((action, i) => (
-                        <li key={i} className="text-sm flex gap-2">
-                          <span className="text-gray-400">•</span>
-                          <span>{action}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </CardContent>
               </Card>
