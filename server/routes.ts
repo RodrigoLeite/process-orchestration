@@ -454,7 +454,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!workflow) {
         return res.status(404).json({ error: "Workflow not found" });
       }
-      res.json(workflow);
+      
+      // Add area info to the workflow
+      const demands = await storage.getDemands();
+      const demand = demands.find(d => d.workflowId === workflow.id);
+      const area = demand?.area || (demand?.parsed as any)?.area || "Unknown";
+      
+      res.json({
+        ...workflow,
+        area: area
+      });
     } catch (error) {
       console.error("Error fetching workflow:", error);
       res.status(500).json({ error: "Failed to fetch workflow" });
