@@ -285,7 +285,7 @@ export default function AreaDetailsPage() {
                           onClick={() => navigate(`/app/kanban/workflow/${demand.workflowId}`)}
                           data-testid={`button-kanban-${demand.id}`}
                         >
-                          Ver no Kanban
+                          {t("workflows.viewKanban")}
                         </Button>
                       )}
                     </div>
@@ -300,12 +300,12 @@ export default function AreaDetailsPage() {
       {/* Volume Chart */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold" data-testid="section-chart">
-          Volume dos Últimos 7 Dias
+          {t("areaDetails.volumeChart")}
         </h2>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Histórico de Demandas</CardTitle>
-            <CardDescription>Visualização diária</CardDescription>
+            <CardTitle className="text-lg">{t("areaDetails.chartHistory")}</CardTitle>
+            <CardDescription>{t("workflows.dailyVisualization")}</CardDescription>
           </CardHeader>
           <CardContent>
             <SimpleVolumeChart data={volumeData} />
@@ -316,17 +316,17 @@ export default function AreaDetailsPage() {
       {/* Settings Section */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold" data-testid="section-settings">
-          Configurações da Área
+          {t("areaDetails.settings")}
         </h2>
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
             <div className="space-y-3">
-              <p className="text-sm font-medium text-foreground">Gerenciamento de Workflows</p>
+              <p className="text-sm font-medium text-foreground">{t("workflows.workflowManagement")}</p>
               <p className="text-sm text-muted-foreground">
-                Funcionalidade para criar e gerenciar múltiplos workflows por área em breve.
+                {t("workflows.workflowManagementDesc")}
               </p>
               <Button variant="outline" disabled data-testid="button-manage-workflows">
-                Gerenciar Workflows
+                {t("areaDetails.manageWorkflows")}
               </Button>
             </div>
           </CardContent>
