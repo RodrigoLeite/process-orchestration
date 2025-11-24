@@ -69,9 +69,9 @@ export default function DemandsManager() {
           <ChevronLeft className="w-4 h-4" />
           {t("areaDetails.back")}
         </Button>
-        <h1 className="text-4xl md:text-5xl font-bold">{t("nav.demands")}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold">{t("demandsManager.title")}</h1>
         <p className="text-lg text-muted-foreground">
-          {t("workflows.subtitle")}
+          {t("demandsManager.subtitle")}
         </p>
       </div>
 
@@ -83,8 +83,8 @@ export default function DemandsManager() {
       ) : demands.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center">
           <p className="text-2xl mb-2">📭</p>
-          <p className="font-semibold text-foreground">{t("kanban.noDemands")}</p>
-          <p className="text-muted-foreground">{t("workflows.subtitle")}</p>
+          <p className="font-semibold text-foreground">{t("demandsManager.noDemands")}</p>
+          <p className="text-muted-foreground">{t("demandsManager.createNewDemand")}</p>
         </div>
       ) : (
         <div className="rounded-lg border overflow-hidden">
@@ -92,14 +92,14 @@ export default function DemandsManager() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-semibold">Descrição</th>
-                  <th className="px-4 py-3 text-left font-semibold">Responsável</th>
-                  <th className="px-4 py-3 text-left font-semibold">Área</th>
-                  <th className="px-4 py-3 text-left font-semibold">Tipo</th>
-                  <th className="px-4 py-3 text-left font-semibold">Prioridade</th>
-                  <th className="px-4 py-3 text-left font-semibold">Workflow</th>
-                  <th className="px-4 py-3 text-left font-semibold">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold">Ação</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnDescription")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnAssignee")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnArea")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnType")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnPriority")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnWorkflow")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnStatus")}</th>
+                  <th className="px-4 py-3 text-left font-semibold">{t("demandsManager.columnAction")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -110,7 +110,7 @@ export default function DemandsManager() {
                     <tr key={demand.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">
-                          {truncateText(parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição")}
+                          {truncateText(parsed?.descricao_estruturada || demand.rawText || demand.raw_text || t("demandsManager.noDescription"))}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           ID: {demand.id.slice(0, 8)}
@@ -120,21 +120,21 @@ export default function DemandsManager() {
                         {(demand.assignedTo || demand.assigned_to) ? (
                           <Badge color="blue">{demand.assignedTo || demand.assigned_to}</Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground">{t("demandsManager.noData")}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {parsed?.area ? (
                           <Badge color="blue">{parsed.area}</Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground">{t("demandsManager.noData")}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {parsed?.tipo ? (
                           <Badge color="gray">{parsed.tipo}</Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground">{t("demandsManager.noData")}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -143,14 +143,14 @@ export default function DemandsManager() {
                             {parsed.prioridade}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground">{t("demandsManager.noData")}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {demand.workflowId ? (
-                          <Badge color="green">Workflow atribuído</Badge>
+                          <Badge color="green">{t("demandsManager.workflowAssigned")}</Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground">{t("demandsManager.noData")}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -160,7 +160,7 @@ export default function DemandsManager() {
                       </td>
                       <td className="px-4 py-3">
                         <Link href={`/app/demands/${demand.id}`} className="inline-block px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700" data-testid={`link-details-${demand.id}`}>
-                          Ver detalhes
+                          {t("demandsManager.view")} {t("areaDetails.details")}
                         </Link>
                       </td>
                     </tr>

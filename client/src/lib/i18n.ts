@@ -122,6 +122,25 @@ export const translations = {
       unassigned: 'Não atribuída',
     },
 
+    demandsManager: {
+      title: 'Gerenciador de Demandas',
+      subtitle: 'Visualize e gerencie todas as demandas em um único lugar',
+      noDemands: 'Nenhuma demanda registrada',
+      createNewDemand: 'Crie uma nova demanda para começar',
+      columnDescription: 'Descrição',
+      columnAssignee: 'Responsável',
+      columnArea: 'Área',
+      columnType: 'Tipo',
+      columnPriority: 'Prioridade',
+      columnWorkflow: 'Workflow',
+      columnStatus: 'Status',
+      columnAction: 'Ação',
+      noDescription: 'Sem descrição',
+      noData: '-',
+      workflowAssigned: 'Workflow atribuído',
+      view: 'Ver',
+    },
+
     dashboard: {
       title: 'Dashboard Operacional',
       subtitle: 'Visualize KPIs, gargalos e métricas operacionais em tempo real',
@@ -301,6 +320,25 @@ export const translations = {
       demandsbyArea: 'Demands by My Area',
       demandsbyAreaDesc: 'Demands classified by department',
       unassigned: 'Unassigned',
+    },
+
+    demandsManager: {
+      title: 'Demand Manager',
+      subtitle: 'View and manage all demands in one place',
+      noDemands: 'No demands registered',
+      createNewDemand: 'Create a new demand to get started',
+      columnDescription: 'Description',
+      columnAssignee: 'Assignee',
+      columnArea: 'Area',
+      columnType: 'Type',
+      columnPriority: 'Priority',
+      columnWorkflow: 'Workflow',
+      columnStatus: 'Status',
+      columnAction: 'Action',
+      noDescription: 'No description',
+      noData: '-',
+      workflowAssigned: 'Workflow assigned',
+      view: 'View',
     },
 
     dashboard: {
