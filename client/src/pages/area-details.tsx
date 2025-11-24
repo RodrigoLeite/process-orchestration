@@ -8,6 +8,7 @@ import AreaDemandListItem from "@/components/AreaDemandListItem";
 import SimpleVolumeChart from "@/components/SimpleVolumeChart";
 import DashboardKPICard from "@/components/DashboardKPICard";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useI18nStore } from "@/lib/store/i18nStore";
 
 interface Demand {
   id: string;
@@ -40,6 +41,7 @@ interface BottleneckData {
 
 export default function AreaDetailsPage() {
   const { t } = useTranslation();
+  const { language } = useI18nStore();
   const [match, params] = useRoute("/app/areas/:id");
   const [, navigate] = useLocation();
   const areaId = params?.id;
@@ -112,7 +114,7 @@ export default function AreaDetailsPage() {
     }).length;
     
     return {
-      day: date.toLocaleDateString("pt-BR", { weekday: "short" }).substring(0, 3),
+      day: date.toLocaleDateString(language, { weekday: "short" }).substring(0, 3),
       volume: volumeOnDate
     };
   });
