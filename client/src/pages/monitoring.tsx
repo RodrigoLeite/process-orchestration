@@ -39,7 +39,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function MonitoringPage() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 

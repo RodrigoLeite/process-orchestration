@@ -21,7 +21,7 @@ interface ExecutionLog {
 
 export default function AILogsPage() {
   const [, navigate] = useLocation();
-  const t = useTranslation();
+  const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<"newest" | "slowest">("newest");
 
   const { data: logsData, isLoading } = useQuery({

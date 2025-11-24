@@ -18,7 +18,7 @@ interface Agent {
 
 export default function AgentsPage() {
   const [, navigate] = useLocation();
-  const t = useTranslation();
+  const { t } = useTranslation();
 
   const { data: allAgents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["agents"],
