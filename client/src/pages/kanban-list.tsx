@@ -27,16 +27,22 @@ interface WorkflowStats {
 const areaColors: Record<string, { badge: string; bg: string }> = {
   "ti": { badge: "blue", bg: "bg-blue-50" },
   "TI": { badge: "blue", bg: "bg-blue-50" },
-  "vendas": { badge: "rose", bg: "bg-rose-50" },
-  "VENDAS": { badge: "rose", bg: "bg-rose-50" },
+  "Ti": { badge: "blue", bg: "bg-blue-50" },
+  "vendas": { badge: "green", bg: "bg-green-50" },
+  "VENDAS": { badge: "green", bg: "bg-green-50" },
+  "Vendas": { badge: "green", bg: "bg-green-50" },
   "rh": { badge: "purple", bg: "bg-purple-50" },
   "RH": { badge: "purple", bg: "bg-purple-50" },
+  "Rh": { badge: "purple", bg: "bg-purple-50" },
   "financeiro": { badge: "yellow", bg: "bg-yellow-50" },
   "FINANCEIRO": { badge: "yellow", bg: "bg-yellow-50" },
+  "Financeiro": { badge: "yellow", bg: "bg-yellow-50" },
   "operações": { badge: "orange", bg: "bg-orange-50" },
   "OPERAÇÕES": { badge: "orange", bg: "bg-orange-50" },
+  "Operações": { badge: "orange", bg: "bg-orange-50" },
   "jurídico": { badge: "red", bg: "bg-red-50" },
   "JURÍDICO": { badge: "red", bg: "bg-red-50" },
+  "Jurídico": { badge: "red", bg: "bg-red-50" },
   "Unknown": { badge: "gray", bg: "bg-gray-50" }
 };
 
