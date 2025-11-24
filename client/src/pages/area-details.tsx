@@ -23,17 +23,6 @@ interface Demand {
   delayRisk?: string;
 }
 
-interface WorkflowStage {
-  id: string;
-  name: string;
-  orderIndex: string;
-}
-
-interface AreaWorkflow {
-  id: string;
-  areaName: string;
-  name: string;
-}
 
 interface BottleneckData {
   success: boolean;
@@ -76,28 +65,6 @@ export default function AreaDetailsPage() {
     }
   });
 
-  // Fetch workflow for this area
-  const { data: workflow, isLoading: workflowLoading } = useQuery<AreaWorkflow>({
-    queryKey: ["area-workflow", areaId],
-    queryFn: async () => {
-      const res = await fetch(`/api/areas/${areaId}/workflow`);
-      if (!res.ok) return null;
-      return res.json();
-    },
-    enabled: !!areaId
-  });
-
-  // Fetch workflow stages
-  const { data: stages = [] } = useQuery<WorkflowStage[]>({
-    queryKey: ["area-workflow-stages", workflow?.id],
-    queryFn: async () => {
-      if (!workflow?.id) return [];
-      const res = await fetch(`/api/workflows/${workflow.id}/stages`);
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!workflow?.id
-  });
 
   if (!match) return null;
 
@@ -172,52 +139,6 @@ export default function AreaDetailsPage() {
         </div>
       </div>
 
-      {/* Workflow Section */}
-      {workflow && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold" data-testid="section-workflow">
-            Workflow da Área
-          </h2>
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{workflow.name}</CardTitle>
-                  <CardDescription className="mt-2">
-                    {stages.length} etapa{stages.length !== 1 ? "s" : ""}
-                  </CardDescription>
-                </div>
-                <Button
-                  onClick={() => navigate(`/app/kanban/workflow/${workflow.id}`)}
-                  data-testid="button-open-kanban-area"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Abrir Kanban
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-3">Etapas do Workflow</p>
-                  <div className="flex flex-wrap gap-2">
-                    {stages.sort((a, b) => parseInt(a.orderIndex) - parseInt(b.orderIndex)).map((stage, idx) => (
-                      <div key={stage.id} className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium">
-                          {stage.name}
-                        </span>
-                        {idx < stages.length - 1 && (
-                          <span className="text-gray-300">→</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -278,11 +199,6 @@ export default function AreaDetailsPage() {
                         }>
                           {(demand.parsed as any)?.prioridade || "média"}
                         </Badge>
-                        {demand.stageId && stages.length > 0 && (
-                          <Badge color="purple">
-                            {stages.find(s => s.id === demand.stageId)?.name || "Etapa Desconhecida"}
-                          </Badge>
-                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">ID: {demand.id.slice(0, 8)}</p>
                     </div>
