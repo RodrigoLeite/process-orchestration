@@ -36,6 +36,30 @@ export default function KanbanCard({ demand, onAdvance }: KanbanCardProps) {
     return colorMap[status] || "gray";
   };
 
+  const getAreaColor = (area?: string): string => {
+    const areaColorMap: Record<string, string> = {
+      "ti": "blue",
+      "TI": "blue",
+      "Ti": "blue",
+      "vendas": "green",
+      "VENDAS": "green",
+      "Vendas": "green",
+      "rh": "purple",
+      "RH": "purple",
+      "Rh": "purple",
+      "financeiro": "yellow",
+      "FINANCEIRO": "yellow",
+      "Financeiro": "yellow",
+      "operações": "orange",
+      "OPERAÇÕES": "orange",
+      "Operações": "orange",
+      "jurídico": "red",
+      "JURÍDICO": "red",
+      "Jurídico": "red"
+    };
+    return areaColorMap[area || ""] || "gray";
+  };
+
   const handleAdvance = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
@@ -60,6 +84,7 @@ export default function KanbanCard({ demand, onAdvance }: KanbanCardProps) {
 
   const category = demand.parsed?.tipo || "Sem categoria";
   const priority = demand.parsed?.prioridade || "média";
+  const area = demand.area || demand.parsed?.area || "Unknown";
   const slaRemaining = demand.slaRemaining || demand.sla_remaining || "N/A";
   const eta = demand.eta || "N/A";
   const description = demand.parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem descrição";
@@ -76,8 +101,11 @@ export default function KanbanCard({ demand, onAdvance }: KanbanCardProps) {
         </h3>
       </div>
 
-      {/* Badges de categoria e prioridade */}
+      {/* Badges de área, categoria e prioridade */}
       <div className="flex gap-2 flex-wrap">
+        <Badge color={getAreaColor(area)} data-testid={`badge-area-${demand.id}`}>
+          {area}
+        </Badge>
         <Badge color="blue" data-testid={`badge-category-${demand.id}`}>
           {category}
         </Badge>
