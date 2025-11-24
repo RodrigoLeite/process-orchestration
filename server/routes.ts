@@ -1698,15 +1698,15 @@ Texto original: ${demand.rawText}`;
       const areaWorkflows = await storage.getAllAreaWorkflows();
       
       const areaIcons: Record<string, string> = {
-        vendas: "📊",
-        ti: "💻",
-        operacoes: "⚙️",
-        rh: "👥",
-        juridico: "⚖️",
-        financeiro: "💰",
-        comercial: "📈",
-        fiscal: "📋",
-        compras: "🛒"
+        vendas: "BarChart3",
+        ti: "Grid3x3",
+        operacoes: "Settings",
+        rh: "Users",
+        juridico: "Scale",
+        financeiro: "DollarSign",
+        comercial: "TrendingUp",
+        fiscal: "FileText",
+        compras: "ShoppingCart"
       };
 
       const areaDescriptions: Record<string, string> = {
@@ -1745,7 +1745,7 @@ Texto original: ${demand.rawText}`;
       const areasWithMetadata = Array.from(areaMap.values()).map(area => ({
         id: normalizeAreaName(area.areaName),
         name: area.name,
-        icon: areaIcons[normalizeAreaName(area.areaName)] || "📌",
+        iconName: areaIcons[normalizeAreaName(area.areaName)] || "Circle",
         description: areaDescriptions[normalizeAreaName(area.areaName)] || "Área operacional",
         workflowId: area.id
       }));
