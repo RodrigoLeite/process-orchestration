@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, ExternalLink } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import type { Demand } from "@/lib/types";
 
 interface WorkflowStage {
@@ -38,6 +39,7 @@ interface StageInsight {
 export default function DemandDetail() {
   const [match, params] = useRoute("/app/demands/:id");
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
 
   // Fetch demand
   const { data: demand, isLoading, error } = useQuery<Demand>({
@@ -115,11 +117,11 @@ export default function DemandDetail() {
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar
+          {t("demandDetail.back")}
         </Button>
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
-            <p className="text-red-700 font-semibold">❌ Demanda não encontrada</p>
+            <p className="text-red-700 font-semibold">❌ {t("demandDetail.notFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -130,7 +132,7 @@ export default function DemandDetail() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando detalhes da demanda...</p>
+        <p className="text-muted-foreground">{t("demandDetail.loading")}</p>
       </div>
     );
   }
@@ -172,7 +174,7 @@ export default function DemandDetail() {
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar ao Dashboard
+          {t("demandDetail.back")}
         </Button>
       </div>
 
@@ -182,7 +184,7 @@ export default function DemandDetail() {
           {title}
         </h1>
         <p className="text-muted-foreground text-sm">
-          ID: {demand.id}
+          {t("demandDetail.id")}: {demand.id}
         </p>
       </div>
 
@@ -205,7 +207,7 @@ export default function DemandDetail() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Área Detectada
+              {t("demandDetail.detectedArea")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -213,7 +215,7 @@ export default function DemandDetail() {
               {area}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Classificação automática
+              {t("demandDetail.autoClassification")}
             </p>
           </CardContent>
         </Card>
@@ -222,7 +224,7 @@ export default function DemandDetail() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Status
+              {t("demandDetail.status")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -239,7 +241,7 @@ export default function DemandDetail() {
               {getStatusDisplay(demand.status)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Estado atual da demanda
+              {t("demandDetail.currentState")}
             </p>
           </CardContent>
         </Card>
@@ -248,7 +250,7 @@ export default function DemandDetail() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Workflow
+              {t("demandDetail.workflow")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -256,7 +258,7 @@ export default function DemandDetail() {
               {workflow?.name || "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {workflow?.areaName || "Área desconhecida"}
+              {workflow?.areaName || "—"}
             </p>
           </CardContent>
         </Card>
@@ -265,7 +267,7 @@ export default function DemandDetail() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Fase Atual
+              {t("demandDetail.currentStage")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -273,9 +275,7 @@ export default function DemandDetail() {
               {currentStage?.name || "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {stages.length > 0 ? `Etapa ${
-                stages.findIndex(s => s.id === demand.stageId) + 1
-              } de ${stages.length}` : "Etapas desconhecidas"}
+              {stages.length > 0 ? t("demandDetail.stageOf", "Etapa {current} de {total}").replace("{current}", String(stages.findIndex(s => s.id === demand.stageId) + 1)).replace("{total}", String(stages.length)) : t("demandDetail.unknownStages")}
             </p>
           </CardContent>
         </Card>
@@ -284,12 +284,12 @@ export default function DemandDetail() {
       {/* Description Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Descrição Completa</CardTitle>
+          <CardTitle>{t("demandDetail.fullDescription")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {parsed?.descricao_estruturada && (
             <div>
-              <p className="text-xs text-gray-600 mb-2 font-semibold">Descrição Estruturada</p>
+              <p className="text-xs text-gray-600 mb-2 font-semibold">{t("demandDetail.structuredDescription")}</p>
               <p className="text-foreground bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
                 {parsed.descricao_estruturada}
               </p>
@@ -298,7 +298,7 @@ export default function DemandDetail() {
 
           {(demand.rawText || demand.raw_text) && (
             <div>
-              <p className="text-xs text-gray-600 mb-2 font-semibold">Texto Original</p>
+              <p className="text-xs text-gray-600 mb-2 font-semibold">{t("demandDetail.originalText")}</p>
               <p className="text-foreground/80 bg-gray-100 p-4 rounded-lg italic">
                 {demand.rawText || demand.raw_text}
               </p>
@@ -307,7 +307,7 @@ export default function DemandDetail() {
 
           {parsed?.sugestao_proximo_passo && (
             <div>
-              <p className="text-xs text-gray-600 mb-2 font-semibold">Próximo Passo Sugerido</p>
+              <p className="text-xs text-gray-600 mb-2 font-semibold">{t("demandDetail.nextStep")}</p>
               <p className="text-foreground bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
                 💡 {parsed.sugestao_proximo_passo}
               </p>
@@ -320,8 +320,8 @@ export default function DemandDetail() {
       {bottlenecks.length > 0 && (
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <CardTitle className="text-red-900">Gargalos Identificados</CardTitle>
-            <CardDescription className="text-red-800">Problemas encontrados em etapas do fluxo</CardDescription>
+            <CardTitle className="text-red-900">{t("demandDetail.bottlenecksDetected")}</CardTitle>
+            <CardDescription className="text-red-800">{t("demandDetail.problemsFound")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -353,8 +353,8 @@ export default function DemandDetail() {
       {insights.length > 0 && (
         <Card className="border-purple-200 bg-purple-50">
           <CardHeader>
-            <CardTitle className="text-purple-900">Insights & Recomendações</CardTitle>
-            <CardDescription className="text-purple-800">Análises inteligentes sobre o fluxo</CardDescription>
+            <CardTitle className="text-purple-900">{t("demandDetail.insightsRecommendations")}</CardTitle>
+            <CardDescription className="text-purple-800">{t("demandDetail.smartAnalysis")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -391,8 +391,8 @@ export default function DemandDetail() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="font-semibold text-foreground">Ver no Kanban</p>
-                <p className="text-sm text-muted-foreground">Gerencie esta demanda no quadro Kanban</p>
+                <p className="font-semibold text-foreground">{t("demandDetail.viewInKanban")}</p>
+                <p className="text-sm text-muted-foreground">{t("demandDetail.manageKanban")}</p>
               </div>
               <Button
                 onClick={() => navigate(`/app/kanban/workflow/${workflow.id}`)}
@@ -400,7 +400,7 @@ export default function DemandDetail() {
                 className="gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
-                Abrir Kanban
+                {t("demandDetail.openKanban")}
               </Button>
             </div>
           </CardContent>
@@ -411,7 +411,7 @@ export default function DemandDetail() {
       <Card className="border-gray-200 bg-gray-50">
         <CardContent className="pt-6">
           <p className="text-xs text-gray-600">
-            Criado em: {demand.createdAt ? new Date(demand.createdAt).toLocaleString("pt-BR", {
+            {t("demandDetail.createdAt")}: {demand.createdAt ? new Date(demand.createdAt).toLocaleString("pt-BR", {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",
