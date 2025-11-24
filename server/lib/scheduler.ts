@@ -127,21 +127,26 @@ export async function processNewDemands(): Promise<void> {
 }
 
 export function startScheduler(): void {
-  setInterval(() => executeBottleneckAgent(), 5 * 60 * 1000);
+  // DISABLED: Background scheduling disabled to prevent excessive OpenAI API usage
+  // Agents can be triggered manually via API endpoints instead
   
-  // Process new demands every 2 minutes
-  setInterval(() => processNewDemands(), 2 * 60 * 1000);
+  // // Execute bottleneck agent every 5 minutes
+  // setInterval(() => executeBottleneckAgent(), 5 * 60 * 1000);
   
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(2, 0, 0, 0);
-  const msUntilNext = tomorrow.getTime() - now.getTime();
+  // // Process new demands every 2 minutes
+  // setInterval(() => processNewDemands(), 2 * 60 * 1000);
   
-  setTimeout(() => {
-    executeInsightsAgent();
-    setInterval(() => executeInsightsAgent(), 24 * 60 * 60 * 1000);
-  }, msUntilNext);
+  // // Execute insights agent daily at 2 AM
+  // const now = new Date();
+  // const tomorrow = new Date(now);
+  // tomorrow.setDate(tomorrow.getDate() + 1);
+  // tomorrow.setHours(2, 0, 0, 0);
+  // const msUntilNext = tomorrow.getTime() - now.getTime();
   
-  console.log("[SCHEDULER] ✓ Initialized");
+  // setTimeout(() => {
+  //   executeInsightsAgent();
+  //   setInterval(() => executeInsightsAgent(), 24 * 60 * 60 * 1000);
+  // }, msUntilNext);
+  
+  console.log("[SCHEDULER] ✓ Initialized (background agents disabled)");
 }
