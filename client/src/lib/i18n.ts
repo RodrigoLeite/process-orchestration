@@ -220,6 +220,12 @@ export const translations = {
       severityCritical: '🔴 Crítico',
       severityMedium: '🟡 Médio',
       severityLow: '🟢 Baixo',
+      impactTableTitle: 'Tabela de Impacto',
+      columnArea: 'Área',
+      columnDemandsAtRisk: 'Demandas em Risco',
+      columnSlaViolations: 'SLAs Violados',
+      columnRiskScore: 'Score de Risco',
+      noImpactData: 'Sem dados de impacto',
     },
 
     // Common
@@ -467,6 +473,12 @@ export const translations = {
       severityCritical: '🔴 Critical',
       severityMedium: '🟡 Medium',
       severityLow: '🟢 Low',
+      impactTableTitle: 'Impact Table',
+      columnArea: 'Area',
+      columnDemandsAtRisk: 'Demands at Risk',
+      columnSlaViolations: 'SLA Violations',
+      columnRiskScore: 'Risk Score',
+      noImpactData: 'No impact data',
     },
 
     // Common
