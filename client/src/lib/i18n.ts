@@ -85,6 +85,8 @@ export const translations = {
       workflowManagementDesc: 'Funcionalidade para criar e gerenciar múltiplos workflows por área em breve.',
       manageWorkflows: 'Gerenciar Workflows',
       viewKanban: 'Ver no Kanban',
+      filterByArea: 'Filtrar por Área',
+      allAreas: 'Todas as Áreas',
     },
 
     // Home/Dashboard
@@ -708,6 +710,8 @@ export const translations = {
       workflowManagementDesc: 'Feature to create and manage multiple workflows per area coming soon.',
       manageWorkflows: 'Manage Workflows',
       viewKanban: 'View in Kanban',
+      filterByArea: 'Filter by Area',
+      allAreas: 'All Areas',
     },
 
     // Home/Dashboard
