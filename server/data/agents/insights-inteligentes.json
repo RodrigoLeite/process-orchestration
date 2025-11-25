@@ -12,7 +12,9 @@
         "data": {
           "label": "Dados de Demandas",
           "value": ""
-        }
+        },
+        "width": 320,
+        "height": 263
       },
       {
         "id": "prompt-analyzer",
@@ -24,7 +26,9 @@
         "data": {
           "label": "Análise de Padrões",
           "systemPrompt": "Você é um analista de dados inteligente. Analise os dados de demandas e identifique padrões, tendências e insights acionáveis. Gere recomendações baseadas em: volume, tipos comuns, áreas críticas, tempo médio de resolução. Retorne JSON com: {\"trends\": [], \"recommendations\": [], \"risks\": [], \"opportunities\": []}"
-        }
+        },
+        "width": 320,
+        "height": 201
       },
       {
         "id": "agent-insights",
@@ -39,8 +43,11 @@
           "maxTokens": 2500,
           "logicType": "none",
           "modelProvider": "OpenAI",
-          "modelName": "gpt-4-turbo"
-        }
+          "modelName": "gpt-4o-mini"
+        },
+        "width": 320,
+        "height": 574,
+        "dragging": false
       },
       {
         "id": "output-insights",
@@ -52,7 +59,9 @@
         "data": {
           "label": "Insights Gerados",
           "schema": "{\"trends\": \"array\", \"recommendations\": \"array\", \"risks\": \"array\", \"opportunities\": \"array\"}"
-        }
+        },
+        "width": 150,
+        "height": 249
       }
     ],
     "edges": [
@@ -78,6 +87,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T19:26:13.204Z",
-  "updatedAt": "2025-11-23T19:26:13.204Z"
+  "createdAt": "2025-11-25T22:29:02.455Z",
+  "updatedAt": "2025-11-25T22:29:02.455Z"
 }
