@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Activity, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
+import { Loader2, Activity, CheckCircle2, AlertCircle, ChevronRight, X } from "lucide-react";
 import Badge from "@/components/Badge";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface ExecutionLog {
@@ -23,6 +23,7 @@ export default function AILogsPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<"newest" | "slowest">("newest");
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   const { data: logsData, isLoading } = useQuery({
     queryKey: ["ai-logs"],
@@ -38,8 +39,23 @@ export default function AILogsPage() {
 
   const allLogs: ExecutionLog[] = logsData?.data || [];
 
+  // Get unique agents
+  const uniqueAgents = useMemo(() => {
+    const agents = new Set<string>();
+    allLogs.forEach(log => {
+      if (log.agentExecuted) agents.add(log.agentExecuted);
+    });
+    return Array.from(agents).sort();
+  }, [allLogs]);
+
+  // Filter logs by agent
+  const filteredLogs = useMemo(() => {
+    if (!selectedAgent) return allLogs;
+    return allLogs.filter(log => log.agentExecuted === selectedAgent);
+  }, [allLogs, selectedAgent]);
+
   // Sort logs
-  const sortedLogs = [...allLogs].sort((a, b) => {
+  const sortedLogs = [...filteredLogs].sort((a, b) => {
     if (sortBy === "newest") {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     } else {
@@ -87,7 +103,7 @@ export default function AILogsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-total">
-              {allLogs.length}
+              {filteredLogs.length}
             </div>
           </CardContent>
         </Card>
@@ -100,8 +116,8 @@ export default function AILogsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600" data-testid="stat-success">
-              {allLogs.length > 0
-                ? `${Math.round((allLogs.filter(l => l.status === "success").length / allLogs.length) * 100)}%`
+              {filteredLogs.length > 0
+                ? `${Math.round((filteredLogs.filter(l => l.status === "success").length / filteredLogs.length) * 100)}%`
                 : "—"}
             </div>
           </CardContent>
@@ -115,9 +131,9 @@ export default function AILogsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-avg-duration">
-              {allLogs.length > 0
+              {filteredLogs.length > 0
                 ? formatDuration(
-                    allLogs.reduce((sum, l) => sum + l.duration_ms, 0) / allLogs.length
+                    filteredLogs.reduce((sum, l) => sum + l.duration_ms, 0) / filteredLogs.length
                   )
                 : "—"}
             </div>
@@ -125,24 +141,52 @@ export default function AILogsPage() {
         </Card>
       </div>
 
-      {/* Sorting */}
-      <div className="flex gap-2" data-testid="sort-buttons">
-        <Button
-          variant={sortBy === "newest" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSortBy("newest")}
-          data-testid="sort-newest"
-        >
-          {t("aiLogs.newest")}
-        </Button>
-        <Button
-          variant={sortBy === "slowest" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSortBy("slowest")}
-          data-testid="sort-slowest"
-        >
-          {t("aiLogs.slowest")}
-        </Button>
+      {/* Filters and Sorting */}
+      <div className="space-y-3">
+        {/* Agent Filter */}
+        {uniqueAgents.length > 0 && (
+          <div className="flex flex-wrap gap-2" data-testid="agent-filter">
+            <Button
+              variant={!selectedAgent ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedAgent(null)}
+              data-testid="filter-agent-all"
+            >
+              {t("aiLogs.allAgents")}
+            </Button>
+            {uniqueAgents.map(agent => (
+              <Button
+                key={agent}
+                variant={selectedAgent === agent ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedAgent(agent)}
+                data-testid={`filter-agent-${agent}`}
+              >
+                🤖 {agent}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Sorting */}
+        <div className="flex gap-2" data-testid="sort-buttons">
+          <Button
+            variant={sortBy === "newest" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortBy("newest")}
+            data-testid="sort-newest"
+          >
+            {t("aiLogs.newest")}
+          </Button>
+          <Button
+            variant={sortBy === "slowest" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortBy("slowest")}
+            data-testid="sort-slowest"
+          >
+            {t("aiLogs.slowest")}
+          </Button>
+        </div>
       </div>
 
       {/* Logs List */}

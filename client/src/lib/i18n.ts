@@ -562,6 +562,7 @@ export const translations = {
       generatedWorkflow: 'Workflow Gerado',
       details: 'Detalhes',
       agent: 'Agente',
+      allAgents: 'Todos os Agentes',
     },
 
     // AI Logs Detail Page
@@ -1194,6 +1195,7 @@ export const translations = {
       generatedWorkflow: 'Generated Workflow',
       details: 'Details',
       agent: 'Agent',
+      allAgents: 'All Agents',
     },
 
     // AI Logs Detail Page
