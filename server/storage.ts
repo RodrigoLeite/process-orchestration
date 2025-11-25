@@ -1,13 +1,21 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, type StageBottleneck, type InsertStageBottleneck, type StageInsight, type InsertStageInsight, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents, stageBottlenecks, stageInsights } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, type StageBottleneck, type InsertStageBottleneck, type StageInsight, type InsertStageInsight, type Tenant, type InsertTenant, type TenantUser, type InsertTenantUser, type AuditLog, type InsertAuditLog, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents, stageBottlenecks, stageInsights, tenants, tenantUsers, auditLogs } from "@shared/schema";
 
 export interface IStorage {
+  // Users & Tenants
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
+  getTenant(id: string): Promise<Tenant | undefined>;
+  createTenant(tenant: InsertTenant): Promise<Tenant>;
+  getTenantUser(tenantId: string, userId: string): Promise<TenantUser | undefined>;
+  createTenantUser(tenantUser: InsertTenantUser): Promise<TenantUser>;
+  getTenantUsers(tenantId: string): Promise<TenantUser[]>;
+
+  // Demands
   getDemands(): Promise<Demand[]>;
   getDemand(id: string): Promise<Demand | undefined>;
   createDemand(demand: InsertDemand): Promise<Demand>;
@@ -89,6 +97,10 @@ export interface IStorage {
   createStageInsight(insight: InsertStageInsight): Promise<StageInsight>;
   getStageInsightsByDemand(demandId: string): Promise<StageInsight[]>;
   getStageInsightsByStage(stageId: string): Promise<StageInsight[]>;
+
+  // Audit Logs
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(tenantId: string, filters?: { entityType?: string; entityId?: string; userId?: string }, limit?: number): Promise<AuditLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -649,6 +661,65 @@ export class DatabaseStorage implements IStorage {
       .from(stageInsights)
       .where(eq(stageInsights.stageId, stageId))
       .orderBy(desc(stageInsights.createdAt));
+  }
+
+  // Tenant Methods
+  async getTenant(id: string): Promise<Tenant | undefined> {
+    const result = await this.db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createTenant(tenant: InsertTenant): Promise<Tenant> {
+    const result = await this.db.insert(tenants).values(tenant).returning();
+    return result[0];
+  }
+
+  async getTenantUser(tenantId: string, userId: string): Promise<TenantUser | undefined> {
+    const result = await this.db
+      .select()
+      .from(tenantUsers)
+      .where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createTenantUser(tenantUser: InsertTenantUser): Promise<TenantUser> {
+    const result = await this.db.insert(tenantUsers).values(tenantUser).returning();
+    return result[0];
+  }
+
+  async getTenantUsers(tenantId: string): Promise<TenantUser[]> {
+    return await this.db
+      .select()
+      .from(tenantUsers)
+      .where(eq(tenantUsers.tenantId, tenantId))
+      .orderBy(desc(tenantUsers.createdAt));
+  }
+
+  // Audit Log Methods
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const result = await this.db.insert(auditLogs).values(log).returning();
+    return result[0];
+  }
+
+  async getAuditLogs(
+    tenantId: string,
+    filters?: { entityType?: string; entityId?: string; userId?: string },
+    limit: number = 1000
+  ): Promise<AuditLog[]> {
+    let query = this.db.select().from(auditLogs).where(eq(auditLogs.tenantId, tenantId));
+
+    if (filters?.entityType) {
+      query = query.where(and(eq(auditLogs.tenantId, tenantId), eq(auditLogs.entityType, filters.entityType)));
+    }
+    if (filters?.entityId) {
+      query = query.where(and(eq(auditLogs.tenantId, tenantId), eq(auditLogs.entityId, filters.entityId)));
+    }
+    if (filters?.userId) {
+      query = query.where(and(eq(auditLogs.tenantId, tenantId), eq(auditLogs.userId, filters.userId)));
+    }
+
+    return await query.orderBy(desc(auditLogs.createdAt)).limit(limit);
   }
 }
 

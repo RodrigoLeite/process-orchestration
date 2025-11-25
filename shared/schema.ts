@@ -3,6 +3,7 @@ import { pgTable, text, varchar, uuid, jsonb, timestamp, integer } from "drizzle
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// ========== USERS & TENANTS ==========
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -17,8 +18,42 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export const tenants = pgTable("tenants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  plan: text("plan").notNull().default("free"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type Tenant = typeof tenants.$inferSelect;
+
+export const tenantUsers = pgTable("tenant_users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").notNull().default("member"), // owner, admin, manager, member, readonly
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
+export type TenantUser = typeof tenantUsers.$inferSelect;
+
+// ========== DEMANDS ==========
 export const demands = pgTable("demands", {
   id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id"),
   rawText: text("raw_text"),
   parsed: jsonb("parsed").$type<{
     area?: string;
@@ -95,9 +130,11 @@ export const insertAgentResponseSchema = createInsertSchema(agentResponses).omit
 export type InsertAgentResponse = z.infer<typeof insertAgentResponseSchema>;
 export type AgentResponse = typeof agentResponses.$inferSelect;
 
+// ========== WORKFLOWS ==========
 export const workflows = pgTable("workflows", {
   id: uuid("id").primaryKey().defaultRandom(),
-  workflowHash: text("workflow_hash").notNull().unique(),
+  tenantId: uuid("tenant_id"),
+  workflowHash: text("workflow_hash").notNull(),
   name: text("name").notNull().default("Workflow"),
   steps: jsonb("steps").$type<Array<{
     order: number;
@@ -110,6 +147,7 @@ export const workflows = pgTable("workflows", {
     acceptanceCriteria?: string;
     duration?: string;
   }>>().notNull(),
+  createdBy: varchar("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -394,3 +432,23 @@ export const insertStageInsightSchema = createInsertSchema(stageInsights).omit({
 
 export type InsertStageInsight = z.infer<typeof insertStageInsightSchema>;
 export type StageInsight = typeof stageInsights.$inferSelect;
+
+// ========== AUDIT LOGS ==========
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id"),
+  userId: varchar("user_id"),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  action: text("action").notNull(), // CREATE, UPDATE, DELETE, RUN, etc
+  payload: jsonb("payload").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
