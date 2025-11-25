@@ -5,7 +5,7 @@ import {
   Grid3x3,
   AlertTriangle,
   Settings,
-  Home,
+  Home as HomeIcon,
   Menu,
   X,
   ChevronLeft,
@@ -30,7 +30,7 @@ export default function Navigation() {
   const { t } = useTranslation();
 
   const navItems = [
-    { label: t("nav.home"), href: "/", icon: Home },
+    { label: t("nav.home"), href: "/", icon: HomeIcon },
     { label: t("nav.demands"), href: "/app/demands", icon: Grid3x3 },
     { label: t("nav.workflows"), href: "/app/workflows", icon: LayoutGrid },
     { label: t("nav.areas"), href: "/app/areas", icon: BarChart3 },
@@ -72,10 +72,8 @@ export default function Navigation() {
           <div className="flex items-center justify-between mb-8">
             {!isSidebarCollapsed && (
               <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity flex-1 bg-transparent border-none cursor-pointer">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-sm font-bold">
-                  D
-                </div>
-                <span className="truncate">Orquestração</span>
+                <HomeIcon className="w-8 h-8 text-primary flex-shrink-0" />
+                <span className="truncate">{t("nav.orchestration")}</span>
               </button>
             )}
             <Button
@@ -121,7 +119,7 @@ export default function Navigation() {
           {/* Footer info */}
           {!isSidebarCollapsed && (
             <div className="pt-4 border-t border-border text-xs text-muted-foreground">
-              <p>Sistema de Orquestração IA</p>
+              <p>{t("branding.systemShortName")}</p>
               <p className="mt-1">© 2024</p>
             </div>
           )}
