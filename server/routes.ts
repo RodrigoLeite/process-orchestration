@@ -251,8 +251,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "rawText is required" });
       }
 
-      // 1. Parse the demand text
-      const parsed = await parseDemand(rawText);
+      // 1. Parse the demand text with LangSmith instrumentation
+      const parsed = await runInstrumentedAgent({
+        agentKey: "demand_parser",
+        input: { text: rawText },
+        handler: async () => await parseDemand(rawText)
+      });
+      
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       const assignedTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
