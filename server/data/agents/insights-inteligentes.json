@@ -1,0 +1,83 @@
+{
+  "agentId": "insights-inteligentes",
+  "graph": {
+    "nodes": [
+      {
+        "id": "chat-input",
+        "type": "chatInput",
+        "position": {
+          "x": -30.48,
+          "y": 83.9
+        },
+        "data": {
+          "label": "Dados de Demandas",
+          "value": ""
+        }
+      },
+      {
+        "id": "prompt-analyzer",
+        "type": "prompt",
+        "position": {
+          "x": 300,
+          "y": 50
+        },
+        "data": {
+          "label": "Análise de Padrões",
+          "systemPrompt": "Você é um analista de dados inteligente. Analise os dados de demandas e identifique padrões, tendências e insights acionáveis. Gere recomendações baseadas em: volume, tipos comuns, áreas críticas, tempo médio de resolução. Retorne JSON com: {\"trends\": [], \"recommendations\": [], \"risks\": [], \"opportunities\": []}"
+        }
+      },
+      {
+        "id": "agent-insights",
+        "type": "agent",
+        "position": {
+          "x": 700,
+          "y": -100
+        },
+        "data": {
+          "label": "Gerar Insights",
+          "temperature": 0.6,
+          "maxTokens": 2500,
+          "logicType": "none",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4-turbo"
+        }
+      },
+      {
+        "id": "output-insights",
+        "type": "output",
+        "position": {
+          "x": 1000,
+          "y": 150
+        },
+        "data": {
+          "label": "Insights Gerados",
+          "schema": "{\"trends\": \"array\", \"recommendations\": \"array\", \"risks\": \"array\", \"opportunities\": \"array\"}"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "chat-input",
+        "target": "prompt-analyzer",
+        "id": "e1"
+      },
+      {
+        "source": "prompt-analyzer",
+        "target": "agent-insights",
+        "id": "e2"
+      },
+      {
+        "source": "agent-insights",
+        "target": "output-insights",
+        "id": "e3"
+      }
+    ],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  },
+  "createdAt": "2025-11-23T19:26:13.204Z",
+  "updatedAt": "2025-11-23T19:26:13.204Z"
+}
