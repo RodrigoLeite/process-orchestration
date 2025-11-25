@@ -12,7 +12,9 @@
         "data": {
           "label": "Demanda",
           "value": ""
-        }
+        },
+        "width": 320,
+        "height": 263
       },
       {
         "id": "api-create-demand",
@@ -27,7 +29,9 @@
           "method": "POST",
           "headers": "{}",
           "bodyTemplate": "{\"rawText\": \"PLACEHOLDER\"}"
-        }
+        },
+        "width": 200,
+        "height": 56
       },
       {
         "id": "prompt-generator",
@@ -39,7 +43,9 @@
         "data": {
           "label": "Instruções para Workflow",
           "systemPrompt": "Você é um especialista em gestão de processos. Receba uma demanda criada no sistema e gere um workflow detalhado com etapas customizadas baseadas na área (TI, Vendas, RH, Financeiro, etc). Retorne JSON com: {\"workflowName\": \"nome\", \"area\": \"area\", \"stages\": [{\"name\": \"nome\", \"type\": \"tipo\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"duration_hours\": 2}]}"
-        }
+        },
+        "width": 320,
+        "height": 201
       },
       {
         "id": "agent-generate-workflow",
@@ -54,8 +60,11 @@
           "maxTokens": 3000,
           "logicType": "none",
           "modelProvider": "OpenAI",
-          "modelName": "gpt-4-turbo"
-        }
+          "modelName": "gpt-4o-mini"
+        },
+        "width": 320,
+        "height": 574,
+        "dragging": false
       },
       {
         "id": "output-workflow",
@@ -67,7 +76,9 @@
         "data": {
           "label": "Workflow Gerado",
           "schema": "{\"workflowName\": \"string\", \"area\": \"string\", \"stages\": \"array\"}"
-        }
+        },
+        "width": 150,
+        "height": 249
       }
     ],
     "edges": [
@@ -98,6 +109,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-23T19:26:13.204Z",
-  "updatedAt": "2025-11-23T19:26:13.204Z"
+  "createdAt": "2025-11-25T22:28:54.782Z",
+  "updatedAt": "2025-11-25T22:28:54.782Z"
 }

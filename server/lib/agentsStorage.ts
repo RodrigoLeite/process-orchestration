@@ -54,18 +54,9 @@ export async function loadAgent(agentId: string): Promise<AgentStorage | null> {
     const data = await fs.readFile(filepath, 'utf-8');
     const parsed = JSON.parse(data);
     
-    // Normalize model names to gpt-4-turbo for agent nodes if not specified
+    // Only set default model name if not specified (don't override user choices)
     if (parsed.graph?.nodes) {
       parsed.graph.nodes = parsed.graph.nodes.map((node: any) => {
-        if (node.type === 'agent' && node.data?.modelName === 'gpt-4o-mini') {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              modelName: 'gpt-4-turbo'
-            }
-          };
-        }
         if (node.type === 'agent' && !node.data?.modelName) {
           return {
             ...node,
