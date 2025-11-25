@@ -4,35 +4,42 @@ This project is an AI-driven process orchestration system designed to classify, 
 
 # Recent Changes
 
-## Google OAuth Implementation (Latest)
+## JWT OAuth2 Implementation (Latest)
 - **Authentication System**: 
-  - Integrated Passport.js with Google OAuth 2.0 strategy
-  - Updated `users` table schema: added `email`, `googleId`, `name`, `image` fields
-  - Created login page at `/login` with Google OAuth button
-  - Automatic personal tenant creation for first-time Google users
-- **Session Management**:
-  - Express session with PostgreSQL store (`connect-pg-simple`)
-  - HTTP-only cookies for security
-  - Session persistence via `session` table
-- **Auth Routes**:
-  - `POST /api/auth/google` - Initiates OAuth login
-  - `GET /api/auth/google/callback` - OAuth callback handler
-  - `GET /api/auth/logout` - Logout with session destruction
-  - `GET /api/auth/session` - Get current session info
-  - `POST /api/auth/switch-tenant` - Switch active tenant
-- **UI Components**:
-  - Created `client/src/pages/login.tsx` - Login page with Google button
-  - Created `client/src/components/tenant-switcher.tsx` - User/tenant switcher
-  - Layout now includes tenant switcher for authenticated users
-- **Middleware**:
-  - `authMiddleware` - Passport configuration and session setup
-  - `tenantMiddleware` - Tenant context injection from headers
-  - Protected routes via Layout component wrapper
+  - Google OAuth2 with server-side token exchange (no client secret exposure)
+  - JWT access tokens (15-minute TTL) with claims: sub, tenantId, role, email
+  - Refresh tokens (UUID) stored in Redis with 30-day TTL and automatic rotation
+  - Updated `users` schema: email, googleId, name, image
+  - Updated `tenants` schema: isConfigured, metadata fields
+- **Backend Services**:
+  - `server/lib/googleOAuth.ts` - OAuth2 client with token exchange
+  - `server/lib/jwt.ts` - JWT signing/verification (HS256)
+  - `server/lib/redisClient.ts` - Redis client for refresh tokens
+  - `server/lib/authService.ts` - User/tenant creation and token issuance
+  - `server/middleware/jwtMiddleware.ts` - JWT validation and RBAC
+- **Auth Routes** (`server/routes/authRoutes.ts`):
+  - `GET /api/auth/google` - OAuth2 initiation with CSRF state
+  - `GET /api/auth/google/callback` - Callback, creates user/tenant, emits tokens
+  - `POST /api/auth/refresh` - Rotates refresh token pair
+  - `POST /api/auth/logout` - Invalidates refresh token
+  - `GET /api/auth/session` - Returns current user/tenant/role
+- **Frontend Components**:
+  - `client/src/pages/Login.tsx` - Login with Google button
+  - `client/src/pages/Onboarding.tsx` - Workspace configuration
+  - `client/src/hooks/useAuth.ts` - React hook for auth state
+- **Security**:
+  - httpOnly, Secure, SameSite=strict cookies
+  - CSRF protection via state parameter
+  - Refresh token rotation on use
+  - Role-based access control
+- **Tenant Automation**:
+  - First-time users get personal workspace automatically
+  - Tenant name: "Workspace de {firstName}"
+  - User set as "owner" of personal tenant
 - **Documentation**:
-  - Created `GOOGLE_OAUTH_SETUP.md` with complete setup guide
-  - Setup instructions for Google Cloud Console
-  - Environment variable configuration guide
-  - Troubleshooting section
+  - `JWT_OAUTH_IMPLEMENTATION.md` - Complete implementation guide
+  - `SETUP_INSTRUCTIONS.md` - Quick setup and troubleshooting
+  - API endpoints and testing guide
 
 ## Multi-Tenant + RBAC + Audit Logs
 - **Multi-Tenant Architecture**: 
