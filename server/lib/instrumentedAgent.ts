@@ -136,16 +136,17 @@ export async function runInstrumentedAgent({
           extra: { metadata },
         });
 
-        // LangSmith returns a UUID string directly from createRun
-        console.log(`[AGENT:${agentKey}] Run returned:`, run);
-        console.log(`[AGENT:${agentKey}] Run type:`, typeof run);
-        runId = run || undefined;
-        context.runId = runId;
-        
-        logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
+        // LangSmith returns a UUID - extract it if it exists
+        if (run) {
+          runId = typeof run === 'string' ? run : (run as any)?.id;
+          context.runId = runId;
+          logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
+        } else {
+          console.warn(`[AGENT:${agentKey}] LangSmith createRun returned empty response`);
+        }
       } catch (createRunError) {
         console.error(`[AGENT:${agentKey}] Error creating LangSmith run:`, createRunError);
-        logAgentEvent(agentKey, "LANGSMITH_RUN_FAILED", { error: String(createRunError) });
+        // Continue execution even if LangSmith fails - don't block the agent
       }
     } else {
       console.warn(`[AGENT:${agentKey}] LangSmith client not available`);
