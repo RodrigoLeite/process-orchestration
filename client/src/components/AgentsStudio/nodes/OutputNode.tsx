@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Database, ChevronDown } from 'lucide-react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function OutputNode({ data, id }: any) {
+  const { t } = useTranslation();
   const { setNodes } = useReactFlow();
   const { updateNode } = useAgentsStore();
   
@@ -65,7 +67,7 @@ export default function OutputNode({ data, id }: any) {
         {isExpanded && (
           <>
             <div className="mb-3">
-              <label className="text-xs text-gray-600 block mb-1">Schema JSON</label>
+              <label className="text-xs text-gray-600 block mb-1">{t("agentStudio.outputNodeSchema")}</label>
               <textarea
                 value={schema}
                 onChange={handleSchemaChange}
@@ -80,7 +82,7 @@ export default function OutputNode({ data, id }: any) {
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs"
               data-testid={`button-execute-workflow-${id}`}
             >
-              Executar Workflow
+              {t("agentStudio.outputNodeExecute")}
             </Button>
           </>
         )}

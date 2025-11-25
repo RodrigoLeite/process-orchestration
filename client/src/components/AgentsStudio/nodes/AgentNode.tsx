@@ -2,8 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { ChevronDown, Bot } from 'lucide-react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function AgentNode({ data, id }: any) {
+  const { t } = useTranslation();
   const { setNodes } = useReactFlow();
   const { updateNode } = useAgentsStore();
 
@@ -104,7 +106,7 @@ export default function AgentNode({ data, id }: any) {
 
       {/* Description */}
       <div className="px-4 py-2 text-sm text-gray-600 bg-gray-50 border-b border-gray-200">
-        Executa um agente de IA com configuração de modelo e lógica customizada.
+        {t("agentStudio.agentNodeDescription")}
       </div>
 
       {/* Content */}

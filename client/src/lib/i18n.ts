@@ -442,6 +442,28 @@ export const translations = {
       // Canvas
       chatInputPlaceholder: 'Digite sua mensagem aqui...',
       agentSystemPrompt: 'Você é um assistente helpful. Processe a entrada e retorne uma resposta estruturada.',
+      // Nodes - ChatInputNode
+      chatInputNodeYourMessage: 'Sua Mensagem',
+      chatInputNodePlaceholder: 'Digite aqui a demanda, pergunta ou comando...',
+      chatInputNodeHint: '💬 Digite aqui o que deseja que o agente processe',
+      // Nodes - PromptNode
+      promptNodeSystemPrompt: 'System Prompt',
+      promptNodePlaceholder: 'Enter system prompt...',
+      // Nodes - LogicNode
+      logicNodeType: 'Tipo de Lógica',
+      logicNodeCondition: 'Condição / Regra',
+      logicNodeConditionPlaceholder: 'Defina a condição ou regra...',
+      logicNodeTest: 'Testar Lógica',
+      logicNodeFilter: 'Filtro',
+      logicNodeRouting: 'Roteamento',
+      logicNodeNormalization: 'Normalização',
+      logicNodeValidation: 'Validação',
+      logicNodeToolCall: 'Chamada de Ferramenta',
+      // Nodes - OutputNode
+      outputNodeSchema: 'Schema JSON',
+      outputNodeExecute: 'Executar Workflow',
+      // Nodes - AgentNode
+      agentNodeDescription: 'Executa um agente de IA com configuração de modelo e lógica customizada.',
     },
 
     // Critical Alerts Page
@@ -959,6 +981,28 @@ export const translations = {
       // Canvas
       chatInputPlaceholder: 'Type your message here...',
       agentSystemPrompt: 'You are a helpful assistant. Process the input and return a structured response.',
+      // Nodes - ChatInputNode
+      chatInputNodeYourMessage: 'Your Message',
+      chatInputNodePlaceholder: 'Type here your demand, question or command...',
+      chatInputNodeHint: '💬 Type here what you want the agent to process',
+      // Nodes - PromptNode
+      promptNodeSystemPrompt: 'System Prompt',
+      promptNodePlaceholder: 'Enter system prompt...',
+      // Nodes - LogicNode
+      logicNodeType: 'Logic Type',
+      logicNodeCondition: 'Condition / Rule',
+      logicNodeConditionPlaceholder: 'Define the condition or rule...',
+      logicNodeTest: 'Test Logic',
+      logicNodeFilter: 'Filter',
+      logicNodeRouting: 'Routing',
+      logicNodeNormalization: 'Normalization',
+      logicNodeValidation: 'Validation',
+      logicNodeToolCall: 'Tool Call',
+      // Nodes - OutputNode
+      outputNodeSchema: 'JSON Schema',
+      outputNodeExecute: 'Execute Workflow',
+      // Nodes - AgentNode
+      agentNodeDescription: 'Execute an AI agent with customizable model configuration and logic.',
     },
 
     // Critical Alerts Page

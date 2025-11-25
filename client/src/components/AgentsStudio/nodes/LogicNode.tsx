@@ -4,18 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Settings, ChevronDown } from 'lucide-react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
-const LOGIC_TYPES = [
-  { value: 'filter', label: 'Filtro' },
-  { value: 'routing', label: 'Roteamento' },
-  { value: 'normalization', label: 'Normalização' },
-  { value: 'validation', label: 'Validação' },
-  { value: 'tool_call', label: 'Chamada de Ferramenta' },
+const getLogicTypes = (t: any) => [
+  { value: 'filter', label: t("agentStudio.logicNodeFilter") },
+  { value: 'routing', label: t("agentStudio.logicNodeRouting") },
+  { value: 'normalization', label: t("agentStudio.logicNodeNormalization") },
+  { value: 'validation', label: t("agentStudio.logicNodeValidation") },
+  { value: 'tool_call', label: t("agentStudio.logicNodeToolCall") },
 ];
 
 export default function LogicNode({ data, id }: any) {
+  const { t } = useTranslation();
   const { setNodes } = useReactFlow();
   const { updateNode } = useAgentsStore();
+  const LOGIC_TYPES = getLogicTypes(t);
   
   const [isExpanded, setIsExpanded] = useState(true);
   const [name, setName] = useState(data.stepName || 'Logic');
@@ -80,7 +83,7 @@ export default function LogicNode({ data, id }: any) {
         {isExpanded && (
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-600 block mb-1">Tipo de Lógica</label>
+              <label className="text-xs text-gray-600 block mb-1">{t("agentStudio.logicNodeType")}</label>
               <select
                 value={logicType}
                 onChange={handleTypeChange}
@@ -96,11 +99,11 @@ export default function LogicNode({ data, id }: any) {
             </div>
 
             <div>
-              <label className="text-xs text-gray-600 block mb-1">Condição / Regra</label>
+              <label className="text-xs text-gray-600 block mb-1">{t("agentStudio.logicNodeCondition")}</label>
               <textarea
                 value={condition}
                 onChange={handleConditionChange}
-                placeholder="Defina a condição ou regra..."
+                placeholder={t("agentStudio.logicNodeConditionPlaceholder")}
                 className="w-full bg-white border border-gray-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-purple-500 h-16"
                 data-testid={`textarea-condition-${id}`}
               />
@@ -112,7 +115,7 @@ export default function LogicNode({ data, id }: any) {
               className="w-full bg-purple-50 hover:bg-purple-100 border-purple-300 text-purple-600 text-xs"
               data-testid={`button-test-logic-${id}`}
             >
-              Testar Lógica
+              {t("agentStudio.logicNodeTest")}
             </Button>
           </div>
         )}

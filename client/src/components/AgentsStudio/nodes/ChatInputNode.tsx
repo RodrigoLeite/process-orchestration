@@ -3,8 +3,10 @@ import { Handle, Position, useReactFlow } from 'reactflow';
 import { Card } from '@/components/ui/card';
 import { MessageSquare, ChevronDown } from 'lucide-react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function ChatInputNode({ data, id }: any) {
+  const { t } = useTranslation();
   const { setNodes } = useReactFlow();
   const { updateNode } = useAgentsStore();
   
@@ -62,18 +64,18 @@ export default function ChatInputNode({ data, id }: any) {
         {isExpanded && (
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-600 block mb-1">Sua Mensagem</label>
+              <label className="text-xs text-gray-600 block mb-1">{t("agentStudio.chatInputNodeYourMessage")}</label>
               <textarea
                 value={inputValue}
                 onChange={handleInputValueChange}
-                placeholder="Digite aqui a demanda, pergunta ou comando..."
+                placeholder={t("agentStudio.chatInputNodePlaceholder")}
                 className="w-full bg-green-50 border border-green-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-green-500 focus:bg-white h-24"
                 data-testid={`textarea-chat-input-value-${id}`}
               />
             </div>
 
             <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-              💬 Digite aqui o que deseja que o agente processe
+              {t("agentStudio.chatInputNodeHint")}
             </div>
           </div>
         )}
