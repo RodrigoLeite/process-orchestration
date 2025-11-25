@@ -127,22 +127,28 @@ export async function runInstrumentedAgent({
     if (client) {
       const metadata = createMetadata(context, input);
       
-      const run = await client.createRun({
-        name: agentKey,
-        run_type: "chain" as any,
-        inputs: input,
-        project_name: langsmithConfig.projectName,
-        extra: { metadata },
-      });
+      try {
+        const run = await client.createRun({
+          name: agentKey,
+          run_type: "chain" as any,
+          inputs: input,
+          project_name: langsmithConfig.projectName,
+          extra: { metadata },
+        });
 
-      // LangSmith returns a UUID string directly from createRun
-      console.log(`[AGENT:${agentKey}] Run returned:`, run);
-      console.log(`[AGENT:${agentKey}] Run type:`, typeof run);
-      console.log(`[AGENT:${agentKey}] Run keys:`, Object.keys(run || {}));
-      runId = run || undefined;
-      context.runId = runId;
-      
-      logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
+        // LangSmith returns a UUID string directly from createRun
+        console.log(`[AGENT:${agentKey}] Run returned:`, run);
+        console.log(`[AGENT:${agentKey}] Run type:`, typeof run);
+        runId = run || undefined;
+        context.runId = runId;
+        
+        logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
+      } catch (createRunError) {
+        console.error(`[AGENT:${agentKey}] Error creating LangSmith run:`, createRunError);
+        logAgentEvent(agentKey, "LANGSMITH_RUN_FAILED", { error: String(createRunError) });
+      }
+    } else {
+      console.warn(`[AGENT:${agentKey}] LangSmith client not available`);
     }
 
     // Execute handler
