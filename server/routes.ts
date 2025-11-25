@@ -1040,6 +1040,24 @@ Maximum 5 bottlenecks. If there are fewer, return only the critical ones.`;
       const pendingCounts = await storage.countDemandsByStatus("pending");
       const inProgressCounts = await storage.countDemandsByStatus("in_progress");
 
+      // If no pending or in-progress demands, return empty data immediately
+      const totalDemands = Object.values(pendingCounts).reduce((sum, count) => sum + count, 0) +
+                          Object.values(inProgressCounts).reduce((sum, count) => sum + count, 0);
+      
+      if (totalDemands === 0) {
+        return res.json({
+          success: true,
+          data: {
+            threshold: 15,
+            totalAreas: 0,
+            overloadedCount: 0,
+            areas: [],
+            overloaded: []
+          },
+          error: null
+        });
+      }
+
       const areas = await storage.getWorkgraphNodes();
       const OVERLOAD_THRESHOLD = 15;
 
