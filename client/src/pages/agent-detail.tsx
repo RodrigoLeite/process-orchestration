@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Bot, Loader2, Play, Copy, Check } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { getAgentDescription } from "@/lib/agentDescriptions";
 import type { Agent, AgentLog } from "@shared/schema";
 
 export default function AgentDetailPage({ params }: { params: { id: string } }) {
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [showTestModal, setShowTestModal] = useState(false);
   const [testInput, setTestInput] = useState("{}");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -124,7 +125,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
               <h1 className="text-3xl font-bold" data-testid={`agent-name-${id}`}>
                 {agent.name}
               </h1>
-              <p className="text-muted-foreground mt-1">{agent.description || t("agentDetail.noDescription")}</p>
+              <p className="text-muted-foreground mt-1">{getAgentDescription(agent.internalKey, agent.description, language) || t("agentDetail.noDescription")}</p>
             </div>
           </div>
 

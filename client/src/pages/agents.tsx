@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Bot, Loader2, ArrowRight } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { getAgentDescription } from "@/lib/agentDescriptions";
 
 interface Agent {
   id: string;
@@ -18,7 +19,7 @@ interface Agent {
 
 export default function AgentsPage() {
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const { data: allAgents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["agents"],
@@ -86,7 +87,7 @@ export default function AgentsPage() {
                       <span className="truncate">{agent.name}</span>
                     </CardTitle>
                     <CardDescription className="mt-2 line-clamp-2">
-                      {agent.description || t("agents.noDescription")}
+                      {getAgentDescription(agent.internalKey, agent.description, language) || t("agents.noDescription")}
                     </CardDescription>
                   </div>
                 </div>
