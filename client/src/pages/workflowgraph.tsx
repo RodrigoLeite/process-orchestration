@@ -26,6 +26,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface GraphNode {
   id: string;
@@ -108,6 +109,7 @@ const nodeTypes = {
 };
 
 export default function WorkflowGraph() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [testInput, setTestInput] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -149,13 +151,13 @@ export default function WorkflowGraph() {
       return res.json();
     },
     onSuccess: () => {
-      toast.success("Execução iniciada com sucesso!");
+      toast.success(t('executionGraph.successMessage'));
       setTestInput("");
       queryClient.invalidateQueries({ queryKey: ["workflow-graph"] });
       queryClient.invalidateQueries({ queryKey: ["workflow-node"] });
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao executar: ${error.message}`);
+      toast.error(`${t('executionGraph.errorMessage')}: ${error.message}`);
     },
   });
 
@@ -195,7 +197,7 @@ export default function WorkflowGraph() {
 
   const handleExecute = () => {
     if (!testInput.trim()) {
-      toast.error("Por favor, digite um input para testar");
+      toast.error(t('executionGraph.emptyInputError'));
       return;
     }
     executeMutation.mutate(testInput);
@@ -208,13 +210,13 @@ export default function WorkflowGraph() {
         <div className="flex gap-4 items-end">
           <div className="flex-1">
             <label className="text-sm text-gray-700 block mb-2">
-              Input para Teste
+              {t('executionGraph.testInputLabel')}
             </label>
             <div className="flex gap-2">
               <Input
                 value={testInput}
                 onChange={(e) => setTestInput(e.target.value)}
-                placeholder="Digite o input para testar o graph..."
+                placeholder={t('executionGraph.testInputPlaceholder')}
                 className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
                 data-testid="input-test-graph"
                 onKeyDown={(e) => {
@@ -228,7 +230,7 @@ export default function WorkflowGraph() {
                 data-testid="button-execute-graph"
               >
                 <PlayCircle className="w-4 h-4" />
-                {executeMutation.isPending ? "Executando..." : "Executar Graph"}
+                {executeMutation.isPending ? t('executionGraph.executingButton') : t('executionGraph.executeButton')}
               </Button>
             </div>
           </div>
@@ -241,7 +243,7 @@ export default function WorkflowGraph() {
         <div className="flex-1 bg-white overflow-hidden">
           {graphLoading ? (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-500">Carregando grafo...</div>
+              <div className="text-gray-500">{t('executionGraph.loadingGraph')}</div>
             </div>
           ) : nodes.length > 0 ? (
             <ReactFlow
@@ -271,7 +273,7 @@ export default function WorkflowGraph() {
             </ReactFlow>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-500">Nenhum nodo encontrado</div>
+              <div className="text-gray-500">{t('executionGraph.noNodesFound')}</div>
             </div>
           )}
         </div>
@@ -283,13 +285,13 @@ export default function WorkflowGraph() {
               <div className="text-center">
                 <Zap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">
-                  Clique em um nodo para ver detalhes
+                  {t('executionGraph.selectNodeHint')}
                 </p>
               </div>
             </div>
           ) : nodeLoading ? (
             <div className="p-4">
-              <div className="text-gray-500 text-sm">Carregando...</div>
+              <div className="text-gray-500 text-sm">{t('executionGraph.loading')}</div>
             </div>
           ) : nodeDetail ? (
             <div className="p-4 space-y-4">
@@ -310,7 +312,7 @@ export default function WorkflowGraph() {
               {/* Node Description */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Descrição
+                  {t('executionGraph.nodeDescription')}
                 </h4>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   {nodeDetail.description}
@@ -321,7 +323,7 @@ export default function WorkflowGraph() {
               {nodeDetail.meta && Object.keys(nodeDetail.meta).length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Metadados
+                    {t('executionGraph.nodeMetadata')}
                   </h4>
                   <div className="bg-white rounded-lg p-3 text-xs text-gray-600 max-h-32 overflow-y-auto font-mono border border-gray-200">
                     {JSON.stringify(nodeDetail.meta, null, 2)}
@@ -333,7 +335,7 @@ export default function WorkflowGraph() {
               {nodeDetail.lastRuns && nodeDetail.lastRuns.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Últimas Execuções
+                    {t('executionGraph.nodeLastRuns')}
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {nodeDetail.lastRuns.map((run) => (
@@ -370,10 +372,10 @@ export default function WorkflowGraph() {
                   className="w-full gap-2 border-gray-300 hover:bg-gray-100"
                   disabled
                   data-testid="button-run-agent"
-                  title="Funcionalidade ainda não implementada"
+                  title={t('executionGraph.notImplemented')}
                 >
                   <PlayCircle className="w-4 h-4" />
-                  Executar Agente
+                  {t('executionGraph.executeAgent')}
                 </Button>
               </div>
             </div>
