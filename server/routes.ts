@@ -579,6 +579,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all demands from last 7 days
       const last7DaysDemands = await storage.getDemandsFromLastDays(7);
+      
+      // If no demands exist, return empty bottlenecks immediately
+      if (last7DaysDemands.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            timestamp: new Date().toISOString(),
+            bottlenecks: [],
+            metrics: {}
+          },
+          error: null
+        });
+      }
+
       const allAreas = await storage.getWorkgraphNodes();
 
       // Calculate metrics per area
