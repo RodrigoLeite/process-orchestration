@@ -1,4 +1,19 @@
-// Centralized agent descriptions for multilingual support
+// Centralized agent names and descriptions for multilingual support
+export const agentNamesByKey = {
+  'pt-BR': {
+    workflow_builder: 'Gerador de Workflow',
+    insights_ai: 'Insights Inteligentes',
+    bottleneck_ai: 'Monitor de Gargalos',
+    demand_processor: 'Processador de Demandas',
+  },
+  'en-US': {
+    workflow_builder: 'Workflow Generator',
+    insights_ai: 'Intelligent Insights',
+    bottleneck_ai: 'Bottleneck Monitor',
+    demand_processor: 'Demand Processor',
+  },
+};
+
 export const agentDescriptionsByKey = {
   'pt-BR': {
     workflow_builder: 'Cria automaticamente o workflow personalizado para cada demanda.',
@@ -13,6 +28,26 @@ export const agentDescriptionsByKey = {
     demand_processor: 'Automatically processes and classifies new demands in the system.',
   },
 };
+
+export function getAgentName(
+  internalKey: string | undefined,
+  name: string | undefined,
+  language: 'pt-BR' | 'en-US'
+): string {
+  if (!internalKey) return name || '';
+  
+  // Normalize key for lookup
+  const normalizedKey = internalKey.toLowerCase().replace(/-/g, '_');
+  
+  // Try to find translated name
+  const translations = agentNamesByKey[language];
+  if (translations && translations[normalizedKey as keyof typeof translations]) {
+    return translations[normalizedKey as keyof typeof translations];
+  }
+  
+  // Fallback to original name
+  return name || '';
+}
 
 export function getAgentDescription(
   internalKey: string | undefined,

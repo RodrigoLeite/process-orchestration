@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Bot, Loader2, Play, Copy, Check } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
-import { getAgentDescription } from "@/lib/agentDescriptions";
+import { getAgentDescription, getAgentName } from "@/lib/agentDescriptions";
 import type { Agent, AgentLog } from "@shared/schema";
 
 export default function AgentDetailPage({ params }: { params: { id: string } }) {
@@ -123,7 +123,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
             </div>
             <div>
               <h1 className="text-3xl font-bold" data-testid={`agent-name-${id}`}>
-                {agent.name}
+                {getAgentName(agent.internalKey, agent.name, language)}
               </h1>
               <p className="text-muted-foreground mt-1">{getAgentDescription(agent.internalKey, agent.description, language) || t("agentDetail.noDescription")}</p>
             </div>
@@ -241,7 +241,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-2xl bg-white">
             <CardHeader>
-              <CardTitle>{t("agentDetail.testAgentTitle").replace("{name}", agent.name)}</CardTitle>
+              <CardTitle>{t("agentDetail.testAgentTitle").replace("{name}", getAgentName(agent.internalKey, agent.name, language))}</CardTitle>
               <CardDescription>{t("agentDetail.testDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
