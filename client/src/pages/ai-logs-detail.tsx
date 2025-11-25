@@ -23,6 +23,7 @@ interface ExecutionDetail {
     status: "success" | "error";
     agentKey: string;
     metadata: Record<string, any>;
+    errorMessage?: string | null;
   };
   workflows: Array<{
     id: string;
@@ -207,6 +208,23 @@ export default function AILogsDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Error Message (if error) */}
+      {detail.execution.status === "error" && detail.execution.errorMessage && (
+        <Card className="border-red-500/20 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="w-5 h-5" />
+              Erro na Execução
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-red-700 bg-white p-3 rounded font-mono whitespace-pre-wrap break-words" data-testid="text-error-message">
+              {detail.execution.errorMessage}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Demand Details */}
       {detail.demandData && (

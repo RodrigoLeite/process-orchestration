@@ -3276,7 +3276,8 @@ Texto original: ${demand.rawText}`;
             duration_ms: foundLog.durationMs || 0,
             status: foundLog.status,
             agentKey: foundAgent?.name || "unknown",
-            metadata: foundLog.metadata || {}
+            metadata: foundLog.metadata || {},
+            errorMessage: foundLog.metadata?.errorMessage || foundLog.metadata?.error || null
           },
           workflows,
           bottlenecks,
