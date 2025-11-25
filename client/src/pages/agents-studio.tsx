@@ -130,23 +130,23 @@ export default function AgentsStudio() {
       <div className="w-full h-full flex flex-col bg-white overflow-hidden">
         <Toolbar onBack={handleBackToList} />
 
-        <div className="flex-1 flex overflow-hidden gap-0">
-          {/* Sidebar - conditional render */}
-          {isSidebarOpen && <Sidebar />}
+        <div className="flex-1 flex flex-col overflow-hidden gap-0">
+          {/* Top Section: Sidebar + Canvas */}
+          <div className="flex-1 flex overflow-hidden gap-0">
+            {/* Sidebar - conditional render */}
+            {isSidebarOpen && <Sidebar />}
 
-          {/* Canvas */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Canvas />
+            {/* Canvas */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Canvas />
+            </div>
           </div>
 
           {/* Divider */}
-          <div className="w-1 bg-gray-300 hover:bg-gray-400 cursor-col-resize transition-colors" />
+          <div className="h-1 bg-gray-300 hover:bg-gray-400 cursor-row-resize transition-colors" />
 
-          {/* Execution Panel */}
-          <div
-            style={{ width: `${splitSize}%` }}
-            className="bg-gray-50 border-l border-gray-300 overflow-hidden flex flex-col"
-          >
+          {/* Execution Panel - Bottom Section */}
+          <div className="h-64 bg-gray-50 border-t border-gray-300 overflow-hidden flex flex-col">
             <div className="p-3 border-b border-gray-300 bg-gray-100">
               <h2 className="text-sm font-bold text-gray-900">{t("agentStudio.execution")}</h2>
             </div>

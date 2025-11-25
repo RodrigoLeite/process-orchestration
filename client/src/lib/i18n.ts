@@ -464,6 +464,20 @@ export const translations = {
       outputNodeExecute: 'Executar Workflow',
       // Nodes - AgentNode
       agentNodeDescription: 'Executa um agente de IA com configuração de modelo e lógica customizada.',
+      // ExecutionPanel
+      executionPanelEmptyMessage: 'Execute o workflow para ver os resultados',
+      executionPanelTrace: 'Trace',
+      executionPanelOutput: 'Output',
+      executionPanelStats: 'Estatísticas',
+      executionPanelFinalResult: 'Resultado Final',
+      executionPanelTotalDuration: 'Duração Total',
+      executionPanelTokensUsed: 'Tokens Usados',
+      executionPanelNodesExecuted: 'Nós Executados',
+      executionPanelStatus: 'Status',
+      executionPanelSuccess: 'Sucesso',
+      executionPanelError: 'Erro',
+      executionPanelInput: 'Input',
+      executionPanelOutput_: 'Output',
     },
 
     // Critical Alerts Page
@@ -1003,6 +1017,20 @@ export const translations = {
       outputNodeExecute: 'Execute Workflow',
       // Nodes - AgentNode
       agentNodeDescription: 'Execute an AI agent with customizable model configuration and logic.',
+      // ExecutionPanel
+      executionPanelEmptyMessage: 'Execute the workflow to see the results',
+      executionPanelTrace: 'Trace',
+      executionPanelOutput: 'Output',
+      executionPanelStats: 'Statistics',
+      executionPanelFinalResult: 'Final Result',
+      executionPanelTotalDuration: 'Total Duration',
+      executionPanelTokensUsed: 'Tokens Used',
+      executionPanelNodesExecuted: 'Nodes Executed',
+      executionPanelStatus: 'Status',
+      executionPanelSuccess: 'Success',
+      executionPanelError: 'Error',
+      executionPanelInput: 'Input',
+      executionPanelOutput_: 'Output',
     },
 
     // Critical Alerts Page
