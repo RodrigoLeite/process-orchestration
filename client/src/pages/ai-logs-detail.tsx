@@ -210,7 +210,7 @@ export default function AILogsDetailPage() {
       </div>
 
       {/* Error Message (if error) */}
-      {detail.execution.status === "error" && detail.execution.errorMessage && (
+      {detail.execution.status === "error" && (
         <Card className="border-red-500/20 bg-red-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-700">
@@ -220,7 +220,7 @@ export default function AILogsDetailPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-red-700 bg-white p-3 rounded font-mono whitespace-pre-wrap break-words" data-testid="text-error-message">
-              {detail.execution.errorMessage}
+              {detail.execution.errorMessage || detail.execution.metadata?.error || "Erro desconhecido"}
             </p>
           </CardContent>
         </Card>
