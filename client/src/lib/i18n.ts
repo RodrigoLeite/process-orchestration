@@ -1,5 +1,16 @@
 export type Language = 'pt-BR' | 'en-US';
 
+// Helper functions for area translations
+export function getAreaName(areaId: string, language: Language): string {
+  const areaKey = areaId.toLowerCase();
+  return (translations[language]?.areaNames as any)?.[areaKey] || areaId;
+}
+
+export function getAreaDescription(areaId: string, language: Language): string {
+  const areaKey = areaId.toLowerCase();
+  return (translations[language]?.areaDescriptions as any)?.[areaKey] || '';
+}
+
 export const translations = {
   'pt-BR': {
     // Navigation
@@ -38,6 +49,25 @@ export const translations = {
       completionRate: 'Taxa de Conclusão',
       criticalAreas: 'Áreas Críticas',
       viewDetails: 'Ver Detalhes',
+    },
+
+    // Area Names and Descriptions
+    areaNames: {
+      financeiro: 'Financeiro',
+      juridico: 'Jurídico',
+      operacoes: 'Operações',
+      rh: 'RH',
+      ti: 'TI',
+      vendas: 'Vendas',
+    },
+
+    areaDescriptions: {
+      financeiro: 'Controle financeiro e orçamentário',
+      juridico: 'Gestão de questões legais e contratos',
+      operacoes: 'Operações corporativas e processos',
+      rh: 'Recursos Humanos e gestão de pessoas',
+      ti: 'Tecnologia da Informação e infraestrutura',
+      vendas: 'Gestão de vendas e relacionamento comercial',
     },
 
     // Area Details
@@ -671,6 +701,25 @@ export const translations = {
       completionRate: 'Completion Rate',
       criticalAreas: 'Critical Areas',
       viewDetails: 'View Details',
+    },
+
+    // Area Names and Descriptions
+    areaNames: {
+      financeiro: 'Finance',
+      juridico: 'Legal',
+      operacoes: 'Operations',
+      rh: 'HR',
+      ti: 'IT',
+      vendas: 'Sales',
+    },
+
+    areaDescriptions: {
+      financeiro: 'Financial and budget control',
+      juridico: 'Legal matters and contract management',
+      operacoes: 'Corporate operations and processes',
+      rh: 'Human Resources and people management',
+      ti: 'Information Technology and infrastructure',
+      vendas: 'Sales and business relationship management',
     },
 
     // Area Details

@@ -3,8 +3,9 @@ import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Users, Loader2, BarChart3, Grid3x3, Settings, Scale, DollarSign, TrendingUp, FileText, ShoppingCart, Circle, User } from "lucide-react";
-import type { AreaWorkflow } from "@/lib/types";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { getAreaName, getAreaDescription } from "@/lib/i18n";
+import { useI18nStore } from "@/lib/store/i18nStore";
 
 interface Area {
   id: string;
@@ -34,6 +35,7 @@ function IconRenderer({ iconName }: { iconName: string }) {
 
 export default function AreasListPage() {
   const { t } = useTranslation();
+  const { language } = useI18nStore();
   const { data: areas = [], isLoading } = useQuery<Area[]>({
     queryKey: ["areas"],
     queryFn: async () => {
@@ -76,10 +78,10 @@ export default function AreasListPage() {
                   <div>
                     <CardTitle className="text-xl flex items-center gap-2">
                       <IconRenderer iconName={area.iconName} />
-                      {area.name}
+                      {getAreaName(area.id, language)}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {area.description}
+                      {getAreaDescription(area.id, language)}
                     </CardDescription>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
