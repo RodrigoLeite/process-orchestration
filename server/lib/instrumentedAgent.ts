@@ -135,8 +135,11 @@ export async function runInstrumentedAgent({
         extra: { metadata },
       });
 
-      // LangSmith returns an object with id property
-      runId = (run as any)?.id || undefined;
+      // LangSmith returns a UUID string directly from createRun
+      console.log(`[AGENT:${agentKey}] Run returned:`, run);
+      console.log(`[AGENT:${agentKey}] Run type:`, typeof run);
+      console.log(`[AGENT:${agentKey}] Run keys:`, Object.keys(run || {}));
+      runId = run || undefined;
       context.runId = runId;
       
       logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
