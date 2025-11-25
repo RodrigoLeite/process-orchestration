@@ -14,6 +14,8 @@ import {
   type SupervisorEvent
 } from "./lib/agentSupervisor";
 import { requireAdmin, logAdminAccess } from "./lib/adminAuthMiddleware";
+import { requireRole } from "./middleware/requireRole";
+import { logAudit } from "./lib/audit";
 import { saveAgent, loadAgent, executeAgent } from "./lib/agentsStorage";
 import { getGraphLabels } from "./lib/graphTranslations";
 
@@ -3679,6 +3681,57 @@ Texto original: ${demand.rawText}`;
       res.status(500).json({
         success: false,
         error: "Failed to fetch monitoring status"
+      });
+    }
+  });
+
+  // Audit Logs API - Admin only
+  app.get("/api/audit-logs", requireAdmin, async (req, res) => {
+    try {
+      if (!req.tenantContext?.tenantId) {
+        return res.status(400).json({ error: "Tenant context required" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 100;
+      const logs = await storage.getAuditLogs(req.tenantContext.tenantId, {}, limit);
+
+      res.json({
+        success: true,
+        data: logs,
+        count: logs.length,
+      });
+    } catch (error) {
+      console.error("[AUDIT] Error fetching audit logs:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch audit logs",
+      });
+    }
+  });
+
+  // Audit Logs by Entity - Admin only
+  app.get("/api/audit-logs/:entityType/:entityId", requireAdmin, async (req, res) => {
+    try {
+      if (!req.tenantContext?.tenantId) {
+        return res.status(400).json({ error: "Tenant context required" });
+      }
+
+      const { entityType, entityId } = req.params;
+      const logs = await storage.getAuditLogs(
+        req.tenantContext.tenantId,
+        { entityType, entityId }
+      );
+
+      res.json({
+        success: true,
+        data: logs,
+        count: logs.length,
+      });
+    } catch (error) {
+      console.error("[AUDIT] Error fetching audit logs:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch audit logs",
       });
     }
   });

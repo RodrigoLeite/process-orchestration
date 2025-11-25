@@ -4,15 +4,29 @@ This project is an AI-driven process orchestration system designed to classify, 
 
 # Recent Changes
 
-- Fixed bottlenecks page showing data in production environment:
-  - Added early return to `/api/areas/overload` when no pending/in-progress demands exist
-  - Now all three bottleneck-related endpoints return empty data when database is empty
-  - `/api/bottlenecks` - returns empty bottlenecks array
-  - `/api/areas/overload` - returns empty areas array
-  - `/api/demands` - returns empty demands array
+## Multi-Tenant + RBAC + Audit Logs (Latest)
+- **Multi-Tenant Architecture**: 
+  - Added `tenants` table for tenant isolation
+  - Added `tenant_users` table with role-based access control (owner, admin, manager, member, readonly)
+  - Demands and workflows now include `tenant_id` field
+  - Added `tenantMiddleware` to inject tenant context from `x-tenant-id` header with fallback to default tenant
+  - Added `requireRole` middleware for role-based access control with role hierarchy
+- **Audit Logging**:
+  - Added `audit_logs` table for append-only event logging
+  - Created `server/lib/audit.ts` utility for logging CRUD operations
+  - New API endpoints for audit log queries (admin-only):
+    - `GET /api/audit-logs` - Get all tenant audit logs
+    - `GET /api/audit-logs/:entityType/:entityId` - Get audit trail for specific entity
+- **Database Migrations**:
+  - Generated and applied migration `0000_cheerful_nighthawk.sql` with all new tables
+  - Run `npm run db:push` to apply migrations before deployment
+- **Data Migration Script**:
+  - Created `server/db/scripts/migrate_to_tenant.ts` to backfill existing data with default tenant
+  - Run before first deployment: `DATABASE_URL="..." npx tsx server/db/scripts/migrate_to_tenant.ts`
+
+Previous changes:
+- Fixed bottlenecks page showing data in production environment
 - Implemented full internationalization for area names and descriptions (pt-BR and en-US)
-- Added helper functions `getAreaName()` and `getAreaDescription()` in i18n.ts
-- Updated areas-list.tsx and area-details.tsx to display translated area names and descriptions
 
 # User Preferences
 
@@ -67,7 +81,16 @@ The system uses a **Workflow-Per-Demand Pattern**, where each demand generates i
 
 ## Authentication & Authorization
 
-No authentication is currently implemented; the system is designed for internal enterprise use behind a VPN/firewall.
+No user authentication is currently implemented (system is behind VPN/firewall). However:
+- **Multi-Tenant Support**: Tenant context is injected via `x-tenant-id` header
+- **Role-Based Access Control (RBAC)**: Users can have roles within a tenant:
+  - `owner` - Full access including tenant management
+  - `admin` - Full operational access
+  - `manager` - Limited management access
+  - `member` - Standard user access
+  - `readonly` - Read-only access
+- **Default Tenant**: Backward-compatible with existing internal API calls (no header required)
+- **Middleware**: All routes get `req.tenant` and `req.tenantContext` from tenantMiddleware
 
 ## Internal Observability System
 
@@ -95,9 +118,58 @@ A LangFlow-inspired visual editor, integrated into the UI at `/app/agents-studio
 ## Database
 
 -   **Neon Serverless PostgreSQL**: Cloud-hosted database solution.
+-   **Multi-Tenant Schema**: Supports tenant isolation with audit logging
 
 ## Optional Services
 
 -   **Supabase**: Storage client configured.
 -   **Twilio**: SMS notification interface.
 -   **SendGrid**: Email notification interface.
+
+## Multi-Tenant Deployment Checklist
+
+Before going to production with multi-tenant support:
+
+1. **Pre-Deployment**:
+   - [ ] Run migrations: `npm run db:push`
+   - [ ] Run data migration: `DATABASE_URL="..." npx tsx server/db/scripts/migrate_to_tenant.ts`
+   - [ ] Verify tables exist: `psql $DATABASE_URL -c "\dt tenants, tenant_users, audit_logs"`
+
+2. **Configuration**:
+   - [ ] Set `DEFAULT_TENANT_ID` env var if using non-standard UUID (default: `00000000-0000-0000-0000-000000000000`)
+   - [ ] Ensure `x-tenant-id` header will be passed by clients
+
+3. **Testing**:
+   - [ ] Test existing API calls still work (backward compatible)
+   - [ ] Test with `x-tenant-id` header to use different tenant
+   - [ ] Verify audit logs are being recorded: `GET /api/audit-logs`
+   - [ ] Test role-based access: `GET /api/audit-logs` requires `owner`/`admin` role
+
+4. **Monitoring**:
+   - [ ] Check audit_logs table for unexpected access patterns
+   - [ ] Monitor tenant isolation via application logs
+   - [ ] Verify no cross-tenant data leaks
+
+## API Changes for Multi-Tenant
+
+All existing endpoints remain backward compatible. To use multi-tenant features:
+
+### Header-Based Tenant Selection
+```
+GET /api/demands
+Headers: x-tenant-id: 550e8400-e29b-41d4-a716-446655440000
+```
+
+### Role-Based Endpoints
+```
+# Admin-only audit logs (requires x-tenant-id header)
+GET /api/audit-logs?limit=50
+GET /api/audit-logs/demand/{demandId}
+```
+
+### Default Tenant (Backward Compatible)
+```
+# Existing internal calls work without header - uses default tenant
+GET /api/demands
+POST /api/demands
+```

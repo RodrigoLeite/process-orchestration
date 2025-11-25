@@ -5,6 +5,7 @@ import { registerWorkflowRoutes } from "./lib/workflow-api";
 import { seedAgents, initializeDefaultAreas } from "./lib/seeds";
 import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
+import { tenantMiddleware } from "./middleware/tenantMiddleware";
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -30,6 +31,9 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// Tenant middleware (sets req.tenant and req.tenantContext)
+app.use(tenantMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();
