@@ -3,8 +3,10 @@ import { Handle, Position, useReactFlow } from 'reactflow';
 import { Card } from '@/components/ui/card';
 import { Zap, ChevronDown } from 'lucide-react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function PromptNode({ data, id }: any) {
+  const { t } = useTranslation();
   const { setNodes } = useReactFlow();
   const { updateNode } = useAgentsStore();
   
@@ -64,11 +66,11 @@ export default function PromptNode({ data, id }: any) {
         {isExpanded && (
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-600 block mb-1">System Prompt</label>
+              <label className="text-xs text-gray-600 block mb-1">{t("agentStudio.promptNodeSystemPrompt")}</label>
               <textarea
                 value={systemPrompt}
                 onChange={handlePromptChange}
-                placeholder="Enter system prompt..."
+                placeholder={t("agentStudio.promptNodePlaceholder")}
                 className="w-full bg-white border border-gray-300 rounded px-2 py-2 text-gray-900 text-xs resize-none outline-none focus:border-blue-500 h-24"
                 data-testid={`textarea-system-prompt-${id}`}
               />
