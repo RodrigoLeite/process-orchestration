@@ -7,7 +7,7 @@ import Toolbar from '@/components/AgentsStudio/Toolbar';
 import ExecutionPanel from '@/components/AgentsStudio/ExecutionPanel';
 import { ReactFlowProvider } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot, Sparkles, Zap, Lightbulb, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 
 const getSampleAgents = (t: any) => [
@@ -15,19 +15,22 @@ const getSampleAgents = (t: any) => [
     id: 'workflow-generator',
     name: t("agentStudio.workflowGenerator"),
     description: t("agentStudio.workflowGeneratorDesc"),
-    icon: '⚙️'
+    icon: Zap,
+    iconColor: 'text-blue-600'
   },
   {
     id: 'insights-inteligentes',
     name: t("agentStudio.smartInsights"),
     description: t("agentStudio.smartInsightsDesc"),
-    icon: '💡'
+    icon: Lightbulb,
+    iconColor: 'text-yellow-600'
   },
   {
     id: 'monitor-gargalos',
     name: t("agentStudio.bottleneckMonitor"),
     description: t("agentStudio.bottleneckMonitorDesc"),
-    icon: '🚨'
+    icon: AlertTriangle,
+    iconColor: 'text-red-600'
   }
 ];
 
@@ -82,30 +85,38 @@ export default function AgentsStudio() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {SAMPLE_AGENTS.map((agent) => (
-                <button
-                  key={agent.id}
-                  onClick={() => handleSelectAgent(agent.id)}
-                  className="group relative bg-white border border-gray-300 rounded-xl p-6 hover:border-blue-500 hover:shadow-lg hover:bg-blue-50 transition-all duration-200 text-left"
-                  data-testid={`button-select-agent-${agent.id}`}
-                >
-                  <div className="mb-4 text-4xl">{agent.icon}</div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                    {agent.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {agent.description}
-                  </p>
-                  <div className="flex items-center gap-2 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-sm font-medium">{t("agentStudio.selectAgent")}</span>
-                    <span>→</span>
-                  </div>
-                </button>
-              ))}
+              {SAMPLE_AGENTS.map((agent) => {
+                const IconComponent = agent.icon;
+                return (
+                  <button
+                    key={agent.id}
+                    onClick={() => handleSelectAgent(agent.id)}
+                    className="group relative bg-white border border-gray-300 rounded-xl p-6 hover:border-blue-500 hover:shadow-lg hover:bg-blue-50 transition-all duration-200 text-left"
+                    data-testid={`button-select-agent-${agent.id}`}
+                  >
+                    <div className="mb-4">
+                      <IconComponent size={40} className={`${agent.iconColor}`} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      {agent.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {agent.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-sm font-medium">{t("agentStudio.selectAgent")}</span>
+                      <span>→</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-300">
-              <h3 className="text-gray-900 font-bold mb-2">💡 {t("agentStudio.tip")}</h3>
+              <h3 className="text-gray-900 font-bold mb-2 flex items-center gap-2">
+                <Lightbulb size={18} className="text-yellow-600" />
+                {t("agentStudio.tip")}
+              </h3>
               <p className="text-gray-600 text-sm">
                 {t("agentStudio.tipDescription")}
               </p>
