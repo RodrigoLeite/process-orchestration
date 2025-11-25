@@ -1,0 +1,113 @@
+Implementar Multi-Tenant + RBAC + Audit Logs no backend existente (Node.js + Express + TypeScript + Drizzle).
+O projeto atual usa: Express ESM, Drizzle ORM, PostgreSQL, estrutura de pastas server/, server/ai/, client/.
+
+Requisitos gerais:
+- Toda entidade crítica (demands, workflows, agents, executions) deve ser associada a um tenant_id.
+- Há usuários globais no sistema; um usuário pode pertencer a vários tenants via tenant_users.
+- Implementar middleware que injete tenant context e user context em cada request.
+- Implementar audit logs append-only para operações críticas (create/update/delete em demands, workflows, agent runs).
+
+Entregáveis (arquivos/migrations/rotas/middleware):
+
+1) DB (Drizzle) — criar migrations:
+- tabela tenants:
+  - id (pk uuid)
+  - name
+  - slug (unique)
+  - plan (text)
+  - created_at
+
+- tabela tenant_users:
+  - id (pk uuid)
+  - tenant_id (fk tenants.id)
+  - user_id (fk users.id)
+  - role (enum: owner, admin, manager, member, readonly)
+  - created_at
+
+- tabela workflows:
+  - id (pk uuid)
+  - tenant_id (fk tenants.id)
+  - workflow_hash
+  - name
+  - metadata jsonb
+  - created_by (user_id)
+  - created_at
+  - version int
+
+- tabela audit_logs:
+  - id (pk uuid)
+  - tenant_id (fk tenants.id) nullable? (prefer not)
+  - user_id (nullable)
+  - entity_type (text)
+  - entity_id (text)
+  - action (text) e.g. CREATE/UPDATE/DELETE/RUN
+  - payload jsonb
+  - created_at timestamptz default now()
+
+Gerar migrations Drizzle (TS files) e adicionar ao diretório server/db/migrations.
+
+2) Middleware Express:
+- server/middleware/tenantMiddleware.ts
+  - extrai tenant via:
+    - header `x-tenant-id` OR
+    - subdomain (opcional) OR
+    - query param (dev)
+  - valida se o user pertence ao tenant (se user auth presente)
+  - injeta req.tenant = { id, name, plan }
+  - se não autorizado, retorna 403
+
+- server/middleware/requireRole(roleOrRoles)
+  - verifica se req.user tem role suficiente no tenant
+  - roles suportados: owner, admin, manager, member, readonly
+  - caso insuficiente, retorna 403
+
+3) Audit util:
+- server/lib/audit.ts
+  - function logAudit({ tenantId, userId, entityType, entityId, action, payload })
+  - escreve em audit_logs table
+  - sempre execute dentro da mesma transação quando pertinente
+
+4) Atualizar endpoints críticos (exemplos):
+- POST /api/demands
+  - usar tenantMiddleware
+  - criar demanda com tenant_id
+  - chamar logAudit({ action: 'CREATE', entityType: 'demand', entityId, payload })
+
+- POST /api/workflows (create/reuse)
+  - similar
+
+5) Tests básicos (Vitest)
+- criar mocks para tenantMiddleware
+- testar que usuário sem tenant role recebe 403
+- testar que audit_log é escrito
+
+6) Migration de dados (script)
+- script server/db/scripts/migrate_to_tenant.ts
+  - preencher tenant_id default para dados existentes (bookkeeping)
+  - mapping: criar tenant “default” e atribuir existing data to default tenant
+  - instruções para ops: “rodar antes de deploy” (imprimir SQL necessário)
+
+7) Documentação minimal
+- README: como adicionar tenant header, como criar tenant e users via SQL/endpoint.
+
+Notas importantes:
+- Mantenha compatibilidade com chamadas internas que hoje não passam tenant (adicionar fallback para tenant default em dev).
+- Não altere UI; apenas ajuste backend e contratos da API (aceitando x-tenant-id header).
+- Use UUIDs (v4) para novos ids.
+
+Gere todo o código necessário nos arquivos:
+- server/db/migrations/xxxx_create_tenants.ts
+- server/db/migrations/xxxx_create_tenant_users.ts
+- server/db/migrations/xxxx_create_workflows_tenant.ts
+- server/db/migrations/xxxx_create_audit_logs.ts
+- server/middleware/tenantMiddleware.ts
+- server/middleware/requireRole.ts
+- server/lib/audit.ts
+- server/api/demands.ts (atualizado)
+- server/api/workflows.ts (atualizado)
+- server/db/scripts/migrate_to_tenant.ts
+- tests/tenant.middleware.test.ts
+
+Certifique-se de que o código TypeScript ESM compile e que as migrations sejam compatíveis com Drizzle.
+
+Ao final, gere também um checklist de comandos para rodar as migrations e validar localmente.
