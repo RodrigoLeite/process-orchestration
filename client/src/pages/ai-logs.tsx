@@ -173,7 +173,7 @@ export default function AILogsPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       {getStatusIcon(log.status)}
                       <Badge
                         color={getStatusColor(log.status)}
@@ -184,6 +184,11 @@ export default function AILogsPage() {
                       <Badge color="blue" data-testid={`duration-${log.executionId}`}>
                         ⏱ {formatDuration(log.duration_ms)}
                       </Badge>
+                      {log.agentExecuted && (
+                        <Badge color="purple" data-testid={`agent-${log.executionId}`}>
+                          🤖 {t("aiLogs.agent")}: {log.agentExecuted}
+                        </Badge>
+                      )}
                     </div>
                     <CardTitle className="text-base" data-testid={`title-${log.executionId}`}>
                       {t("aiLogs.execution")} #{log.executionId.substring(0, 8)}

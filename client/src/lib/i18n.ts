@@ -555,6 +555,13 @@ export const translations = {
       newest: 'Mais Recentes',
       slowest: 'Mais Lentos',
       noLogs: 'Nenhuma execução registrada',
+      success: '✓ Sucesso',
+      error: '✗ Erro',
+      execution: 'Execução',
+      demand: 'Demanda',
+      generatedWorkflow: 'Workflow Gerado',
+      details: 'Detalhes',
+      agent: 'Agente',
     },
 
     // AI Logs Detail Page
@@ -1186,6 +1193,7 @@ export const translations = {
       demand: 'Demand',
       generatedWorkflow: 'Generated Workflow',
       details: 'Details',
+      agent: 'Agent',
     },
 
     // AI Logs Detail Page
