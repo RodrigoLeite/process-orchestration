@@ -480,6 +480,26 @@ export const translations = {
       executionPanelOutput_: 'Output',
     },
 
+    // Execution Graph Page
+    executionGraph: {
+      testInputLabel: 'Input para Teste',
+      testInputPlaceholder: 'Digite o input para testar o graph...',
+      executeButton: 'Executar Graph',
+      executingButton: 'Executando...',
+      loadingGraph: 'Carregando grafo...',
+      noNodesFound: 'Nenhum nodo encontrado',
+      selectNodeHint: 'Clique em um nodo para ver detalhes',
+      loading: 'Carregando...',
+      nodeDescription: 'Descrição',
+      nodeMetadata: 'Metadados',
+      nodeLastRuns: 'Últimas Execuções',
+      executeAgent: 'Executar Agente',
+      notImplemented: 'Funcionalidade ainda não implementada',
+      successMessage: 'Execução iniciada com sucesso!',
+      errorMessage: 'Erro ao executar',
+      emptyInputError: 'Por favor, digite um input para testar',
+    },
+
     // Critical Alerts Page
     alerts: {
       title: 'Alertas Críticos',
@@ -1031,6 +1051,26 @@ export const translations = {
       executionPanelError: 'Error',
       executionPanelInput: 'Input',
       executionPanelOutput_: 'Output',
+    },
+
+    // Execution Graph Page
+    executionGraph: {
+      testInputLabel: 'Test Input',
+      testInputPlaceholder: 'Enter test input for the graph...',
+      executeButton: 'Execute Graph',
+      executingButton: 'Executing...',
+      loadingGraph: 'Loading graph...',
+      noNodesFound: 'No nodes found',
+      selectNodeHint: 'Click on a node to see details',
+      loading: 'Loading...',
+      nodeDescription: 'Description',
+      nodeMetadata: 'Metadata',
+      nodeLastRuns: 'Last Executions',
+      executeAgent: 'Execute Agent',
+      notImplemented: 'Feature not yet implemented',
+      successMessage: 'Execution started successfully!',
+      errorMessage: 'Error executing',
+      emptyInputError: 'Please enter an input to test',
     },
 
     // Critical Alerts Page
