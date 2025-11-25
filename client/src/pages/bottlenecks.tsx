@@ -125,7 +125,7 @@ export default function BottlenecksPage() {
     critical: bottlenecks.filter(b => b.severity === "high").length,
     attention: bottlenecks.filter(b => b.severity === "medium").length,
     moderate: bottlenecks.filter(b => b.severity === "low").length,
-    normal: Math.max(0, 10 - bottlenecks.length)
+    normal: bottlenecks.length === 0 ? 0 : Math.max(0, 6 - bottlenecks.length)
   };
 
   // Build impact table data
