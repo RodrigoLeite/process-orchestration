@@ -1,0 +1,184 @@
+Implementar Login com Google OAuth2 integrado ao meu projeto **Vite + React (frontend)** e **Express + TypeScript + Drizzle (backend)**.  
+Objetivo: autenticação via Google com criação automática de tenant e emissão de tokens JWT + refresh token, armazenamento de refresh token em Redis, persistência em Postgres via Drizzle, e UI de login no Vite React.
+
+**STACK**:
+- Frontend: Vite + React + TypeScript + Tailwind + ShadCN (componentes)
+- Backend: Node.js + Express + TypeScript (ESM) + Drizzle ORM + PostgreSQL
+- Redis: para refresh tokens / sessions (env REDIS_URL)
+- JWT: jose
+- OAuth: Google OAuth2 (server-side flow)
+- IDs: UUID v4 (use `crypto` or `uuid`)
+
+==================================================================
+REQUISITOS FUNCIONAIS
+==================================================================
+1) Fluxo OAuth:
+- Frontend: botão "Continuar com Google" que redireciona para backend endpoint `/api/auth/google`.
+- Backend: `/api/auth/google` → inicia OAuth2 redirect para Google consent screen.
+- Google callback: `/api/auth/google/callback` → recebe `code`, troca por tokens, valida profile.
+- Após callback o backend:
+  - cria/atualiza `users` no DB (Drizzle)
+  - se usuário não tem nenhum tenant → cria `tenant` automático (nome: "Workspace de <firstName>" ou `email` local part)
+  - cria `tenant_users` com role = "owner" (se novo tenant)
+  - emite **access_token (JWT curto)** e **refresh_token (random uuid)**, salva refresh_token no Redis mapeado para user+tenant
+  - define cookies httpOnly Secure `access_token` (or include in response body) and `refresh_token` (httpOnly)
+  - redireciona para frontend `/app` ou `/onboarding` se tenant.is_configured = false
+
+2) Tokens e sessão:
+- Access token (JWT) com claims: `sub=userId`, `tenantId`, `role`, expires ~15min
+- Refresh token: random uuid stored in Redis with TTL 30 days, associated to userId + tenantId
+- Endpoint `/api/auth/refresh` que troca refresh token por novo pair tokens (rotate refresh token: invalidate old one in Redis)
+- Endpoint `/api/auth/logout` que invalida refresh token no Redis e limpa cookies
+
+3) Segurança:
+- Cookies: HttpOnly, Secure, SameSite=Strict, path=/
+- CSRF: for non-OAuth flows (not required on callback)
+- Validate inputs
+- Use env vars: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SIGNING_KEY, REDIS_URL, APP_URL, FRONTEND_URL
+
+==================================================================
+DB (Drizzle) — migrations a criar
+==================================================================
+Create migrations files under `server/db/migrations/`:
+
+1) users table
+- id uuid pk
+- name text
+- email text unique
+- picture text nullable
+- created_at timestamptz default now()
+
+2) tenants table
+- id uuid pk
+- name text
+- is_configured boolean default false
+- metadata jsonb nullable
+- created_at timestamptz default now()
+
+3) tenant_users table
+- id uuid pk
+- tenant_id uuid fk
+- user_id uuid fk
+- role text  -- "owner" | "admin" | "member" | "readonly"
+- created_at timestamptz default now()
+
+4) (optional) sessions/refresh_tokens table if you prefer DB over Redis (but we will use Redis as primary)
+
+==================================================================
+BACKEND — Arquivos a criar/atualizar (Express + TypeScript)
+==================================================================
+Crie esses arquivos (paths e responsabilidades):
+
+/server/auth/googleOAuth.ts
+- Encapsula a lógica OAuth2 client with `google-auth-library` (OAuth2Client)
+- Functions:
+  - getAuthUrl(state?)
+  - getTokensFromCode(code)
+  - getProfileFromIdToken(id_token)
+
+ /server/routes/authRoutes.ts
+- Route: GET  /api/auth/google  -> redirect to Google consent (use getAuthUrl)
+- Route: GET  /api/auth/google/callback -> handles code, exchanges tokens, processes user
+- Route: POST /api/auth/refresh -> rotates refresh token, returns new tokens
+- Route: POST /api/auth/logout -> invalidates refresh token, clears cookies
+
+/server/lib/jwt.ts
+- functions: signAccessToken(payload), verifyAccessToken(token)
+- use `jose` library, RS256 or HS256 per env config (use symmetric secret for simplicity)
+
+server/lib/redisClient.ts
+- simple redis client wrapper (ioredis or redis npm), connect using REDIS_URL
+
+/server/services/authService.ts
+- createOrUpdateUserFromGoogle(profile)
+- ensureTenantForUser(user): creates tenant & tenant_user if user has no tenant
+- issueTokensForUser(user, tenant): signs access JWT + creates refresh uuid (save to Redis)
+
+/server/middleware/authMiddleware.ts
+- reads access_token from cookie Authorization header Bearer fallback
+- verifies JWT and attaches req.user = { id, tenantId, role, email }
+- on failure respond 401
+
+/server/middleware/tenantMiddleware.ts (integration)
+- ensures req.tenant is loaded from tenant_users for req.user
+
+==================================================================
+FRONTEND — Vite + React
+==================================================================
+Files to create:
+
+/client/src/pages/Login.tsx
+- UI with:
+  - Button "Continuar com Google" -> window.location = `${BACKEND_URL}/api/auth/google?redirect=${FRONTEND_URL}/app`
+  - (optional) Email/password form (not required now)
+- Use ShadCN components and Tailwind dark theme
+
+/client/src/hooks/useAuth.ts
+- helper to read session from backend (`/api/auth/session`) or decode JWT
+- helper signOut()
+
+/client/src/pages/Onboarding.tsx
+- If tenant.is_configured=false render small form to set workspace name/logo and call `/api/tenant/update`
+
+==================================================================
+TENANT BOOTSTRAP (backend)
+==================================================================
+When creating tenant automatically:
+- name = user.name ? `Workspace de ${user.name.split(" ")[0]}` : email prefix
+- tenant.is_configured = false
+- create tenant_user role owner
+
+After callback: if is_configured false -> redirect to /onboarding
+
+==================================================================
+ROUTE SECURITY / MIDDLEWARE
+==================================================================
+- Add global middleware in Express to parse cookies and attach user if access token valid.
+- Protect sensitive endpoints with `authMiddleware` and `tenantMiddleware` in sequence.
+
+==================================================================
+FRONTEND REDIRECT/STATE HANDLING
+==================================================================
+- On OAuth callback backend sets cookies and redirects to frontend `/auth/success` or `/app`
+- Frontend `/auth/success` reads `/api/auth/session` to get user + tenant info and redirect to onboarding or dashboard accordingly.
+
+==================================================================
+TESTS
+==================================================================
+- Write integration tests (supertest) to sanity-check:
+  - GET /api/auth/google returns 302 to Google URL
+  - Simulate callback handler with mocked tokens/profile -> user created, tenant created, cookies set
+  - POST /api/auth/refresh rotates token
+  - POST /api/auth/logout invalidates refresh token
+
+==================================================================
+ENV SAMPLE (.env.example)
+==================================================================
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REDIRECT_URI=https://your-backend.com/api/auth/google/callback
+JWT_SIGNING_KEY=super-secret-key
+REDIS_URL=redis://...
+APP_URL=https://your-backend.com
+FRONTEND_URL=http://localhost:5173
+
+==================================================================
+DELIVERABLES (ao colar o prompt no Replit AI)
+==================================================================
+- Migrations Drizzle (4 files)
+- Backend files list (googleOAuth.ts, authRoutes.ts, authService.ts, jwt.ts, redisClient.ts, middlewares)
+- Frontend Login page + Onboarding page + useAuth hook
+- Integration notes (how to configure Google OAuth credentials)
+- Test files (basic)
+- README com instructions to run locally (env, build, start, create Google credentials)
+
+==================================================================
+NOTAS FINAIS
+==================================================================
+- Use the `google-auth-library` for server-side code (OAuth2Client).
+- Prefer server-side token exchange (no client secret exposure).
+- For simplicity, refresh tokens stored in Redis (key: `refresh:<refreshId>` -> JSON with userId, tenantId)
+- Rotate refresh tokens on use: issue new refresh id, delete old in Redis.
+- Ensure CORS allows FRONTEND_URL and set SameSite flags correctly.
+
+Gere todo o código necessário, pronto para rodar na stack Vite + React frontend e Express + Drizzle backend.

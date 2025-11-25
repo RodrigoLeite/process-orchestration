@@ -1,0 +1,79 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  image?: string;
+}
+
+export interface AuthTenant {
+  id: string;
+  name: string;
+  isConfigured: boolean;
+}
+
+export interface AuthSession {
+  authenticated: boolean;
+  user?: AuthUser;
+  tenant?: AuthTenant;
+  role?: string;
+}
+
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+export function useAuth() {
+  const { data: session, isLoading, refetch } = useQuery<AuthSession>({
+    queryKey: ['auth-session'],
+    queryFn: async () => {
+      const response = await fetch(`${BACKEND_URL}/api/auth/session`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch session');
+      }
+
+      return response.json();
+    },
+    retry: false,
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
+  const login = useCallback(() => {
+    window.location.href = `${BACKEND_URL}/api/auth/google`;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await logoutMutation.mutateAsync();
+  }, [logoutMutation]);
+
+  return {
+    session: session || { authenticated: false },
+    isLoading,
+    isAuthenticated: session?.authenticated || false,
+    user: session?.user,
+    tenant: session?.tenant,
+    role: session?.role,
+    login,
+    logout,
+  };
+}

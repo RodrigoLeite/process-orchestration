@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout";
 import Dashboard from "@/pages/home";
 import Landing from "@/pages/landing";
 import LoginPage from "@/pages/login";
+import OnboardingPage from "@/pages/onboarding";
 import Demands from "@/pages/demands";
 import AllDemands from "@/pages/all-demands";
 import DemandsManager from "@/pages/demands-manager";
@@ -74,6 +75,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
+      <Route path="/onboarding" component={OnboardingPage} />
       <Route component={AppRoutes} />
     </Switch>
   );

@@ -1,14 +1,14 @@
 import { type Server } from "node:http";
 import express, { type Express, type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { registerWorkflowRoutes } from "./lib/workflow-api";
 import { seedAgents, initializeDefaultAreas } from "./lib/seeds";
 import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
 import { tenantMiddleware } from "./middleware/tenantMiddleware";
-import { configureSession, configurePassport } from "./middleware/authMiddleware";
-import authRoutes from "./routes/auth";
-import passport from "passport";
+import { jwtMiddleware } from "./middleware/jwtMiddleware";
+import authRoutes from "./routes/authRoutes";
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -34,12 +34,10 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
-// Session & Passport
-app.use(configureSession());
-configurePassport();
-app.use(passport.initialize());
-app.use(passport.session());
+// JWT middleware (sets req.user if token is valid)
+app.use(jwtMiddleware);
 
 // Tenant middleware (sets req.tenant and req.tenantContext)
 app.use(tenantMiddleware);
