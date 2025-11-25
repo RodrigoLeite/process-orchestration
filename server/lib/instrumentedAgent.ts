@@ -152,14 +152,18 @@ export async function runInstrumentedAgent({
       const client = getLangsmithClient();
       if (client) {
         try {
-          await updateLangSmithRun(runId, {
+          console.log(`[AGENT:${agentKey}] Updating LangSmith run ${runId} with success status...`);
+          const updateResult = await updateLangSmithRun(runId, {
             output,
             duration,
             success: true,
           }, "success");
+          console.log(`[AGENT:${agentKey}] LangSmith run update result:`, updateResult);
         } catch (error) {
           console.error(`[AGENT:${agentKey}] Failed to update LangSmith run:`, error);
         }
+      } else {
+        console.warn(`[AGENT:${agentKey}] LangSmith client not available for updating run ${runId}`);
       }
     }
 
