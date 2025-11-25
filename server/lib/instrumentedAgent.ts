@@ -148,8 +148,10 @@ export async function runInstrumentedAgent({
     const duration = Date.now() - startTime;
 
     // Update LangSmith run with success
+    console.log(`[AGENT:${agentKey}] After handler: runId=${runId}`);
     if (runId) {
       const client = getLangsmithClient();
+      console.log(`[AGENT:${agentKey}] Client available: ${!!client}`);
       if (client) {
         try {
           console.log(`[AGENT:${agentKey}] Updating LangSmith run ${runId} with success status...`);
@@ -165,6 +167,8 @@ export async function runInstrumentedAgent({
       } else {
         console.warn(`[AGENT:${agentKey}] LangSmith client not available for updating run ${runId}`);
       }
+    } else {
+      console.warn(`[AGENT:${agentKey}] No runId to update (runId is null or undefined)`);
     }
 
     // Fire onSuccess callback
