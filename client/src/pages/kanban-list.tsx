@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, LayoutGrid } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
@@ -50,6 +52,7 @@ const areaColors: Record<string, { badge: string; bg: string }> = {
 export default function KanbanList() {
   const { t } = useTranslation();
   const [, navigate] = useLocation();
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
 
   const { data: workflows, isLoading, error } = useQuery<AreaWorkflow[]>({
     queryKey: ["workflows"],
@@ -121,15 +124,49 @@ export default function KanbanList() {
     };
   };
 
+  // Extract unique areas and sort them
+  const uniqueAreas = workflows ? [...new Set(workflows.map((w) => w.area))].sort() : [];
+
+  // Filter workflows by selected area
+  const filteredWorkflows = selectedArea
+    ? workflows?.filter((w) => w.area === selectedArea) || []
+    : workflows || [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <LayoutGrid className="w-8 h-8" />
-        <h1 className="text-4xl font-bold">{t("workflows.title")} ({workflows.length})</h1>
+        <h1 className="text-4xl font-bold">{t("workflows.title")} ({filteredWorkflows.length})</h1>
+      </div>
+
+      {/* Filter by Area */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-muted-foreground">{t("workflows.filterByArea")}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={selectedArea === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedArea(null)}
+            data-testid="button-filter-all-areas"
+          >
+            {t("workflows.allAreas")}
+          </Button>
+          {uniqueAreas.map((area) => (
+            <Button
+              key={area}
+              variant={selectedArea === area ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedArea(area)}
+              data-testid={`button-filter-area-${area}`}
+            >
+              {area}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {workflows.map((workflow) => {
+        {filteredWorkflows.map((workflow) => {
           const stats = getWorkflowStats(workflow.id);
 
           return (
