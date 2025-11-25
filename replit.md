@@ -5,34 +5,32 @@ This project is an AI-driven process orchestration system designed to classify, 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
-- **Internationalization (i18n)**: System now supports Portuguese BR (pt-BR) and English US (en-US). Default language is Portuguese BR. Language selector added in Settings page with persistent storage via Zustand (localStorage).
 
 # System Architecture
 
 ## Frontend Architecture
 
-The frontend is a React 18 + Vite + TypeScript single-page application, utilizing Radix UI components with Tailwind CSS for styling and shadcn/ui patterns. State management is handled by TanStack Query, and Wouter is used for client-side routing. Forms are managed with React Hook Form and Zod validation. The design is mobile-responsive with a collapsible navigation sidebar and features real-time updates through polling.
+The frontend is a React 18 + Vite + TypeScript single-page application using Radix UI components with Tailwind CSS and shadcn/ui patterns. State management is handled by TanStack Query, Wouter for routing, and React Hook Form with Zod for forms. The design is mobile-responsive with a collapsible navigation sidebar.
 
 ## Backend Architecture
 
-The backend is built with Node.js + Express + TypeScript, using esbuild for production and tsx for development. It exposes RESTful JSON APIs and employs custom logging middleware.
+The backend is built with Node.js + Express + TypeScript, exposing RESTful JSON APIs.
 
 **Core Components:**
 
 -   **AI Agent Supervisor**: Orchestrates specialized AI agents, with decisions traced via LangSmith.
--   **Instrumented Agent Wrapper**: Provides generic LangSmith tracing, logging, and error handling for all AI agents.
--   **Specialized AI Agents**: Include Workflow Builder, Insights AI, Bottleneck Detector, and Predictive AI, all using GPT-4 via OpenAI API with structured JSON output.
--   **Scheduler**: Manages automated periodic execution of bottleneck and insights agents, driven by an event-driven architecture.
--   **Notification Infrastructure**: Stubs for Twilio (SMS) and SendGrid (Email) integration, along with a webhook dispatcher.
+-   **Specialized AI Agents**: Workflow Builder, Insights AI, Bottleneck Detector, and Predictive AI, all using GPT-4 with structured JSON output.
+-   **Scheduler**: Manages automated periodic execution of agents.
+-   **Notification Infrastructure**: Stubs for Twilio (SMS) and SendGrid (Email) integration, and a webhook dispatcher.
 -   **Auto-Escalation Engine**: Triggers tiered escalation strategies based on bottleneck severity.
--   **LangFlow Integration**: A backend gateway for executing LangFlow-designed agents.
--   **LangChain AI Agents Foundation**: Provides a robust foundation for building LangChain-based AI agents, including an LLM client (GPT-4 Turbo), a prompt builder, and various tools.
--   **LangGraph Orchestration System**: A complete demand processing pipeline using LangGraph, integrating `input_node`, `workflow_builder_node`, `bottleneck_detector_node`, `insights_node`, and `output_node` for sequential execution. This system handles demand validation, workflow generation, risk identification, and insight generation.
--   **Visual AI Agent Editor**: A full-featured, LangFlow-like visual editor for designing, building, and testing AI agents without code. Built with React + ReactFlow for canvas interaction, Zustand for state management, and file-based persistence. Supports PromptNode (LLM calls), LogicNode (conditional routing/filtering), and OutputNode (result formatting). Includes real-time execution tracing, node connection validation, and a dedicated studio interface.
+-   **LangFlow Integration**: Backend gateway for executing LangFlow-designed agents.
+-   **LangChain AI Agents Foundation**: Provides an LLM client (GPT-4 Turbo), prompt builder, and tools.
+-   **LangGraph Orchestration System**: A complete demand processing pipeline (input, workflow builder, bottleneck detector, insights, output nodes) for sequential execution.
+-   **Visual AI Agent Editor**: A full-featured, LangFlow-like visual editor for designing, building, and testing AI agents without code. Built with React + ReactFlow, Zustand for state, and file-based persistence. Supports PromptNode, LogicNode, and OutputNode.
 
 **Architectural Patterns:**
 
-The system is event-driven, with a webhook system for external integrations. It adheres to separation of concerns, isolating agent logic from API routes and storage. All AI operations are extensively instrumented and logged to LangSmith for observability and audit trails. The system leverages modern LangChain and LangGraph for agent orchestration, promoting stateless, pure TypeScript functions with Zod schemas for strict validation and structured JSON-only responses.
+The system is event-driven, with a webhook system for external integrations, and adheres to separation of concerns. All AI operations are instrumented and logged to LangSmith for observability. It leverages LangChain and LangGraph for agent orchestration, promoting stateless, pure TypeScript functions with Zod schemas for validation and structured JSON responses.
 
 ## Data Storage
 
@@ -40,155 +38,47 @@ PostgreSQL, via Neon serverless connector, is used for persistent storage, manag
 
 **Core Data Models:**
 
--   `demands`: Main entity for requests, including metadata, workflows, and SLA.
--   `workflows`: Workflow definitions with UNIQUE workflowHash for intelligent deduplication (workflow-per-demand architecture)
--   `workflow_stages`: Stages within each workflow with ordering
+-   `demands`: Main entity for requests.
+-   `workflows`: Workflow definitions with `workflowHash` for deduplication.
+-   `workflow_stages`: Stages within each workflow.
 -   `workgraph_nodes` / `workgraph_edges`: Represent graph-based workflow execution paths.
 -   `agents` / `agent_logs`: AI agent registry and execution history.
 -   `webhooks` / `webhook_events`: External integration event system.
 -   `demand_history`: Audit trail for demand state changes.
--   `langflow_agents`: Stores LangFlow agent definitions, compiled code, and versioning.
--   `system_events`: Records all agent executions with metadata for internal observability.
--   `stage_bottlenecks` / `stage_insights`: Bottleneck and insight analysis linked to specific workflow stages.
+-   `langflow_agents`: Stores LangFlow agent definitions.
+-   `system_events`: Records all agent executions for internal observability.
+-   `stage_bottlenecks` / `stage_insights`: Bottleneck and insight analysis.
 
-## Workflow Architecture - REFACTORED (Nov 23, 2025)
+## Workflow Architecture
 
-**IMPORTANT: Migrated from area-based workflows to demand-based workflows with intelligent deduplication**
-
-### Key Changes:
-1. **Workflow-Per-Demand Pattern**: Each demand generates its own workflow steps via AI, no longer fixed per-area
-2. **Intelligent Area-Aware Deduplication**: Uses SHA-256 hash of workflow steps + area to automatically reuse identical workflows across multiple demands IN THE SAME AREA
-3. **Hash Function**: `generateWorkflowHash(steps, area)` canonicalizes and hashes workflow step JSON + area for comparison
-4. **Deduplication Service**: `getOrCreateWorkflow(etapas, workflowName, area)` handles the lookup and creation with automatic step normalization, now area-aware
-5. **Workflow Naming**: Each workflow gets a user-friendly name generated by the AI agent (e.g., "TI - Implementação de Sistema de Autenticação OAuth2", "Vendas - Fechamento de Venda")
-6. **Smart Hash Normalization**: Hash includes AREA and ignores volatile fields (descriptions, assignees, durations) and maps stage names to standard patterns for robust deduplication
-
-### Workflow Generation Flow:
-1. Demand is created and routed to orchestration
-2. LangGraph executes WorkflowBuilder agent which generates AI-customized steps SPECIFIC TO THE AREA (TI, Vendas, RH, etc.)
-3. Steps are normalized to standard format via `convertEtapasToSteps()`
-4. Hash is generated from normalized steps + area with smart mapping of stage names to standard patterns
-5. System checks if workflow with this hash already exists via `getWorkflowByHash()`
-6. If exists → reuse (no new workflow created); If not → create new workflow with stages
-7. Demand is linked to the found/created workflow
-8. WorkflowBuilder agent also generates a human-readable name for the workflow
-
-### Area-Specific Stage Names (Nov 23, 2025 Update):
-The WorkflowBuilder agent now tailors stage names to each area and DEMAND TYPE.
-
-### Demand-Type Customization (Nov 23, 2025 - CRITICAL FIX):
-**Problem Fixed**: WorkflowBuilder was generating identical workflow structures for all demands in the same area, causing "Cancelar acesso de funcionário" to reuse "Implementação OAuth2" workflow.
-
-**Solution Implemented**:
-1. **Flexible Prompt**: Changed from rigid 6-stage template to flexible guidelines encouraging variation
-2. **Type-Based Structure**: Agent now generates completely different structures based on demand type:
-   - **Security/Access Tasks**: Auditoria → Desativação → Revogação de Acessos → Confirmação (4 stages)
-   - **Development Tasks**: Planejamento → Implementação → Testes → Deployment (4 stages)
-   - **Other Types**: Adapt number and type of stages to actual work needed
-3. **Temperature**: Kept at 0.5 for balanced variation between consistency and diversity
-4. **Result**: Identical demands reuse workflows; different demands create new ones (true workflow-per-demand)
-
-### Example Workflows Now Generated:
-**For "Cancelar acesso do funcionário" (Security):**
-- 4 stages focused on access control and audit
-- Hash: 452378423d3f32bda2ba75ca26ff978484b157cb5fd31be863feb7c12710cc47
-
-**For "Implementar integração Stripe" (Development):**
-- 4 stages focused on development lifecycle
-- Hash: 41b935446cc9af21a3784543a7c31e7dba1c9fc43877623f498dd93cbcaa6ab2
-
-Same area (TI), but completely different structures based on actual work type.
-
-### Area-Specific Stage Names by Demand Type:
-
-**TI/TECH**: Planejamento e Análise → Revisão e Aprovação → Implementação → Testes e Validação → Deployment e Implementação em Produção → Monitoramento e Ajustes
-
-**VENDAS/SALES**: Confirmar Dados do Cliente → Análise de Viabilidade → Gerar Contrato → Revisão e Aprovação → Fechamento da Venda → Onboarding do Cliente
-
-**RH/HR**: Recebimento de Solicitação → Análise e Triagem → Processamento → Aprovação → Implementação → Acompanhamento
-
-**FINANCEIRO/FINANCE**: Recebimento de Solicitação → Análise Financeira → Aprovação → Processamento → Auditoria → Finalização
-
-**OPERACOES/OPERATIONS**: Planejamento → Análise de Recursos → Execução → Monitoramento → Ajustes → Encerramento
-
-**JURIDICO/LEGAL**: Recebimento de Demanda → Análise Jurídica → Parecer Legal → Aprovação → Implementação → Revisão
-
-### Deduplication Details:
-- **Temperature**: 0.2 for consistent agent outputs
-- **Area Parameter**: Now included in hash generation to prevent cross-area deduplication
-- **Hash Resilience**: Hash normalization intelligently ignores variable fields and uses area-specific stage names
-- **Result**: Identical demands within the SAME AREA now correctly share the same workflow. Different areas generate completely different workflows with appropriate stage names
+The system uses a **Workflow-Per-Demand Pattern**, where each demand generates its own AI-customized workflow steps. It implements **Intelligent Area-Aware Deduplication** using a SHA-256 hash of normalized workflow steps and the associated area to reuse identical workflows. The WorkflowBuilder agent tailors stage names and structures based on the demand type (e.g., Security/Access, Development) and area, ensuring flexibility and avoiding fixed templates.
 
 ## Authentication & Authorization
 
-Currently, no authentication is implemented, with direct database access. The system is designed for internal enterprise use behind a VPN/firewall.
+No authentication is currently implemented; the system is designed for internal enterprise use behind a VPN/firewall.
 
 ## Internal Observability System
 
-An admin-only internal monitoring system tracks agent execution and system events without exposing LangSmith details. It includes a `system_events` table, admin middleware for access control, an API endpoint to fetch events, and a dashboard for real-time visualization and filtering.
+An admin-only internal monitoring system tracks agent execution and system events via a `system_events` table, API endpoint, and dashboard for visualization and filtering.
+
+## LangSmith RunTree Instrumentation
+
+LangSmith integration uses `RunTree` for local UUID generation and proper state management, ensuring agent runs appear with correct IDs and completion statuses.
 
 ## Critical Bottleneck Alerts & Auto-Escalation System
 
-This system provides live monitoring of critical bottlenecks with a dedicated dashboard for tracking alert status and severity. It integrates with notification stubs and an auto-escalation engine that triggers tiered responses based on bottleneck severity scores.
+This system provides live monitoring of critical bottlenecks with a dedicated dashboard, integrating with notification stubs and an auto-escalation engine based on severity scores.
 
-## Visual AI Agent Editor (New - Nov 23, 2025)
+## Visual AI Agent Editor
 
-A **LangFlow-inspired visual editor** for designing and managing AI agents without code. Fully integrated into the UI at `/app/agents-studio`.
-
-**Features:**
-- **Visual Canvas**: Drag-and-drop interface with ReactFlow for composing agent logic
-- **Node Types**:
-  - **PromptNode**: Configure LLM calls with system prompts, temperature, and token limits
-  - **LogicNode**: Implement conditional logic, filtering, validation, and routing between nodes
-  - **OutputNode**: Define structured output schemas for agent results
-- **Execution & Testing**: Execute agents directly from the editor with real-time tracing
-- **Persistence**: Auto-saves agent definitions to JSON files in `server/data/agents/`
-- **State Management**: Zustand store for canvas state, node properties, and execution history
-- **Sample Agents**: Pre-built templates for workflow generation, normalization, and monitoring
-
-**API Endpoints:**
-- `GET /api/agents/load?agentId={agentId}` - Load agent graph definition
-- `POST /api/agents/save` - Save agent graph (body: `{agentId, graph}`)
-- `POST /api/agents/execute` - Execute agent with test input (body: `{agentId, graph}`)
-
-**File Structure:**
-- Frontend: `client/src/components/AgentsStudio/` (Canvas, NodeEditor, ExecutionPanel)
-- Backend: `server/lib/agentsStorage.ts` (file-based persistence)
-- Sample Agents: `server/data/agents/*.json` (workflow-generator, workflow-normalizer, workflow-monitor)
-
-# API Endpoints (Updated)
-
-## Workflow Endpoints
-
-- **GET /api/workflows** - List all workflows (demand-based)
-- **GET /api/workflows/:id** - Get specific workflow with steps
-- **GET /api/workflows/:id/stages** - Get all stages for a workflow
-- **GET /api/workflows/:id/demands** - Get all demands using this workflow
-
-## Demand Endpoints
-
-- **GET /api/demands** - List all demands
-- **GET /api/demands/:id** - Get demand with included workflow steps
-- **POST /api/demands** - Create new demand (triggers orchestration with workflow deduplication)
-- **PATCH /api/demands/:id** - Update demand status
-- **PATCH /api/demands/:id/stage** - Move demand to different stage
-
-## Orchestration Endpoint
-
-- **POST /api/ai/orchestrate** - Execute full orchestration pipeline with deduplication
-
-## Visual Agent Editor Endpoints (New)
-
-- **GET /api/agents/load** - Load agent graph definition by agentId
-- **POST /api/agents/save** - Save/update agent graph definition
-- **POST /api/agents/execute** - Execute agent graph with input
+A LangFlow-inspired visual editor, integrated into the UI at `/app/agents-studio`, allows designing and managing AI agents without code. It features a drag-and-drop canvas with PromptNode, LogicNode, and OutputNode types, execution with real-time tracing, and file-based persistence for agent definitions.
 
 # External Dependencies
 
 ## AI & Language Models
 
--   **OpenAI API**: Utilizes GPT-4 for demand parsing, classification, workflow generation, and insights.
--   **LangSmith**: Provides observability and tracing for AI agent execution, including debugging, performance tracking, and audit trails.
+-   **OpenAI API**: Utilizes GPT-4 for demand processing, classification, workflow generation, and insights.
+-   **LangSmith**: Provides observability and tracing for AI agent execution.
 
 ## Database
 
