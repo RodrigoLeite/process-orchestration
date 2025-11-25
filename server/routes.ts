@@ -3114,6 +3114,7 @@ Texto original: ${demand.rawText}`;
                 timestamp: log.createdAt,
                 duration_ms: log.durationMs || 0,
                 status: log.status === 'success' ? 'success' : 'error',
+                agentExecuted: agent.name,
                 agentLogs: [],
                 workflow: null
               });
