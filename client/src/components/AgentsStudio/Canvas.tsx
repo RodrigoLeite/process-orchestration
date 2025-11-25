@@ -10,6 +10,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import PromptNode from './nodes/PromptNode';
 import LogicNode from './nodes/LogicNode';
 import OutputNode from './nodes/OutputNode';
@@ -27,6 +28,7 @@ const nodeTypes = {
 };
 
 export default function Canvas() {
+  const { t } = useTranslation();
   const {
     nodes: storeNodes,
     edges: storeEdges,
@@ -97,7 +99,7 @@ export default function Canvas() {
         data: {
           label: nodeLabel,
           ...(nodeType === 'chatInput' && {
-            placeholder: 'Digite sua mensagem aqui...',
+            placeholder: t("agentStudio.chatInputPlaceholder"),
           }),
           ...(nodeType === 'prompt' && {
             systemPrompt: '',
@@ -120,7 +122,7 @@ export default function Canvas() {
             bodyTemplate: '{"titulo": "input", "descricao": "input"}',
           }),
           ...(nodeType === 'agent' && {
-            systemPrompt: 'Você é um assistente helpful. Processe a entrada e retorne uma resposta estruturada.',
+            systemPrompt: t("agentStudio.agentSystemPrompt"),
             temperature: 0.7,
             maxTokens: 2000,
             logicType: 'none',
