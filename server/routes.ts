@@ -3736,6 +3736,50 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Tenant update endpoint
+  app.post("/api/tenant/update", async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { tenantId, name, isConfigured } = req.body;
+
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID required" });
+      }
+
+      const tenant = await storage.getTenant(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      // Update tenant in database directly
+      const updated = await storage.db
+        .update((await import("@shared/schema")).tenants)
+        .set({
+          name: name || tenant.name,
+          isConfigured: isConfigured ? "true" : "false",
+        })
+        .where(
+          (await import("drizzle-orm")).eq(
+            (await import("@shared/schema")).tenants.id,
+            tenantId
+          )
+        )
+        .returning()
+        .then((rows: any[]) => rows[0]);
+
+      res.json({
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      console.error("Error updating tenant:", error);
+      res.status(500).json({ error: "Failed to update tenant" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -35,6 +35,8 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   plan: text("plan").notNull().default("free"),
+  isConfigured: text("is_configured").notNull().default("false"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
