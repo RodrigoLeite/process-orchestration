@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plug } from 'lucide-react';
 
 export default function APINode({ data, id }: any) {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +18,10 @@ export default function APINode({ data, id }: any) {
       <Handle type="target" position={Position.Top} />
 
       <div className="font-bold text-orange-700 text-sm mb-2 flex items-center justify-between">
-        <span>🔌 {label}</span>
+        <div className="flex items-center gap-2">
+          <Plug size={16} className="text-orange-600 flex-shrink-0" />
+          <span>{label}</span>
+        </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="text-orange-500 hover:text-orange-700"

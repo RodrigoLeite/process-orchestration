@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
-import { ChevronDown, Play } from 'lucide-react';
+import { ChevronDown, Bot } from 'lucide-react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
 
 export default function AgentNode({ data, id }: any) {
@@ -91,7 +91,7 @@ export default function AgentNode({ data, id }: any) {
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🤖</span>
+          <Bot size={20} className="text-indigo-600 flex-shrink-0" />
           <input
             type="text"
             value={title}
@@ -100,7 +100,6 @@ export default function AgentNode({ data, id }: any) {
             data-testid={`input-agent-node-title-${id}`}
           />
         </div>
-        <Play size={20} className="text-indigo-500" />
       </div>
 
       {/* Description */}
