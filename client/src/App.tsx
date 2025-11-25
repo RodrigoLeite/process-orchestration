@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Layout } from "@/components/layout";
 import Dashboard from "@/pages/home";
 import Landing from "@/pages/landing";
+import LoginPage from "@/pages/login";
 import Demands from "@/pages/demands";
 import AllDemands from "@/pages/all-demands";
 import DemandsManager from "@/pages/demands-manager";
@@ -32,7 +33,7 @@ import MonitoringPage from "@/pages/monitoring";
 import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
-function Router() {
+function AppRoutes() {
   return (
     <Layout>
       <Switch>
@@ -66,6 +67,15 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
     </Layout>
+  );
+}
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/login" component={LoginPage} />
+      <Route component={AppRoutes} />
+    </Switch>
   );
 }
 

@@ -14,6 +14,7 @@ export interface IStorage {
   getTenantUser(tenantId: string, userId: string): Promise<TenantUser | undefined>;
   createTenantUser(tenantUser: InsertTenantUser): Promise<TenantUser>;
   getTenantUsers(tenantId: string): Promise<TenantUser[]>;
+  getTenantUsersByUserId(userId: string): Promise<TenantUser[]>;
 
   // Demands
   getDemands(): Promise<Demand[]>;
@@ -104,7 +105,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private db;
+  public db;
 
   constructor() {
     if (!process.env.DATABASE_URL) {
@@ -693,6 +694,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(tenantUsers)
       .where(eq(tenantUsers.tenantId, tenantId))
+      .orderBy(desc(tenantUsers.createdAt));
+  }
+
+  async getTenantUsersByUserId(userId: string): Promise<TenantUser[]> {
+    return await this.db
+      .select()
+      .from(tenantUsers)
+      .where(eq(tenantUsers.userId, userId))
       .orderBy(desc(tenantUsers.createdAt));
   }
 

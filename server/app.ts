@@ -6,6 +6,9 @@ import { seedAgents, initializeDefaultAreas } from "./lib/seeds";
 import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
 import { tenantMiddleware } from "./middleware/tenantMiddleware";
+import { configureSession, configurePassport } from "./middleware/authMiddleware";
+import authRoutes from "./routes/auth";
+import passport from "passport";
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -32,8 +35,17 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// Session & Passport
+app.use(configureSession());
+configurePassport();
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Tenant middleware (sets req.tenant and req.tenantContext)
 app.use(tenantMiddleware);
+
+// Auth routes
+app.use("/api", authRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();
