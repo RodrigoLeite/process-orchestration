@@ -109,7 +109,7 @@ const nodeTypes = {
 };
 
 export default function WorkflowGraph() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const queryClient = useQueryClient();
   const [testInput, setTestInput] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -118,9 +118,9 @@ export default function WorkflowGraph() {
 
   // Fetch graph data
   const { data: graphData, isLoading: graphLoading } = useQuery<GraphData>({
-    queryKey: ["workflow-graph"],
+    queryKey: ["workflow-graph", language],
     queryFn: async () => {
-      const res = await fetch("/api/ai/graph");
+      const res = await fetch(`/api/ai/graph?lang=${language}`);
       if (!res.ok) throw new Error("Failed to fetch graph");
       const json = await res.json();
       return json.data;
@@ -129,9 +129,9 @@ export default function WorkflowGraph() {
 
   // Fetch selected node details
   const { data: nodeDetail, isLoading: nodeLoading } = useQuery<NodeDetail>({
-    queryKey: ["workflow-node", selectedNodeId],
+    queryKey: ["workflow-node", selectedNodeId, language],
     queryFn: async () => {
-      const res = await fetch(`/api/ai/graph/${selectedNodeId}`);
+      const res = await fetch(`/api/ai/graph/${selectedNodeId}?lang=${language}`);
       if (!res.ok) throw new Error("Failed to fetch node details");
       const json = await res.json();
       return json.data;
