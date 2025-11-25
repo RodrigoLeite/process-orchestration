@@ -17,6 +17,15 @@ export const translations = {
       monitoring: 'Monitoramento',
       orchestrationLogs: 'Logs de Orquestração',
       settings: 'Configurações',
+      orchestration: 'Orquestração',
+    },
+
+    // Branding & System
+    branding: {
+      systemName: 'Sistema de Orquestração de Demandas',
+      systemShortName: 'Sistema de Orquestração IA',
+      copyright: 'Sistema de Orquestração',
+      boardTitle: 'Board de Orquestração',
     },
 
     // Areas List
@@ -631,6 +640,15 @@ export const translations = {
       monitoring: 'Monitoring',
       orchestrationLogs: 'Orchestration Logs',
       settings: 'Settings',
+      orchestration: 'Orchestration',
+    },
+
+    // Branding & System
+    branding: {
+      systemName: 'Demand Orchestration System',
+      systemShortName: 'AI Orchestration System',
+      copyright: 'Orchestration System',
+      boardTitle: 'Orchestration Board',
     },
 
     // Areas List

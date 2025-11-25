@@ -2,9 +2,11 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import KanbanBoard from "@/components/KanbanBoard";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 export default function KanbanBoardPage() {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6">
@@ -20,7 +22,7 @@ export default function KanbanBoardPage() {
       </Button>
 
       <div className="space-y-4">
-        <h1 className="text-4xl md:text-5xl font-bold">Board de Orquestração</h1>
+        <h1 className="text-4xl md:text-5xl font-bold">{t("branding.boardTitle")}</h1>
         <p className="text-lg text-muted-foreground">
           Visualize e gerencie demandas por área em tempo real
         </p>
