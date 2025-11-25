@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Bot, Loader2, ArrowRight } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
-import { getAgentDescription } from "@/lib/agentDescriptions";
+import { getAgentDescription, getAgentName } from "@/lib/agentDescriptions";
 
 interface Agent {
   id: string;
@@ -84,7 +84,7 @@ export default function AgentsPage() {
                   <div className="flex-1">
                     <CardTitle className="text-lg flex items-center gap-2" data-testid={`agent-name-${agent.id}`}>
                       <Bot className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <span className="truncate">{agent.name}</span>
+                      <span className="truncate">{getAgentName(agent.internalKey, agent.name, language)}</span>
                     </CardTitle>
                     <CardDescription className="mt-2 line-clamp-2">
                       {getAgentDescription(agent.internalKey, agent.description, language) || t("agents.noDescription")}
