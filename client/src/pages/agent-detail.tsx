@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Bot, Loader2, Play, Copy, Check } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import type { Agent, AgentLog } from "@shared/schema";
 
 export default function AgentDetailPage({ params }: { params: { id: string } }) {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const [showTestModal, setShowTestModal] = useState(false);
   const [testInput, setTestInput] = useState("{}");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -57,7 +59,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       try {
         inputData = JSON.parse(testInput);
       } catch {
-        setTestResult({ error: "JSON inválido no campo de entrada" });
+        setTestResult({ error: t("agentDetail.invalidJson") });
         return;
       }
 
@@ -76,7 +78,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  if (!id) return <div>Agente não encontrado</div>;
+  if (!id) return <div>{t("agentDetail.notFound")}</div>;
 
   if (agentLoading || logsLoading) {
     return (
@@ -91,11 +93,11 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       <div className="space-y-4">
         <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate("/app/agents")}>
           <ChevronLeft className="w-4 h-4" />
-          Voltar
+          {t("agentDetail.back")}
         </Button>
         <Card>
           <CardContent className="py-16 text-center">
-            <p className="text-lg">Agente não encontrado</p>
+            <p className="text-lg">{t("agentDetail.notFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -110,7 +112,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       <div className="space-y-4">
         <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate("/app/agents")}>
           <ChevronLeft className="w-4 h-4" />
-          Voltar
+          {t("agentDetail.back")}
         </Button>
 
         <div className="flex items-start justify-between">
@@ -122,13 +124,13 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
               <h1 className="text-3xl font-bold" data-testid={`agent-name-${id}`}>
                 {agent.name}
               </h1>
-              <p className="text-muted-foreground mt-1">{agent.description || "Sem descrição"}</p>
+              <p className="text-muted-foreground mt-1">{agent.description || t("agentDetail.noDescription")}</p>
             </div>
           </div>
 
           <Button onClick={() => setShowTestModal(true)} className="gap-2">
             <Play className="w-4 h-4" />
-            Testar Agente
+            {t("agentDetail.testAgent")}
           </Button>
         </div>
       </div>
@@ -137,25 +139,25 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Tipo</p>
+            <p className="text-sm text-muted-foreground mb-2">{t("agentDetail.type")}</p>
             <Badge color={agent.type === "system" ? "blue" : "purple"}>
-              {agent.type === "system" ? "Sistema" : "Usuário"}
+              {agent.type === "system" ? t("agentDetail.system") : t("agentDetail.user")}
             </Badge>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Status</p>
+            <p className="text-sm text-muted-foreground mb-2">{t("agentDetail.status")}</p>
             <Badge color={isActive ? "green" : "red"}>
-              {isActive ? "Ativo" : "Inativo"}
+              {isActive ? t("agentDetail.active") : t("agentDetail.inactive")}
             </Badge>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Criado em</p>
+            <p className="text-sm text-muted-foreground mb-2">{t("agentDetail.createdAt")}</p>
             <p className="font-semibold">
               {new Date(agent.createdAt).toLocaleDateString("pt-BR")}
             </p>
@@ -167,15 +169,15 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span>Histórico de Execuções</span>
+            <span>{t("agentDetail.executionHistory")}</span>
             <span className="text-sm font-normal text-muted-foreground">({logs.length} registros)</span>
           </CardTitle>
-          <CardDescription>Últimas 20 execuções do agente</CardDescription>
+          <CardDescription>{t("agentDetail.lastExecutions")}</CardDescription>
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nenhuma execução registrada
+              {t("agentDetail.noExecutions")}
             </div>
           ) : (
             <div className="space-y-3">
@@ -192,7 +194,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                           color={log.status === "success" ? "green" : "red"}
                           data-testid={`log-status-${log.id}`}
                         >
-                          {log.status === "success" ? "✓ Sucesso" : "✕ Erro"}
+                          {log.status === "success" ? t("agentDetail.success") : t("agentDetail.error")}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
                           {new Date(log.createdAt).toLocaleString("pt-BR", {
@@ -238,13 +240,13 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-2xl bg-white">
             <CardHeader>
-              <CardTitle>Testar Agente: {agent.name}</CardTitle>
-              <CardDescription>Execute o agente com um JSON de entrada personalizado</CardDescription>
+              <CardTitle>{t("agentDetail.testAgentTitle").replace("{name}", agent.name)}</CardTitle>
+              <CardDescription>{t("agentDetail.testDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Input Textarea */}
               <div>
-                <label className="text-sm font-semibold mb-2 block">JSON de Entrada</label>
+                <label className="text-sm font-semibold mb-2 block">{t("agentDetail.jsonInput")}</label>
                 <textarea
                   value={testInput}
                   onChange={(e) => setTestInput(e.target.value)}
@@ -257,7 +259,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
               {/* Test Result */}
               {testResult && (
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Resultado</label>
+                  <label className="text-sm font-semibold">{t("agentDetail.result")}</label>
                   <div className={`p-4 rounded-lg border ${
                     testResult.error
                       ? "bg-red-50 border-red-200"
@@ -280,12 +282,12 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                       {copied ? (
                         <>
                           <Check className="w-3 h-3" />
-                          Copiado
+                          {t("agentDetail.copied")}
                         </>
                       ) : (
                         <>
                           <Copy className="w-3 h-3" />
-                          Copiar resultado
+                          {t("agentDetail.copyResult")}
                         </>
                       )}
                     </Button>
@@ -303,7 +305,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                   }}
                   disabled={isExecuting}
                 >
-                  Fechar
+                  {t("agentDetail.close")}
                 </Button>
                 <Button
                   onClick={handleTestAgent}
@@ -314,12 +316,12 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                   {isExecuting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Executando...
+                      {t("agentDetail.executing")}
                     </>
                   ) : (
                     <>
                       <Play className="w-4 h-4" />
-                      Executar
+                      {t("agentDetail.execute")}
                     </>
                   )}
                 </Button>
