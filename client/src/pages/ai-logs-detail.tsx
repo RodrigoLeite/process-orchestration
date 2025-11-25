@@ -24,6 +24,8 @@ interface ExecutionDetail {
     agentKey: string;
     metadata: Record<string, any>;
     errorMessage?: string | null;
+    inputJson?: any | null;
+    outputJson?: any | null;
   };
   workflows: Array<{
     id: string;
@@ -209,7 +211,7 @@ export default function AILogsDetailPage() {
         </Card>
       </div>
 
-      {/* Error Message (if error) */}
+      {/* Error Message / Input & Output (if error) */}
       {detail.execution.status === "error" && (
         <Card className="border-red-500/20 bg-red-50">
           <CardHeader>
@@ -218,10 +220,33 @@ export default function AILogsDetailPage() {
               Erro na Execução
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-red-700 bg-white p-3 rounded font-mono whitespace-pre-wrap break-words" data-testid="text-error-message">
-              {detail.execution.errorMessage || detail.execution.metadata?.error || "Erro desconhecido"}
-            </p>
+          <CardContent className="space-y-4">
+            {/* Input/Output JSON */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {detail.execution.inputJson && (
+                <div>
+                  <p className="text-xs font-semibold mb-2 text-red-700">INPUT</p>
+                  <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-32 font-mono">
+                    {JSON.stringify(detail.execution.inputJson, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {detail.execution.outputJson && (
+                <div>
+                  <p className="text-xs font-semibold mb-2 text-red-700">OUTPUT</p>
+                  <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-32 font-mono">
+                    {JSON.stringify(detail.execution.outputJson, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+            
+            {/* Fallback error message */}
+            {!detail.execution.outputJson && (
+              <p className="text-sm text-red-700 bg-white p-3 rounded font-mono whitespace-pre-wrap break-words" data-testid="text-error-message">
+                {detail.execution.errorMessage || detail.execution.metadata?.error || "Erro desconhecido"}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
