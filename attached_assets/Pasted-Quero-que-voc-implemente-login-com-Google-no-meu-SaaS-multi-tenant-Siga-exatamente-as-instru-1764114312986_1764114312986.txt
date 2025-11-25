@@ -1,0 +1,144 @@
+Quero que você implemente **login com Google** no meu SaaS multi-tenant.  
+Siga exatamente as instruções abaixo:
+
+# ======================================================
+# 🎯 OBJETIVO
+Implementar autenticação com Google OAuth2 usando:
+- Next.js + NextAuth
+- Multi-tenant com criação automática de tenant
+- JWT contendo tenantId, userId e role
+- UI de login com botão “Continuar com Google”
+- Redirecionamento pós-login para /dashboard
+- Persistência no banco usando Prisma
+
+# ======================================================
+# 🏗️ REQUISITOS TÉCNICOS
+
+## 1. ADD NextAuth
+Criar:
+- /api/auth/[...nextauth]/route.ts
+- Configuração com provider Google
+- CALLBACKS:
+  - signIn → criar usuário se não existir
+  - jwt → incluir { userId, tenantId, role }
+  - session → retornar esses campos ao frontend
+
+Modelos Prisma que devem existir:
+
+model User {
+  id        String  @id @default(cuid())
+  name      String?
+  email     String? @unique
+  image     String?
+  tenants   TenantUser[]
+  createdAt DateTime @default(now())
+}
+
+model Tenant {
+  id        String @id @default(cuid())
+  name      String
+  users     TenantUser[]
+  createdAt DateTime @default(now())
+}
+
+model TenantUser {
+  id        String @id @default(cuid())
+  tenant    Tenant @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  user      User @relation(fields: [userId], references: [id])
+  userId    String
+  role      String // "owner" | "admin" | "member"
+  createdAt DateTime @default(now())
+}
+
+## 2. AUTO-TENANT CREATION
+No callback "signIn":
+- Se o usuário ainda não existir → criar User
+- Se existir mas NÃO tiver tenant → criar Tenant com nome padrão igual ao nome do usuário, ex "Workspace de Rodrigo"
+- Criar registro TenantUser com role = "owner"
+
+## 3. SESSION E JWT
+Callbacks devem assegurar que o token contenha:
+
+token.userId = user.id
+token.tenantId = tenant.id
+token.role = "owner" | "admin" | "member"
+
+A session retornada ao frontend deve replicar esses valores.
+
+## 4. LOGIN PAGE /login
+Criar página:
+- Logo do SaaS
+- Botão grande “Continuar com Google”
+- Chamada: signIn("google")
+
+Usar shadcn/ui e Tailwind.
+
+## 5. PROTEÇÃO DE ROTAS
+Criar middleware.ts:
+- Bloquear todas as rotas exceto /login e /api/auth/*
+- Validar session
+- Redirecionar para /login quando não autenticado
+
+## 6. TENANT SWITCHER
+Criar endpoint /api/tenant/switch:
+- Atualiza tenantId no JWT (use NextAuth update)
+
+Criar UI:
+- Um component <TenantSwitcher />
+- Lista tenants do usuário (consulta TenantUser)
+- Permite trocar o tenant ativo
+- Botão “Criar novo workspace”
+
+## 7. REDIRECIONAMENTO
+Após login → enviar usuário para /dashboard com tenantId no JWT.
+
+## 8. MULTI-TENANT GUARD
+Criar helper server-side:
+
+export function requireTenant() {
+  // valida session e tenantId
+}
+
+Usar isso nas rotas API e pages.
+
+# ======================================================
+# 🎨 UI / COMPONENTS
+
+Criar:
+
+📌 components/auth/LoginCard.tsx
+📌 components/auth/GoogleButton.tsx
+📌 components/tenant/TenantSwitcher.tsx
+
+Todos em tema dark, estilizados com shadcn + Tailwind.
+
+# ======================================================
+# 📡 TESTES
+
+Adicionar testes E2E (Playwright):
+1) Login com Google (mock provider)
+2) Criação de tenant automático
+3) Seleção de tenant
+4) Acesso ao dashboard
+
+# ======================================================
+# 📦 FINAL
+Me entregue:
+
+✔ Todos os arquivos criados  
+✔ Código completo  
+✔ Atualização das rotas  
+✔ Atualização dos modelos Prisma (schema.prisma)  
+✔ Componente UI de login e tenant switcher  
+✔ Middleware de proteção  
+✔ JWT multi-tenant  
+✔ Redirecionamento pós-login  
+✔ Migrations Prisma  
+✔ Arquivo .env exemplo  
+✔ Instruções de como iniciar
+
+Esse é um requisito obrigatório:  
+“Todo usuário novo deve ganhar seu próprio tenant automaticamente.”
+
+Produza o código completo.
