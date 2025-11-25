@@ -1,9 +1,11 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Zap, Settings, Database, MessageSquare, Plug, Bot } from 'lucide-react';
 
 export default function Sidebar() {
+  const { t } = useTranslation();
   const { setNodes, nodes } = useAgentsStore();
 
   const onDragStart = (event: React.DragEvent, nodeType: string, nodeLabel: string) => {
@@ -57,91 +59,97 @@ export default function Sidebar() {
   return (
     <div className="w-64 bg-white border-r border-gray-300 flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-300">
-        <h2 className="text-lg font-bold text-gray-900">Nós Disponíveis</h2>
+        <h2 className="text-lg font-bold text-gray-900">{t("agentStudio.availableNodes")}</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Chat Input Node */}
         <div
           draggable
-          onDragStart={(e) => onDragStart(e, 'chatInput', 'Chat Input')}
+          onDragStart={(e) => onDragStart(e, 'chatInput', t("agentStudio.chatInputNode"))}
           className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-grab hover:bg-green-100 transition"
+          data-testid="node-chat-input"
         >
           <div className="flex items-center gap-2 text-green-600 font-semibold">
             <MessageSquare size={16} />
-            <span>Chat Input Node</span>
+            <span>{t("agentStudio.chatInputNode")}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-1">Nó de entrada para dados do usuário</p>
+          <p className="text-xs text-gray-600 mt-1">{t("agentStudio.chatInputDesc")}</p>
         </div>
 
         {/* Agent Node */}
         <div
           draggable
-          onDragStart={(e) => onDragStart(e, 'agent', 'Agent Executor')}
+          onDragStart={(e) => onDragStart(e, 'agent', t("agentStudio.agentNode"))}
           className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg cursor-grab hover:bg-indigo-100 transition"
+          data-testid="node-agent"
         >
           <div className="flex items-center gap-2 text-indigo-600 font-semibold">
             <Bot size={16} />
-            <span>Agent Node</span>
+            <span>{t("agentStudio.agentNode")}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-1">Executor de IA com prompt, lógica e temperatura configuráveis</p>
+          <p className="text-xs text-gray-600 mt-1">{t("agentStudio.agentNodeDesc")}</p>
         </div>
 
         {/* Prompt Node */}
         <div
           draggable
-          onDragStart={(e) => onDragStart(e, 'prompt', 'Prompt')}
+          onDragStart={(e) => onDragStart(e, 'prompt', t("agentStudio.promptNode"))}
           className="p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-grab hover:bg-blue-100 transition"
+          data-testid="node-prompt"
         >
           <div className="flex items-center gap-2 text-blue-600 font-semibold">
             <Zap size={16} />
-            <span>Prompt Node</span>
+            <span>{t("agentStudio.promptNode")}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-1">Nó de configuração de prompt com temperatura</p>
+          <p className="text-xs text-gray-600 mt-1">{t("agentStudio.promptNodeDesc")}</p>
         </div>
 
         {/* Logic Node */}
         <div
           draggable
-          onDragStart={(e) => onDragStart(e, 'logic', 'Logic')}
+          onDragStart={(e) => onDragStart(e, 'logic', t("agentStudio.logicNode"))}
           className="p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-grab hover:bg-purple-100 transition"
+          data-testid="node-logic"
         >
           <div className="flex items-center gap-2 text-purple-600 font-semibold">
             <Settings size={16} />
-            <span>Logic Node</span>
+            <span>{t("agentStudio.logicNode")}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-1">Nó de lógica (filtro, roteamento, validação)</p>
+          <p className="text-xs text-gray-600 mt-1">{t("agentStudio.logicNodeDesc")}</p>
         </div>
 
         {/* Output Node */}
         <div
           draggable
-          onDragStart={(e) => onDragStart(e, 'output', 'Output')}
+          onDragStart={(e) => onDragStart(e, 'output', t("agentStudio.outputNode"))}
           className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg cursor-grab hover:bg-emerald-100 transition"
+          data-testid="node-output"
         >
           <div className="flex items-center gap-2 text-emerald-600 font-semibold">
             <Database size={16} />
-            <span>Output Node</span>
+            <span>{t("agentStudio.outputNode")}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-1">Nó de saída com schema JSON</p>
+          <p className="text-xs text-gray-600 mt-1">{t("agentStudio.outputNodeDesc")}</p>
         </div>
 
         {/* API Node */}
         <div
           draggable
-          onDragStart={(e) => onDragStart(e, 'api', 'API Call')}
+          onDragStart={(e) => onDragStart(e, 'api', t("agentStudio.apiNode"))}
           className="p-3 bg-orange-50 border border-orange-200 rounded-lg cursor-grab hover:bg-orange-100 transition"
+          data-testid="node-api"
         >
           <div className="flex items-center gap-2 text-orange-600 font-semibold">
             <Plug size={16} />
-            <span>API Node</span>
+            <span>{t("agentStudio.apiNode")}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-1">Nó para chamadas HTTP a APIs</p>
+          <p className="text-xs text-gray-600 mt-1">{t("agentStudio.apiNodeDesc")}</p>
         </div>
       </div>
 
       <div className="p-4 border-t border-gray-300 text-xs text-gray-600">
-        <p>Arraste nós para o canvas para começar a construir seu agente.</p>
+        <p>{t("agentStudio.dragToCanvas")}</p>
       </div>
     </div>
   );

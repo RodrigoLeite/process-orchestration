@@ -1,19 +1,22 @@
 import React from 'react';
 import { useAgentsStore } from '@/lib/store/agentsStore';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Save, Play, RotateCcw, RotateCw, ZoomIn, Undo, Redo, ArrowLeft, Menu } from 'lucide-react';
+import { getAgentName } from '@/lib/agentDescriptions';
 
 interface ToolbarProps {
   onBack?: () => void;
 }
 
-const SAMPLE_AGENTS = [
-  { id: 'workflow-generator', name: 'Gerador de Workflow' },
-  { id: 'insights-inteligentes', name: 'Insights Inteligentes' },
-  { id: 'monitor-gargalos', name: 'Monitor de Gargalos' }
+const SAMPLE_AGENTS_CONFIG = [
+  { id: 'workflow-generator', internalKey: 'workflow_builder' },
+  { id: 'insights-inteligentes', internalKey: 'insights_ai' },
+  { id: 'monitor-gargalos', internalKey: 'bottleneck_ai' }
 ];
 
 export default function Toolbar({ onBack }: ToolbarProps) {
+  const { t, language } = useTranslation();
   const {
     saveGraph,
     executeGraph,
@@ -28,7 +31,8 @@ export default function Toolbar({ onBack }: ToolbarProps) {
     isSidebarOpen,
   } = useAgentsStore();
 
-  const currentAgent = SAMPLE_AGENTS.find(a => a.id === currentAgentId);
+  const currentAgentConfig = SAMPLE_AGENTS_CONFIG.find(a => a.id === currentAgentId);
+  const currentAgentName = currentAgentConfig ? getAgentName(currentAgentConfig.internalKey, currentAgentConfig.id, language) : t("agentStudio.unknownAgent");
 
   const handleSave = async () => {
     try {
@@ -56,7 +60,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
       {/* Agent Name Header */}
       <div className="h-12 px-4 flex items-center border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
         <h2 className="text-sm font-semibold text-gray-900">
-          {currentAgent ? `📋 ${currentAgent.name}` : 'Agente Desconhecido'}
+          {currentAgentName && `📋 ${currentAgentName}`}
         </h2>
       </div>
 
@@ -68,7 +72,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           variant="outline"
           onClick={toggleSidebar}
           className="bg-white hover:bg-gray-100 border-gray-300"
-          title={isSidebarOpen ? 'Fechar painel' : 'Abrir painel'}
+          title={isSidebarOpen ? t("agentStudio.closePanel") : t("agentStudio.openPanel")}
           data-testid="button-toggle-sidebar"
         >
           <Menu size={16} />
@@ -82,7 +86,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
             data-testid="button-back-to-agents"
           >
             <ArrowLeft size={16} className="mr-2" />
-            Voltar
+            {t("agentStudio.back")}
           </Button>
         )}
         <Button
@@ -93,7 +97,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Save size={16} className="mr-2" />
-          {isSaving ? 'Salvando...' : 'Salvar'}
+          {isSaving ? t("agentStudio.saving") : t("agentStudio.save")}
         </Button>
 
         <Button
@@ -104,7 +108,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           className="bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-600"
         >
           <Play size={16} className="mr-2" />
-          {isExecuting ? 'Executando...' : 'Executar'}
+          {isExecuting ? t("agentStudio.executing") : t("agentStudio.execute")}
         </Button>
       </div>
 
