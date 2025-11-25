@@ -15,6 +15,7 @@ import {
 } from "./lib/agentSupervisor";
 import { requireAdmin, logAdminAccess } from "./lib/adminAuthMiddleware";
 import { saveAgent, loadAgent, executeAgent } from "./lib/agentsStorage";
+import { getGraphLabels } from "./lib/graphTranslations";
 
 // Calculate delay risk based on SLA
 function calculateDelayRisk(demand: any): string {
@@ -3287,62 +3288,65 @@ Texto original: ${demand.rawText}`;
 
   // Workflow Graph Visualization Endpoints
   // GET /api/ai/graph - Returns the complete LangGraph structure
-  app.get("/api/ai/graph", async (_req, res) => {
+  app.get("/api/ai/graph", async (req, res) => {
     try {
+      const lang = (req.query.lang as string) || 'pt-BR';
+      const labels = getGraphLabels(lang);
+
       // Define the LangGraph structure for the orchestration pipeline
       const graphData = {
         nodes: [
           {
             id: "input_node",
-            label: "Validação de Entrada",
+            label: labels.inputValidation,
             type: "system",
-            description: "Valida e prepara a demanda para processamento. Verifica se todos os campos necessários estão presentes e se o formato está correto."
+            description: labels.inputValidationDesc
           },
           {
             id: "workflow_builder_node",
-            label: "Gerador de Workflow",
+            label: labels.workflowGenerator,
             type: "agent",
-            description: "Gera um workflow estruturado baseado na demanda. Cria etapas, responsabilidades, dependências e critérios de sucesso."
+            description: labels.workflowGeneratorDesc
           },
           {
             id: "bottleneck_detector_node",
-            label: "Monitor de Gargalos",
+            label: labels.bottleneckMonitor,
             type: "agent",
-            description: "Analisa o workflow gerado para identificar possíveis gargalos, riscos e pontos de contenção. Calcula scores de severidade."
+            description: labels.bottleneckMonitorDesc
           },
           {
             id: "insights_node",
-            label: "Insights Inteligentes",
+            label: labels.smartInsights,
             type: "agent",
-            description: "Extrai insights acionáveis do workflow e gargalos. Fornece recomendações de otimização e identificação de oportunidades."
+            description: labels.smartInsightsDesc
           },
           {
             id: "output_node",
-            label: "Consolidação de Saída",
+            label: labels.outputConsolidation,
             type: "system",
-            description: "Consolida todos os resultados (workflow, gargalos, insights) e os persiste no banco de dados para auditoria e análise."
+            description: labels.outputConsolidationDesc
           }
         ],
         edges: [
           {
             source: "input_node",
             target: "workflow_builder_node",
-            label: "validado"
+            label: labels.edgeValidated
           },
           {
             source: "workflow_builder_node",
             target: "bottleneck_detector_node",
-            label: "workflow criado"
+            label: labels.edgeWorkflowCreated
           },
           {
             source: "bottleneck_detector_node",
             target: "insights_node",
-            label: "gargalos detectados"
+            label: labels.edgeBottlenecksDetected
           },
           {
             source: "insights_node",
             target: "output_node",
-            label: "insights gerados"
+            label: labels.edgeInsightsGenerated
           }
         ]
       };
@@ -3364,14 +3368,16 @@ Texto original: ${demand.rawText}`;
   app.get("/api/ai/graph/:nodeId", async (req, res) => {
     try {
       const { nodeId } = req.params;
+      const lang = (req.query.lang as string) || 'pt-BR';
+      const labels = getGraphLabels(lang);
 
       // Define node details with metadata and last runs
       const nodeDetails: Record<string, any> = {
         input_node: {
           id: "input_node",
-          label: "Validação de Entrada",
+          label: labels.inputValidation,
           type: "system",
-          description: "Valida e prepara a demanda para processamento, verificando se todos os campos necessários estão presentes e se o formato está correto. Este nodo é crítico pois previne que demandas inválidas avancem no pipeline.",
+          description: labels.inputValidationDetailedDesc,
           meta: {
             version: "1.0",
             author: "system",
@@ -3396,9 +3402,9 @@ Texto original: ${demand.rawText}`;
         },
         workflow_builder_node: {
           id: "workflow_builder_node",
-          label: "Gerador de Workflow",
+          label: labels.workflowGenerator,
           type: "agent",
-          description: "Agente especializado que gera workflows estruturados a partir de demandas. Utiliza GPT-4 para criar etapas bem definidas, atribuir responsabilidades, estimar durações e definir critérios de sucesso. Cada workflow inclui dependências entre etapas e prioridades.",
+          description: labels.workflowGeneratorDetailedDesc,
           meta: {
             version: "2.1",
             author: "ai-agents",
@@ -3425,9 +3431,9 @@ Texto original: ${demand.rawText}`;
         },
         bottleneck_detector_node: {
           id: "bottleneck_detector_node",
-          label: "Monitor de Gargalos",
+          label: labels.bottleneckMonitor,
           type: "agent",
-          description: "Analisa workflows para identificar gargalos potenciais usando análise de movimentação histórica, dependências críticas e pontos de contenção. Calcula scores de severidade (crítica, alta, média, baixa) para cada gargalo identificado.",
+          description: labels.bottleneckMonitorDetailedDesc,
           meta: {
             version: "1.5",
             author: "ai-agents",
@@ -3448,9 +3454,9 @@ Texto original: ${demand.rawText}`;
         },
         insights_node: {
           id: "insights_node",
-          label: "Insights Inteligentes",
+          label: labels.smartInsights,
           type: "agent",
-          description: "Extrai insights acionáveis e recomendações a partir da análise de workflows e gargalos. Identifica padrões, oportunidades de otimização e fatores de risco para melhor tomada de decisão.",
+          description: labels.smartInsightsDetailedDesc,
           meta: {
             version: "1.3",
             author: "ai-agents",
@@ -3471,9 +3477,9 @@ Texto original: ${demand.rawText}`;
         },
         output_node: {
           id: "output_node",
-          label: "Consolidação de Saída",
+          label: labels.outputConsolidation,
           type: "system",
-          description: "Consolida todos os resultados do pipeline de orquestração (workflow, gargalos, insights) e os persiste no banco de dados para auditoria, análise e histórico de execução.",
+          description: labels.outputConsolidationDetailedDesc,
           meta: {
             version: "1.0",
             author: "system",

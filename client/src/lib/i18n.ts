@@ -498,6 +498,18 @@ export const translations = {
       successMessage: 'Execução iniciada com sucesso!',
       errorMessage: 'Erro ao executar',
       emptyInputError: 'Por favor, digite um input para testar',
+      // Agent/Node Names
+      inputValidation: 'Validação de Entrada',
+      workflowGenerator: 'Gerador de Workflow',
+      bottleneckMonitor: 'Monitor de Gargalos',
+      smartInsights: 'Insights Inteligentes',
+      outputConsolidation: 'Consolidação de Saída',
+      // Agent/Node Descriptions
+      inputValidationDesc: 'Valida e prepara a demanda para processamento. Verifica se todos os campos necessários estão presentes e se o formato está correto.',
+      workflowGeneratorDesc: 'Gera um workflow estruturado baseado na demanda. Cria etapas, responsabilidades, dependências e critérios de sucesso.',
+      bottleneckMonitorDesc: 'Analisa o workflow gerado para identificar possíveis gargalos, riscos e pontos de contenção. Calcula scores de severidade.',
+      smartInsightsDesc: 'Extrai insights acionáveis do workflow e gargalos. Fornece recomendações de otimização e identificação de oportunidades.',
+      outputConsolidationDesc: 'Consolida todos os resultados (workflow, gargalos, insights) e os persiste no banco de dados para auditoria e análise.',
     },
 
     // Critical Alerts Page
@@ -1071,6 +1083,18 @@ export const translations = {
       successMessage: 'Execution started successfully!',
       errorMessage: 'Error executing',
       emptyInputError: 'Please enter an input to test',
+      // Agent/Node Names
+      inputValidation: 'Input Validation',
+      workflowGenerator: 'Workflow Generator',
+      bottleneckMonitor: 'Bottleneck Monitor',
+      smartInsights: 'Smart Insights',
+      outputConsolidation: 'Output Consolidation',
+      // Agent/Node Descriptions
+      inputValidationDesc: 'Validates and prepares the demand for processing. Checks if all necessary fields are present and the format is correct.',
+      workflowGeneratorDesc: 'Generates a structured workflow based on the demand. Creates stages, responsibilities, dependencies, and success criteria.',
+      bottleneckMonitorDesc: 'Analyzes the generated workflow to identify potential bottlenecks, risks, and points of contention. Calculates severity scores.',
+      smartInsightsDesc: 'Extracts actionable insights from the workflow and bottlenecks. Provides optimization recommendations and identifies opportunities.',
+      outputConsolidationDesc: 'Consolidates all results (workflow, bottlenecks, insights) and persists them in the database for audit and analysis.',
     },
 
     // Critical Alerts Page
