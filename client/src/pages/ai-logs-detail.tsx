@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, CheckCircle2, AlertCircle, Zap, Target, Lightbulb } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface ExecutionDetail {
   executionId: string;
@@ -44,6 +45,7 @@ interface ExecutionDetail {
 }
 
 export default function AILogsDetailPage() {
+  const { t } = useTranslation();
   const [match, params] = useRoute("/app/ai/logs/:id");
   const [, navigate] = useLocation();
 
@@ -74,11 +76,11 @@ export default function AILogsDetailPage() {
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar aos Logs
+          {t('aiLogsDetail.backButton')}
         </Button>
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
-            <p className="text-red-700 font-semibold">❌ Execução não encontrada</p>
+            <p className="text-red-700 font-semibold">{t('aiLogsDetail.notFound')}</p>
           </CardContent>
         </Card>
       </div>
@@ -89,7 +91,7 @@ export default function AILogsDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando detalhes da execução...</p>
+        <p className="text-muted-foreground">{t('aiLogsDetail.loading')}</p>
       </div>
     );
   }
@@ -127,14 +129,14 @@ export default function AILogsDetailPage() {
           data-testid="button-back"
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar aos Logs
+          {t('aiLogsDetail.backButton')}
         </Button>
       </div>
 
       {/* Execution Title */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold" data-testid="title-execution">
-          Detalhes da Execução #{detail.executionId.substring(0, 8)}
+          {t('aiLogsDetail.executionTitle')} #{detail.executionId.substring(0, 8)}
         </h1>
         <p className="text-muted-foreground text-sm">
           ID: {detail.executionId}
@@ -147,7 +149,7 @@ export default function AILogsDetailPage() {
           color={detail.execution.status === "success" ? "green" : "red"}
           data-testid="badge-status"
         >
-          {detail.execution.status === "success" ? "✓ Sucesso" : "✗ Erro"}
+          {detail.execution.status === "success" ? t('aiLogsDetail.statusSuccess') : t('aiLogsDetail.statusError')}
         </Badge>
         <Badge color="blue" data-testid="badge-duration">
           ⏱ {formatDuration(detail.execution.duration_ms)}
@@ -162,7 +164,7 @@ export default function AILogsDetailPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Timestamp
+              {t('aiLogsDetail.timestamp')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -175,7 +177,7 @@ export default function AILogsDetailPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Duração
+              {t('aiLogsDetail.duration')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -188,7 +190,7 @@ export default function AILogsDetailPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Status
+              {t('aiLogsDetail.status')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -199,7 +201,7 @@ export default function AILogsDetailPage() {
                 <AlertCircle className="w-5 h-5 text-red-600" />
               )}
               <span className="font-semibold" data-testid="text-status">
-                {detail.execution.status === "success" ? "Sucesso" : "Erro"}
+                {detail.execution.status === "success" ? t('aiLogsDetail.statusSuccessText') : t('aiLogsDetail.statusErrorText')}
               </span>
             </div>
           </CardContent>
@@ -212,41 +214,41 @@ export default function AILogsDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Demanda Processada
+              {t('aiLogsDetail.demandProcessed')}
             </CardTitle>
             <CardDescription>
-              Informações da demanda que originou esta execução
+              {t('aiLogsDetail.demandProcessedDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-semibold text-gray-600">Título</p>
+                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.title')}</p>
                 <p className="text-base mt-1" data-testid="text-demand-title">
                   {detail.demandData?.title || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-600">ID</p>
+                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.id')}</p>
                 <p className="font-mono text-sm mt-1" data-testid="text-demand-id">
                   {detail.demandData?.id || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-600">Prioridade</p>
+                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.priority')}</p>
                 <Badge color={getPriorityColor(detail.demandData?.priority)} data-testid="badge-demand-priority">
                   {(detail.demandData?.priority || "desconhecida").toUpperCase()}
                 </Badge>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-600">Área</p>
+                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.area')}</p>
                 <p className="text-base mt-1" data-testid="text-demand-area">
                   {detail.demandData?.area || "—"}
                 </p>
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 mb-2">Descrição</p>
+              <p className="text-sm font-semibold text-gray-600 mb-2">{t('aiLogsDetail.description')}</p>
               <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded" data-testid="text-demand-description">
                 {detail.demandData?.description || "—"}
               </p>
@@ -261,10 +263,10 @@ export default function AILogsDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5" />
-              Workflows Gerados ({detail.workflows.length})
+              {t('aiLogsDetail.workflowsGenerated')} ({detail.workflows.length})
             </CardTitle>
             <CardDescription>
-              Workflows criados durante esta execução do grafo
+              {t('aiLogsDetail.workflowsGeneratedDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -287,10 +289,10 @@ export default function AILogsDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-orange-600" />
-              Gargalos Identificados ({detail.bottlenecks.length})
+              {t('aiLogsDetail.bottlenecksIdentified')} ({detail.bottlenecks.length})
             </CardTitle>
             <CardDescription>
-              Riscos e bloqueadores detectados no workflow
+              {t('aiLogsDetail.bottlenecksIdentifiedDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -309,11 +311,11 @@ export default function AILogsDetailPage() {
                   <div className="mt-3 space-y-2">
                     {bottleneck.bottlenecks.map((item: any, i: number) => (
                       <div key={i} className="text-sm bg-orange-50 p-2 rounded">
-                        <p className="font-semibold text-gray-700">{item.stage || item.title || "Gargalo"}</p>
+                        <p className="font-semibold text-gray-700">{item.stage || item.title || t('aiLogsDetail.bottleneck')}</p>
                         <p className="text-gray-600">{item.reason || item.description || "—"}</p>
                         {item.recommended_action && (
                           <p className="text-gray-700 mt-1">
-                            <strong>Recomendação:</strong> {item.recommended_action}
+                            <strong>{t('aiLogsDetail.recommendationLabel')}:</strong> {item.recommended_action}
                           </p>
                         )}
                       </div>
@@ -335,10 +337,10 @@ export default function AILogsDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="w-5 h-5 text-yellow-600" />
-              Insights & Recomendações ({detail.insights.length})
+              {t('aiLogsDetail.insightsRecommendations')} ({detail.insights.length})
             </CardTitle>
             <CardDescription>
-              Análises e recomendações geradas pelo sistema
+              {t('aiLogsDetail.insightsRecommendationsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -350,7 +352,7 @@ export default function AILogsDetailPage() {
                   <div className="space-y-3">
                     {insight.insights.key_insights && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">🎯 Insights Principais:</p>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.keyInsights')}</p>
                         <ul className="text-sm text-gray-600 space-y-1 ml-4">
                           {Array.isArray(insight.insights.key_insights) &&
                             insight.insights.key_insights.map((item: any, i: number) => (
@@ -362,7 +364,7 @@ export default function AILogsDetailPage() {
 
                     {insight.insights.recommendations && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">💡 Recomendações:</p>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.recommendations')}</p>
                         <ul className="text-sm text-gray-600 space-y-1 ml-4">
                           {Array.isArray(insight.insights.recommendations) &&
                             insight.insights.recommendations.map((item: any, i: number) => (
@@ -374,7 +376,7 @@ export default function AILogsDetailPage() {
 
                     {insight.insights.risk_factors && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">⚠️ Fatores de Risco:</p>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.riskFactors')}</p>
                         <ul className="text-sm text-gray-600 space-y-1 ml-4">
                           {Array.isArray(insight.insights.risk_factors) &&
                             insight.insights.risk_factors.map((item: any, i: number) => (
@@ -386,7 +388,7 @@ export default function AILogsDetailPage() {
 
                     {insight.insights.optimization_opportunities && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">🚀 Oportunidades de Otimização:</p>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.optimizationOpportunities')}</p>
                         <ul className="text-sm text-gray-600 space-y-1 ml-4">
                           {Array.isArray(insight.insights.optimization_opportunities) &&
                             insight.insights.optimization_opportunities.map((item: any, i: number) => (
@@ -414,7 +416,7 @@ export default function AILogsDetailPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">Nenhum resultado gerado nesta execução</p>
+              <p className="text-gray-600">{t('aiLogsDetail.noResults')}</p>
             </CardContent>
           </Card>
         )}
