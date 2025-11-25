@@ -4,7 +4,37 @@ This project is an AI-driven process orchestration system designed to classify, 
 
 # Recent Changes
 
-## Multi-Tenant + RBAC + Audit Logs (Latest)
+## Google OAuth Implementation (Latest)
+- **Authentication System**: 
+  - Integrated Passport.js with Google OAuth 2.0 strategy
+  - Updated `users` table schema: added `email`, `googleId`, `name`, `image` fields
+  - Created login page at `/login` with Google OAuth button
+  - Automatic personal tenant creation for first-time Google users
+- **Session Management**:
+  - Express session with PostgreSQL store (`connect-pg-simple`)
+  - HTTP-only cookies for security
+  - Session persistence via `session` table
+- **Auth Routes**:
+  - `POST /api/auth/google` - Initiates OAuth login
+  - `GET /api/auth/google/callback` - OAuth callback handler
+  - `GET /api/auth/logout` - Logout with session destruction
+  - `GET /api/auth/session` - Get current session info
+  - `POST /api/auth/switch-tenant` - Switch active tenant
+- **UI Components**:
+  - Created `client/src/pages/login.tsx` - Login page with Google button
+  - Created `client/src/components/tenant-switcher.tsx` - User/tenant switcher
+  - Layout now includes tenant switcher for authenticated users
+- **Middleware**:
+  - `authMiddleware` - Passport configuration and session setup
+  - `tenantMiddleware` - Tenant context injection from headers
+  - Protected routes via Layout component wrapper
+- **Documentation**:
+  - Created `GOOGLE_OAUTH_SETUP.md` with complete setup guide
+  - Setup instructions for Google Cloud Console
+  - Environment variable configuration guide
+  - Troubleshooting section
+
+## Multi-Tenant + RBAC + Audit Logs
 - **Multi-Tenant Architecture**: 
   - Added `tenants` table for tenant isolation
   - Added `tenant_users` table with role-based access control (owner, admin, manager, member, readonly)
@@ -17,12 +47,6 @@ This project is an AI-driven process orchestration system designed to classify, 
   - New API endpoints for audit log queries (admin-only):
     - `GET /api/audit-logs` - Get all tenant audit logs
     - `GET /api/audit-logs/:entityType/:entityId` - Get audit trail for specific entity
-- **Database Migrations**:
-  - Generated and applied migration `0000_cheerful_nighthawk.sql` with all new tables
-  - Run `npm run db:push` to apply migrations before deployment
-- **Data Migration Script**:
-  - Created `server/db/scripts/migrate_to_tenant.ts` to backfill existing data with default tenant
-  - Run before first deployment: `DATABASE_URL="..." npx tsx server/db/scripts/migrate_to_tenant.ts`
 
 Previous changes:
 - Fixed bottlenecks page showing data in production environment
