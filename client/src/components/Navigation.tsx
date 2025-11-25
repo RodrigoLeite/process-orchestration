@@ -8,8 +8,8 @@ import {
   Home as HomeIcon,
   Menu,
   X,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   LayoutGrid,
   Bot,
   Bell,
@@ -84,7 +84,7 @@ export default function Navigation() {
               data-testid="button-collapse-toggle"
               title={isSidebarCollapsed ? "Expandir menu" : "Colapsar menu"}
             >
-              {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
             </Button>
           </div>
 
