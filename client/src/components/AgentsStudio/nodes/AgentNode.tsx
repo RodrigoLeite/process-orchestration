@@ -16,7 +16,7 @@ export default function AgentNode({ data, id }: any) {
     logicType = 'none',
     condition = '',
     modelProvider = 'OpenAI',
-    modelName = 'gpt-4o-mini',
+    modelName = 'gpt-4-turbo',
   } = data;
 
   const [title, setTitle] = useState(label);
