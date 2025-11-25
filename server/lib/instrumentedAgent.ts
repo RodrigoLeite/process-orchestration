@@ -3,9 +3,10 @@
  * Generic wrapper for instrumenting any AI agent with LangSmith tracing
  */
 
-import { getLangsmithClient, updateLangSmithRun } from "./langsmith";
+import { getLangsmithClient } from "./langsmith";
 import { langsmithConfig } from "./langsmith-config";
 import { storage } from "../storage";
+import { RunTree } from "langsmith";
 
 /**
  * Callback interface for metrics extension
@@ -122,30 +123,31 @@ export async function runInstrumentedAgent({
   let runId: string | null = null;
 
   try {
-    // Create LangSmith run
+    // Create LangSmith run using RunTree for proper ID tracking
     const client = getLangsmithClient();
-    if (client) {
+    if (client && langsmithConfig.apiKey) {
       const metadata = createMetadata(context, input);
       
       try {
-        const run = await client.createRun({
+        // Use RunTree for proper ID tracking and non-blocking async tracing
+        const runTree = new RunTree({
           name: agentKey,
-          run_type: "chain" as any,
+          run_type: "chain",
           inputs: input,
           project_name: langsmithConfig.projectName,
+          client,
           extra: { metadata },
         });
 
-        // LangSmith returns a UUID - extract it if it exists
-        if (run) {
-          runId = typeof run === 'string' ? run : (run as any)?.id;
-          context.runId = runId;
-          logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
-        } else {
-          console.warn(`[AGENT:${agentKey}] LangSmith createRun returned empty response`);
-        }
+        // RunTree provides a client property with an ID
+        runId = runTree.id;
+        context.runId = runId;
+        logAgentEvent(agentKey, "LANGSMITH_RUN_CREATED", { runId });
+
+        // Store RunTree for later use (optional background posting)
+        (context as any).runTree = runTree;
       } catch (createRunError) {
-        console.error(`[AGENT:${agentKey}] Error creating LangSmith run:`, createRunError);
+        console.error(`[AGENT:${agentKey}] Error creating LangSmith RunTree:`, createRunError);
         // Continue execution even if LangSmith fails - don't block the agent
       }
     } else {
@@ -158,28 +160,24 @@ export async function runInstrumentedAgent({
     
     const duration = Date.now() - startTime;
 
-    // Update LangSmith run with success
-    console.log(`[AGENT:${agentKey}] After handler: runId=${runId}`);
-    if (runId) {
-      const client = getLangsmithClient();
-      console.log(`[AGENT:${agentKey}] Client available: ${!!client}`);
-      if (client) {
-        try {
-          console.log(`[AGENT:${agentKey}] Updating LangSmith run ${runId} with success status...`);
-          const updateResult = await updateLangSmithRun(runId, {
-            output,
-            duration,
-            success: true,
-          }, "success");
-          console.log(`[AGENT:${agentKey}] LangSmith run update result:`, updateResult);
-        } catch (error) {
-          console.error(`[AGENT:${agentKey}] Failed to update LangSmith run:`, error);
-        }
-      } else {
-        console.warn(`[AGENT:${agentKey}] LangSmith client not available for updating run ${runId}`);
+    // Finalize and post LangSmith run (non-blocking async)
+    if (runId && (context as any).runTree) {
+      const runTree = (context as any).runTree;
+      try {
+        // End the run with outputs
+        runTree.end({
+          outputs: output,
+        });
+        
+        // Post to LangSmith asynchronously (don't block agent)
+        runTree.postRun().catch((err: any) => {
+          console.error(`[AGENT:${agentKey}] Failed to post run to LangSmith:`, err);
+        });
+        
+        logAgentEvent(agentKey, "LANGSMITH_RUN_POSTED", { runId });
+      } catch (error) {
+        console.error(`[AGENT:${agentKey}] Error finalizing LangSmith run:`, error);
       }
-    } else {
-      console.warn(`[AGENT:${agentKey}] No runId to update (runId is null or undefined)`);
     }
 
     // Fire onSuccess callback
@@ -210,23 +208,23 @@ export async function runInstrumentedAgent({
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Update LangSmith run with error
-    if (runId) {
-      const client = getLangsmithClient();
-      if (client) {
-        try {
-          await updateLangSmithRun(
-            runId,
-            {
-              error: errorMessage,
-              duration,
-              success: false,
-            },
-            "error"
-          );
-        } catch (updateError) {
-          console.error(`[AGENT:${agentKey}] Failed to update LangSmith run on error:`, updateError);
-        }
+    // Finalize LangSmith run with error (non-blocking async)
+    if (runId && (context as any).runTree) {
+      const runTree = (context as any).runTree;
+      try {
+        // End the run with error
+        runTree.end({
+          error: errorMessage,
+        });
+        
+        // Post to LangSmith asynchronously (don't block agent)
+        runTree.postRun().catch((err: any) => {
+          console.error(`[AGENT:${agentKey}] Failed to post error run to LangSmith:`, err);
+        });
+        
+        logAgentEvent(agentKey, "LANGSMITH_ERROR_RUN_POSTED", { runId });
+      } catch (finalizeError) {
+        console.error(`[AGENT:${agentKey}] Error finalizing error run:`, finalizeError);
       }
     }
 
