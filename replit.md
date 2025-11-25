@@ -2,6 +2,18 @@
 
 This project is an AI-driven process orchestration system designed to classify, route, and manage internal business demands across departments. It leverages GPT-4 for automated request analysis, custom workflow creation, bottleneck detection, and actionable insight generation. The system aims to streamline business processes, improve efficiency, and provide predictive insights for better decision-making.
 
+# Recent Changes
+
+- Fixed bottlenecks page showing data in production environment:
+  - Added early return to `/api/areas/overload` when no pending/in-progress demands exist
+  - Now all three bottleneck-related endpoints return empty data when database is empty
+  - `/api/bottlenecks` - returns empty bottlenecks array
+  - `/api/areas/overload` - returns empty areas array
+  - `/api/demands` - returns empty demands array
+- Implemented full internationalization for area names and descriptions (pt-BR and en-US)
+- Added helper functions `getAreaName()` and `getAreaDescription()` in i18n.ts
+- Updated areas-list.tsx and area-details.tsx to display translated area names and descriptions
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
