@@ -122,6 +122,11 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
 
     // Redirect to frontend
     const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+    console.log('[OAUTH CALLBACK] Redirect decision:', {
+      isNew,
+      tenantIsConfigured: tenant.isConfigured,
+      condition: `isNew=${isNew} && tenant.isConfigured !== 'true' = ${isNew && tenant.isConfigured !== 'true'}`
+    });
     const redirectUrl = isNew && tenant.isConfigured !== 'true'
       ? `${baseUrl}/onboarding?tenant=${tenant.id}`
       : `${baseUrl}/app/demands`;
