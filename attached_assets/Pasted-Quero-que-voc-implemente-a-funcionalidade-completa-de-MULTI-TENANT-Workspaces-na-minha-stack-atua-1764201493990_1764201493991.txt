@@ -1,0 +1,126 @@
+Quero que você implemente a funcionalidade completa de MULTI-TENANT (Workspaces) na minha stack atual:
+
+STACK:
+- Vite + React + TypeScript
+- Express.js backend
+- Drizzle ORM (PostgreSQL)
+- Auth: Google OAuth2 + Sessions JWT
+- Multi-tenant por "tenant_id"
+
+========================================
+OBJETIVO:
+Implementar sistema completo de Workspaces (Tenants múltiplos por usuário), com:
+
+1. Criação de novos tenants
+2. Listagem de tenants do usuário
+3. Troca de tenant ativo
+4. Sessão com tenantId
+5. Isolamento total de dados por tenant
+6. UI de seleção de workspace (Workspace Switcher)
+7. UI para criação de novos workspaces
+8. UI para gerenciar workspaces (lista + roles)
+9. Tabela user_tenants (many-to-many) com roles
+10. Integração com onboarding inicial
+
+========================================
+BACKEND — INSTRUÇÕES:
+
+Criar as tabelas DRIZZLE:
+
+**tenants**
+- id (pk)
+- name
+- slug (único, gerado automaticamente)
+- created_by (user_id)
+- created_at
+
+**user_tenants**
+- id (pk)
+- user_id (fk users.id)
+- tenant_id (fk tenants.id)
+- role ("owner" | "admin" | "member" | "viewer")
+- created_at
+
+Atualize tabela sessions para incluir:
+- tenant_id
+
+Rotas:
+
+POST /api/tenants
+  - cria novo tenant
+  - adiciona usuário como owner
+  - retorna tenant criado
+
+GET /api/tenants
+  - lista tenants do usuário logado
+
+POST /api/tenants/switch
+  body: { tenantId }
+  - valida se o user pertence ao tenant
+  - atualiza sessão com tenantId
+
+GET /api/tenants/current
+  - retorna tenantId + nome + role
+
+POST /api/tenants/invite
+  - envia convite (mock)
+  - adiciona user_tenants com role "member"
+
+Validação:
+- Toda requisição autenticada deve validar tenantId
+- Toda query deve filtrar por tenant_id
+- Nenhum dado pode ser acessado sem tenant
+
+========================================
+FRONTEND — INSTRUÇÕES:
+
+Criar componente global:
+**<TenantProvider>**
+- carrega tenant atual do backend
+- expõe { currentTenant, switchTenant, tenants }
+
+Criar componente:
+**WorkspaceSwitcher.tsx**
+- fica no header (canto superior esquerdo)
+- mostra nome do tenant atual
+- ao clicar abre dropdown:
+    - lista todos os tenants
+    - botão “Criar novo workspace”
+    - botão “Gerenciar workspaces”
+
+Criar modal:
+**CreateWorkspaceModal.tsx**
+- campo nome
+- slug gerado automaticamente
+- botão criar
+- chama POST /api/tenants
+
+Criar modal:
+**ManageWorkspacesModal.tsx**
+- mostra tenants
+- mostra role
+- botão sair (exceto owner)
+- botão convidar usuário
+
+Ao trocar tenant:
+- chamar POST /api/tenants/switch
+- atualizar contexto global
+- recarregar dados da aplicação
+
+========================================
+ONBOARDING — INSTRUÇÕES:
+- Após o primeiro login Google OAuth, criar tenant inicial automaticamente:
+    name = default workspace name
+    role = owner
+
+========================================
+IMPORTANTE:
+- Código completo em TS
+- Backend Express modularizado
+- Frontend com shadcn UI + tema dark
+- Toda query deve respeitar tenant_id
+- Seguir boas práticas de segurança
+
+========================================
+
+Gere TODO o código completo (frontend + backend + Drizzle) com a estrutura final integrada.

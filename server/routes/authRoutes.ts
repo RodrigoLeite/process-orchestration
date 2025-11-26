@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getAuthUrl, getTokensFromCode, getProfileFromIdToken, getUserInfoFromAccessToken } from '../lib/googleOAuth';
 import { createOrUpdateUserFromGoogle, ensureTenantForUser, issueTokensForUser } from '../lib/authService';
 import { deleteRefreshToken, getRefreshToken, setRefreshToken } from '../lib/redisClient';
-import { jwtMiddleware, requireAuth } from '../middleware/jwtMiddleware';
+import { jwtMiddleware, requireAuth, AuthRequest } from '../middleware/jwtMiddleware';
 import { signAccessToken } from '../lib/jwt';
 import { randomUUID } from 'crypto';
 import { storage } from '../storage';
