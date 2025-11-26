@@ -26,10 +26,8 @@ router.get('/auth/google', (req: Request, res: Response) => {
       maxAge: 10 * 60 * 1000, // 10 minutes
     });
 
-    // Build the dynamic callback URL based on the current request host
-    const host = req.get('host');
-    const protocol = req.get('x-forwarded-proto') || req.protocol;
-    const callbackUrl = `${protocol}://${host}/api/auth/google/callback`;
+    // Use the registered callback URL from environment
+    const callbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback';
     console.log('[OAUTH INITIATE] Using callback URL:', callbackUrl);
 
     const authUrl = getAuthUrl(state, callbackUrl);
@@ -61,10 +59,8 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
 
-    // Exchange code for tokens with the same callback URL
-    const cbHost = req.get('host');
-    const cbProtocol = req.get('x-forwarded-proto') || req.protocol;
-    const cbUrl = `${cbProtocol}://${cbHost}/api/auth/google/callback`;
+    // Exchange code for tokens with the registered callback URL
+    const cbUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback';
     console.log('[OAUTH CALLBACK] Exchanging code for tokens with callback URL:', cbUrl);
     const tokens = await getTokensFromCode(code as string, cbUrl);
     if (!tokens.id_token && !tokens.access_token) {
