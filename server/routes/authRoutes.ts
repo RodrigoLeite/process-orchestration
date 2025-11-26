@@ -26,16 +26,10 @@ router.get('/auth/google', (req: Request, res: Response) => {
       maxAge: 10 * 60 * 1000, // 10 minutes
     });
 
-    // Get callback URL - use GOOGLE_CALLBACK_URL for prod, construct dynamically for dev
-    let callbackUrl: string;
-    if (process.env.NODE_ENV === 'production' && process.env.GOOGLE_CALLBACK_URL) {
-      callbackUrl = process.env.GOOGLE_CALLBACK_URL;
-    } else {
-      // Dev environment - construct URL from current request
-      const host = req.get('host');
-      const protocol = req.get('x-forwarded-proto') || req.protocol;
-      callbackUrl = `${protocol}://${host}/api/auth/google/callback`;
-    }
+    // Get callback URL - use appropriate env var for environment
+    const callbackUrl = process.env.NODE_ENV === 'production' 
+      ? (process.env.GOOGLE_CALLBACK_URL || 'https://your-production-url.com/api/auth/google/callback')
+      : (process.env.GOOGLE_CALLBACK_URL_DEV || 'http://localhost:5000/api/auth/google/callback');
     console.log('[OAUTH INITIATE] Using callback URL:', callbackUrl);
 
     const authUrl = getAuthUrl(state, callbackUrl);
@@ -67,16 +61,10 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
 
-    // Exchange code for tokens - use same logic as initiation
-    let cbUrl: string;
-    if (process.env.NODE_ENV === 'production' && process.env.GOOGLE_CALLBACK_URL) {
-      cbUrl = process.env.GOOGLE_CALLBACK_URL;
-    } else {
-      // Dev environment - construct URL from current request
-      const host = req.get('host');
-      const protocol = req.get('x-forwarded-proto') || req.protocol;
-      cbUrl = `${protocol}://${host}/api/auth/google/callback`;
-    }
+    // Exchange code for tokens - use appropriate env var for environment
+    const cbUrl = process.env.NODE_ENV === 'production'
+      ? (process.env.GOOGLE_CALLBACK_URL || 'https://your-production-url.com/api/auth/google/callback')
+      : (process.env.GOOGLE_CALLBACK_URL_DEV || 'http://localhost:5000/api/auth/google/callback');
     console.log('[OAUTH CALLBACK] Exchanging code for tokens with callback URL:', cbUrl);
     const tokens = await getTokensFromCode(code as string, cbUrl);
     if (!tokens.id_token && !tokens.access_token) {

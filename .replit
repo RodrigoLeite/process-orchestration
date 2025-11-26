@@ -79,3 +79,6 @@ mockupState = "FULLSTACK"
 LANGSMITH_PROJECT = "process-orchestration"
 LANGSMITH_ENDPOINT = "https://api.smith.langchain.com"
 LANGSMITH_ENABLED = "true"
+
+[userenv.development]
+GOOGLE_CALLBACK_URL_DEV = "https://6223e777-ce20-4af3-8c51-b6d90edd3134-00-nvajlv5o7d7z.riker.replit.dev/api/auth/google/callback"
