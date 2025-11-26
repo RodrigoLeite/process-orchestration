@@ -135,11 +135,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update tenant
-      await storage.db.update(__import("@shared/schema").tenants).set({
+      const { tenants } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      await storage.db.update(tenants).set({
         name,
         isConfigured: isConfigured ? "true" : "false",
         metadata: metadata || null,
-      }).where(__import("drizzle-orm").eq(__import("@shared/schema").tenants.id, req.tenant.tenantId));
+      }).where(eq(tenants.id, req.tenant.tenantId));
 
       return res.json({ success: true, message: "Tenant updated successfully" });
     } catch (error) {
