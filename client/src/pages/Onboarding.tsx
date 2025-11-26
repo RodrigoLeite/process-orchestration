@@ -40,7 +40,7 @@ export default function OnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -48,7 +48,7 @@ export default function OnboardingPage() {
 
   if (!tenant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="max-w-md p-8">
           <p className="text-red-500">Erro: Tenant não encontrado</p>
         </Card>
@@ -116,24 +116,24 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        <Card className="bg-slate-900 border-slate-700 p-8">
+        <Card className="bg-white border-gray-200 p-8 shadow-lg">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-onboarding-title">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-onboarding-title">
               Configure seu workspace
             </h1>
-            <p className="text-slate-400">Personalize seu espaço de trabalho para começar</p>
+            <p className="text-gray-600">Personalize seu espaço de trabalho para começar</p>
           </div>
 
           <div className="mb-8 flex items-center gap-2">
             <div className="flex-1 h-1 bg-blue-500 rounded"></div>
-            <span className="text-xs font-medium text-slate-400">Passo 1 de 1</span>
+            <span className="text-xs font-medium text-gray-600">Passo 1 de 1</span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6" data-testid="form-onboarding">
             <div>
-              <Label htmlFor="logo" className="text-slate-300 text-sm font-medium block mb-3">
+              <Label htmlFor="logo" className="text-gray-700 text-sm font-medium block mb-3">
                 Logo do workspace (opcional)
               </Label>
               <div className="flex gap-4 items-start">
@@ -143,12 +143,12 @@ export default function OnboardingPage() {
                     type="file"
                     accept="image/*"
                     onChange={handleLogoChange}
-                    className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                     data-testid="input-logo"
                   />
                 </div>
                 {logoPreview && (
-                  <div className="w-24 h-24 rounded-lg overflow-hidden bg-slate-800">
+                  <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" data-testid="img-logo-preview" />
                   </div>
                 )}
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <Label htmlFor="name" className="text-slate-300 text-sm font-medium block mb-2">
+              <Label htmlFor="name" className="text-gray-700 text-sm font-medium block mb-2">
                 Nome do workspace
               </Label>
               <Input
@@ -165,23 +165,23 @@ export default function OnboardingPage() {
                 placeholder="Ex: Minha Empresa"
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
-                className="bg-slate-800 border-slate-700 text-white"
+                className="bg-gray-50 border-gray-200 text-gray-900"
                 data-testid="input-workspace-name"
               />
               {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
 
             <div>
-              <Label htmlFor="area" className="text-slate-300 text-sm font-medium block mb-2">
+              <Label htmlFor="area" className="text-gray-700 text-sm font-medium block mb-2">
                 Área de atuação
               </Label>
               <Select value={formData.area} onValueChange={(v) => handleChange('area', v)}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white" data-testid="select-area">
+                <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-900" data-testid="select-area">
                   <SelectValue placeholder="Selecione uma área" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-white border-gray-200">
                   {AREAS.map((a) => (
-                    <SelectItem key={a.value} value={a.value} className="text-white">
+                    <SelectItem key={a.value} value={a.value} className="text-gray-900">
                       {a.label}
                     </SelectItem>
                   ))}
@@ -200,8 +200,8 @@ export default function OnboardingPage() {
             </Button>
           </form>
 
-          <div className="mt-8 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-            <p className="text-xs text-slate-400">💡 Você pode modificar essas informações depois nas configurações</p>
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-600">💡 Você pode modificar essas informações depois nas configurações</p>
           </div>
         </Card>
       </div>
