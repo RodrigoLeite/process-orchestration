@@ -39,39 +39,53 @@ router.get('/auth/google', (req: Request, res: Response) => {
  */
 router.get('/auth/google/callback', async (req: Request, res: Response) => {
   try {
+    console.log('[OAUTH CALLBACK] Starting callback handler');
     const { code, state } = req.query;
     const oauthState = (req as any).cookies?.oauth_state;
 
     if (!code) {
+      console.error('[OAUTH CALLBACK] Missing authorization code');
       return res.status(400).json({ error: 'Missing authorization code' });
     }
 
     // Verify state for CSRF protection
     if (state && oauthState && state !== oauthState) {
+      console.error('[OAUTH CALLBACK] Invalid state parameter');
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
 
     // Exchange code for tokens
+    console.log('[OAUTH CALLBACK] Exchanging code for tokens');
     const tokens = await getTokensFromCode(code as string);
     if (!tokens.id_token && !tokens.access_token) {
+      console.error('[OAUTH CALLBACK] Failed to get tokens');
       return res.status(400).json({ error: 'Failed to get tokens' });
     }
 
     // Get user profile
     let profile;
     if (tokens.id_token) {
+      console.log('[OAUTH CALLBACK] Verifying ID token');
       profile = await getProfileFromIdToken(tokens.id_token);
     } else if (tokens.access_token) {
+      console.log('[OAUTH CALLBACK] Fetching user info from access token');
       profile = await getUserInfoFromAccessToken(tokens.access_token);
     } else {
+      console.error('[OAUTH CALLBACK] No id_token or access_token');
       return res.status(400).json({ error: 'Could not retrieve user profile' });
     }
 
+    console.log('[OAUTH CALLBACK] Got profile:', profile.email);
+
     // Create or update user
+    console.log('[OAUTH CALLBACK] Creating/updating user');
     const user = await createOrUpdateUserFromGoogle(profile);
+    console.log('[OAUTH CALLBACK] User created/updated:', user.id);
 
     // Ensure user has a tenant
+    console.log('[OAUTH CALLBACK] Ensuring user has tenant');
     const { tenant, isNew } = await ensureTenantForUser(user);
+    console.log('[OAUTH CALLBACK] Tenant:', tenant.id, 'isNew:', isNew, 'isConfigured:', tenant.isConfigured);
 
     // Get tenant user role
     const tenantUser = await storage.db
@@ -84,9 +98,11 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     const role = tenantUser?.role || 'member';
 
     // Issue tokens
+    console.log('[OAUTH CALLBACK] Issuing tokens');
     const tokenResponse = await issueTokensForUser(user, tenant, role);
 
     // Set secure httpOnly cookies
+    console.log('[OAUTH CALLBACK] Setting cookies');
     res.cookie('access_token', tokenResponse.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -109,10 +125,11 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
       ? `${baseUrl}/onboarding?tenant=${tenant.id}`
       : `${baseUrl}/app/demands`;
 
+    console.log('[OAUTH CALLBACK] Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   } catch (error) {
-    console.error('OAuth callback error:', error);
-    res.status(500).json({ error: 'OAuth callback failed' });
+    console.error('[OAUTH CALLBACK] Error:', error);
+    res.status(500).json({ error: 'OAuth callback failed', details: String(error) });
   }
 });
 
