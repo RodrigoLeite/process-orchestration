@@ -103,7 +103,7 @@ export default function OnboardingPage() {
       // Invalidate auth cache to refresh tenant status
       await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
       // Redirect after cache is invalidated
-      setTimeout(() => navigate('/app'), 500);
+      setTimeout(() => navigate('/'), 500);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
