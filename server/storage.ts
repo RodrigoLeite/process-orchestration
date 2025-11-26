@@ -603,6 +603,11 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async updateTenantUserRole(id: string, role: string): Promise<TenantUser | undefined> {
+    const result = await this.db.update(tenantUsers).set({ role }).where(eq(tenantUsers.id, id)).returning();
+    return result[0];
+  }
+
   async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
     const result = await this.db.insert(auditLogs).values(log).returning();
     return result[0];
