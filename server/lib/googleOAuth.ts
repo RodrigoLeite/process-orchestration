@@ -22,13 +22,20 @@ export interface GoogleProfile {
 /**
  * Generate the OAuth2 authorization URL
  */
-export function getAuthUrl(state?: string): string {
+export function getAuthUrl(state?: string, redirectUri?: string): string {
   const scopes = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
   ];
 
-  return oauth2Client.generateAuthUrl({
+  // Create a temporary client with the correct redirect URI for this request
+  const client = new OAuth2Client(
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    redirectUri || GOOGLE_REDIRECT_URI
+  );
+
+  return client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
     state: state || undefined,

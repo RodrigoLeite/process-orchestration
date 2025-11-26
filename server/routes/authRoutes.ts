@@ -26,7 +26,13 @@ router.get('/auth/google', (req: Request, res: Response) => {
       maxAge: 10 * 60 * 1000, // 10 minutes
     });
 
-    const authUrl = getAuthUrl(state);
+    // Build the dynamic callback URL based on the current request host
+    const host = req.get('host');
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const callbackUrl = `${protocol}://${host}/api/auth/google/callback`;
+    console.log('[OAUTH INITIATE] Using callback URL:', callbackUrl);
+
+    const authUrl = getAuthUrl(state, callbackUrl);
     res.redirect(authUrl);
   } catch (error) {
     console.error('Error initiating OAuth:', error);
