@@ -33,6 +33,20 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
+  app.use("*", async (req, res, next) => {
+    // CRITICAL: Log ALL requests before Vite takes over
+    const path = req.url.split('?')[0]; // Get path without query string
+    console.log('[BEFORE VITE]', req.method, path);
+    
+    if (path.startsWith("/api")) {
+      console.log('[SKIP VITE] Passing API route to Express:', path);
+      return next();
+    }
+    
+    // Now pass to vite for non-API routes
+    next();
+  });
+
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     // Skip this middleware for API routes - let Express handle them
