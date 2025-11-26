@@ -121,7 +121,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     res.clearCookie('oauth_state');
 
     // Redirect to frontend
-    const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.FRONTEND_URL || `https://${req.get('host')}`;
     console.log('[OAUTH CALLBACK] Redirect decision:', {
       isNew,
       tenantIsConfigured: tenant.isConfigured,
@@ -132,7 +132,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
       : `${baseUrl}/app/demands`;
 
     console.log('[OAUTH CALLBACK] Redirecting to:', redirectUrl);
-    res.redirect(redirectUrl);
+    res.status(302).redirect(redirectUrl);
   } catch (error) {
     console.error('[OAUTH CALLBACK] Error:', error);
     res.status(500).json({ error: 'OAuth callback failed', details: String(error) });
