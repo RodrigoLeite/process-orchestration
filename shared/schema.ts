@@ -491,7 +491,7 @@ export const insertStageInsightSchema = createInsertSchema(stageInsights).omit({
   createdAt: true,
 });
 
-export type InsertStageInsight = z.infer<typeof insertStageInsights>;
+export type InsertStageInsight = z.infer<typeof insertStageInsightSchema>;
 export type StageInsight = typeof stageInsights.$inferSelect;
 
 // ========== AUDIT LOGS ==========
