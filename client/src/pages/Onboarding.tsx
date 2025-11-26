@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { queryClient } from '@/lib/queryClient';
 
 const onboardingSchema = z.object({
   name: z.string().min(3, 'Mínimo 3 caracteres').max(100, 'Máximo 100 caracteres'),
@@ -99,7 +100,10 @@ export default function OnboardingPage() {
       }
 
       toast.success('Workspace configurado com sucesso!');
-      setTimeout(() => navigate('/app'), 1000);
+      // Invalidate auth cache to refresh tenant status
+      await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
+      // Redirect after cache is invalidated
+      setTimeout(() => navigate('/app'), 500);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
