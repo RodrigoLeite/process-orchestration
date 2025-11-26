@@ -3814,6 +3814,130 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // RBAC Endpoints
+
+  // GET /api/rbac/users - List tenant users with roles
+  app.get("/api/rbac/users", async (req: any, res) => {
+    try {
+      const tenantId = req.query.tenantId as string;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID required" });
+      }
+
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Get all tenant users
+      const tenantUsers = await storage.getTenantUsers(tenantId);
+
+      // Enrich with user and role info
+      const enrichedUsers = await Promise.all(
+        tenantUsers.map(async (tu) => {
+          const user = await storage.getUser(tu.userId);
+          const role = tu.roleId ? await storage.getRole(tu.roleId) : null;
+          
+          return {
+            id: tu.id,
+            userId: tu.userId,
+            email: user?.email || "unknown",
+            name: user?.name || "Unknown User",
+            roleId: tu.roleId,
+            roleName: role?.name || "No Role",
+          };
+        })
+      );
+
+      res.json(enrichedUsers);
+    } catch (error) {
+      console.error("[RBAC] Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // GET /api/rbac/roles - List roles for a tenant
+  app.get("/api/rbac/roles", async (req: any, res) => {
+    try {
+      const tenantId = req.query.tenantId as string;
+
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID required" });
+      }
+
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const roles = await storage.getTenantRoles(tenantId);
+      res.json(roles);
+    } catch (error) {
+      console.error("[RBAC] Error fetching roles:", error);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
+  // PUT /api/rbac/users/:id/role - Update user role
+  app.put("/api/rbac/users/:id/role", async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { roleId } = req.body;
+
+      if (!id || !roleId) {
+        return res.status(400).json({ error: "Tenant user ID and role ID required" });
+      }
+
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Get the tenant user to check permissions
+      const tenantUser = await storage.db.select().from((await import("@shared/schema")).tenantUsers).where(
+        (await import("drizzle-orm")).eq((await import("@shared/schema")).tenantUsers.id, id)
+      ).limit(1).then((rows: any[]) => rows[0]);
+
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant user not found" });
+      }
+
+      // Check if current user is admin/owner
+      const currentUserTenantUser = await storage.getTenantUser(tenantUser.tenantId, req.user.id);
+      const currentUserRole = currentUserTenantUser?.roleId ? await storage.getRole(currentUserTenantUser.roleId) : null;
+      
+      if (!currentUserRole || !["Owner", "Admin"].includes(currentUserRole.name)) {
+        return res.status(403).json({ error: "Forbidden: insufficient permissions" });
+      }
+
+      // Prevent changing Owner role
+      const targetRole = await storage.getRole(roleId);
+      if (!targetRole) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
+      if (targetRole.name === "Owner") {
+        return res.status(400).json({ error: "Cannot assign Owner role" });
+      }
+
+      // Update the role
+      const updated = await storage.updateTenantUser(id, { roleId });
+
+      // Audit log
+      await logAudit({
+        tenantId: tenantUser.tenantId,
+        userId: req.user.id,
+        entityType: "tenant_user",
+        entityId: id,
+        action: "UPDATE_ROLE",
+        payload: { previousRoleId: tenantUser.roleId, newRoleId: roleId },
+      });
+
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      console.error("[RBAC] Error updating user role:", error);
+      res.status(500).json({ error: "Failed to update user role" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
