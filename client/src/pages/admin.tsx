@@ -113,7 +113,8 @@ export default function AdminPanel() {
               <tbody>
                 {tenantUsers.map((tenantUser: TenantUserWithRole) => {
                   const isCurrentUser = tenantUser.userId === user?.id;
-                  const isOwner = tenantUser.roleName === 'Owner';
+                  const isOwner = tenantUser.roleName === 'owner';
+                  const currentRoleId = roles.find((r: Role) => r.name.toLowerCase() === tenantUser.roleName)?.id || '';
 
                   return (
                     <tr key={tenantUser.id} className="border-b border-gray-100 hover:bg-gray-50" data-testid={`row-user-${tenantUser.id}`}>
@@ -127,7 +128,7 @@ export default function AdminPanel() {
                           </span>
                         ) : (
                           <Select
-                            value={tenantUser.roleId}
+                            value={currentRoleId}
                             onValueChange={(roleId) =>
                               updateRoleMutation.mutate({
                                 tenantUserId: tenantUser.id,
