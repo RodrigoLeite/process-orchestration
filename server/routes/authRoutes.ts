@@ -107,7 +107,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
     const redirectUrl = isNew && tenant.isConfigured !== 'true'
       ? `${baseUrl}/onboarding?tenant=${tenant.id}`
-      : `${baseUrl}/app`;
+      : `${baseUrl}/app/demands`;
 
     res.redirect(redirectUrl);
   } catch (error) {
