@@ -141,7 +141,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     });
     const redirectUrl = isNew && tenant.isConfigured !== 'true'
       ? `${baseUrl}/onboarding?tenant=${tenant.id}`
-      : `${baseUrl}/app/demands`;
+      : `${baseUrl}/`;
 
     console.log('[OAUTH CALLBACK] Redirecting to:', redirectUrl);
     res.status(302).redirect(redirectUrl);
