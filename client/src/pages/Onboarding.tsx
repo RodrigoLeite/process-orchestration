@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'wouter';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMutation } from '@tanstack/react-query';
 
 export default function OnboardingPage() {
   const { isAuthenticated, tenant } = useAuth();
-  const [, navigate] = useRouter();
+  const [, navigate] = useLocation();
   const [workspaceName, setWorkspaceName] = useState(tenant?.name || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

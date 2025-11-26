@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'wouter';
+import { useLocation } from 'wouter';
 import { Chrome } from 'lucide-react';
 
 export default function LoginPage() {
   const { isAuthenticated, login, isLoading } = useAuth();
-  const [, navigate] = useRouter();
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
