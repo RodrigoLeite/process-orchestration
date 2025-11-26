@@ -6,8 +6,8 @@ import { registerWorkflowRoutes } from "./lib/workflow-api";
 import { seedAgents, initializeDefaultAreas } from "./lib/seeds";
 import { startScheduler, executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
 import { getLangsmithClient } from "./lib/langsmith";
-import { tenantMiddleware } from "./middleware/tenantMiddleware";
 import { jwtMiddleware } from "./middleware/jwtMiddleware";
+import { tenantMiddleware } from "./tenant/middleware";
 import authRoutes from "./routes/authRoutes";
 
 export function log(message: string, source = "express") {
