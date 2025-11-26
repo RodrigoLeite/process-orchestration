@@ -99,7 +99,7 @@ export const tenantUsers = pgTable("tenant_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull(),
   userId: varchar("user_id").notNull(),
-  roleId: uuid("role_id"),
+  role: text("role").notNull().default("member"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

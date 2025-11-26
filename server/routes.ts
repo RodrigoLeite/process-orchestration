@@ -3832,19 +3832,18 @@ Texto original: ${demand.rawText}`;
       // Get all tenant users
       const tenantUsers = await storage.getTenantUsers(tenantId);
 
-      // Enrich with user and role info
+      // Enrich with user info
       const enrichedUsers = await Promise.all(
         tenantUsers.map(async (tu) => {
           const user = await storage.getUser(tu.userId);
-          const role = tu.roleId ? await storage.getRole(tu.roleId) : null;
           
           return {
             id: tu.id,
             userId: tu.userId,
             email: user?.email || "unknown",
             name: user?.name || "Unknown User",
-            roleId: tu.roleId,
-            roleName: role?.name || "No Role",
+            roleId: tu.id, // Use tenant user ID as roleId for dropdown
+            roleName: tu.role,
           };
         })
       );
@@ -3856,20 +3855,21 @@ Texto original: ${demand.rawText}`;
     }
   });
 
-  // GET /api/rbac/roles - List roles for a tenant
+  // GET /api/rbac/roles - List available roles
   app.get("/api/rbac/roles", async (req: any, res) => {
     try {
-      const tenantId = req.query.tenantId as string;
-
-      if (!tenantId) {
-        return res.status(400).json({ error: "Tenant ID required" });
-      }
-
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const roles = await storage.getTenantRoles(tenantId);
+      // Return available role names
+      const roleNames = ["Owner", "Admin", "Manager", "Member", "Viewer"];
+      const roles = roleNames.map((name, idx) => ({
+        id: idx.toString(),
+        name,
+        description: `${name} role`,
+      }));
+
       res.json(roles);
     } catch (error) {
       console.error("[RBAC] Error fetching roles:", error);
@@ -3884,7 +3884,7 @@ Texto original: ${demand.rawText}`;
       const { roleId } = req.body;
 
       if (!id || !roleId) {
-        return res.status(400).json({ error: "Tenant user ID and role ID required" });
+        return res.status(400).json({ error: "Tenant user ID and role required" });
       }
 
       if (!req.user) {
@@ -3902,24 +3902,27 @@ Texto original: ${demand.rawText}`;
 
       // Check if current user is admin/owner
       const currentUserTenantUser = await storage.getTenantUser(tenantUser.tenantId, req.user.id);
-      const currentUserRole = currentUserTenantUser?.roleId ? await storage.getRole(currentUserTenantUser.roleId) : null;
       
-      if (!currentUserRole || !["Owner", "Admin"].includes(currentUserRole.name)) {
+      if (!currentUserTenantUser || !["owner", "admin"].includes(currentUserTenantUser.role)) {
         return res.status(403).json({ error: "Forbidden: insufficient permissions" });
       }
 
-      // Prevent changing Owner role
-      const targetRole = await storage.getRole(roleId);
-      if (!targetRole) {
-        return res.status(404).json({ error: "Role not found" });
-      }
+      // Get role name from the passed role name/ID
+      const roleNames = ["Owner", "Admin", "Manager", "Member", "Viewer"];
+      const targetRoleName = roleNames[parseInt(roleId)] || roleId;
 
-      if (targetRole.name === "Owner") {
+      // Prevent changing Owner role
+      if (targetRoleName === "Owner") {
         return res.status(400).json({ error: "Cannot assign Owner role" });
       }
 
+      // Prevent removing owner
+      if (tenantUser.role === "owner") {
+        return res.status(400).json({ error: "Cannot change owner role" });
+      }
+
       // Update the role
-      const updated = await storage.updateTenantUser(id, { roleId });
+      const updated = await storage.updateTenantUserRole(id, targetRoleName.toLowerCase());
 
       // Audit log
       await logAudit({
@@ -3928,7 +3931,7 @@ Texto original: ${demand.rawText}`;
         entityType: "tenant_user",
         entityId: id,
         action: "UPDATE_ROLE",
-        payload: { previousRoleId: tenantUser.roleId, newRoleId: roleId },
+        payload: { previousRole: tenantUser.role, newRole: targetRoleName.toLowerCase() },
       });
 
       res.json({ success: true, data: updated });
