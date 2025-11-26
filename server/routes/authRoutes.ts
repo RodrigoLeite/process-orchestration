@@ -120,12 +120,15 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
 
     res.clearCookie('oauth_state');
 
-    // Redirect to frontend
-    const baseUrl = process.env.FRONTEND_URL || `https://${req.get('host')}`;
+    // Redirect to frontend - use the same host the request came from
+    const host = req.get('host');
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const baseUrl = `${protocol}://${host}`;
     console.log('[OAUTH CALLBACK] Redirect decision:', {
       isNew,
       tenantIsConfigured: tenant.isConfigured,
-      condition: `isNew=${isNew} && tenant.isConfigured !== 'true' = ${isNew && tenant.isConfigured !== 'true'}`
+      condition: `isNew=${isNew} && tenant.isConfigured !== 'true' = ${isNew && tenant.isConfigured !== 'true'}`,
+      baseUrl
     });
     const redirectUrl = isNew && tenant.isConfigured !== 'true'
       ? `${baseUrl}/onboarding?tenant=${tenant.id}`
