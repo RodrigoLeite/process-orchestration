@@ -28,7 +28,7 @@ export async function signAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>
 export async function verifyAccessToken(token: string): Promise<TokenPayload> {
   try {
     const verified = await jwtVerify(token, secret);
-    return verified.payload as TokenPayload;
+    return verified.payload as unknown as TokenPayload;
   } catch (error) {
     throw new Error('Invalid or expired access token');
   }
@@ -37,7 +37,7 @@ export async function verifyAccessToken(token: string): Promise<TokenPayload> {
 export async function decodeAccessToken(token: string): Promise<TokenPayload | null> {
   try {
     const verified = await jwtVerify(token, secret);
-    return verified.payload as TokenPayload;
+    return verified.payload as unknown as TokenPayload;
   } catch {
     return null;
   }

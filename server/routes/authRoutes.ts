@@ -236,7 +236,7 @@ router.post('/auth/logout', async (req: Request, res: Response) => {
  * GET /api/auth/session
  * Get current session info
  */
-router.get('/auth/session', jwtMiddleware, async (req: any, res: Response) => {
+router.get('/auth/session', jwtMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.json({ authenticated: false });
