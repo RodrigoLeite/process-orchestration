@@ -16,7 +16,8 @@ import {
   Activity,
   GitBranch,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export default function Navigation() {
     { label: t("nav.criticalAlerts"), href: "/app/alerts", icon: Bell },
     { label: t("nav.monitoring"), href: "/app/monitoring", icon: TrendingUp },
     { label: t("nav.orchestrationLogs"), href: "/app/ai/logs", icon: Activity },
+    { label: "Admin Panel", href: "/admin", icon: Shield },
     { label: t("nav.settings"), href: "/settings", icon: Settings }
   ];
 

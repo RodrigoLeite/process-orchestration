@@ -48,11 +48,58 @@ export const insertTenantSchema = createInsertSchema(tenants).omit({
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type Tenant = typeof tenants.$inferSelect;
 
+// ========== RBAC ==========
+export const permissions = pgTable("permissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type Permission = typeof permissions.$inferSelect;
+
+export const roles = pgTable("roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Role = typeof roles.$inferSelect;
+
+export const rolePermissions = pgTable("role_permissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roleId: uuid("role_id").notNull(),
+  permissionId: uuid("permission_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+
 export const tenantUsers = pgTable("tenant_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull(),
   userId: varchar("user_id").notNull(),
-  role: text("role").notNull().default("member"), // owner, admin, manager, member, readonly
+  roleId: uuid("role_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -444,7 +491,7 @@ export const insertStageInsightSchema = createInsertSchema(stageInsights).omit({
   createdAt: true,
 });
 
-export type InsertStageInsight = z.infer<typeof insertStageInsightSchema>;
+export type InsertStageInsight = z.infer<typeof insertStageInsights>;
 export type StageInsight = typeof stageInsights.$inferSelect;
 
 // ========== AUDIT LOGS ==========
