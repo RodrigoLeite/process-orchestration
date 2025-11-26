@@ -3,6 +3,7 @@ import { createClient } from 'redis';
 let redisClient: any;
 let useInMemory = true; // Default to in-memory
 let clientInitialized = false;
+let redisErrorLogged = false;
 
 // In-memory fallback storage for development
 const inMemoryStore = new Map<string, { value: string; expiresAt: number }>();
@@ -23,21 +24,29 @@ export function initializeRedisClient() {
     });
 
     redisClient.on('error', (err: any) => {
-      console.warn('Redis unavailable, using in-memory storage');
+      if (!redisErrorLogged) {
+        console.log('Redis unavailable, using in-memory storage for session tokens');
+        redisErrorLogged = true;
+      }
       useInMemory = true;
     });
     
     redisClient.on('connect', () => {
       console.log('Connected to Redis');
       useInMemory = false;
+      redisErrorLogged = false;
     });
 
     // Try to connect in the background (non-blocking)
     redisClient.connect().catch(() => {
+      if (!redisErrorLogged) {
+        console.log('Redis unavailable, using in-memory storage for session tokens');
+        redisErrorLogged = true;
+      }
       useInMemory = true;
     });
   } catch (error) {
-    console.warn('Redis unavailable, using in-memory storage');
+    console.log('Redis unavailable, using in-memory storage for session tokens');
     useInMemory = true;
     redisClient = null;
   }
