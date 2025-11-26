@@ -68,15 +68,12 @@ function ProtectedRoutes() {
 }
 
 function AppRoutes() {
-  const [, navigate] = useLocation();
-
   return (
     <Layout>
       <Switch>
         <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/" component={Dashboard} />
         <Route path="/dashboard" component={Dashboard} />
-        <Route path="/app" component={() => { navigate("/app/demands"); return null; }} />
         <Route path="/landing" component={Landing} />
         <Route path="/demands" component={Demands} />
         <Route path="/app/demands" component={DemandsManager} />
