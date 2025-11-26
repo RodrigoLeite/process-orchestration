@@ -104,9 +104,10 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     res.clearCookie('oauth_state');
 
     // Redirect to frontend
+    const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
     const redirectUrl = isNew && tenant.isConfigured !== 'true'
-      ? `${process.env.FRONTEND_URL || 'http://localhost:5173'}/onboarding?tenant=${tenant.id}`
-      : `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app`;
+      ? `${baseUrl}/onboarding?tenant=${tenant.id}`
+      : `${baseUrl}/app`;
 
     res.redirect(redirectUrl);
   } catch (error) {
