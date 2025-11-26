@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Lock, Users, Shield } from 'lucide-react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface TenantUserWithRole {
   id: string;
@@ -27,6 +28,7 @@ interface Role {
 
 export default function AdminPanel() {
   const { tenant, user } = useAuth();
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
 
   const { data: tenantUsers = [] } = useQuery({
@@ -35,7 +37,7 @@ export default function AdminPanel() {
       const res = await fetch(`/api/rbac/users?tenantId=${tenant?.id}`, {
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Falha ao carregar usuários');
+      if (!res.ok) throw new Error(t('admin.errorLoadUsers'));
       return res.json();
     },
     enabled: !!tenant?.id,
@@ -47,7 +49,7 @@ export default function AdminPanel() {
       const res = await fetch(`/api/rbac/roles?tenantId=${tenant?.id}`, {
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Falha ao carregar roles');
+      if (!res.ok) throw new Error(t('admin.errorLoadRoles'));
       return res.json();
     },
     enabled: !!tenant?.id,
@@ -61,11 +63,11 @@ export default function AdminPanel() {
         credentials: 'include',
         body: JSON.stringify({ roleId: variables.roleId }),
       });
-      if (!res.ok) throw new Error('Falha ao atualizar role');
+      if (!res.ok) throw new Error(t('admin.errorUpdateRole'));
       return res.json();
     },
     onSuccess: () => {
-      toast.success('Role atualizado com sucesso');
+      toast.success(t('admin.successUpdateRole'));
     },
     onError: (error: any) => {
       toast.error(error.message);
@@ -76,7 +78,7 @@ export default function AdminPanel() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="p-8">
-          <p className="text-red-500">Tenant não encontrado</p>
+          <p className="text-red-500">{t('admin.tenantNotFound')}</p>
         </Card>
       </div>
     );
@@ -88,26 +90,26 @@ export default function AdminPanel() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2" data-testid="text-admin-title">
             <Shield className="w-8 h-8 text-primary" />
-            Painel Admin
+            {t('admin.title')}
           </h1>
-          <p className="text-gray-600">Gerencie usuários e permissões do seu workspace</p>
+          <p className="text-gray-600">{t('admin.subtitle')}</p>
         </div>
 
         {/* Usuários */}
         <Card className="p-6 border-gray-200">
           <div className="flex items-center gap-2 mb-6">
             <Users className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-gray-900">Membros do Workspace</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('admin.workspaceMembers')}</h2>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="table-users">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nome</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Role</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Ações</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnName')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnEmail')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnRole')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,7 +140,7 @@ export default function AdminPanel() {
                             disabled={isCurrentUser || isOwner}
                           >
                             <SelectTrigger className="w-40" data-testid={`select-role-${tenantUser.id}`}>
-                              <SelectValue placeholder="Selecionar role" />
+                              <SelectValue placeholder={t('admin.selectRole')} />
                             </SelectTrigger>
                             <SelectContent>
                               {roles.map((role: Role) => (
@@ -151,7 +153,7 @@ export default function AdminPanel() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-500">
-                        {isCurrentUser && <span className="text-blue-600 font-medium">Você</span>}
+                        {isCurrentUser && <span className="text-blue-600 font-medium">{t('admin.you')}</span>}
                       </td>
                     </tr>
                   );
@@ -162,7 +164,7 @@ export default function AdminPanel() {
 
           {tenantUsers.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              <p>Nenhum usuário adicionado ainda</p>
+              <p>{t('admin.noUsers')}</p>
             </div>
           )}
         </Card>
@@ -172,13 +174,13 @@ export default function AdminPanel() {
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-blue-900 mb-2">Roles Disponíveis</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">{t('admin.availableRoles')}</h3>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• <strong>Owner</strong>: Acesso total (não pode ser removido)</li>
-                <li>• <strong>Admin</strong>: Gerencia usuários e configurações</li>
-                <li>• <strong>Manager</strong>: Acesso gerencial limitado</li>
-                <li>• <strong>Member</strong>: Acesso padrão</li>
-                <li>• <strong>Viewer</strong>: Apenas visualização</li>
+                <li>• <strong>Owner</strong>: {t('admin.ownerDescription')}</li>
+                <li>• <strong>Admin</strong>: {t('admin.adminDescription')}</li>
+                <li>• <strong>Manager</strong>: {t('admin.managerDescription')}</li>
+                <li>• <strong>Member</strong>: {t('admin.memberDescription')}</li>
+                <li>• <strong>Viewer</strong>: {t('admin.viewerDescription')}</li>
               </ul>
             </div>
           </div>

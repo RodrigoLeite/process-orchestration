@@ -329,6 +329,31 @@ export const translations = {
       english: 'English (USA)',
     },
 
+    // Admin Panel
+    admin: {
+      title: 'Painel Admin',
+      subtitle: 'Gerencie usuários e permissões do seu workspace',
+      tenantNotFound: 'Tenant não encontrado',
+      workspaceMembers: 'Membros do Workspace',
+      columnName: 'Nome',
+      columnEmail: 'Email',
+      columnRole: 'Role',
+      columnActions: 'Ações',
+      selectRole: 'Selecionar role',
+      you: 'Você',
+      availableRoles: 'Roles Disponíveis',
+      ownerDescription: 'Acesso total (não pode ser removido)',
+      adminDescription: 'Gerencia usuários e configurações',
+      managerDescription: 'Acesso gerencial limitado',
+      memberDescription: 'Acesso padrão',
+      viewerDescription: 'Apenas visualização',
+      noUsers: 'Nenhum usuário adicionado ainda',
+      successUpdateRole: 'Role atualizado com sucesso',
+      errorLoadUsers: 'Falha ao carregar usuários',
+      errorLoadRoles: 'Falha ao carregar roles',
+      errorUpdateRole: 'Falha ao atualizar role',
+    },
+
     bottlenecks: {
       title: 'Monitor de Gargalos (IA)',
       subtitle: 'Análise inteligente com recomendações técnicas para resolução de gargalos',
@@ -979,6 +1004,31 @@ export const translations = {
       selectLanguage: 'Select your preferred language',
       portuguese: 'Português (Brasil)',
       english: 'English (USA)',
+    },
+
+    // Admin Panel
+    admin: {
+      title: 'Admin Panel',
+      subtitle: 'Manage users and permissions in your workspace',
+      tenantNotFound: 'Tenant not found',
+      workspaceMembers: 'Workspace Members',
+      columnName: 'Name',
+      columnEmail: 'Email',
+      columnRole: 'Role',
+      columnActions: 'Actions',
+      selectRole: 'Select role',
+      you: 'You',
+      availableRoles: 'Available Roles',
+      ownerDescription: 'Full access (cannot be removed)',
+      adminDescription: 'Manages users and settings',
+      managerDescription: 'Limited managerial access',
+      memberDescription: 'Standard access',
+      viewerDescription: 'View only',
+      noUsers: 'No users added yet',
+      successUpdateRole: 'Role updated successfully',
+      errorLoadUsers: 'Failed to load users',
+      errorLoadRoles: 'Failed to load roles',
+      errorUpdateRole: 'Failed to update role',
     },
 
     bottlenecks: {
