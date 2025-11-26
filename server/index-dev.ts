@@ -7,8 +7,12 @@ import { nanoid } from "nanoid";
 import { createServer as createViteServer, createLogger } from "vite";
 
 import runApp from "./app";
+import { initializeRedisClient } from "./lib/redisClient";
 
 import viteConfig from "../vite.config";
+
+// Initialize Redis (with fallback to in-memory for dev)
+initializeRedisClient();
 
 const viteLogger = createLogger();
 
