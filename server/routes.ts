@@ -117,6 +117,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add request logging middleware
   app.use(createRequestLogger());
 
+  // Tenant update endpoint
+  app.put("/api/tenant/update", async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      if (!req.tenant) {
+        return res.status(403).json({ error: "Tenant not found" });
+      }
+
+      const { name, isConfigured, metadata } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "Tenant name is required" });
+      }
+
+      // Update tenant
+      await storage.db.update(__import("@shared/schema").tenants).set({
+        name,
+        isConfigured: isConfigured ? "true" : "false",
+        metadata: metadata || null,
+      }).where(__import("drizzle-orm").eq(__import("@shared/schema").tenants.id, req.tenant.tenantId));
+
+      return res.json({ success: true, message: "Tenant updated successfully" });
+    } catch (error) {
+      console.error("Error updating tenant:", error);
+      return res.status(500).json({ error: "Failed to update tenant" });
+    }
+  });
+
   // Test endpoint to verify OpenAI API key
   app.get("/api/test-openai", async (req, res) => {
     try {

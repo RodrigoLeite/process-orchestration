@@ -71,6 +71,7 @@ function AppRoutes() {
   return (
     <Layout>
       <Switch>
+        <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/" component={Dashboard} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/landing" component={Landing} />
