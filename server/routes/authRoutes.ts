@@ -61,9 +61,12 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
 
-    // Exchange code for tokens
-    console.log('[OAUTH CALLBACK] Exchanging code for tokens');
-    const tokens = await getTokensFromCode(code as string);
+    // Exchange code for tokens with the same callback URL
+    const cbHost = req.get('host');
+    const cbProtocol = req.get('x-forwarded-proto') || req.protocol;
+    const cbUrl = `${cbProtocol}://${cbHost}/api/auth/google/callback`;
+    console.log('[OAUTH CALLBACK] Exchanging code for tokens with callback URL:', cbUrl);
+    const tokens = await getTokensFromCode(code as string, cbUrl);
     if (!tokens.id_token && !tokens.access_token) {
       console.error('[OAUTH CALLBACK] Failed to get tokens');
       return res.status(400).json({ error: 'Failed to get tokens' });

@@ -45,10 +45,18 @@ export function getAuthUrl(state?: string, redirectUri?: string): string {
 /**
  * Exchange authorization code for tokens
  */
-export async function getTokensFromCode(code: string) {
+export async function getTokensFromCode(code: string, redirectUri?: string) {
   try {
     console.log('[GOOGLE OAUTH] Exchanging code for tokens, code:', code.substring(0, 20) + '...');
-    const { tokens } = await oauth2Client.getToken(code);
+    
+    // Create a temporary client with the correct redirect URI for this request
+    const client = new OAuth2Client(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      redirectUri || GOOGLE_REDIRECT_URI
+    );
+    
+    const { tokens } = await client.getToken(code);
     console.log('[GOOGLE OAUTH] Got tokens:', { hasIdToken: !!tokens.id_token, hasAccessToken: !!tokens.access_token });
     return tokens;
   } catch (error) {
