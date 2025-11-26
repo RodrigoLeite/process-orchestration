@@ -17,6 +17,7 @@ const router = Router();
  */
 router.get('/auth/google', (req: Request, res: Response) => {
   try {
+    console.log('[OAUTH INITIATE] Starting Google OAuth flow');
     const state = randomUUID();
     res.cookie('oauth_state', state, {
       httpOnly: true,

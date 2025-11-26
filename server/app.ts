@@ -28,6 +28,13 @@ declare module 'http' {
     rawBody: unknown
   }
 }
+
+// Global logging middleware - FIRST
+app.use((req, res, next) => {
+  console.log('[GLOBAL]', req.method, req.path, req.url);
+  next();
+});
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
