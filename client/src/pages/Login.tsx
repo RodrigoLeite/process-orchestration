@@ -6,13 +6,13 @@ import { Chrome } from 'lucide-react';
 
 export default function LoginPage() {
   const { isAuthenticated, login, isLoading } = useAuth();
-  const [, navigate] = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      navigate('/app');
+      router.push('/app');
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, router]);
 
   if (isLoading) {
     return (

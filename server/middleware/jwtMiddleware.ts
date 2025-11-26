@@ -14,44 +14,46 @@ export interface AuthRequest extends Request {
  * JWT verification middleware
  * Reads token from Authorization header (Bearer scheme) or cookies
  */
-export async function jwtMiddleware(
+export function jwtMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): Promise<void> {
-  try {
-    let token: string | undefined;
+): void {
+  (async () => {
+    try {
+      let token: string | undefined;
 
-    // Try to get token from Authorization header
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.slice(7);
+      // Try to get token from Authorization header
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7);
+      }
+
+      // Fallback to cookie
+      if (!token) {
+        token = req.cookies?.access_token;
+      }
+
+      if (!token) {
+        return next(); // Continue without auth (routes can require it if needed)
+      }
+
+      const payload = await decodeAccessToken(token);
+      if (payload) {
+        req.user = {
+          id: payload.sub,
+          tenantId: payload.tenantId,
+          role: payload.role,
+          email: payload.email,
+        };
+      }
+
+      next();
+    } catch (error) {
+      console.error('JWT Middleware error:', error);
+      next();
     }
-
-    // Fallback to cookie
-    if (!token) {
-      token = req.cookies?.access_token;
-    }
-
-    if (!token) {
-      return next(); // Continue without auth (routes can require it if needed)
-    }
-
-    const payload = await decodeAccessToken(token);
-    if (payload) {
-      req.user = {
-        id: payload.sub,
-        tenantId: payload.tenantId,
-        role: payload.role,
-        email: payload.email,
-      };
-    }
-
-    next();
-  } catch (error) {
-    console.error('JWT Middleware error:', error);
-    next();
-  }
+  })();
 }
 
 /**

@@ -8,22 +8,22 @@ import { useMutation } from '@tanstack/react-query';
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function OnboardingPage() {
-  const { isAuthenticated, tenant, refetch } = useAuth();
-  const [, navigate] = useRouter();
+  const { isAuthenticated, tenant } = useAuth();
+  const router = useRouter();
   const [workspaceName, setWorkspaceName] = useState(tenant?.name || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login');
+      router.push('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (tenant?.isConfigured) {
-      navigate('/app');
+      router.push('/app');
     }
-  }, [tenant?.isConfigured, navigate]);
+  }, [tenant?.isConfigured, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +44,8 @@ export default function OnboardingPage() {
       });
 
       if (response.ok) {
-        await refetch?.();
-        navigate('/app');
+        // Reload auth session after tenant update
+        window.location.href = '/app';
       } else {
         alert('Failed to configure workspace');
       }
