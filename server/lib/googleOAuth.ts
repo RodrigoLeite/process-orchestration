@@ -40,10 +40,12 @@ export function getAuthUrl(state?: string): string {
  */
 export async function getTokensFromCode(code: string) {
   try {
+    console.log('[GOOGLE OAUTH] Exchanging code for tokens, code:', code.substring(0, 20) + '...');
     const { tokens } = await oauth2Client.getToken(code);
+    console.log('[GOOGLE OAUTH] Got tokens:', { hasIdToken: !!tokens.id_token, hasAccessToken: !!tokens.access_token });
     return tokens;
   } catch (error) {
-    console.error('Error getting tokens from code:', error);
+    console.error('[GOOGLE OAUTH] Error getting tokens from code:', error);
     throw error;
   }
 }
@@ -53,6 +55,7 @@ export async function getTokensFromCode(code: string) {
  */
 export async function getProfileFromIdToken(idToken: string): Promise<GoogleProfile> {
   try {
+    console.log('[GOOGLE OAUTH] Verifying ID token with audience:', GOOGLE_CLIENT_ID);
     const ticket = await oauth2Client.verifyIdToken({
       idToken,
       audience: GOOGLE_CLIENT_ID,
@@ -61,6 +64,7 @@ export async function getProfileFromIdToken(idToken: string): Promise<GoogleProf
     const payload = ticket.getPayload();
     if (!payload) throw new Error('Invalid token payload');
 
+    console.log('[GOOGLE OAUTH] ID token verified, email:', payload.email);
     return {
       id: payload.sub!,
       email: payload.email!,
@@ -70,7 +74,7 @@ export async function getProfileFromIdToken(idToken: string): Promise<GoogleProf
       family_name: payload.family_name,
     };
   } catch (error) {
-    console.error('Error verifying ID token:', error);
+    console.error('[GOOGLE OAUTH] Error verifying ID token:', error);
     throw error;
   }
 }
