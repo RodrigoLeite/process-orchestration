@@ -21,13 +21,11 @@ export interface AuthSession {
   role?: string;
 }
 
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 export function useAuth() {
   const { data: session, isLoading, refetch } = useQuery<AuthSession>({
     queryKey: ['auth-session'],
     queryFn: async () => {
-      const response = await fetch(`${BACKEND_URL}/api/auth/session`, {
+      const response = await fetch(`/api/auth/session`, {
         credentials: 'include',
       });
 
@@ -42,7 +40,7 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${BACKEND_URL}/api/auth/logout`, {
+      const response = await fetch(`/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -59,7 +57,7 @@ export function useAuth() {
   });
 
   const login = useCallback(() => {
-    window.location.href = `${BACKEND_URL}/api/auth/google`;
+    window.location.href = `/api/auth/google`;
   }, []);
 
   const logout = useCallback(async () => {

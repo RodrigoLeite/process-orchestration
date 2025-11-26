@@ -5,32 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMutation } from '@tanstack/react-query';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 export default function OnboardingPage() {
   const { isAuthenticated, tenant } = useAuth();
-  const router = useRouter();
+  const [, navigate] = useRouter();
   const [workspaceName, setWorkspaceName] = useState(tenant?.name || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      navigate('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     if (tenant?.isConfigured) {
-      router.push('/app');
+      navigate('/app');
     }
-  }, [tenant?.isConfigured, router]);
+  }, [tenant?.isConfigured, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/tenant/update`, {
+      const response = await fetch(`/api/tenant/update`, {
         method: 'POST',
         credentials: 'include',
         headers: {
