@@ -34,6 +34,7 @@ import WorkflowGraphPage from "@/pages/workflowgraph";
 import AgentsStudio from "@/pages/agents-studio";
 import MonitoringPage from "@/pages/monitoring";
 import SettingsPage from "@/pages/settings";
+import AdminPanel from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoutes() {
@@ -98,6 +99,7 @@ function AppRoutes() {
         <Route path="/app/workflow-graph" component={WorkflowGraphPage} />
         <Route path="/app/monitoring" component={MonitoringPage} />
         <Route path="/settings" component={SettingsPage} />
+        <Route path="/admin" component={AdminPanel} />
         <Route path="/observability" component={ObservabilityPage} />
         <Route component={NotFound} />
       </Switch>

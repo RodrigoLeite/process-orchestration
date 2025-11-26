@@ -628,3 +628,5 @@ export class DatabaseStorage implements IStorage {
     return await query;
   }
 }
+
+export const storage = new DatabaseStorage();
