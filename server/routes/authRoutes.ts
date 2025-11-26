@@ -5,7 +5,7 @@ import { deleteRefreshToken, getRefreshToken, setRefreshToken } from '../lib/red
 import { jwtMiddleware, requireAuth } from '../middleware/jwtMiddleware';
 import { signAccessToken } from '../lib/jwt';
 import { randomUUID } from 'crypto';
-import { db } from '../storage';
+import { storage } from '../storage';
 import { users, tenants, tenantUsers } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
@@ -74,7 +74,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     const { tenant, isNew } = await ensureTenantForUser(user);
 
     // Get tenant user role
-    const tenantUser = await db
+    const tenantUser = await storage.db
       .select()
       .from(tenantUsers)
       .where(eq(tenantUsers.userId, user.id))
@@ -136,7 +136,7 @@ router.post('/auth/refresh', async (req: Request, res: Response) => {
     const { userId, tenantId } = tokenData;
 
     // Get user and tenant
-    const user = await db
+    const user = await storage.db
       .select()
       .from(users)
       .where(eq(users.id, userId))
@@ -147,7 +147,7 @@ router.post('/auth/refresh', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    const tenant = await db
+    const tenant = await storage.db
       .select()
       .from(tenants)
       .where(eq(tenants.id, tenantId))
@@ -159,7 +159,7 @@ router.post('/auth/refresh', async (req: Request, res: Response) => {
     }
 
     // Get user role in tenant
-    const tenantUser = await db
+    const tenantUser = await storage.db
       .select()
       .from(tenantUsers)
       .where(and(
@@ -242,14 +242,14 @@ router.get('/auth/session', jwtMiddleware, async (req: any, res: Response) => {
       return res.json({ authenticated: false });
     }
 
-    const user = await db
+    const user = await storage.db
       .select()
       .from(users)
       .where(eq(users.id, req.user.id))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
-    const tenant = await db
+    const tenant = await storage.db
       .select()
       .from(tenants)
       .where(eq(tenants.id, req.user.tenantId))
