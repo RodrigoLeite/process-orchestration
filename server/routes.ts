@@ -287,12 +287,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/demands", async (req, res) => {
+  app.post("/api/demands", async (req: any, res) => {
     try {
       const { rawText } = req.body;
-      
+      const tenantId = req.tenantContext?.id;
+
       if (!rawText) {
         return res.status(400).json({ error: "rawText is required" });
+      }
+
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID is required" });
       }
 
       // 1. Parse the demand text with LangSmith instrumentation
@@ -305,10 +310,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const routeTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       const assignedTo = parsed.area ? parsed.area.toLowerCase() : "unknown";
       
-      console.log("[DEMAND] Creating demand with area:", assignedTo, "parsed.area:", parsed.area);
+      console.log("[DEMAND] Creating demand with area:", assignedTo, "parsed.area:", parsed.area, "tenantId:", tenantId);
       
       // 2. Create the demand
       const demand = await storage.createDemand({
+        tenantId,
         rawText,
         parsed,
         routeTo,
@@ -1789,11 +1795,13 @@ Texto original: ${demand.rawText}`;
       const hash = generateWorkflowHash(standardSteps);
 
       // Get or create workflow (with deduplication)
-      const savedWorkflow = await storage.getWorkflowByHash(hash);
+      const tenantId = (req as any).tenantContext?.id;
+      const savedWorkflow = await storage.getWorkflowByHash(hash, tenantId);
       let workflow = savedWorkflow;
       
       if (!workflow) {
         workflow = await storage.createWorkflow({
+          tenantId,
           workflowHash: hash,
           steps: standardSteps
         });
