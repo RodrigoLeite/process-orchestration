@@ -17,6 +17,8 @@ router.get('/workspaces', async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    console.log('[WORKSPACES] Fetching for user:', req.user.id);
+
     // Get all tenant_users records for this user
     const userTenants = await storage.db
       .select({
@@ -26,9 +28,28 @@ router.get('/workspaces', async (req: AuthRequest, res: Response): Promise<void>
       .from(tenantUsers)
       .where(eq(tenantUsers.userId, req.user.id));
 
+    console.log('[WORKSPACES] Found tenant_users records:', userTenants.length, userTenants);
+
     if (userTenants.length === 0) {
-      res.json([]);
-      return;
+      // Try alternate approach - get current tenant from session
+      const currentTenant = await storage.db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.id, req.user.tenantId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+      
+      console.log('[WORKSPACES] No tenant_users found, returning current tenant:', currentTenant?.id);
+
+      if (currentTenant) {
+        return res.json([{
+          id: currentTenant.id,
+          name: currentTenant.name,
+          role: 'owner', // Default to owner for current workspace
+        }]);
+      }
+
+      return res.json([]);
     }
 
     // Get tenant details for each
@@ -37,6 +58,8 @@ router.get('/workspaces', async (req: AuthRequest, res: Response): Promise<void>
       .select()
       .from(tenants)
       .where(inArray(tenants.id, workspaceIds));
+
+    console.log('[WORKSPACES] Tenant details found:', tenantDetails.length);
 
     // Build response with tenant details and roles
     const workspaces = userTenants.map(ut => {
@@ -50,7 +73,7 @@ router.get('/workspaces', async (req: AuthRequest, res: Response): Promise<void>
 
     res.json(workspaces);
   } catch (error) {
-    console.error('Error fetching workspaces:', error);
+    console.error('[WORKSPACES] Error:', error);
     res.status(500).json({ error: 'Failed to fetch workspaces' });
   }
 });
