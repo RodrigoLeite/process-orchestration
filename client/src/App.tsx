@@ -11,6 +11,7 @@ import Landing from "@/pages/landing";
 import LoginPage from "@/pages/Login";
 import OnboardingPage from "@/pages/Onboarding";
 import WorkspacesPage from "@/pages/workspaces";
+import CreateWorkspacePage from "@/pages/create-workspace";
 import Demands from "@/pages/demands";
 import AllDemands from "@/pages/all-demands";
 import DemandsManager from "@/pages/demands-manager";
@@ -75,6 +76,7 @@ function AppRoutes() {
       <Switch>
         <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/workspaces" component={WorkspacesPage} />
+        <Route path="/workspaces/create" component={CreateWorkspacePage} />
         <Route path="/" component={Dashboard} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/landing" component={Landing} />
