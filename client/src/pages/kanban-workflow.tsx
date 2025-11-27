@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, Lock, LockOpen } from "lucide-react";
 import Badge from "@/components/Badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 
 interface WorkflowStage {
@@ -56,12 +57,13 @@ export default function KanbanWorkflow() {
   const [match, params] = useRoute("/app/kanban/workflow/:workflowId");
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { tenant } = useAuth();
   const workflowId = params?.workflowId;
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
 
   // Fetch workflow
   const { data: workflow, isLoading: workflowLoading } = useQuery<AreaWorkflow>({
-    queryKey: ["workflow", workflowId],
+    queryKey: ["workflow", workflowId, tenant?.id],
     queryFn: async () => {
       const res = await fetch(`/api/workflows/${workflowId}`);
       if (!res.ok) throw new Error("Failed to fetch workflow");
@@ -74,7 +76,7 @@ export default function KanbanWorkflow() {
 
   // Fetch stages
   const { data: stages = [], isLoading: stagesLoading } = useQuery<WorkflowStage[]>({
-    queryKey: ["workflow-stages", workflowId],
+    queryKey: ["workflow-stages", workflowId, tenant?.id],
     queryFn: async () => {
       const res = await fetch(`/api/workflows/${workflowId}/stages`);
       if (!res.ok) throw new Error("Failed to fetch stages");
@@ -87,7 +89,7 @@ export default function KanbanWorkflow() {
 
   // Fetch demands for this workflow
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
-    queryKey: ["workflow-demands", workflowId],
+    queryKey: ["workflow-demands", workflowId, tenant?.id],
     queryFn: async () => {
       const res = await fetch(`/api/workflows/${workflowId}/demands`);
       if (!res.ok) throw new Error("Failed to fetch demands");

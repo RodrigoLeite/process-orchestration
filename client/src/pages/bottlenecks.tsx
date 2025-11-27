@@ -9,6 +9,7 @@ import AreaImpactTable from "@/components/AreaImpactTable";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useI18nStore } from "@/lib/store/i18nStore";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Bottleneck {
   area: string;
@@ -51,11 +52,12 @@ interface Demand {
 export default function BottlenecksPage() {
   const { t } = useTranslation();
   const { language } = useI18nStore();
+  const { tenant } = useAuth();
   const [isReorchestrating, setIsReorchestrating] = useState(false);
 
   // Fetch bottlenecks
   const { data: bottleneckData, isLoading: bottleneckLoading } = useQuery<BottleneckData>({
-    queryKey: ["bottlenecks-page"],
+    queryKey: ["bottlenecks-page", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/bottlenecks");
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
@@ -66,7 +68,7 @@ export default function BottlenecksPage() {
 
   // Fetch overload
   const { data: overloadData, isLoading: overloadLoading } = useQuery<OverloadData>({
-    queryKey: ["bottlenecks-overload"],
+    queryKey: ["bottlenecks-overload", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/areas/overload");
       if (!res.ok) throw new Error("Failed to fetch overload");
@@ -76,7 +78,7 @@ export default function BottlenecksPage() {
 
   // Fetch demands
   const { data: demands = [] } = useQuery<Demand[]>({
-    queryKey: ["bottlenecks-demands"],
+    queryKey: ["bottlenecks-demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");

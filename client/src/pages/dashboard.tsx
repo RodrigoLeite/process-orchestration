@@ -6,6 +6,7 @@ import Badge from "@/components/Badge";
 import DashboardKPICard from "@/components/DashboardKPICard";
 import DashboardHeatmap from "@/components/DashboardHeatmap";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface OverloadArea {
   area: string;
@@ -49,11 +50,12 @@ interface Demand {
 
 export default function DashboardPage() {
   const { t } = useTranslation();
+  const { tenant } = useAuth();
   const [heatmapData, setHeatmapData] = useState<any[]>([]);
 
   // Fetch demands for general metrics
   const { data: demands = [] } = useQuery<Demand[]>({
-    queryKey: ["dashboard-demands"],
+    queryKey: ["dashboard-demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
@@ -63,7 +65,7 @@ export default function DashboardPage() {
 
   // Fetch overload data
   const { data: overloadData, isLoading: overloadLoading } = useQuery<OverloadData>({
-    queryKey: ["dashboard-overload"],
+    queryKey: ["dashboard-overload", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/areas/overload");
       if (!res.ok) throw new Error("Failed to fetch overload data");
@@ -73,7 +75,7 @@ export default function DashboardPage() {
 
   // Fetch bottlenecks
   const { data: bottleneckData, isLoading: bottleneckLoading } = useQuery<BottleneckData>({
-    queryKey: ["dashboard-bottlenecks"],
+    queryKey: ["dashboard-bottlenecks", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/bottlenecks");
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
