@@ -120,8 +120,8 @@ export default function WorkspacesPage() {
 
       {/* Create Workspace Modal - redirects to onboarding */}
       {isCreating && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="modal-create-workspace">
-          <Card className="p-8 max-w-md w-full mx-4" data-testid="card-create-workspace-modal">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" data-testid="modal-create-workspace" onClick={() => setIsCreating(false)}>
+          <Card className="p-8 max-w-md w-full mx-4 bg-white shadow-xl" data-testid="card-create-workspace-modal" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold mb-4">Criar novo workspace</h2>
             <p className="text-gray-600 mb-6">
               Você será redirecionado para a tela de configuração do workspace.

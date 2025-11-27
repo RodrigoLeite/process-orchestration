@@ -63,7 +63,15 @@ export function Layout({ children }: LayoutProps) {
 
                   {/* Dropdown Menu */}
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-card border rounded-lg shadow-lg z-50" data-testid="menu-user-dropdown">
+                    <>
+                      {/* Backdrop overlay */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowUserMenu(false)}
+                        data-testid="backdrop-user-menu"
+                      />
+                      {/* Menu */}
+                      <div className="absolute right-0 mt-2 w-48 bg-card border rounded-lg shadow-lg z-50" data-testid="menu-user-dropdown">
                       <div className="p-3 border-b">
                         <p className="font-medium text-sm" data-testid="text-dropdown-name">{user.name}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -95,6 +103,7 @@ export function Layout({ children }: LayoutProps) {
                         </button>
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
               </div>
