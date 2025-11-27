@@ -8,19 +8,42 @@ import { eq, and } from 'drizzle-orm';
 import { TenantInfo } from './context';
 
 /**
- * Load primary tenant for user (first tenant by creation date)
- * In the future, this can be extended to handle tenant switching
+ * Load tenant for user with optional tenant switching support
+ * If preferredTenantId is provided, loads that tenant (if user has access)
+ * Otherwise loads primary tenant (first tenant by creation date)
  */
-export async function loadTenantForUser(userId: string): Promise<TenantInfo | null> {
+export async function loadTenantForUser(userId: string, preferredTenantId?: string): Promise<TenantInfo | null> {
   try {
-    // Get first tenant user record for this user (primary tenant)
-    const tenantUser = await storage.db
-      .select()
-      .from(tenantUsers)
-      .where(eq(tenantUsers.userId, userId))
-      .orderBy(tenantUsers.createdAt)
-      .limit(1)
-      .then((rows: any[]) => rows[0]);
+    let tenantUser;
+    
+    // If a preferred tenant is specified, try to load that one
+    if (preferredTenantId) {
+      tenantUser = await storage.db
+        .select()
+        .from(tenantUsers)
+        .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, preferredTenantId)))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+      
+      if (tenantUser) {
+        console.log(`[TENANT LOADER] Using preferred tenant ${preferredTenantId} for user ${userId}`);
+      }
+    }
+    
+    // If no preferred tenant or user doesn't have access to it, get first tenant (primary tenant)
+    if (!tenantUser) {
+      tenantUser = await storage.db
+        .select()
+        .from(tenantUsers)
+        .where(eq(tenantUsers.userId, userId))
+        .orderBy(tenantUsers.createdAt)
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+      
+      if (tenantUser) {
+        console.log(`[TENANT LOADER] Using primary tenant ${tenantUser.tenantId} for user ${userId}`);
+      }
+    }
 
     if (!tenantUser) {
       return null;

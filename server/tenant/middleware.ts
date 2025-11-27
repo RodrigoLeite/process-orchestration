@@ -23,8 +23,8 @@ export function tenantMiddleware(
         return next();
       }
 
-      // Load tenant for this user
-      const tenantInfo = await loadTenantForUser(req.user.id);
+      // Load tenant for this user, preferring the one from JWT if available (for workspace switching)
+      const tenantInfo = await loadTenantForUser(req.user.id, req.user.tenantId);
 
       if (!tenantInfo) {
         console.warn(`No tenant found for user ${req.user.id}`);
