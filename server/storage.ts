@@ -40,7 +40,7 @@ export interface IStorage {
   updateDemandStatus(id: string, status: string): Promise<Demand | undefined>;
   updateDemandWithSLA(id: string, updates: any): Promise<Demand | undefined>;
   getDemandsWithStatus(status: string): Promise<Demand[]>;
-  countDemandsByStatus(status: string): Promise<Record<string, number>>;
+  countDemandsByStatus(status: string, tenantId?: string): Promise<Record<string, number>>;
   getDemandsFromLastDays(days: number): Promise<Demand[]>;
 
   createLog(log: InsertLog): Promise<Log>;
@@ -272,8 +272,18 @@ export class DatabaseStorage implements IStorage {
     return await this.db.select().from(demands).where(eq(demands.status, status));
   }
 
-  async countDemandsByStatus(status: string): Promise<Record<string, number>> {
-    const allDemands = await this.db.select().from(demands).where(eq(demands.status, status));
+  async countDemandsByStatus(status: string, tenantId?: string): Promise<Record<string, number>> {
+    let query;
+    if (tenantId) {
+      query = this.db.select().from(demands).where(and(
+        eq(demands.status, status),
+        eq(demands.tenantId, tenantId as any)
+      ));
+    } else {
+      query = this.db.select().from(demands).where(eq(demands.status, status));
+    }
+    
+    const allDemands = await query;
     
     const counts: Record<string, number> = {};
     for (const demand of allDemands) {
