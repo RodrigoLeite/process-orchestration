@@ -27,25 +27,27 @@ export function convertEtapasToSteps(etapas: any[]): WorkflowStep[] {
 export async function getOrCreateWorkflow(
   etapas: any[],
   workflowName: string = "Workflow",
-  area: string = "unknown"
+  area: string = "unknown",
+  tenantId?: string
 ): Promise<Workflow> {
   // Convert etapas to standard steps
   const steps = convertEtapasToSteps(etapas);
 
   // Generate hash for deduplication (includes area to prevent cross-area deduplication)
   const hash = generateWorkflowHash(steps, area);
-  console.log(`[WORKFLOW] Generated hash: ${hash}`);
+  console.log(`[WORKFLOW] Generated hash: ${hash}, tenantId: ${tenantId}`);
 
-  // Check if workflow with this hash already exists
-  let existingWorkflow = await storage.getWorkflowByHash(hash);
+  // Check if workflow with this hash already exists (filtered by tenant if provided)
+  let existingWorkflow = await storage.getWorkflowByHash(hash, tenantId);
   if (existingWorkflow) {
     console.log(`[WORKFLOW] Found existing workflow: ${existingWorkflow.id}`);
     return existingWorkflow;
   }
 
   // Create new workflow
-  console.log(`[WORKFLOW] Creating new workflow with hash: ${hash}`);
+  console.log(`[WORKFLOW] Creating new workflow with hash: ${hash}, tenantId: ${tenantId}`);
   const newWorkflow = await storage.createWorkflow({
+    tenantId,
     workflowHash: hash,
     name: workflowName,
     steps
