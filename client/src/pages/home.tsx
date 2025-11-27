@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, FileText, TrendingUp, BarChart3, Zap, Eye, CheckCircle2, AlertCircle } from "lucide-react";
 import Badge from "@/components/Badge";
+import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { tenant } = useAuth();
   const [demandText, setDemandText] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [createStatus, setCreateStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
@@ -19,12 +21,13 @@ export default function Dashboard() {
 
   // Fetch demands
   const { data: demands = [], isLoading: demandsLoading } = useQuery<Demand[]>({
-    queryKey: ["all-demands"],
+    queryKey: ["all-demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
       return res.json();
-    }
+    },
+    enabled: !!tenant?.id
   });
 
   const recentDemands = demands.slice(0, 5);
@@ -58,7 +61,7 @@ export default function Dashboard() {
       setDemandText("");
       
       // Invalidate queries and redirect immediately
-      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+      await queryClient.invalidateQueries({ queryKey: ["all-demands", tenant?.id] });
       navigate(`/app/demands/${data.id}`);
     } catch (error) {
       setCreateStatus({ type: "error", message: t("home.errorCreateDemand") });
@@ -76,7 +79,7 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/process-new-demands", { method: "POST" });
       if (!res.ok) throw new Error("Falha ao processar");
-      await queryClient.invalidateQueries({ queryKey: ["all-demands"] });
+      await queryClient.invalidateQueries({ queryKey: ["all-demands", tenant?.id] });
       setCreateStatus({ type: "success", message: t("home.successCreateDemand") });
     } catch (error) {
       setCreateStatus({ type: "error", message: t("home.errorProcessDemands") });
