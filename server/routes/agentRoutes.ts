@@ -101,6 +101,19 @@ router.post("/workflow/normalize", async (req: any, res) => {
       return res.status(404).json({ error: "Demand not found" });
     }
 
+    if (demand.tenantId && demand.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied to this demand" });
+    }
+
+    const workflow = await storage.getWorkflowById(workflowId);
+    if (!workflow) {
+      return res.status(404).json({ error: "Workflow not found" });
+    }
+
+    if (workflow.tenantId && workflow.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied to this workflow" });
+    }
+
     const jobId = randomUUID();
     
     await storage.createJob({
@@ -155,6 +168,19 @@ router.post("/workflow/assign", async (req: any, res) => {
     const demand = await storage.getDemand(demandId);
     if (!demand) {
       return res.status(404).json({ error: "Demand not found" });
+    }
+
+    if (demand.tenantId && demand.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied to this demand" });
+    }
+
+    const workflow = await storage.getWorkflowById(workflowId);
+    if (!workflow) {
+      return res.status(404).json({ error: "Workflow not found" });
+    }
+
+    if (workflow.tenantId && workflow.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied to this workflow" });
     }
 
     const jobId = randomUUID();
