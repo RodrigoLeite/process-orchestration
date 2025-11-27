@@ -237,6 +237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/demands", async (req, res) => {
     try {
       const tenantId = (req as any).tenantContext?.id;
+      console.log("[DEBUG /api/demands] req.tenantContext:", (req as any).tenantContext);
+      console.log("[DEBUG /api/demands] tenantId extracted:", tenantId);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
