@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, Clock, CheckCircle2, ArrowRight, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 
 const statusColors = {
@@ -34,14 +35,16 @@ export default function Demands() {
   const [rawText, setRawText] = useState("");
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { tenant } = useAuth();
 
   const { data: demands = [], isLoading } = useQuery<Demand[]>({
-    queryKey: ["demands"],
+    queryKey: ["demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
       return res.json();
-    }
+    },
+    enabled: !!tenant?.id
   });
 
   const createMutation = useMutation({
@@ -55,7 +58,7 @@ export default function Demands() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["demands"] });
+      queryClient.invalidateQueries({ queryKey: ["demands", tenant?.id] });
       setRawText("");
       toast.success("✅ Demanda criada e classificada automaticamente!", {
         duration: 2000,

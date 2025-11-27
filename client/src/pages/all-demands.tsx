@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, MapPin, ListIcon, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 
 const areaIcons: Record<string, string> = {
@@ -31,14 +32,16 @@ const areaColors: Record<string, string> = {
 export default function AllDemands() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { tenant } = useAuth();
   const { data: demands = [], isLoading } = useQuery<(Demand & { routeTo?: string })[]>({
-    queryKey: ["all-demands"],
+    queryKey: ["all-demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
       return res.json();
     },
-    refetchInterval: 5000
+    refetchInterval: 5000,
+    enabled: !!tenant?.id
   });
 
   const demandsByArea = demands.reduce((acc, demand) => {
