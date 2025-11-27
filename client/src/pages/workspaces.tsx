@@ -72,8 +72,7 @@ export default function WorkspacesPage() {
           {workspaces.map((workspace: Workspace) => (
             <Card
               key={workspace.id}
-              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate('/')}
+              className="p-6 hover:shadow-lg transition-shadow"
               data-testid={`card-workspace-${workspace.id}`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -90,19 +89,29 @@ export default function WorkspacesPage() {
                 <Button
                   size="sm"
                   onClick={async (e) => {
+                    e.preventDefault();
                     e.stopPropagation();
-                    // Switch to this workspace
-                    const res = await fetch(`/api/workspaces/${workspace.id}/switch`, {
-                      method: 'POST',
-                      credentials: 'include',
-                    });
-                    if (res.ok) {
-                      // Invalidate auth session to reload the new workspace
-                      await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
-                      // Redirect to the workspace
-                      setTimeout(() => {
-                        window.location.href = '/';
-                      }, 100);
+                    try {
+                      console.log('[WORKSPACE SWITCH] Attempting to switch to', workspace.id);
+                      // Switch to this workspace
+                      const res = await fetch(`/api/workspaces/${workspace.id}/switch`, {
+                        method: 'POST',
+                        credentials: 'include',
+                      });
+                      console.log('[WORKSPACE SWITCH] Response status:', res.status);
+                      if (res.ok) {
+                        console.log('[WORKSPACE SWITCH] Success, invalidating session and redirecting');
+                        // Invalidate auth session to reload the new workspace
+                        await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
+                        // Redirect to the workspace
+                        setTimeout(() => {
+                          window.location.href = '/';
+                        }, 200);
+                      } else {
+                        console.error('[WORKSPACE SWITCH] Failed with status', res.status);
+                      }
+                    } catch (error) {
+                      console.error('[WORKSPACE SWITCH] Error:', error);
                     }
                   }}
                   data-testid={`button-switch-to-${workspace.id}`}
