@@ -4,7 +4,27 @@ This project is an AI-driven process orchestration system designed to classify, 
 
 # Recent Changes
 
-## Tenant Isolation Bug Fix (Latest)
+## Inngest Queue Infrastructure (Latest)
+- **Job Queue System**: Added Inngest-based queue for async agent execution
+- **Database Schema**: New `jobs` table for tracking job execution
+- **Agent Workers**: 3 workers (generate, normalize, assign workflow)
+- **API Routes**:
+  - `POST /api/agents/workflow/generate` - Trigger workflow generation job
+  - `POST /api/agents/workflow/normalize` - Trigger workflow normalization job
+  - `POST /api/agents/workflow/assign` - Trigger workflow assignment job
+  - `GET /api/jobs` - List all jobs for current tenant
+  - `GET /api/jobs/:jobId` - Get specific job status
+- **Frontend Hook**: `useJobStatus(jobId)` for real-time job tracking
+- **Files**:
+  - `server/inngest/client.ts` - Inngest client configuration
+  - `server/inngest/serve.ts` - Express serve endpoint
+  - `server/inngest/functions/` - Worker functions
+  - `server/agents/` - Agent implementations (generator, normalizer, assigner)
+  - `server/routes/agentRoutes.ts` - Agent job trigger routes
+  - `server/routes/jobRoutes.ts` - Job status routes
+  - `client/src/hooks/useJobStatus.ts` - React hook for job status
+
+## Tenant Isolation Bug Fix
 - **Critical Bug Fixed**: `server/tenant/middleware.ts` was NOT setting `req.tenantContext` 
 - **Root Cause**: Middleware loaded tenant info but assigned to `req.tenant` instead of `req.tenantContext`
 - **Impact**: All API endpoints received `tenantId = undefined`, breaking tenant filtering
@@ -120,6 +140,7 @@ PostgreSQL, via Neon serverless connector, is used for persistent storage, manag
 -   `langflow_agents`: Stores LangFlow agent definitions.
 -   `system_events`: Records all agent executions for internal observability.
 -   `stage_bottlenecks` / `stage_insights`: Bottleneck and insight analysis.
+-   `jobs`: Inngest job queue tracking (status, output, error, timestamps).
 
 ## Workflow Architecture
 
