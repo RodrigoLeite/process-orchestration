@@ -612,10 +612,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ Bottleneck Detection Endpoint ============
 
   // Detect bottlenecks using AI analysis
-  app.get("/api/bottlenecks", async (req, res) => {
+  app.get("/api/bottlenecks", async (req: any, res) => {
     try {
+      const tenantId = req.tenantContext?.id;
       const language = (req.query.language as string) || "pt-BR";
       
+      if (!tenantId) {
+        return res.status(400).json({ success: false, data: null, error: "Tenant ID is required" });
+      }
+
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ success: false, data: null, error: "OpenAI API key not configured" });
       }
@@ -625,8 +630,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiKey: process.env.OPENAI_API_KEY
       });
 
-      // Get all demands from last 7 days
-      const last7DaysDemands = await storage.getDemandsFromLastDays(7);
+      // Get all demands from last 7 days for this tenant
+      const last7DaysDemands = await storage.getDemandsFromLastDays(7, tenantId);
       
       // If no demands exist, return empty bottlenecks immediately
       if (last7DaysDemands.length === 0) {
@@ -1082,11 +1087,17 @@ Maximum 5 bottlenecks. If there are fewer, return only the critical ones.`;
   });
 
   // Get overloaded areas
-  app.get("/api/areas/overload", async (req, res) => {
+  app.get("/api/areas/overload", async (req: any, res) => {
     try {
+      const tenantId = req.tenantContext?.id;
       const language = (req.query.language as string) || "pt-BR";
-      const pendingCounts = await storage.countDemandsByStatus("pending");
-      const inProgressCounts = await storage.countDemandsByStatus("in_progress");
+      
+      if (!tenantId) {
+        return res.status(400).json({ success: false, data: null, error: "Tenant ID is required" });
+      }
+
+      const pendingCounts = await storage.countDemandsByStatus("pending", tenantId);
+      const inProgressCounts = await storage.countDemandsByStatus("in_progress", tenantId);
 
       // If no pending or in-progress demands, return empty data immediately
       const totalDemands = Object.values(pendingCounts).reduce((sum, count) => sum + count, 0) +
@@ -2129,13 +2140,18 @@ Texto original: ${demand.rawText}`;
   });
 
   // Predictions endpoint
-  app.get("/api/predictions", async (req, res) => {
+  app.get("/api/predictions", async (req: any, res) => {
     try {
+      const tenantId = req.tenantContext?.id;
       const days = Math.min(parseInt(req.query.days as string) || 7, 30);
       const language = (req.query.language as string) || "pt-BR";
       
+      if (!tenantId) {
+        return res.status(400).json({ success: false, data: null, error: "Tenant ID is required" });
+      }
+
       // Get historical demand data
-      const last30DaysDemands = await storage.getDemandsFromLastDays(30);
+      const last30DaysDemands = await storage.getDemandsFromLastDays(30, tenantId);
       
       // Group by date to get daily volumes
       const demandHistory = Array.from({ length: 30 }, (_, i) => {
