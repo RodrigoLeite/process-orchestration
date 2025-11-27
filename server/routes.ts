@@ -1810,7 +1810,18 @@ Texto original: ${demand.rawText}`;
 
   app.get("/api/areas", async (req, res) => {
     try {
-      const areaWorkflows = await storage.getAllAreaWorkflows();
+      const tenantId = (req as any).tenantContext?.id;
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      // Get workflows for this tenant and extract unique areas
+      const workflows = await storage.getAllWorkflowsFromDb(tenantId);
+      // Map workflows to area format: workflow.name is the area name
+      const areaWorkflows = workflows.map((w: any) => ({
+        id: w.id,
+        areaName: w.name || "default",
+        name: w.name || "Workflow",
+      }));
       
       const areaIcons: Record<string, string> = {
         vendas: "BarChart3",

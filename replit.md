@@ -4,7 +4,22 @@ This project is an AI-driven process orchestration system designed to classify, 
 
 # Recent Changes
 
-## JWT OAuth2 Implementation (Latest)
+## Tenant Isolation Bug Fix (Latest)
+- **Critical Bug Fixed**: `server/tenant/middleware.ts` was NOT setting `req.tenantContext` 
+- **Root Cause**: Middleware loaded tenant info but assigned to `req.tenant` instead of `req.tenantContext`
+- **Impact**: All API endpoints received `tenantId = undefined`, breaking tenant filtering
+- **Fix Applied**:
+  - Modified middleware to set `req.tenantContext` with `id` property (used by routes)
+  - Maintained backward compatibility with `req.tenant` 
+  - Updated `/api/areas` endpoint to use `getAllWorkflowsFromDb(tenantId)` for tenant-aware filtering
+  - Removed debug logs
+- **Verification**: 
+  - ✅ `/api/demands` - filters by tenant correctly
+  - ✅ `/api/areas` - now returns 26 areas for "Workspace de Rodrigo" (was showing 0)
+  - ✅ `/api/workflows` - filters by tenant correctly
+  - ✅ Workspace switching now works end-to-end
+
+## JWT OAuth2 Implementation
 - **Authentication System**: 
   - Google OAuth2 with server-side token exchange (no client secret exposure)
   - JWT access tokens (15-minute TTL) with claims: sub, tenantId, role, email
