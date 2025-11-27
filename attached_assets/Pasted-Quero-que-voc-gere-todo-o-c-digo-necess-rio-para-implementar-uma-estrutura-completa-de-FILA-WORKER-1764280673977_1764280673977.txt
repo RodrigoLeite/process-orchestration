@@ -1,0 +1,155 @@
+Quero que você gere todo o código necessário para implementar uma estrutura completa de FILA, WORKERS e JOB PROCESSORS usando **Inngest** no meu projeto com a seguinte stack:
+
+- **Frontend:** Vite + React + TypeScript  
+- **Backend:** Express.js  
+- **ORM:** Drizzle ORM  
+- **Banco:** PostgreSQL multi-tenant (tenant_id em todas as tabelas)  
+- **Autenticação:** Google OAuth + JWT (já implementado)  
+- **Objetivo:** Criar infraestrutura de execução assíncrona dos meus agentes internos.
+
+---
+
+# 📌 OBJETIVO DO PEDIDO
+
+Quero que você gere **todo o código** necessário para implementar:
+
+### **1. Infra de Inngest**
+- instalação  
+- configuração do cliente no backend  
+- endpoint de recepção (express route)  
+- dev server "inngest dev"  
+- estrutura recomendada de pastas
+
+### **2. Registro de Functions (Workers)**
+Crie workers para processar:
+
+- **generate_workflow** → executa meu AGENTE GERADOR DE WORKFLOW  
+- **normalize_workflow** → executa o AGENTE NORMALIZADOR DE WORKFLOW  
+- **assign_workflow** → executa o AGENTE ATRIBUIDOR DE WORKFLOW  
+
+Cada um deve:  
+1. receber o payload (tenant_id, user_id, demand_id, prompt)  
+2. buscar dados no banco via Drizzle  
+3. executar sua lógica  
+4. salvar outputs em tabelas appropriadas  
+5. emitir eventos para o frontend via pusher (se possível)  
+6. retornar status final do job
+
+### **3. Rotas API Express**
+Crie rotas como:
+
+`POST /api/agents/workflow/generate`
+- valida tenant_id
+- cria o job usando `inngest.send()`
+- retorna jobId / eventId
+
+`POST /api/agents/workflow/normalize`
+
+`POST /api/agents/workflow/assign`
+
+### **4. Modelo de Job Execution no DB**
+Quero schemas Drizzle (PostgreSQL) como:
+
+```
+jobs
+- id (pk)
+- tenant_id (fk)
+- user_id
+- agent_type (enum)
+- payload (jsonb)
+- status (pending, running, completed, failed)
+- output (jsonb)
+- error (text)
+- created_at
+- updated_at
+```
+
+### **5. Workers com Retry, Rate-Limit e Concurrency**
+Cada worker deve incluir:
+
+```
+export const generateWorkflowFn = inngest.createFunction(
+  { id: "generate-workflow", concurrency: 5, retries: 3 },
+  { event: "agent/generate.workflow" },
+  async ({ event, step }) => { ... }
+)
+```
+
+### **6. Execução dos Agentes**
+Os workers irão chamar meus 3 agentes internos como módulos:
+
+```
+import { runGeneratorAgent } from "@/agents/generator";
+import { runNormalizerAgent } from "@/agents/normalizer";
+import { runAssignmentAgent } from "@/agents/assigner";
+```
+
+Cada worker deve:
+
+1. carregar os dados no banco  
+2. chamar o agente correspondente  
+3. salvar resultado  
+4. marcar status  
+5. disparar webhook opcional  
+6. emitir evento realtime (opcional)
+
+### **7. Código exemplo dos agentes**
+Você pode criar mocks como:
+
+```
+export async function runGeneratorAgent({ prompt }) {
+  return { workflow: [...] };
+}
+```
+
+### **8. Frontend**
+Criar:
+
+- Hook: `useJobStatus(eventId)`  
+- Atualização de tela em tempo real  
+- Exemplo de acionamento da API:
+
+```
+const res = await api.post("/api/agents/workflow/generate", {
+  prompt,
+  demandId
+});
+```
+
+### **9. CLI / Dev Mode**
+Incluir instruções no código:
+
+```
+npx inngest-cli@latest dev -u http://localhost:3000/api/inngest
+```
+
+### **10. Multi-Tenant: IMPORTANTE**
+Sempre usar tenant_id do usuário logado.
+
+### **11. Entrega em FORMATO DE ARQUIVOS**
+Quero que você gere:
+
+### **(A) Estrutura de pastas**
+### **(B) Arquivos .ts do backend (Express)**
+### **(C) Arquivos Drizzle**
+### **(D) Workers + Inngest Functions**
+### **(E) Código do frontend React**
+### **(F) Instruções de como rodar**
+
+Tudo com imports corretos e compatível com minha stack.
+
+Não use Next.js.
+
+---
+
+# 📌 EXTRA
+Inclua também:
+
+- validação Zod no backend  
+- middleware de autenticação JWT  
+- funções helpers para salvar logs da execução  
+- comentários explicando cada parte  
+
+---
+
+Gere **todo o código**, completo, organizado, pronto para colar nos arquivos.  
