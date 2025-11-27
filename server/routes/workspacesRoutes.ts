@@ -109,9 +109,24 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res:
       return;
     }
 
-    // Tenant switch is done on client side by refreshing session
-    // Just verify access and return success
-    res.json({ success: true, message: 'Ready to switch workspace' });
+    // Generate new JWT with the new tenantId
+    const { signAccessToken } = await import('../lib/jwt');
+    const newAccessToken = await signAccessToken({
+      sub: req.user.id,
+      tenantId: workspaceId,
+      role: tenantUser.role,
+      email: req.user.email,
+    });
+
+    // Set the new token in the cookie
+    res.cookie('access_token', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.json({ success: true, message: 'Workspace switched successfully' });
   } catch (error) {
     console.error('Error switching workspace:', error);
     res.status(500).json({ error: 'Failed to switch workspace' });
