@@ -9,6 +9,7 @@ import SimpleVolumeChart from "@/components/SimpleVolumeChart";
 import DashboardKPICard from "@/components/DashboardKPICard";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useI18nStore } from "@/lib/store/i18nStore";
+import { useAuth } from "@/hooks/useAuth";
 import { getAreaName } from "@/lib/i18n";
 
 interface Demand {
@@ -43,13 +44,14 @@ interface BottleneckData {
 export default function AreaDetailsPage() {
   const { t } = useTranslation();
   const { language } = useI18nStore();
+  const { tenant } = useAuth();
   const [match, params] = useRoute("/app/areas/:id");
   const [, navigate] = useLocation();
   const areaId = params?.id;
 
   // Fetch demands for this area
   const { data: demands = [], isLoading: demandsLoading, refetch } = useQuery<Demand[]>({
-    queryKey: ["area-demands", areaId],
+    queryKey: ["area-demands", areaId, tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");

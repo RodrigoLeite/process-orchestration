@@ -4,6 +4,7 @@ import { Loader2, ChevronLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Badge from "@/components/Badge";
+import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 
 const DEFAULT_STATUSES = ["recebido", "em_andamento", "aguardando", "concluido"];
@@ -11,10 +12,11 @@ const DEFAULT_STATUSES = ["recebido", "em_andamento", "aguardando", "concluido"]
 export default function KanbanAreaDetail() {
   const [match, params] = useRoute("/app/kanban/area/:area");
   const [, navigate] = useLocation();
+  const { tenant } = useAuth();
 
   // Fetch all demands
   const { data: demands = [], isLoading, error } = useQuery<Demand[]>({
-    queryKey: ["kanban-area-demands", params?.area],
+    queryKey: ["kanban-area-demands", params?.area, tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");

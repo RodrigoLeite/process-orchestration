@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useLocation, Link } from "wouter";
 import type { Demand } from "@/lib/types";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 
 const getPriorityColor = (prioridade: string): string => {
   const colorMap: Record<string, string> = {
@@ -41,9 +42,10 @@ const getStatusLabel = (status: string): string => {
 export default function DemandsManager() {
   const { t } = useTranslation();
   const [, navigate] = useLocation();
+  const { tenant } = useAuth();
 
   const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
-    queryKey: ["demands-manager"],
+    queryKey: ["demands-manager", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
