@@ -31,7 +31,15 @@ export function tenantMiddleware(
         return next();
       }
 
-      // Inject tenant context into request
+      // Inject tenant context into request - use tenantContext property for API routes
+      (req as any).tenantContext = {
+        id: tenantInfo.id,
+        userId: req.user.id,
+        role: tenantInfo.role,
+        name: tenantInfo.name,
+      };
+
+      // Also keep backward compatibility with req.tenant
       req.tenant = {
         tenantId: tenantInfo.id,
         userId: req.user.id,
