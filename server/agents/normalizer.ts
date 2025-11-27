@@ -26,14 +26,18 @@ export interface NormalizerOutput {
 
 export async function runNormalizerAgent(input: NormalizerInput): Promise<NormalizerOutput> {
   const demand = await storage.getDemand(input.demandId);
-  const workflow = await storage.getWorkflowFromDb(input.workflowId);
+  const workflow = await storage.getWorkflowFromDb(input.workflowId, input.tenantId);
 
   if (!demand) {
     throw new Error(`Demand ${input.demandId} not found`);
   }
 
   if (!workflow) {
-    throw new Error(`Workflow ${input.workflowId} not found`);
+    throw new Error(`Workflow ${input.workflowId} not found or not accessible to this tenant`);
+  }
+
+  if (workflow.tenantId && workflow.tenantId !== input.tenantId) {
+    throw new Error(`Access denied: Workflow belongs to a different tenant`);
   }
 
   const priority = demand.parsed?.prioridade || "média";

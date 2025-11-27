@@ -46,9 +46,9 @@ export interface IStorage {
   createLog(log: InsertLog): Promise<Log>;
   createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
   createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
-  getWorkflowFromDb(id: string): Promise<Workflow | undefined>;
-  getAllWorkflowsFromDb(): Promise<Workflow[]>;
-  getWorkflowByHash(hash: string): Promise<Workflow | undefined>;
+  getWorkflowFromDb(id: string, tenantId?: string): Promise<Workflow | undefined>;
+  getAllWorkflowsFromDb(tenantId?: string): Promise<Workflow[]>;
+  getWorkflowByHash(hash: string, tenantId?: string): Promise<Workflow | undefined>;
 
   getWorkgraphNodes(): Promise<WorkgraphNode[]>;
   getWorkgraphNode(id: string): Promise<WorkgraphNode | undefined>;
@@ -322,12 +322,22 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getWorkflowFromDb(id: string): Promise<Workflow | undefined> {
-    const result = await this.db
-      .select()
-      .from(workflows)
-      .where(eq(workflows.id, id))
-      .limit(1);
+  async getWorkflowFromDb(id: string, tenantId?: string): Promise<Workflow | undefined> {
+    let query: any;
+    if (tenantId) {
+      query = this.db
+        .select()
+        .from(workflows)
+        .where(and(eq(workflows.id, id), eq(workflows.tenantId, tenantId as any)))
+        .limit(1);
+    } else {
+      query = this.db
+        .select()
+        .from(workflows)
+        .where(eq(workflows.id, id))
+        .limit(1);
+    }
+    const result = await query;
     return result[0];
   }
 
@@ -345,12 +355,22 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(workflows.createdAt));
   }
 
-  async getWorkflowByHash(hash: string): Promise<Workflow | undefined> {
-    const result = await this.db
-      .select()
-      .from(workflows)
-      .where(eq(workflows.workflowHash, hash))
-      .limit(1);
+  async getWorkflowByHash(hash: string, tenantId?: string): Promise<Workflow | undefined> {
+    let query: any;
+    if (tenantId) {
+      query = this.db
+        .select()
+        .from(workflows)
+        .where(and(eq(workflows.workflowHash, hash), eq(workflows.tenantId, tenantId as any)))
+        .limit(1);
+    } else {
+      query = this.db
+        .select()
+        .from(workflows)
+        .where(eq(workflows.workflowHash, hash))
+        .limit(1);
+    }
+    const result = await query;
     return result[0];
   }
 
