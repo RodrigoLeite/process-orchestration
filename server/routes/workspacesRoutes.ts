@@ -118,4 +118,64 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res:
   }
 });
 
+/**
+ * POST /api/workspaces
+ * Create a new workspace for the current user
+ */
+router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { name, area } = req.body;
+
+    if (!name) {
+      res.status(400).json({ error: 'Workspace name is required' });
+      return;
+    }
+
+    // Create new tenant
+    const { tenants: tenantsTable } = await import("@shared/schema");
+    const newTenant = await storage.db
+      .insert(tenantsTable)
+      .values({
+        name,
+        slug: name.toLowerCase().replace(/\s+/g, '-'),
+        isConfigured: 'true',
+        metadata: { area: area || 'outro' },
+      })
+      .returning()
+      .then((rows: any[]) => rows[0]);
+
+    console.log('[WORKSPACES] Created new tenant:', newTenant.id);
+
+    // Add user as owner to the new tenant
+    const newTenantUser = await storage.db
+      .insert(tenantUsers)
+      .values({
+        tenantId: newTenant.id,
+        userId: req.user.id,
+        role: 'owner',
+      })
+      .returning()
+      .then((rows: any[]) => rows[0]);
+
+    console.log('[WORKSPACES] Added user as owner:', newTenantUser.id);
+
+    res.json({
+      success: true,
+      workspace: {
+        id: newTenant.id,
+        name: newTenant.name,
+        role: 'owner',
+      },
+    });
+  } catch (error) {
+    console.error('[WORKSPACES] Error creating workspace:', error);
+    res.status(500).json({ error: 'Failed to create workspace' });
+  }
+});
+
 export default router;
