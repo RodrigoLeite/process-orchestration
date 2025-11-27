@@ -32,7 +32,9 @@ const DEFAULT_TENANT_SLUG = "default";
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
     // Extract tenant ID from multiple sources (priority order)
+    // First priority: JWT token (most reliable for authenticated requests)
     let tenantId = 
+      (req as any).user?.tenantId ||
       req.headers["x-tenant-id"] as string ||
       req.query.tenantId as string ||
       DEFAULT_TENANT_ID;
