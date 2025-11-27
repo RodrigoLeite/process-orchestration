@@ -51,7 +51,7 @@ export const generateWorkflowFn = inngest.createFunction(
       const steps = result.output!.workflow;
       const workflowHash = createWorkflowHash(steps, "generated");
 
-      const existingWorkflow = await storage.getWorkflowByHash(workflowHash);
+      const existingWorkflow = await storage.getWorkflowByHash(workflowHash, tenantId);
       if (!existingWorkflow) {
         await storage.createWorkflow({
           tenantId,
