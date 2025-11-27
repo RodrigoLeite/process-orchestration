@@ -260,17 +260,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/demands/:id", async (req, res) => {
+  app.get("/api/demands/:id", async (req: any, res) => {
     try {
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
       const demand = await storage.getDemand(req.params.id);
       if (!demand) {
         return res.status(404).json({ error: "Demand not found" });
       }
       
+      // Verify tenant access
+      if (tenantId && demand.tenantId && demand.tenantId !== tenantId) {
+        return res.status(403).json({ error: "Access denied: Demand belongs to a different tenant" });
+      }
+      
       // Include workflow steps if demand has a workflow
       let workflowSteps = null;
       if (demand.workflowId) {
-        const workflow = await storage.getWorkflowFromDb(demand.workflowId);
+        const workflow = await storage.getWorkflowFromDb(demand.workflowId, tenantId);
         if (workflow) {
           workflowSteps = workflow.steps;
         }
@@ -486,9 +494,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ Workflow Endpoints ============
 
   // Get all workflows (demand-based, not area-based)
-  app.get("/api/workflows", async (req, res) => {
+  app.get("/api/workflows", async (req: any, res) => {
     try {
-      const tenantId = (req as any).tenantContext?.id;
+      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
@@ -513,15 +524,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a single workflow by ID
-  app.get("/api/workflows/:id", async (req, res) => {
+  app.get("/api/workflows/:id", async (req: any, res) => {
     try {
-      const workflow = await storage.getWorkflowFromDb(req.params.id);
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
+      const workflow = await storage.getWorkflowFromDb(req.params.id, tenantId);
       if (!workflow) {
         return res.status(404).json({ error: "Workflow not found" });
       }
       
       // Add area info to the workflow
-      const demands = await storage.getDemands();
+      const demands = await storage.getDemands(tenantId);
       const demand = demands.find(d => d.workflowId === workflow.id);
       const area = demand?.area || (demand?.parsed as any)?.area || "Unknown";
       
@@ -1308,9 +1322,11 @@ Retorne APENAS JSON (sem markdown):
   // ============ Orchestration Endpoint ============
 
   // Decide next area in workflow using AI
-  app.post("/api/orchestrate", async (req, res) => {
+  app.post("/api/orchestrate", async (req: any, res) => {
     try {
       const { demandId } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
       
       if (!demandId) {
         return res.status(400).json({ error: "demandId is required" });
@@ -1319,6 +1335,11 @@ Retorne APENAS JSON (sem markdown):
       const demand = await storage.getDemand(demandId);
       if (!demand) {
         return res.status(404).json({ error: "Demand not found" });
+      }
+
+      // Verify tenant access
+      if (tenantId && demand.tenantId && demand.tenantId !== tenantId) {
+        return res.status(403).json({ error: "Access denied: Demand belongs to a different tenant" });
       }
 
       // Check if demand is blocked
@@ -1358,8 +1379,8 @@ Retorne APENAS JSON (sem markdown):
         });
       }
 
-      // Get pending demands count by area
-      const pendingCounts = await storage.countDemandsByStatus("pending");
+      // Get pending demands count by area - FILTERED BY TENANT
+      const pendingCounts = await storage.countDemandsByStatus("pending", tenantId);
 
       // Build list of candidate areas with their load
       const candidates = [];
