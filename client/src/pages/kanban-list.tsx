@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AreaWorkflow {
   id: string;
@@ -53,9 +54,10 @@ export default function KanbanList() {
   const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const { tenant } = useAuth();
 
   const { data: workflows, isLoading, error } = useQuery<AreaWorkflow[]>({
-    queryKey: ["workflows"],
+    queryKey: ["workflows", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/workflows");
       if (!res.ok) throw new Error("Failed to fetch workflows");
@@ -67,7 +69,7 @@ export default function KanbanList() {
 
   // Fetch stats for each workflow
   const { data: allDemands = [] } = useQuery({
-    queryKey: ["all-demands"],
+    queryKey: ["all-demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
