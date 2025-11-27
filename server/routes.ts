@@ -1924,8 +1924,9 @@ Texto original: ${demand.rawText}`;
     }
   });
 
-  app.get("/api/agents", async (req, res) => {
+  app.get("/api/agents", async (req: any, res) => {
     try {
+      // Agents are global system entities, but we return logs filtered by tenant
       const dbAgents = await storage.getAgents();
       res.json(dbAgents);
     } catch (error) {
@@ -2039,12 +2040,21 @@ Texto original: ${demand.rawText}`;
     }
   });
 
-  app.get("/api/agents/:id/logs", async (req, res) => {
+  app.get("/api/agents/:id/logs", async (req: any, res) => {
     try {
       const { id } = req.params;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const logs = await storage.getAgentLogs(id);
-      res.json(logs.slice(0, 20));
+      
+      // Filter logs by tenant if tenantId is provided
+      const filteredLogs = tenantId 
+        ? logs.filter(log => (log as any).tenantId === tenantId || !(log as any).tenantId)
+        : logs;
+      
+      res.json(filteredLogs.slice(0, 20));
     } catch (error) {
       console.error("Error fetching agent logs:", error);
       res.status(500).json({ error: "Failed to fetch agent logs" });
@@ -2152,15 +2162,17 @@ Texto original: ${demand.rawText}`;
   });
 
   // System events endpoint (admin only)
-  app.get("/api/system-events", requireAdmin, logAdminAccess, async (req, res) => {
+  app.get("/api/system-events", requireAdmin, logAdminAccess, async (req: any, res) => {
     try {
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
       const agent = req.query.agent as string | undefined;
       
       let events;
       if (agent) {
-        events = await storage.getSystemEventsByAgent(agent, 100);
+        events = await storage.getSystemEventsByAgent(agent, 100, tenantId);
       } else {
-        events = await storage.getSystemEvents(100);
+        events = await storage.getSystemEvents(100, tenantId);
       }
 
       res.json({
