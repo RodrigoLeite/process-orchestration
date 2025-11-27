@@ -561,13 +561,23 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getSystemEvents(limit?: number): Promise<SystemEvent[]> {
-    const query = this.db.select().from(systemEvents).orderBy(desc(systemEvents.createdAt));
+  async getSystemEvents(limit?: number, tenantId?: string): Promise<SystemEvent[]> {
+    let query: any;
+    if (tenantId) {
+      query = this.db.select().from(systemEvents).where(eq(systemEvents.tenantId, tenantId as any)).orderBy(desc(systemEvents.createdAt));
+    } else {
+      query = this.db.select().from(systemEvents).orderBy(desc(systemEvents.createdAt));
+    }
     return limit ? (await query.limit(limit)) : (await query);
   }
 
-  async getSystemEventsByAgent(agentKey: string, limit?: number): Promise<SystemEvent[]> {
-    const query = this.db.select().from(systemEvents).where(eq(systemEvents.agentKey, agentKey)).orderBy(desc(systemEvents.createdAt));
+  async getSystemEventsByAgent(agentKey: string, limit?: number, tenantId?: string): Promise<SystemEvent[]> {
+    let query: any;
+    if (tenantId) {
+      query = this.db.select().from(systemEvents).where(and(eq(systemEvents.agentKey, agentKey), eq(systemEvents.tenantId, tenantId as any))).orderBy(desc(systemEvents.createdAt));
+    } else {
+      query = this.db.select().from(systemEvents).where(eq(systemEvents.agentKey, agentKey)).orderBy(desc(systemEvents.createdAt));
+    }
     return limit ? (await query.limit(limit)) : (await query);
   }
 
