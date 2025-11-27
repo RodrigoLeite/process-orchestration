@@ -237,6 +237,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/demands", async (req, res) => {
     try {
       const tenantId = (req as any).tenantContext?.id;
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       const demands = await storage.getDemands(tenantId);
       // Calculate delay risk for each demand
       const demandsWithRisk = demands.map((d: any) => ({
@@ -472,6 +475,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/workflows", async (req, res) => {
     try {
       const tenantId = (req as any).tenantContext?.id;
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       const workflows = await storage.getAllWorkflowsFromDb(tenantId);
       const demands = await storage.getDemands(tenantId);
       
