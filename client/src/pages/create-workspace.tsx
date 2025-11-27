@@ -136,9 +136,9 @@ export default function CreateWorkspacePage() {
                 <SelectTrigger className="border-gray-300" data-testid="select-area">
                   <SelectValue placeholder="Selecione uma área" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-200" data-testid="select-content-area">
                   {AREAS.map((area) => (
-                    <SelectItem key={area.value} value={area.value}>
+                    <SelectItem key={area.value} value={area.value} className="text-gray-900">
                       {area.label}
                     </SelectItem>
                   ))}
