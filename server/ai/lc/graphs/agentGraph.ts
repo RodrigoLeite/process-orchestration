@@ -128,7 +128,8 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
           demandDescription: state.demandInput?.descricao
         },
         result.data,
-        "success"
+        "success",
+        state.demandInput?.tenantId
       );
       
       return {
@@ -148,7 +149,8 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
           demandDescription: state.demandInput?.descricao
         },
         { error: errorMsg },
-        "error"
+        "error",
+        state.demandInput?.tenantId
       );
       
       return {
@@ -169,7 +171,8 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
         demandDescription: state.demandInput?.descricao
       },
       { error: errorMsg },
-      "error"
+      "error",
+      state.demandInput?.tenantId
     );
     
     return {
@@ -213,7 +216,8 @@ async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
           bottlenecksIdentified: state.bottlenecks?.length || 0
         },
         result.data,
-        "success"
+        "success",
+        state.demandInput?.tenantId
       );
       
       // Save insights to database with stage references
@@ -238,7 +242,8 @@ async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
           bottlenecksIdentified: state.bottlenecks?.length || 0
         },
         { warning: result.error },
-        "success"
+        "warning",
+        state.demandInput?.tenantId
       );
       
       // Don't treat insights failure as critical - return state with warning
@@ -257,7 +262,7 @@ async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
         bottlenecksIdentified: state.bottlenecks?.length || 0
       },
       { error: String(error) },
-      "error"
+      "error", state.demandInput?.tenantId
     );
     
     // Don't fail the graph on insights errors
@@ -297,7 +302,8 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
           workflowStages: state.workflow?.etapas?.length
         },
         result.data,
-        "success"
+        "success",
+        state.demandInput?.tenantId
       );
       
       // Save bottlenecks to database with stage references
@@ -321,7 +327,8 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
           workflowStages: state.workflow?.etapas?.length
         },
         { warning: result.error },
-        "success"
+        "warning",
+        state.demandInput?.tenantId
       );
       
       // Don't treat bottleneck detection failure as critical
@@ -339,7 +346,8 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
         workflowStages: state.workflow?.etapas?.length
       },
       { error: String(error) },
-      "error"
+      "error",
+      state.demandInput?.tenantId
     );
     
     // Don't fail the graph on bottleneck errors

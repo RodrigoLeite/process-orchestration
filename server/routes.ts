@@ -2047,14 +2047,9 @@ Texto original: ${demand.rawText}`;
       const tenantId = headerTenantId || req.tenantContext?.id;
       
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      const logs = await storage.getAgentLogs(id);
+      const logs = await storage.getAgentLogs(id, tenantId);
       
-      // Filter logs by tenant if tenantId is provided
-      const filteredLogs = tenantId 
-        ? logs.filter(log => (log as any).tenantId === tenantId || !(log as any).tenantId)
-        : logs;
-      
-      res.json(filteredLogs.slice(0, 20));
+      res.json(logs.slice(0, 20));
     } catch (error) {
       console.error("Error fetching agent logs:", error);
       res.status(500).json({ error: "Failed to fetch agent logs" });
@@ -2963,9 +2958,11 @@ Texto original: ${demand.rawText}`;
   const { withTracing, logAgentExecution } = await import("./lib/ai/lc/telemetry");
 
   // Orchestration endpoint - Execute complete demand pipeline using NEW agent-based architecture
-  app.post("/api/orchestration/process-demand", async (req, res) => {
+  app.post("/api/orchestration/process-demand", async (req: any, res) => {
     try {
       const { demand, demand_id } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       if (!demand) {
         return res.status(400).json({
@@ -2976,7 +2973,7 @@ Texto original: ${demand.rawText}`;
 
       // Execute the full orchestration graph using new agent-based architecture
       const { executeAgentGraph } = await import("./ai/lc/graphs");
-      const result = await executeAgentGraph(demand);
+      const result = await executeAgentGraph({ ...demand, tenantId });
 
       res.json({
         success: result.success,
@@ -3029,7 +3026,8 @@ Texto original: ${demand.rawText}`;
         urgencia: (parsed.prioridade || "média") as any,
         resultadosEsperados: parsed.resultados_esperados || [],
         slaHoras: 24,
-        demandId: demandId
+        demandId: demandId,
+        tenantId: demandRecord.tenantId
       };
 
       console.log(`[ORCHESTRATE] Loaded demand: ${demandInput.titulo}`);
@@ -3161,8 +3159,10 @@ Texto original: ${demand.rawText}`;
   // ============ Agent Orchestration Graph Endpoint ============
   // New endpoint using LangChain + LangGraph architecture
   // Executes the 3 agents in sequence: Workflow Builder → Bottleneck Detector → Insights
-  app.post("/api/ai/graph", async (req, res) => {
+  app.post("/api/ai/graph", async (req: any, res) => {
     const startTime = Date.now();
+    const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+    const tenantId = headerTenantId || req.tenantContext?.id;
     
     try {
       const { demandInput } = req.body;
@@ -3179,7 +3179,7 @@ Texto original: ${demand.rawText}`;
       
       console.log("[API:GRAPH] Executing agent graph for:", demandInput.titulo);
       
-      const result = await executeAgentGraph(demandInput);
+      const result = await executeAgentGraph({ ...demandInput, tenantId });
       
       const duration = Date.now() - startTime;
       console.log(`[API:GRAPH] Graph execution completed in ${duration}ms`);

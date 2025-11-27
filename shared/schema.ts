@@ -367,6 +367,7 @@ export type Agent = typeof agents.$inferSelect;
 export const agentLogs = pgTable("agent_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   agentId: uuid("agent_id").notNull(),
+  tenantId: uuid("tenant_id").notNull().default(sql`'00000000-0000-0000-0000-000000000000'`),
   inputJson: jsonb("input_json").$type<Record<string, any>>(),
   outputJson: jsonb("output_json").$type<Record<string, any>>(),
   status: text("status").notNull(),
