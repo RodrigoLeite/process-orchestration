@@ -45,6 +45,37 @@ export default function AreasListPage() {
     }
   });
 
+  // Fetch demands to calculate statistics
+  const { data: demands = [] } = useQuery<any[]>({
+    queryKey: ["demands", "stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/demands");
+      if (!res.ok) throw new Error("Failed to fetch demands");
+      return res.json();
+    }
+  });
+
+  // Calculate statistics
+  const activeDemands = demands.filter((d: any) => d.status !== "completed" && d.status !== "cancelled").length;
+  const avgSLA = demands.length > 0 
+    ? Math.round(demands.reduce((sum: number, d: any) => {
+        if (d.slaRemaining || d.sla_remaining) {
+          const slaStr = d.slaRemaining || d.sla_remaining;
+          const hours = parseInt(slaStr.toString()) || 0;
+          return sum + hours;
+        }
+        return sum;
+      }, 0) / demands.length)
+    : 0;
+  const completionRate = demands.length > 0 
+    ? Math.round((demands.filter((d: any) => d.status === "completed").length / demands.length) * 100)
+    : 0;
+  const criticalAreas = areas.filter((a: any) => {
+    const areaDemands = demands.filter((d: any) => (d.assigned_to || d.assignedTo) === a.id);
+    const critical = areaDemands.filter((d: any) => d.delayRisk === "high" || d.delay_risk === "high");
+    return critical.length > 0;
+  }).length;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -108,19 +139,19 @@ export default function AreasListPage() {
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.activeDemands")}</p>
-              <p className="text-2xl font-bold">24</p>
+              <p className="text-2xl font-bold">{activeDemands}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.avgSLA")}</p>
-              <p className="text-2xl font-bold">8h</p>
+              <p className="text-2xl font-bold">{avgSLA}h</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.completionRate")}</p>
-              <p className="text-2xl font-bold">92%</p>
+              <p className="text-2xl font-bold">{completionRate}%</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.criticalAreas")}</p>
-              <p className="text-2xl font-bold text-red-600">1</p>
+              <p className="text-2xl font-bold text-red-600">{criticalAreas}</p>
             </div>
           </div>
         </CardContent>
