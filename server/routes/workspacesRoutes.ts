@@ -10,7 +10,7 @@ const router = Router();
  * GET /api/workspaces
  * List all workspaces for the current user
  */
-router.get('/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -82,7 +82,7 @@ router.get('/workspaces', async (req: AuthRequest, res: Response): Promise<void>
  * POST /api/workspaces/:workspaceId/switch
  * Switch to a different workspace
  */
-router.post('/workspaces/:workspaceId/switch', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Unauthorized' });
