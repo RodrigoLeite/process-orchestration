@@ -23,8 +23,10 @@ export function tenantMiddleware(
         return next();
       }
 
-      // Load tenant for this user, preferring the one from JWT if available (for workspace switching)
-      const tenantInfo = await loadTenantForUser(req.user.id, req.user.tenantId);
+      // Load tenant for this user, preferring header x-tenant-id (for workspace switching), then JWT tenantId
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const preferredTenantId = headerTenantId || req.user.tenantId;
+      const tenantInfo = await loadTenantForUser(req.user.id, preferredTenantId);
 
       if (!tenantInfo) {
         console.warn(`No tenant found for user ${req.user.id}`);

@@ -237,9 +237,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/demands", async (req, res) => {
+  app.get("/api/demands", async (req: any, res) => {
     try {
-      const tenantId = (req as any).tenantContext?.id;
+      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
@@ -290,7 +293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/demands", async (req: any, res) => {
     try {
       const { rawText } = req.body;
-      const tenantId = req.tenantContext?.id;
+      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       if (!rawText) {
         return res.status(400).json({ error: "rawText is required" });
