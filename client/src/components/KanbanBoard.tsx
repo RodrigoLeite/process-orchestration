@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import KanbanColumn from "@/components/KanbanColumn";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 
 interface WorkgraphNode {
@@ -15,6 +16,7 @@ interface WorkgraphNode {
 export default function KanbanBoard() {
   const [location] = useLocation();
   const [areas, setAreas] = useState<WorkgraphNode[]>([]);
+  const { tenant } = useAuth();
 
   // Extract highlight param from URL
   const urlParams = new URLSearchParams(location.split("?")[1] || "");
@@ -39,7 +41,7 @@ export default function KanbanBoard() {
 
   // Fetch demands
   const { data: demands = [], isLoading, refetch } = useQuery<Demand[]>({
-    queryKey: ["kanban-demands"],
+    queryKey: ["kanban-demands", tenant?.id],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
