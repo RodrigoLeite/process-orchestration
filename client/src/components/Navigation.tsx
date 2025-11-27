@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/lib/store/uiStore";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 
 export default function Navigation() {
   const [location, navigate] = useLocation();
@@ -70,6 +71,9 @@ export default function Navigation() {
         data-testid="navigation-sidebar"
       >
         <div className="p-4 h-full flex flex-col">
+          {/* Workspace Switcher */}
+          {!isSidebarCollapsed && <WorkspaceSwitcher />}
+
           {/* Logo + Collapse Toggle */}
           <div className="flex items-center justify-between mb-8">
             {!isSidebarCollapsed && (

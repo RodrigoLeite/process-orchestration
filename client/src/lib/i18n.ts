@@ -354,6 +354,12 @@ export const translations = {
       errorUpdateRole: 'Falha ao atualizar role',
     },
 
+    // Workspaces
+    workspaces: {
+      currentWorkspace: 'Workspace Atual',
+      manageWorkspace: 'Gerenciar workspace',
+    },
+
     bottlenecks: {
       title: 'Monitor de Gargalos (IA)',
       subtitle: 'Análise inteligente com recomendações técnicas para resolução de gargalos',
@@ -1029,6 +1035,12 @@ export const translations = {
       errorLoadUsers: 'Failed to load users',
       errorLoadRoles: 'Failed to load roles',
       errorUpdateRole: 'Failed to update role',
+    },
+
+    // Workspaces
+    workspaces: {
+      currentWorkspace: 'Current Workspace',
+      manageWorkspace: 'Manage workspace',
     },
 
     bottlenecks: {
