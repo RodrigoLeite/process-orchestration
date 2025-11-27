@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Building2, Plus, LogIn } from 'lucide-react';
 import { useState } from 'react';
+import { queryClient } from '@/lib/queryClient';
 
 interface Workspace {
   id: string;
@@ -88,15 +89,21 @@ export default function WorkspacesPage() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
                     // Switch to this workspace
-                    fetch(`/api/workspaces/${workspace.id}/switch`, {
+                    const res = await fetch(`/api/workspaces/${workspace.id}/switch`, {
                       method: 'POST',
                       credentials: 'include',
-                    }).then(() => {
-                      window.location.href = '/';
                     });
+                    if (res.ok) {
+                      // Invalidate auth session to reload the new workspace
+                      await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
+                      // Redirect to the workspace
+                      setTimeout(() => {
+                        window.location.href = '/';
+                      }, 100);
+                    }
                   }}
                   data-testid={`button-switch-to-${workspace.id}`}
                 >
