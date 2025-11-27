@@ -71,10 +71,10 @@ export function Layout({ children }: LayoutProps) {
                         data-testid="backdrop-user-menu"
                       />
                       {/* Menu */}
-                      <div className="absolute right-0 mt-2 w-48 bg-card border rounded-lg shadow-lg z-50" data-testid="menu-user-dropdown">
-                      <div className="p-3 border-b">
-                        <p className="font-medium text-sm" data-testid="text-dropdown-name">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50" data-testid="menu-user-dropdown">
+                      <div className="p-3 border-b border-gray-200">
+                        <p className="font-medium text-sm text-gray-900" data-testid="text-dropdown-name">{user.name}</p>
+                        <p className="text-xs text-gray-600">{user.email}</p>
                       </div>
 
                       <div className="p-2 space-y-1">
@@ -83,7 +83,7 @@ export function Layout({ children }: LayoutProps) {
                             navigate('/workspaces');
                             setShowUserMenu(false);
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent rounded transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-900 hover:bg-gray-100 rounded transition-colors"
                           data-testid="button-switch-workspace"
                         >
                           <Building2 size={16} />
@@ -95,7 +95,7 @@ export function Layout({ children }: LayoutProps) {
                             logout();
                             setShowUserMenu(false);
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent rounded transition-colors text-destructive"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
                           data-testid="button-logout"
                         >
                           <LogOut size={16} />
