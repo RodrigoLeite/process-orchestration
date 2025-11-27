@@ -3,8 +3,9 @@ import Navigation from "./Navigation";
 import { useUIStore } from "@/lib/store/uiStore";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, Building2 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export function Layout({ children }: LayoutProps) {
   const { isSidebarCollapsed } = useUIStore();
   const { t } = useTranslation();
   const { user, tenant, logout } = useAuth();
+  const [, navigate] = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
@@ -67,7 +69,19 @@ export function Layout({ children }: LayoutProps) {
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
 
-                      <div className="p-2">
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => {
+                            navigate('/workspaces');
+                            setShowUserMenu(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent rounded transition-colors"
+                          data-testid="button-switch-workspace"
+                        >
+                          <Building2 size={16} />
+                          Switch Workspace
+                        </button>
+
                         <button
                           onClick={() => {
                             logout();
