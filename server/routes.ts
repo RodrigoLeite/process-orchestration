@@ -18,6 +18,7 @@ import { requireRole } from "./middleware/requireRole";
 import { logAudit } from "./lib/audit";
 import { saveAgent, loadAgent, executeAgent } from "./lib/agentsStorage";
 import { getGraphLabels } from "./lib/graphTranslations";
+import workspacesRouter from "./routes/workspacesRoutes";
 
 // Calculate delay risk based on SLA
 function calculateDelayRisk(demand: any): string {
@@ -3940,6 +3941,9 @@ Texto original: ${demand.rawText}`;
       res.status(500).json({ error: "Failed to update user role" });
     }
   });
+
+  // Register workspaces routes
+  app.use(workspacesRouter);
 
   const httpServer = createServer(app);
   return httpServer;
