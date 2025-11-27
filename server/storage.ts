@@ -203,7 +203,10 @@ export class DatabaseStorage implements IStorage {
     await this.db.delete(rolePermissions).where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)));
   }
 
-  async getDemands(): Promise<Demand[]> {
+  async getDemands(tenantId?: string): Promise<Demand[]> {
+    if (tenantId) {
+      return await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+    }
     return await this.db.select().from(demands).orderBy(desc(demands.createdAt));
   }
 
@@ -256,7 +259,10 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getDemandsWithStatus(status: string): Promise<Demand[]> {
+  async getDemandsWithStatus(status: string, tenantId?: string): Promise<Demand[]> {
+    if (tenantId) {
+      return await this.db.select().from(demands).where(and(eq(demands.status, status), eq(demands.tenantId, tenantId as any)));
+    }
     return await this.db.select().from(demands).where(eq(demands.status, status));
   }
 
@@ -271,8 +277,14 @@ export class DatabaseStorage implements IStorage {
     return counts;
   }
 
-  async getDemandsFromLastDays(days: number): Promise<Demand[]> {
+  async getDemandsFromLastDays(days: number, tenantId?: string): Promise<Demand[]> {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    if (tenantId) {
+      return await this.db.select().from(demands).where((col) => and(
+        sql`${col.createdAt} >= ${cutoffDate}`,
+        eq(col.tenantId, tenantId as any)
+      ));
+    }
     return await this.db.select().from(demands).where((col) => {
       const createdAt = col.createdAt;
       return sql`${createdAt} >= ${cutoffDate}`;
@@ -303,7 +315,14 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAllWorkflowsFromDb(): Promise<Workflow[]> {
+  async getAllWorkflowsFromDb(tenantId?: string): Promise<Workflow[]> {
+    if (tenantId) {
+      return await this.db
+        .select()
+        .from(workflows)
+        .where(eq(workflows.tenantId, tenantId as any))
+        .orderBy(desc(workflows.createdAt));
+    }
     return await this.db
       .select()
       .from(workflows)

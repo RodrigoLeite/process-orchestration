@@ -236,7 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/demands", async (req, res) => {
     try {
-      const demands = await storage.getDemands();
+      const tenantId = (req as any).tenantContext?.id;
+      const demands = await storage.getDemands(tenantId);
       // Calculate delay risk for each demand
       const demandsWithRisk = demands.map((d: any) => ({
         ...d,
@@ -470,8 +471,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all workflows (demand-based, not area-based)
   app.get("/api/workflows", async (req, res) => {
     try {
-      const workflows = await storage.getAllWorkflowsFromDb();
-      const demands = await storage.getDemands();
+      const tenantId = (req as any).tenantContext?.id;
+      const workflows = await storage.getAllWorkflowsFromDb(tenantId);
+      const demands = await storage.getDemands(tenantId);
       
       // Add area info to each workflow
       const workflowsWithArea = workflows.map(workflow => {
