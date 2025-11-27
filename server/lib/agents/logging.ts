@@ -8,10 +8,11 @@ export async function saveAgentLog(
   agentName: string,
   input: any,
   output: any,
-  status: "success" | "error"
+  status: "success" | "error",
+  tenantId?: string
 ) {
   try {
-    console.log(`[AGENT_LOG] Saving log for agent: "${agentName}"`);
+    console.log(`[AGENT_LOG] Saving log for agent: "${agentName}" (tenantId: ${tenantId})`);
     
     // Try to find existing agent by name
     const allAgents = await storage.getAgents();
@@ -37,6 +38,7 @@ export async function saveAgentLog(
     console.log(`[AGENT_LOG] Creating log entry for agentId: ${agentId}`);
     const logEntry = await storage.createAgentLog({
       agentId,
+      tenantId: tenantId || "00000000-0000-0000-0000-000000000000",
       inputJson: input,
       outputJson: output,
       status

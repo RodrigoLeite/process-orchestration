@@ -532,8 +532,14 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAgentLogs(agentId: string): Promise<AgentLog[]> {
-    return await this.db.select().from(agentLogs).where(eq(agentLogs.agentId, agentId));
+  async getAgentLogs(agentId: string, tenantId?: string): Promise<AgentLog[]> {
+    let query: any;
+    if (tenantId) {
+      query = this.db.select().from(agentLogs).where(and(eq(agentLogs.agentId, agentId), eq(agentLogs.tenantId, tenantId as any)));
+    } else {
+      query = this.db.select().from(agentLogs).where(eq(agentLogs.agentId, agentId));
+    }
+    return await query;
   }
 
   async createBottleneckReport(report: InsertBottleneckReport): Promise<BottleneckReport> {
