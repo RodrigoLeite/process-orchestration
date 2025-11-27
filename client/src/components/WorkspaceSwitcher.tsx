@@ -1,25 +1,32 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/hooks/useTranslation';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plus, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { Settings } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 
 export default function WorkspaceSwitcher() {
   const { tenant, user } = useAuth();
   const { t } = useTranslation();
   const [, navigate] = useLocation();
 
+  // Fetch session to get role
+  const { data: session } = useQuery({
+    queryKey: ['auth-session'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/session', {
+        credentials: 'include',
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
   if (!tenant || !user) {
     return null;
   }
+
+  const userRole = session?.role || 'member';
 
   return (
     <div
@@ -37,7 +44,7 @@ export default function WorkspaceSwitcher() {
         className="px-2 py-1 bg-white rounded text-xs font-semibold text-indigo-700 border border-indigo-200"
         data-testid="role-badge"
       >
-        {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member'}
+        {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
       </div>
 
       {/* Manage Workspace Button */}
