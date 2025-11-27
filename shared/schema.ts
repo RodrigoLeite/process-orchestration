@@ -494,6 +494,30 @@ export const insertStageInsightSchema = createInsertSchema(stageInsights).omit({
 export type InsertStageInsight = z.infer<typeof insertStageInsightSchema>;
 export type StageInsight = typeof stageInsights.$inferSelect;
 
+// ========== JOBS (Inngest Queue) ==========
+export const jobs = pgTable("jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  agentType: text("agent_type").notNull(),
+  payload: jsonb("payload").$type<Record<string, any>>(),
+  status: text("status").notNull().default("pending"),
+  output: jsonb("output").$type<Record<string, any>>(),
+  error: text("error"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertJobSchema = createInsertSchema(jobs).omit({
+  createdAt: true,
+  startedAt: true,
+  completedAt: true,
+});
+
+export type InsertJob = z.infer<typeof insertJobSchema>;
+export type Job = typeof jobs.$inferSelect;
+
 // ========== AUDIT LOGS ==========
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").primaryKey().defaultRandom(),

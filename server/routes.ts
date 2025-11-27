@@ -19,6 +19,9 @@ import { logAudit } from "./lib/audit";
 import { saveAgent, loadAgent, executeAgent } from "./lib/agentsStorage";
 import { getGraphLabels } from "./lib/graphTranslations";
 import workspacesRouter from "./routes/workspacesRoutes";
+import agentRoutes from "./routes/agentRoutes";
+import jobRoutes from "./routes/jobRoutes";
+import { inngestServe } from "./inngest/serve";
 
 // Calculate delay risk based on SLA
 function calculateDelayRisk(demand: any): string {
@@ -3956,6 +3959,13 @@ Texto original: ${demand.rawText}`;
 
   // Register workspaces routes
   app.use(workspacesRouter);
+
+  // Register agent job routes (Inngest)
+  app.use("/api/agents", agentRoutes);
+  app.use("/api/jobs", jobRoutes);
+
+  // Inngest serve endpoint
+  app.use("/api/inngest", inngestServe);
 
   const httpServer = createServer(app);
   return httpServer;
