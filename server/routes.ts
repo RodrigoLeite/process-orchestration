@@ -3778,6 +3778,7 @@ Texto original: ${demand.rawText}`;
         try {
           await storage.createSystemEvent({
             executionId,
+            type: "graph_test",
             agentKey: "orchestrationGraphTest",
             status: result.success ? "success" : "error",
             durationMs: 0,

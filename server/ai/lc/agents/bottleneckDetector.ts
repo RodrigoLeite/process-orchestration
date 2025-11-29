@@ -45,19 +45,31 @@ export class BottleneckDetectorAgent extends BaseAgent {
    */
   async detectBottlenecks(workflow: {
     titulo: string;
-    etapas: Array<{
+    etapas?: Array<{
       nome: string;
       descricao: string;
       tipo: string;
       responsavel: string;
       duracao_estimada_horas: number;
     }>;
-    duracao_total_horas: number;
+    duracao_total_horas?: number;
   }): Promise<BaseAgentOutput> {
+    if (!workflow?.etapas || workflow.etapas.length === 0) {
+      return {
+        success: true,
+        data: {
+          gargalos: [],
+          saude_geral: "boa",
+          score_risco: 0,
+          acoes_imediatas: []
+        }
+      };
+    }
+
     const input = `Analyze this workflow for bottlenecks:
 
 Workflow: ${workflow.titulo}
-Total Duration: ${workflow.duracao_total_horas} hours
+Total Duration: ${workflow.duracao_total_horas || 0} hours
 
 Stages:
 ${workflow.etapas
