@@ -17,7 +17,7 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    console.log('[WORKSPACES] Fetching for user:', req.user.id);
+    console.log('[WORKSPACES] Fetching for user:', req.user.id, 'current tenant:', req.user.tenantId);
 
     // Get all tenant_users records for this user
     const userTenants = await storage.db
@@ -30,30 +30,44 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
 
     console.log('[WORKSPACES] Found tenant_users records:', userTenants.length, userTenants);
 
-    if (userTenants.length === 0) {
-      // Try alternate approach - get current tenant from session
-      const currentTenant = await storage.db
+    // Always get the current tenant from session as fallback
+    const currentTenantId = req.user.tenantId;
+    let currentTenantData: any = null;
+    
+    if (currentTenantId) {
+      currentTenantData = await storage.db
         .select()
         .from(tenants)
-        .where(eq(tenants.id, req.user.tenantId))
+        .where(eq(tenants.id, currentTenantId))
         .limit(1)
         .then((rows: any[]) => rows[0]);
       
-      console.log('[WORKSPACES] No tenant_users found, returning current tenant:', currentTenant?.id);
+      console.log('[WORKSPACES] Current tenant from session:', currentTenantData?.id, currentTenantData?.name);
+    }
 
-      if (currentTenant) {
-        return res.json([{
-          id: currentTenant.id,
-          name: currentTenant.name,
-          role: 'owner', // Default to owner for current workspace
+    // If no tenant_users found, return current tenant only
+    if (userTenants.length === 0) {
+      if (currentTenantData) {
+        res.json([{
+          id: currentTenantData.id,
+          name: currentTenantData.name,
+          role: 'owner',
+          isCurrent: true,
         }]);
+        return;
       }
-
-      return res.json([]);
+      res.json([]);
+      return;
     }
 
     // Get tenant details for each
     const workspaceIds = userTenants.map(ut => ut.tenantId);
+    
+    // Include current tenant in the list if not already there
+    if (currentTenantId && !workspaceIds.includes(currentTenantId)) {
+      workspaceIds.push(currentTenantId);
+    }
+    
     const tenantDetails = await storage.db
       .select()
       .from(tenants)
@@ -62,13 +76,22 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
     console.log('[WORKSPACES] Tenant details found:', tenantDetails.length);
 
     // Build response with tenant details and roles
-    const workspaces = userTenants.map(ut => {
-      const tenant = tenantDetails.find(t => t.id === ut.tenantId);
+    const workspaces = workspaceIds.map(tenantId => {
+      const tenant = tenantDetails.find(t => t.id === tenantId);
+      const userTenant = userTenants.find(ut => ut.tenantId === tenantId);
       return {
-        id: ut.tenantId,
+        id: tenantId,
         name: tenant?.name || 'Unknown Workspace',
-        role: ut.role,
+        role: userTenant?.role || 'owner',
+        isCurrent: tenantId === currentTenantId,
       };
+    });
+
+    // Sort to show current workspace first
+    workspaces.sort((a, b) => {
+      if (a.isCurrent && !b.isCurrent) return -1;
+      if (!a.isCurrent && b.isCurrent) return 1;
+      return 0;
     });
 
     res.json(workspaces);
