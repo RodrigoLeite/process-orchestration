@@ -142,9 +142,13 @@ export default function WorkflowGraph() {
   // Execute graph test
   const executeMutation = useMutation({
     mutationFn: async (input: string) => {
+      const headers: any = { "Content-Type": "application/json" };
+      const tenantId = localStorage.getItem("currentTenantId");
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+
       const res = await fetch("/api/ai/graph/run", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ input }),
       });
       if (!res.ok) throw new Error("Failed to execute graph");
