@@ -49,13 +49,15 @@ export default function InsightsPage() {
   const { tenant } = useAuth();
   const tenantId = tenant?.id;
 
-  const headers = tenantId ? { "x-tenant-id": tenantId } : {};
+  const getHeaders = (): HeadersInit => {
+    return tenantId ? { "x-tenant-id": tenantId } : {};
+  };
 
   // Fetch saved bottleneck reports
   const { data: bottleneckReports = [], isLoading: reportsLoading } = useQuery<Report[]>({
     queryKey: ["bottleneck-reports", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/bottleneck-reports?language=${language}`, { headers });
+      const res = await fetch(`/api/bottleneck-reports?language=${language}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch bottleneck reports");
       return res.json();
     }
@@ -65,7 +67,7 @@ export default function InsightsPage() {
   const { data: insightsReports = [], isLoading: insightsLoading } = useQuery<Report[]>({
     queryKey: ["insights-reports", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/insights-reports?language=${language}`, { headers });
+      const res = await fetch(`/api/insights-reports?language=${language}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch insights reports");
       return res.json();
     }
@@ -75,7 +77,7 @@ export default function InsightsPage() {
   const { data: bottleneckData, isLoading: bottleneckLoading } = useQuery<BottleneckData>({
     queryKey: ["insights-bottlenecks", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/bottlenecks?language=${language}`, { headers });
+      const res = await fetch(`/api/bottlenecks?language=${language}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
       return res.json();
     }
@@ -85,7 +87,7 @@ export default function InsightsPage() {
   const { data: overloadData, isLoading: overloadLoading } = useQuery<OverloadData>({
     queryKey: ["insights-overload", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/areas/overload?language=${language}`, { headers });
+      const res = await fetch(`/api/areas/overload?language=${language}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch overload");
       return res.json();
     }
@@ -95,7 +97,7 @@ export default function InsightsPage() {
   const { data: predictionsData, isLoading: predictionsLoading } = useQuery({
     queryKey: ["ai-predictions", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/predictions?days=7&language=${language}`, { headers });
+      const res = await fetch(`/api/predictions?days=7&language=${language}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch predictions");
       const json = await res.json();
       return json.data?.predictions || [];
