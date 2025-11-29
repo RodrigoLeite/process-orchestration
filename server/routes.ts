@@ -3762,6 +3762,7 @@ Texto original: ${demand.rawText}`;
 
       // Execute the agent graph with tenant context and agent config
       try {
+        const { executeAgentGraph } = await import("./ai/lc/graphs");
         const result = await executeAgentGraph({
           titulo: input,
           descricao: input,
