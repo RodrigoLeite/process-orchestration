@@ -10,6 +10,9 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from "lucide-react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
@@ -121,6 +124,11 @@ export default function WorkflowGraph() {
   const queryClient = useQueryClient();
   const [testInput, setTestInput] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+
+  const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 2));
+  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.5));
+  const handleResetZoom = () => setZoom(1);
 
   // Fetch graph data
   const { data: graphData, isLoading: graphLoading } = useQuery<GraphData>({
@@ -233,6 +241,43 @@ export default function WorkflowGraph() {
 
       {/* Main content */}
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Zoom Controls Bar */}
+        <div className="bg-white border-b border-gray-300 px-4 py-2 flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleZoomIn}
+            className="gap-2"
+            data-testid="button-zoom-in"
+            title="Aumentar zoom"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleZoomOut}
+            className="gap-2"
+            data-testid="button-zoom-out"
+            title="Diminuir zoom"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleResetZoom}
+            className="gap-2"
+            data-testid="button-zoom-reset"
+            title="Resetar zoom"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+          <div className="text-sm text-gray-600 ml-2">
+            {Math.round(zoom * 100)}%
+          </div>
+        </div>
+
         {/* Pipeline Container - Top (60%) */}
         <div
           className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300"
@@ -247,7 +292,10 @@ export default function WorkflowGraph() {
               <div className="text-gray-500">{t("executionGraph.loadingGraph")}</div>
             </div>
           ) : pipelineNodes.length > 0 ? (
-            <div className="inline-flex items-center gap-4 p-8 min-w-full">
+            <div
+              className="inline-flex items-center gap-4 p-8 min-w-full origin-top-left transition-transform"
+              style={{ transform: `scale(${zoom})` }}
+            >
               {pipelineNodes.map((node, index) => (
                 <div key={node.id} className="flex items-center gap-4 flex-shrink-0">
                   {/* Node Card */}
