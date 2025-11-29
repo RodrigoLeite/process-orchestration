@@ -1,30 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import ReactFlow, {
-  Node,
-  Edge,
-  Controls,
-  Background,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
-  SelectionMode,
-  NodeProps,
-  Handle,
-  Position,
-} from "reactflow";
-import "reactflow/dist/style.css";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   PlayCircle,
-  ChevronRight,
   Zap,
   AlertCircle,
   CheckCircle2,
+  ChevronRight,
 } from "lucide-react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
@@ -61,51 +46,74 @@ interface NodeDetail {
   }>;
 }
 
-const getNodeColor = (type: string): string => {
+const getNodeColor = (
+  type: string
+): { bg: string; border: string; topBar: string; icon: string } => {
   switch (type) {
     case "agent":
-      return "bg-blue-100 border-blue-400";
+      return {
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+        topBar: "bg-blue-500",
+        icon: "text-blue-600",
+      };
     case "system":
-      return "bg-purple-100 border-purple-400";
+      return {
+        bg: "bg-purple-50",
+        border: "border-purple-200",
+        topBar: "bg-purple-500",
+        icon: "text-purple-600",
+      };
     case "decision":
-      return "bg-green-100 border-green-400";
+      return {
+        bg: "bg-green-50",
+        border: "border-green-200",
+        topBar: "bg-green-500",
+        icon: "text-green-600",
+      };
     default:
-      return "bg-gray-100 border-gray-400";
+      return {
+        bg: "bg-gray-50",
+        border: "border-gray-200",
+        topBar: "bg-gray-500",
+        icon: "text-gray-600",
+      };
   }
 };
 
-const CustomNode = ({ data, selected }: NodeProps<GraphNode>) => {
+interface PipelineNodeProps {
+  node: GraphNode;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const PipelineNode = ({ node, isSelected, onClick }: PipelineNodeProps) => {
+  const colors = getNodeColor(node.type);
+
   return (
     <div
-      className={`px-4 py-3 rounded-lg border-2 transition-all min-w-[150px] ${getNodeColor(
-        data.type
-      )} ${selected ? "border-blue-500 shadow-lg shadow-blue-300/50" : ""}`}
-      title={data.description}
-      data-testid={`node-${data.id}`}
+      onClick={onClick}
+      className={`flex flex-col rounded-lg border-2 overflow-hidden transition-all cursor-pointer ${
+        isSelected
+          ? `${colors.border} shadow-lg shadow-blue-300/40 ring-2 ring-blue-400`
+          : `${colors.border} hover:shadow-md`
+      }`}
     >
-      <Handle 
-        type="target" 
-        position={Position.Top}
-        id={`${data.id}-input`}
-        isConnectable={true}
-        style={{ width: 10, height: 10 }}
-      />
-      <div className="font-semibold text-sm text-gray-900">{data.label}</div>
-      <div className="text-xs text-gray-600 mt-1">{data.type}</div>
-      <Handle 
-        type="source" 
-        position={Position.Bottom}
-        id={`${data.id}-output`}
-        isConnectable={true}
-        style={{ width: 10, height: 10 }}
-      />
+      {/* Top colored bar */}
+      <div className={`h-1.5 ${colors.topBar}`}></div>
+
+      {/* Content */}
+      <div className={`p-4 ${colors.bg}`}>
+        <div className="font-semibold text-sm text-gray-900 mb-1">
+          {node.label}
+        </div>
+        <div className="text-xs text-gray-500 mb-2">{node.type}</div>
+        <div className="text-xs text-gray-600 line-clamp-2">
+          {node.description}
+        </div>
+      </div>
     </div>
   );
-};
-
-// Memoize nodeTypes to avoid React Flow warning
-const nodeTypes = {
-  default: CustomNode,
 };
 
 export default function WorkflowGraph() {
@@ -113,8 +121,6 @@ export default function WorkflowGraph() {
   const queryClient = useQueryClient();
   const [testInput, setTestInput] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   // Fetch graph data
   const { data: graphData, isLoading: graphLoading } = useQuery<GraphData>({
@@ -157,73 +163,53 @@ export default function WorkflowGraph() {
       return res.json();
     },
     onSuccess: () => {
-      toast.success(t('executionGraph.successMessage'));
+      toast.success(t("executionGraph.successMessage"));
       setTestInput("");
       queryClient.invalidateQueries({ queryKey: ["workflow-graph"] });
       queryClient.invalidateQueries({ queryKey: ["workflow-node"] });
     },
     onError: (error: Error) => {
-      toast.error(`${t('executionGraph.errorMessage')}: ${error.message}`);
+      toast.error(
+        `${t("executionGraph.errorMessage")}: ${error.message}`
+      );
     },
   });
 
-  // Build React Flow nodes and edges from API data
-  useMemo(() => {
-    if (!graphData) return;
-
-    const rfNodes: Node[] = graphData.nodes.map((node, index) => ({
-      id: node.id,
-      data: node,
-      position: {
-        x: (index % 3) * 300,
-        y: Math.floor(index / 3) * 150,
-      },
-      type: "default",
-    }));
-
-    const rfEdges: Edge[] = graphData.edges.map((edge) => ({
-      id: `${edge.source}-${edge.target}`,
-      source: edge.source,
-      target: edge.target,
-      label: edge.label,
-      animated: true,
-    }));
-
-    setNodes(rfNodes);
-    setEdges(rfEdges);
-  }, [graphData, setNodes, setEdges]);
-
-  const handleSelectionChange = (changes: { nodes: Array<{ id: string }>; edges: Array<any> }) => {
-    if (changes.nodes.length > 0) {
-      setSelectedNodeId(changes.nodes[0].id);
-    } else {
-      setSelectedNodeId(null);
-    }
-  };
-
   const handleExecute = () => {
     if (!testInput.trim()) {
-      toast.error(t('executionGraph.emptyInputError'));
+      toast.error(t("executionGraph.emptyInputError"));
       return;
     }
     executeMutation.mutate(testInput);
   };
 
+  // Get nodes in pipeline order
+  const pipelineNodes = graphData?.nodes.filter((n) => n.type !== "decision") || [];
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="border-b border-gray-300 bg-gray-50 p-4">
-        <div className="flex gap-4 items-end">
+      <div className="border-b border-gray-300 bg-gray-50 p-6">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              {t("executionGraph.title") || "Execution Pipeline"}
+            </h2>
+            <p className="text-sm text-gray-600">
+              {t("executionGraph.subtitle") ||
+                "Visualize your AI workflow execution pipeline"}
+            </p>
+          </div>
           <div className="flex-1">
             <label className="text-sm text-gray-700 block mb-2">
-              {t('executionGraph.testInputLabel')}
+              {t("executionGraph.testInputLabel")}
             </label>
             <div className="flex gap-2">
               <Input
                 value={testInput}
                 onChange={(e) => setTestInput(e.target.value)}
-                placeholder={t('executionGraph.testInputPlaceholder')}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
+                placeholder={t("executionGraph.testInputPlaceholder")}
+                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 flex-1"
                 data-testid="input-test-graph"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleExecute();
@@ -232,11 +218,13 @@ export default function WorkflowGraph() {
               <Button
                 onClick={handleExecute}
                 disabled={executeMutation.isPending || !testInput.trim()}
-                className="gap-2"
+                className="gap-2 bg-blue-600 hover:bg-blue-700"
                 data-testid="button-execute-graph"
               >
                 <PlayCircle className="w-4 h-4" />
-                {executeMutation.isPending ? t('executionGraph.executingButton') : t('executionGraph.executeButton')}
+                {executeMutation.isPending
+                  ? t("executionGraph.executingButton")
+                  : t("executionGraph.executeButton")}
               </Button>
             </div>
           </div>
@@ -245,41 +233,66 @@ export default function WorkflowGraph() {
 
       {/* Main content */}
       <div className="flex flex-1 min-h-0 overflow-hidden gap-0">
-        {/* Graph Container (70%) */}
-        <div className="flex-1 bg-white overflow-hidden">
+        {/* Pipeline Container (70%) */}
+        <div className="flex-1 bg-white overflow-x-auto overflow-y-auto">
           {graphLoading ? (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-500">{t('executionGraph.loadingGraph')}</div>
+              <div className="text-gray-500">{t("executionGraph.loadingGraph")}</div>
             </div>
-          ) : nodes.length > 0 ? (
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onSelectionChange={handleSelectionChange}
-              fitView
-              selectionMode={SelectionMode.Full}
-              nodeTypes={nodeTypes}
-            >
-              <Background
-                color="#9ca3af"
-                gap={20}
-                size={2}
-                style={{ backgroundColor: "#f3f4f6" }}
-              />
-              <Controls />
-              <MiniMap
-                style={{
-                  backgroundColor: "#ffffff",
-                  border: "1px solid #d1d5db",
-                }}
-                maskColor="rgba(0, 0, 0, 0.1)"
-              />
-            </ReactFlow>
+          ) : pipelineNodes.length > 0 ? (
+            <div className="p-8 min-h-full flex flex-col justify-center">
+              {/* Pipeline visualization */}
+              <div className="flex items-center gap-4 pb-8 overflow-x-auto">
+                {pipelineNodes.map((node, index) => (
+                  <div key={node.id} className="flex items-center gap-4 flex-shrink-0">
+                    {/* Node Card */}
+                    <div className="w-56">
+                      <PipelineNode
+                        node={node}
+                        isSelected={selectedNodeId === node.id}
+                        onClick={() => setSelectedNodeId(node.id)}
+                      />
+                    </div>
+
+                    {/* Arrow connector (except for last node) */}
+                    {index < pipelineNodes.length - 1 && (
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-gray-300"></div>
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        <div className="w-6 h-0.5 bg-gradient-to-r from-gray-300 to-gray-400"></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Agent details summary below pipeline */}
+              {selectedNodeId && nodeDetail && (
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                    {t("executionGraph.agentConfigTitle") || "Agent Configuration"}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {nodeDetail.meta &&
+                      Object.entries(nodeDetail.meta).map(([key, value]) => (
+                        <div key={key} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="text-xs font-medium text-gray-600 mb-1">
+                            {key}
+                          </div>
+                          <div className="text-sm text-gray-900 font-semibold">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-500">{t('executionGraph.noNodesFound')}</div>
+              <div className="text-gray-500">{t("executionGraph.noNodesFound")}</div>
             </div>
           )}
         </div>
@@ -291,19 +304,19 @@ export default function WorkflowGraph() {
               <div className="text-center">
                 <Zap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">
-                  {t('executionGraph.selectNodeHint')}
+                  {t("executionGraph.selectNodeHint")}
                 </p>
               </div>
             </div>
           ) : nodeLoading ? (
             <div className="p-4">
-              <div className="text-gray-500 text-sm">{t('executionGraph.loading')}</div>
+              <div className="text-gray-500 text-sm">{t("executionGraph.loading")}</div>
             </div>
           ) : nodeDetail ? (
-            <div className="p-4 space-y-4">
-              {/* Node Title */}
+            <div className="p-6 space-y-6">
+              {/* Node Title & Type */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
                   {nodeDetail.label}
                 </h3>
                 <Badge
@@ -315,10 +328,13 @@ export default function WorkflowGraph() {
                 </Badge>
               </div>
 
+              {/* Divider */}
+              <div className="h-px bg-gray-200"></div>
+
               {/* Node Description */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  {t('executionGraph.nodeDescription')}
+                  {t("executionGraph.nodeDescription")}
                 </h4>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   {nodeDetail.description}
@@ -328,11 +344,25 @@ export default function WorkflowGraph() {
               {/* Node Metadata */}
               {nodeDetail.meta && Object.keys(nodeDetail.meta).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    {t('executionGraph.nodeMetadata')}
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                    {t("executionGraph.nodeMetadata")}
                   </h4>
-                  <div className="bg-white rounded-lg p-3 text-xs text-gray-600 max-h-32 overflow-y-auto font-mono border border-gray-200">
-                    {JSON.stringify(nodeDetail.meta, null, 2)}
+                  <div className="space-y-2">
+                    {Object.entries(nodeDetail.meta).map(([key, value]) => (
+                      <div
+                        key={key}
+                        className="bg-white rounded-lg p-3 border border-gray-200"
+                      >
+                        <div className="text-xs font-medium text-gray-500 mb-1 uppercase">
+                          {key}
+                        </div>
+                        <div className="text-sm text-gray-900 font-mono">
+                          {typeof value === "object"
+                            ? JSON.stringify(value, null, 2)
+                            : String(value)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -340,28 +370,31 @@ export default function WorkflowGraph() {
               {/* Last Runs */}
               {nodeDetail.lastRuns && nodeDetail.lastRuns.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    {t('executionGraph.nodeLastRuns')}
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                    {t("executionGraph.nodeLastRuns")}
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {nodeDetail.lastRuns.map((run) => (
                       <div
                         key={run.id}
-                        className="bg-white rounded p-2 border border-gray-200"
+                        className="bg-white rounded-lg p-3 border border-gray-200"
                         data-testid={`run-item-${run.id}`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-2">
                           {run.status === "success" ? (
                             <CheckCircle2 className="w-4 h-4 text-green-600" />
                           ) : (
                             <AlertCircle className="w-4 h-4 text-red-600" />
                           )}
-                          <span className="text-xs text-gray-500">
-                            {new Date(run.timestamp).toLocaleString("pt-BR")}
+                          <span className="text-xs text-gray-600 font-medium">
+                            {run.status === "success" ? "Success" : "Failed"}
                           </span>
                         </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(run.timestamp).toLocaleString("pt-BR")}
+                        </div>
                         {run.duration && (
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-gray-600 mt-1">
                             ⏱ {(run.duration / 1000).toFixed(2)}s
                           </div>
                         )}
@@ -372,16 +405,16 @@ export default function WorkflowGraph() {
               )}
 
               {/* Actions */}
-              <div className="pt-4 border-t border-gray-300">
+              <div className="pt-4 border-t border-gray-200">
                 <Button
                   variant="outline"
                   className="w-full gap-2 border-gray-300 hover:bg-gray-100"
                   disabled
                   data-testid="button-run-agent"
-                  title={t('executionGraph.notImplemented')}
+                  title={t("executionGraph.notImplemented")}
                 >
                   <PlayCircle className="w-4 h-4" />
-                  {t('executionGraph.executeAgent')}
+                  {t("executionGraph.executeAgent")}
                 </Button>
               </div>
             </div>
