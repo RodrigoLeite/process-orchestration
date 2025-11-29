@@ -1,0 +1,115 @@
+{
+  "agentId": "workflow-generator",
+  "tenantId": "9949a4fc-6019-4136-b058-79077afa215a",
+  "graph": {
+    "nodes": [
+      {
+        "id": "chat-input",
+        "type": "chatInput",
+        "position": {
+          "x": -30.48,
+          "y": 83.9
+        },
+        "data": {
+          "label": "Demanda",
+          "value": ""
+        },
+        "width": 320,
+        "height": 263
+      },
+      {
+        "id": "api-create-demand",
+        "type": "api",
+        "position": {
+          "x": 337.63,
+          "y": -66.32
+        },
+        "data": {
+          "label": "Criar Demanda",
+          "endpoint": "/api/demands",
+          "method": "POST",
+          "headers": "{}",
+          "bodyTemplate": "{\"rawText\": \"PLACEHOLDER\"}"
+        },
+        "width": 200,
+        "height": 56
+      },
+      {
+        "id": "prompt-generator",
+        "type": "prompt",
+        "position": {
+          "x": 450,
+          "y": 100
+        },
+        "data": {
+          "label": "Instruções para Workflow",
+          "systemPrompt": "Você é um especialista em gestão de processos. Receba uma demanda criada no sistema e gere um workflow detalhado com etapas customizadas baseadas na área (TI, Vendas, RH, Financeiro, etc). Retorne JSON com: {\"workflowName\": \"nome\", \"area\": \"area\", \"stages\": [{\"name\": \"nome\", \"type\": \"tipo\", \"description\": \"desc\", \"priority\": \"alta/média/baixa\", \"duration_hours\": 2}]}"
+        },
+        "width": 320,
+        "height": 201
+      },
+      {
+        "id": "agent-generate-workflow",
+        "type": "agent",
+        "position": {
+          "x": 861.68,
+          "y": -363.7
+        },
+        "data": {
+          "label": "Gerar Workflow",
+          "temperature": 0.4,
+          "maxTokens": 3000,
+          "logicType": "none",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4o-mini"
+        },
+        "width": 320,
+        "height": 574,
+        "dragging": false
+      },
+      {
+        "id": "output-workflow",
+        "type": "output",
+        "position": {
+          "x": 1075.29,
+          "y": 298.51
+        },
+        "data": {
+          "label": "Workflow Gerado",
+          "schema": "{\"workflowName\": \"string\", \"area\": \"string\", \"stages\": \"array\"}"
+        },
+        "width": 150,
+        "height": 249
+      }
+    ],
+    "edges": [
+      {
+        "source": "chat-input",
+        "target": "api-create-demand",
+        "id": "e1"
+      },
+      {
+        "source": "api-create-demand",
+        "target": "prompt-generator",
+        "id": "e2"
+      },
+      {
+        "source": "prompt-generator",
+        "target": "agent-generate-workflow",
+        "id": "e3"
+      },
+      {
+        "source": "agent-generate-workflow",
+        "target": "output-workflow",
+        "id": "e4"
+      }
+    ],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  },
+  "createdAt": "2025-11-29T02:09:10.100Z",
+  "updatedAt": "2025-11-29T02:09:10.100Z"
+}

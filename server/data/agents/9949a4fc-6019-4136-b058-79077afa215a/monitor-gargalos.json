@@ -1,0 +1,93 @@
+{
+  "agentId": "monitor-gargalos",
+  "tenantId": "9949a4fc-6019-4136-b058-79077afa215a",
+  "graph": {
+    "nodes": [
+      {
+        "id": "chat-input",
+        "type": "chatInput",
+        "position": {
+          "x": -30.48,
+          "y": 83.9
+        },
+        "data": {
+          "label": "Métricas de Áreas",
+          "value": ""
+        },
+        "width": 320,
+        "height": 263
+      },
+      {
+        "id": "prompt-bottleneck",
+        "type": "prompt",
+        "position": {
+          "x": 300,
+          "y": 50
+        },
+        "data": {
+          "label": "Análise de Gargalos",
+          "systemPrompt": "Você é um especialista em detecção de gargalos operacionais. Analise as métricas das áreas e identifique gargalos críticos, causas raiz e ações recomendadas. Considere: taxa de conclusão, bloqueios, fila, reaberturas. Retorne JSON com: {\"bottlenecks\": [{\"area\": \"string\", \"severity\": \"high|medium|low\", \"reason\": \"string\", \"actions\": []}]}"
+        },
+        "width": 320,
+        "height": 201
+      },
+      {
+        "id": "agent-bottleneck",
+        "type": "agent",
+        "position": {
+          "x": 700,
+          "y": -100
+        },
+        "data": {
+          "label": "Detectar Gargalos",
+          "temperature": 0.4,
+          "maxTokens": 2000,
+          "logicType": "none",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4o-mini"
+        },
+        "width": 320,
+        "height": 574,
+        "dragging": false
+      },
+      {
+        "id": "output-bottlenecks",
+        "type": "output",
+        "position": {
+          "x": 1000,
+          "y": 150
+        },
+        "data": {
+          "label": "Gargalos Detectados",
+          "schema": "{\"bottlenecks\": \"array\"}"
+        },
+        "width": 150,
+        "height": 249
+      }
+    ],
+    "edges": [
+      {
+        "source": "chat-input",
+        "target": "prompt-bottleneck",
+        "id": "e1"
+      },
+      {
+        "source": "prompt-bottleneck",
+        "target": "agent-bottleneck",
+        "id": "e2"
+      },
+      {
+        "source": "agent-bottleneck",
+        "target": "output-bottlenecks",
+        "id": "e3"
+      }
+    ],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  },
+  "createdAt": "2025-11-29T02:09:21.451Z",
+  "updatedAt": "2025-11-29T02:09:21.451Z"
+}

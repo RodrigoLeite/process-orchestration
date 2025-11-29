@@ -1,0 +1,93 @@
+{
+  "agentId": "insights-inteligentes",
+  "tenantId": "d8ad06d3-87f8-4372-a21a-fa18f69216fb",
+  "graph": {
+    "nodes": [
+      {
+        "id": "chat-input",
+        "type": "chatInput",
+        "position": {
+          "x": -30.48,
+          "y": 83.9
+        },
+        "data": {
+          "label": "Dados de Demandas",
+          "value": ""
+        },
+        "width": 320,
+        "height": 263
+      },
+      {
+        "id": "prompt-analyzer",
+        "type": "prompt",
+        "position": {
+          "x": 300,
+          "y": 50
+        },
+        "data": {
+          "label": "Análise de Padrões",
+          "systemPrompt": "Você é um analista de dados inteligente. Analise os dados de demandas e identifique padrões, tendências e insights acionáveis. Gere recomendações baseadas em: volume, tipos comuns, áreas críticas, tempo médio de resolução. Retorne JSON com: {\"trends\": [], \"recommendations\": [], \"risks\": [], \"opportunities\": []}"
+        },
+        "width": 320,
+        "height": 201
+      },
+      {
+        "id": "agent-insights",
+        "type": "agent",
+        "position": {
+          "x": 700,
+          "y": -100
+        },
+        "data": {
+          "label": "Gerar Insights",
+          "temperature": 0.5,
+          "maxTokens": 2500,
+          "logicType": "none",
+          "modelProvider": "OpenAI",
+          "modelName": "gpt-4o-mini"
+        },
+        "width": 320,
+        "height": 574,
+        "dragging": false
+      },
+      {
+        "id": "output-insights",
+        "type": "output",
+        "position": {
+          "x": 1000,
+          "y": 150
+        },
+        "data": {
+          "label": "Insights Gerados",
+          "schema": "{\"trends\": \"array\", \"recommendations\": \"array\", \"risks\": \"array\", \"opportunities\": \"array\"}"
+        },
+        "width": 150,
+        "height": 249
+      }
+    ],
+    "edges": [
+      {
+        "source": "chat-input",
+        "target": "prompt-analyzer",
+        "id": "e1"
+      },
+      {
+        "source": "prompt-analyzer",
+        "target": "agent-insights",
+        "id": "e2"
+      },
+      {
+        "source": "agent-insights",
+        "target": "output-insights",
+        "id": "e3"
+      }
+    ],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  },
+  "createdAt": "2025-11-29T02:09:53.620Z",
+  "updatedAt": "2025-11-29T02:09:53.620Z"
+}
