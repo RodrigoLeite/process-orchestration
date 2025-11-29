@@ -3686,9 +3686,11 @@ Texto original: ${demand.rawText}`;
   });
 
   // POST /api/ai/graph/run - Execute the graph with test input
-  app.post("/api/ai/graph/run", async (req, res) => {
+  app.post("/api/ai/graph/run", async (req: any, res) => {
     try {
       const { input } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       if (!input || typeof input !== "string" || !input.trim()) {
         return res.status(400).json({
@@ -3701,34 +3703,86 @@ Texto original: ${demand.rawText}`;
       const executionId = `graph-test-${Date.now()}`;
       console.log(`[GRAPH TEST] Starting execution: ${executionId}`);
       console.log(`[GRAPH TEST] Input: ${input.substring(0, 100)}...`);
+      console.log(`[GRAPH TEST] Tenant: ${tenantId}`);
 
-      // Store execution event
+      // Load agent configuration from Agent Studio (if saved)
+      let agentConfig: any = { temperature: 0.7, model: "gpt-4-turbo" };
       try {
-        await storage.createSystemEvent({
-          executionId,
-          agentKey: "orchestrationGraphTest",
-          status: "running",
-          durationMs: 0,
-          metadata: {
-            test_input: input.substring(0, 200),
-            graph_test: true,
+        const savedAgent = await loadAgent("workflow-generator", tenantId);
+        if (savedAgent?.graph?.nodes) {
+          // Find agent node and extract temperature/model
+          const agentNode = savedAgent.graph.nodes.find((n: any) => n.type === "agent");
+          if (agentNode?.data) {
+            agentConfig = {
+              temperature: agentNode.data.temperature || 0.7,
+              model: agentNode.data.modelName || "gpt-4-turbo"
+            };
+            console.log(`[GRAPH TEST] Loaded agent config:`, agentConfig);
+          }
+        }
+      } catch (e) {
+        console.log(`[GRAPH TEST] Using default agent config:`, agentConfig);
+      }
+
+      // Execute the agent graph with tenant context
+      try {
+        const result = await executeAgentGraph({
+          titulo: input,
+          descricao: input,
+          area: "General",
+          tipo: "request",
+          prioridade: "média",
+          tenantId: tenantId || "00000000-0000-0000-0000-000000000000"
+        });
+
+        console.log(`[GRAPH TEST] Execution completed: ${result.success ? "success" : "failed"}`);
+
+        // Store execution event
+        try {
+          await storage.createSystemEvent({
+            executionId,
+            agentKey: "orchestrationGraphTest",
+            status: result.success ? "success" : "error",
+            durationMs: 0,
+            metadata: {
+              test_input: input.substring(0, 200),
+              graph_test: true,
+              agent_config: agentConfig,
+              result: result.success,
+              timestamp: new Date().toISOString()
+            }
+          });
+        } catch (e) {
+          console.warn("Could not store system event:", e);
+        }
+
+        res.json({
+          success: result.success,
+          data: {
+            executionId,
+            message: result.success ? "Graph execution successful" : "Graph execution failed",
+            input: input.substring(0, 100) + (input.length > 100 ? "..." : ""),
+            result: result.data,
+            agentConfig,
+            status: result.success ? "success" : "error",
             timestamp: new Date().toISOString()
           }
         });
-      } catch (e) {
-        console.warn("Could not store system event:", e);
+      } catch (execError) {
+        console.error("[GRAPH TEST] Execution error:", execError);
+        res.json({
+          success: false,
+          data: {
+            executionId,
+            message: "Graph execution failed",
+            input: input.substring(0, 100) + (input.length > 100 ? "..." : ""),
+            error: execError instanceof Error ? execError.message : String(execError),
+            agentConfig,
+            status: "error",
+            timestamp: new Date().toISOString()
+          }
+        });
       }
-
-      res.json({
-        success: true,
-        data: {
-          executionId,
-          message: "Graph execution started successfully",
-          input: input.substring(0, 100) + (input.length > 100 ? "..." : ""),
-          status: "running",
-          timestamp: new Date().toISOString()
-        }
-      });
     } catch (error) {
       console.error("Error executing graph:", error);
       res.status(500).json({
