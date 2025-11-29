@@ -57,10 +57,22 @@ export const orchestrateDemandFn = inngest.createFunction(
       };
     });
 
+    const agentConfig = await step.run("load-agent-config", async () => {
+      try {
+        const { loadGraphAgentConfigs } = await import("../../lib/agentsStorage");
+        const config = await loadGraphAgentConfigs(tenantId);
+        console.log(`[ORCHESTRATE-QUEUE] Loaded agent config:`, config);
+        return config;
+      } catch (error) {
+        console.warn("[ORCHESTRATE-QUEUE] Failed to load agent config, using defaults:", error);
+        return { temperature: 0.7, model: "gpt-4-turbo" };
+      }
+    });
+
     const result = await step.run("execute-agent-graph", async () => {
       try {
         const { executeAgentGraph } = await import("../../ai/lc/graphs");
-        const output = await executeAgentGraph(demandInput as any);
+        const output = await executeAgentGraph(demandInput as any, agentConfig);
         return { success: true as const, output };
       } catch (error) {
         return { success: false as const, error: String(error) };

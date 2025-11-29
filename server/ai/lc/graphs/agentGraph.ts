@@ -111,9 +111,11 @@ async function workflowBuilderNode(state: AgentGraphState, agentConfig?: any): P
   }
 
   try {
-    console.log("[GRAPH:WorkflowBuilder] Starting workflow generation with config:", agentConfig);
+    // Use workflow-specific config if available
+    const nodeConfig = agentConfig?.workflowBuilder || agentConfig;
+    console.log("[GRAPH:WorkflowBuilder] Starting workflow generation with config:", nodeConfig);
     
-    const agent = createWorkflowBuilderAgent(agentConfig);
+    const agent = createWorkflowBuilderAgent(nodeConfig);
     const result = await agent.buildWorkflow(state.demandInput);
 
     if (result.success && result.data) {
@@ -194,9 +196,11 @@ async function insightsNode(state: AgentGraphState, agentConfig?: any): Promise<
   }
 
   try {
-    console.log("[GRAPH:Insights] Starting insights generation with config:", agentConfig);
+    // Use insights-specific config if available
+    const nodeConfig = agentConfig?.insightsGenerator || agentConfig;
+    console.log("[GRAPH:Insights] Starting insights generation with config:", nodeConfig);
     
-    const agent = createInsightsAgent(agentConfig);
+    const agent = createInsightsAgent(nodeConfig);
     const result = await agent.generateInsights({
       demandTitle: state.demandInput?.titulo || "",
       demandDescription: state.demandInput?.descricao || "",
@@ -287,9 +291,11 @@ async function bottleneckDetectorNode(state: AgentGraphState, agentConfig?: any)
   }
 
   try {
-    console.log("[GRAPH:BottleneckDetector] Starting bottleneck detection with config:", agentConfig);
+    // Use bottleneck-specific config if available
+    const nodeConfig = agentConfig?.bottleneckDetector || agentConfig;
+    console.log("[GRAPH:BottleneckDetector] Starting bottleneck detection with config:", nodeConfig);
     
-    const agent = createBottleneckDetectorAgent(agentConfig);
+    const agent = createBottleneckDetectorAgent(nodeConfig);
     const result = await agent.detectBottlenecks(state.workflow);
 
     if (result.success && result.data) {
