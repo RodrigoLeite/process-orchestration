@@ -189,6 +189,14 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
 
     console.log('[WORKSPACES] Created new tenant:', newTenant.id);
 
+    // Create default agents for the new tenant
+    try {
+      const { createDefaultAgentsForTenant } = await import('../lib/agentsStorage');
+      await createDefaultAgentsForTenant(newTenant.id);
+    } catch (agentError) {
+      console.error('[WORKSPACES] Error creating default agents:', agentError);
+    }
+
     // Add user as owner to the new tenant
     const newTenantUser = await storage.db
       .insert(tenantUsers)
