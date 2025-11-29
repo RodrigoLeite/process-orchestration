@@ -232,10 +232,10 @@ export default function WorkflowGraph() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 min-h-0 overflow-hidden gap-0">
-        {/* Pipeline Container (70%) */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Pipeline Container - Top (60%) */}
         <div
-          className="flex-1 overflow-x-auto overflow-y-auto"
+          className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300"
           style={{
             backgroundImage: `radial-gradient(circle, #d1d5db 1px, transparent 1px)`,
             backgroundSize: "20px 20px",
@@ -247,55 +247,28 @@ export default function WorkflowGraph() {
               <div className="text-gray-500">{t("executionGraph.loadingGraph")}</div>
             </div>
           ) : pipelineNodes.length > 0 ? (
-            <div className="p-8 min-h-full flex flex-col justify-center">
-              {/* Pipeline visualization */}
-              <div className="flex items-center gap-4 pb-8 w-max">
-                {pipelineNodes.map((node, index) => (
-                  <div key={node.id} className="flex items-center gap-4 flex-shrink-0">
-                    {/* Node Card */}
-                    <div className="w-56">
-                      <PipelineNode
-                        node={node}
-                        isSelected={selectedNodeId === node.id}
-                        onClick={() => setSelectedNodeId(node.id)}
-                      />
+            <div className="inline-flex items-center gap-4 p-8 min-w-full">
+              {pipelineNodes.map((node, index) => (
+                <div key={node.id} className="flex items-center gap-4 flex-shrink-0">
+                  {/* Node Card */}
+                  <div className="w-56">
+                    <PipelineNode
+                      node={node}
+                      isSelected={selectedNodeId === node.id}
+                      onClick={() => setSelectedNodeId(node.id)}
+                    />
+                  </div>
+
+                  {/* Arrow connector (except for last node) */}
+                  {index < pipelineNodes.length - 1 && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-gray-300"></div>
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <div className="w-6 h-0.5 bg-gradient-to-r from-gray-300 to-gray-400"></div>
                     </div>
-
-                    {/* Arrow connector (except for last node) */}
-                    {index < pipelineNodes.length - 1 && (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-gray-300"></div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                        <div className="w-6 h-0.5 bg-gradient-to-r from-gray-300 to-gray-400"></div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Agent details summary below pipeline */}
-              {selectedNodeId && nodeDetail && (
-                <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
-                    {t("executionGraph.agentConfigTitle") || "Agent Configuration"}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {nodeDetail.meta &&
-                      Object.entries(nodeDetail.meta).map(([key, value]) => (
-                        <div key={key} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <div className="text-xs font-medium text-gray-600 mb-1">
-                            {key}
-                          </div>
-                          <div className="text-sm text-gray-900 font-semibold">
-                            {typeof value === "object"
-                              ? JSON.stringify(value)
-                              : String(value)}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -304,8 +277,8 @@ export default function WorkflowGraph() {
           )}
         </div>
 
-        {/* Sidebar (30%) */}
-        <div className="w-[30%] bg-gray-50 border-l border-gray-300 overflow-y-auto">
+        {/* Details Panel - Bottom (40%) */}
+        <div className="h-[40%] bg-gray-50 overflow-y-auto">
           {!selectedNodeId ? (
             <div className="h-full flex items-center justify-center p-4">
               <div className="text-center">
@@ -321,101 +294,101 @@ export default function WorkflowGraph() {
             </div>
           ) : nodeDetail ? (
             <div className="p-6 space-y-6">
-              {/* Node Title & Type */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  {nodeDetail.label}
-                </h3>
-                <Badge
-                  variant="outline"
-                  className="bg-white text-gray-700 border-gray-300"
-                  data-testid="badge-node-type"
-                >
-                  {nodeDetail.type}
-                </Badge>
-              </div>
+              <div className="grid grid-cols-3 gap-6">
+                {/* Left column - Node Info */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                      {nodeDetail.label}
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className="bg-white text-gray-700 border-gray-300"
+                      data-testid="badge-node-type"
+                    >
+                      {nodeDetail.type}
+                    </Badge>
+                  </div>
 
-              {/* Divider */}
-              <div className="h-px bg-gray-200"></div>
-
-              {/* Node Description */}
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("executionGraph.nodeDescription")}
-                </h4>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {nodeDetail.description}
-                </p>
-              </div>
-
-              {/* Node Metadata */}
-              {nodeDetail.meta && Object.keys(nodeDetail.meta).length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                    {t("executionGraph.nodeMetadata")}
-                  </h4>
-                  <div className="space-y-2">
-                    {Object.entries(nodeDetail.meta).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="bg-white rounded-lg p-3 border border-gray-200"
-                      >
-                        <div className="text-xs font-medium text-gray-500 mb-1 uppercase">
-                          {key}
-                        </div>
-                        <div className="text-sm text-gray-900 font-mono">
-                          {typeof value === "object"
-                            ? JSON.stringify(value, null, 2)
-                            : String(value)}
-                        </div>
-                      </div>
-                    ))}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                      {t("executionGraph.nodeDescription")}
+                    </h4>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {nodeDetail.description}
+                    </p>
                   </div>
                 </div>
-              )}
 
-              {/* Last Runs */}
-              {nodeDetail.lastRuns && nodeDetail.lastRuns.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                    {t("executionGraph.nodeLastRuns")}
-                  </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {nodeDetail.lastRuns.map((run) => (
-                      <div
-                        key={run.id}
-                        className="bg-white rounded-lg p-3 border border-gray-200"
-                        data-testid={`run-item-${run.id}`}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          {run.status === "success" ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-600" />
-                          )}
-                          <span className="text-xs text-gray-600 font-medium">
-                            {run.status === "success" ? "Success" : "Failed"}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(run.timestamp).toLocaleString("pt-BR")}
-                        </div>
-                        {run.duration && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            ⏱ {(run.duration / 1000).toFixed(2)}s
+                {/* Middle column - Configuration */}
+                {nodeDetail.meta && Object.keys(nodeDetail.meta).length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                      {t("executionGraph.nodeMetadata")}
+                    </h4>
+                    <div className="space-y-2">
+                      {Object.entries(nodeDetail.meta).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="bg-white rounded-lg p-3 border border-gray-200"
+                        >
+                          <div className="text-xs font-medium text-gray-500 mb-1 uppercase">
+                            {key}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          <div className="text-sm text-gray-900 font-semibold">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Right column - Last Runs */}
+                {nodeDetail.lastRuns && nodeDetail.lastRuns.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                      {t("executionGraph.nodeLastRuns")}
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {nodeDetail.lastRuns.map((run) => (
+                        <div
+                          key={run.id}
+                          className="bg-white rounded-lg p-3 border border-gray-200"
+                          data-testid={`run-item-${run.id}`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            {run.status === "success" ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                            )}
+                            <span className="text-xs text-gray-600 font-medium">
+                              {run.status === "success" ? "Success" : "Failed"}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(run.timestamp).toLocaleString("pt-BR")}
+                          </div>
+                          {run.duration && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              ⏱ {(run.duration / 1000).toFixed(2)}s
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Actions */}
               <div className="pt-4 border-t border-gray-200">
                 <Button
                   variant="outline"
-                  className="w-full gap-2 border-gray-300 hover:bg-gray-100"
+                  className="gap-2 border-gray-300 hover:bg-gray-100"
                   disabled
                   data-testid="button-run-agent"
                   title={t("executionGraph.notImplemented")}
