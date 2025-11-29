@@ -40,7 +40,7 @@
         },
         "data": {
           "label": "Detectar Gargalos",
-          "temperature": 0.4,
+          "temperature": 0.3,
           "maxTokens": 2000,
           "logicType": "none",
           "modelProvider": "OpenAI",
@@ -88,6 +88,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-29T03:24:17.024Z",
-  "updatedAt": "2025-11-29T03:24:17.024Z"
+  "createdAt": "2025-11-29T03:31:27.251Z",
+  "updatedAt": "2025-11-29T03:31:27.251Z"
 }
