@@ -298,7 +298,7 @@ export default function WorkflowGraph() {
         {/* Pipeline Container - Top (60%) */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300 relative"
+          className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300 relative cursor-grab active:cursor-grabbing"
           style={{
             backgroundImage: `radial-gradient(circle, #d1d5db 1px, transparent 1px)`,
             backgroundSize: "20px 20px",
