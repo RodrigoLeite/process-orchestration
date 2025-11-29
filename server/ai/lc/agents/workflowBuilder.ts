@@ -69,11 +69,13 @@ Keep descriptions concise and consistent. Return ONLY valid JSON matching this e
 }}`;
 
 export class WorkflowBuilderAgent extends BaseAgent {
-  constructor() {
+  constructor(agentConfig?: any) {
+    const model = agentConfig?.model || "gpt-4-turbo";
+    const temperature = agentConfig?.temperature !== undefined ? agentConfig.temperature : 0.5;
     const llm = new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4-turbo",
-      temperature: 0.5, // Balanced temperature for varied, creative workflow generation per-demand
+      modelName: model,
+      temperature,
       maxTokens: 2048
     });
     super("WorkflowBuilder", WORKFLOW_BUILDER_SYSTEM_PROMPT, llm);
@@ -116,6 +118,6 @@ CRITICAL INSTRUCTIONS:
 /**
  * Factory function
  */
-export function createWorkflowBuilderAgent(): WorkflowBuilderAgent {
-  return new WorkflowBuilderAgent();
+export function createWorkflowBuilderAgent(agentConfig?: any): WorkflowBuilderAgent {
+  return new WorkflowBuilderAgent(agentConfig);
 }

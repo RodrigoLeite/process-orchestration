@@ -28,11 +28,13 @@ Return ONLY valid JSON matching this exact structure:
 }}`;
 
 export class BottleneckDetectorAgent extends BaseAgent {
-  constructor() {
+  constructor(agentConfig?: any) {
+    const model = agentConfig?.model || "gpt-4-turbo";
+    const temperature = agentConfig?.temperature !== undefined ? agentConfig.temperature : 0.3;
     const llm = new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4-turbo",
-      temperature: 0.3,
+      modelName: model,
+      temperature,
       maxTokens: 2048
     });
     super("MonitorDeGargalos", BOTTLENECK_DETECTOR_SYSTEM_PROMPT, llm);
@@ -77,6 +79,6 @@ Return ONLY valid JSON.`;
 /**
  * Factory function
  */
-export function createBottleneckDetectorAgent(): BottleneckDetectorAgent {
-  return new BottleneckDetectorAgent();
+export function createBottleneckDetectorAgent(agentConfig?: any): BottleneckDetectorAgent {
+  return new BottleneckDetectorAgent(agentConfig);
 }

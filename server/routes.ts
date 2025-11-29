@@ -3760,7 +3760,7 @@ Texto original: ${demand.rawText}`;
         console.log(`[GRAPH TEST] Using default agent config:`, agentConfig);
       }
 
-      // Execute the agent graph with tenant context
+      // Execute the agent graph with tenant context and agent config
       try {
         const result = await executeAgentGraph({
           titulo: input,
@@ -3769,7 +3769,7 @@ Texto original: ${demand.rawText}`;
           tipo: "request",
           prioridade: "média",
           tenantId: tenantId || "00000000-0000-0000-0000-000000000000"
-        });
+        }, agentConfig);
 
         console.log(`[GRAPH TEST] Execution completed: ${result.success ? "success" : "failed"}`);
 
