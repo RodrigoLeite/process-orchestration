@@ -550,8 +550,13 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getBottleneckReports(limit?: number): Promise<BottleneckReport[]> {
-    const query = this.db.select().from(bottleneckReports).orderBy(desc(bottleneckReports.createdAt));
+  async getBottleneckReports(limit?: number, tenantId?: string): Promise<BottleneckReport[]> {
+    let query: any;
+    if (tenantId) {
+      query = this.db.select().from(bottleneckReports).where(eq(bottleneckReports.tenantId, tenantId as any)).orderBy(desc(bottleneckReports.createdAt));
+    } else {
+      query = this.db.select().from(bottleneckReports).orderBy(desc(bottleneckReports.createdAt));
+    }
     return limit ? (await query.limit(limit)) : (await query);
   }
 
@@ -560,8 +565,13 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getInsightsReports(limit?: number): Promise<InsightsReport[]> {
-    const query = this.db.select().from(insightsReports).orderBy(desc(insightsReports.createdAt));
+  async getInsightsReports(limit?: number, tenantId?: string): Promise<InsightsReport[]> {
+    let query: any;
+    if (tenantId) {
+      query = this.db.select().from(insightsReports).where(eq(insightsReports.tenantId, tenantId as any)).orderBy(desc(insightsReports.createdAt));
+    } else {
+      query = this.db.select().from(insightsReports).orderBy(desc(insightsReports.createdAt));
+    }
     return limit ? (await query.limit(limit)) : (await query);
   }
 

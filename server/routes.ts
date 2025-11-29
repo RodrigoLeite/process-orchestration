@@ -2138,10 +2138,11 @@ Texto original: ${demand.rawText}`;
   });
 
   // Bottleneck reports endpoint
-  app.get("/api/bottleneck-reports", async (req, res) => {
+  app.get("/api/bottleneck-reports", async (req: any, res) => {
     try {
       const language = (req.query.language as string) || "pt-BR";
-      const reports = await storage.getBottleneckReports(100);
+      const tenantId = req.tenantContext?.id;
+      const reports = await storage.getBottleneckReports(100, tenantId);
       res.json(reports);
     } catch (error) {
       console.error("Error fetching bottleneck reports:", error);
@@ -2150,10 +2151,11 @@ Texto original: ${demand.rawText}`;
   });
 
   // Insights reports endpoint
-  app.get("/api/insights-reports", async (req, res) => {
+  app.get("/api/insights-reports", async (req: any, res) => {
     try {
       const language = (req.query.language as string) || "pt-BR";
-      const reports = await storage.getInsightsReports(100);
+      const tenantId = req.tenantContext?.id;
+      const reports = await storage.getInsightsReports(100, tenantId);
       res.json(reports);
     } catch (error) {
       console.error("Error fetching insights reports:", error);

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, Brain } from "lucide-react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useI18nStore } from "@/lib/store/i18nStore";
+import { useAuth } from "@/hooks/useAuth";
 import InsightCard from "@/components/InsightCard";
 import PredictionCard from "@/components/PredictionCard";
 import Badge from "@/components/Badge";
@@ -45,12 +46,16 @@ interface Report {
 export default function InsightsPage() {
   const { t } = useTranslation();
   const language = useI18nStore((state) => state.language);
+  const { tenant } = useAuth();
+  const tenantId = tenant?.id;
+
+  const headers = tenantId ? { "x-tenant-id": tenantId } : {};
 
   // Fetch saved bottleneck reports
   const { data: bottleneckReports = [], isLoading: reportsLoading } = useQuery<Report[]>({
-    queryKey: ["bottleneck-reports", language],
+    queryKey: ["bottleneck-reports", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/bottleneck-reports?language=${language}`);
+      const res = await fetch(`/api/bottleneck-reports?language=${language}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch bottleneck reports");
       return res.json();
     }
@@ -58,9 +63,9 @@ export default function InsightsPage() {
 
   // Fetch saved insights reports
   const { data: insightsReports = [], isLoading: insightsLoading } = useQuery<Report[]>({
-    queryKey: ["insights-reports", language],
+    queryKey: ["insights-reports", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/insights-reports?language=${language}`);
+      const res = await fetch(`/api/insights-reports?language=${language}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch insights reports");
       return res.json();
     }
@@ -68,9 +73,9 @@ export default function InsightsPage() {
 
   // Fetch live bottlenecks for real-time updates
   const { data: bottleneckData, isLoading: bottleneckLoading } = useQuery<BottleneckData>({
-    queryKey: ["insights-bottlenecks", language],
+    queryKey: ["insights-bottlenecks", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/bottlenecks?language=${language}`);
+      const res = await fetch(`/api/bottlenecks?language=${language}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch bottlenecks");
       return res.json();
     }
@@ -78,9 +83,9 @@ export default function InsightsPage() {
 
   // Fetch overload data
   const { data: overloadData, isLoading: overloadLoading } = useQuery<OverloadData>({
-    queryKey: ["insights-overload", language],
+    queryKey: ["insights-overload", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/areas/overload?language=${language}`);
+      const res = await fetch(`/api/areas/overload?language=${language}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch overload");
       return res.json();
     }
@@ -88,9 +93,9 @@ export default function InsightsPage() {
 
   // Fetch AI predictions
   const { data: predictionsData, isLoading: predictionsLoading } = useQuery({
-    queryKey: ["ai-predictions", language],
+    queryKey: ["ai-predictions", language, tenantId],
     queryFn: async () => {
-      const res = await fetch(`/api/predictions?days=7&language=${language}`);
+      const res = await fetch(`/api/predictions?days=7&language=${language}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch predictions");
       const json = await res.json();
       return json.data?.predictions || [];
