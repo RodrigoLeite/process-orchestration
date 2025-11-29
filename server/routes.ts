@@ -1926,8 +1926,11 @@ Texto original: ${demand.rawText}`;
 
   app.get("/api/agents", async (req: any, res) => {
     try {
-      // Agents are global system entities, but we return logs filtered by tenant
-      const dbAgents = await storage.getAgents();
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
+      // Agents are isolated by tenant
+      const dbAgents = await storage.getAgents(tenantId);
       res.json(dbAgents);
     } catch (error) {
       console.error("Error fetching agents:", error);
@@ -1938,9 +1941,11 @@ Texto original: ${demand.rawText}`;
   // === AGENTS STUDIO ROUTES - must be before /:id route ===
   
   // POST /api/agents/save - Save agent graph
-  app.post("/api/agents/save", async (req, res) => {
+  app.post("/api/agents/save", async (req: any, res) => {
     try {
       const { agentId, graph } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       if (!agentId || !graph) {
         return res.status(400).json({
@@ -1949,8 +1954,8 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      console.log(`[AGENTS STUDIO] Saving agent: ${agentId}`);
-      const agentStorage = await saveAgent(agentId, graph);
+      console.log(`[AGENTS STUDIO] Saving agent: ${agentId} for tenant: ${tenantId}`);
+      const agentStorage = await saveAgent(agentId, graph, tenantId);
 
       res.json({
         success: true,
@@ -1966,9 +1971,11 @@ Texto original: ${demand.rawText}`;
   });
 
   // GET /api/agents/load - Load agent graph
-  app.get("/api/agents/load", async (req, res) => {
+  app.get("/api/agents/load", async (req: any, res) => {
     try {
       const { agentId } = req.query;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       if (!agentId || typeof agentId !== "string") {
         return res.status(400).json({
@@ -1977,8 +1984,8 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      console.log(`[AGENTS STUDIO] Loading agent: ${agentId}`);
-      const agentData = await loadAgent(agentId);
+      console.log(`[AGENTS STUDIO] Loading agent: ${agentId} for tenant: ${tenantId}`);
+      const agentData = await loadAgent(agentId, tenantId);
 
       res.json({
         success: true,
@@ -1994,9 +2001,11 @@ Texto original: ${demand.rawText}`;
   });
 
   // POST /api/agents/execute - Execute agent graph
-  app.post("/api/agents/execute", async (req, res) => {
+  app.post("/api/agents/execute", async (req: any, res) => {
     try {
       const { agentId, graph, initialInput } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       if (!agentId || !graph) {
         return res.status(400).json({
@@ -2005,8 +2014,8 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      console.log(`[AGENTS STUDIO] Executing agent: ${agentId}`);
-      const result = await executeAgent(agentId, graph, initialInput);
+      console.log(`[AGENTS STUDIO] Executing agent: ${agentId} for tenant: ${tenantId}`);
+      const result = await executeAgent(agentId, graph, initialInput, tenantId);
 
       res.json({
         success: true,
