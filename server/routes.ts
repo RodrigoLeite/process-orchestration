@@ -3577,8 +3577,8 @@ Texto original: ${demand.rawText}`;
       // Map nodeId to agentId
       const nodeToAgentMap: Record<string, string> = {
         workflow_builder_node: "workflow-generator",
-        bottleneck_detector_node: "bottleneck-detector",
-        insights_node: "insights"
+        bottleneck_detector_node: "monitor-gargalos",
+        insights_node: "insights-inteligentes"
       };
 
       // Define static node details (non-agent nodes)
