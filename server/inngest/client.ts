@@ -13,8 +13,24 @@ export type AgentEventPayload = {
   jobId: string;
 };
 
+export type OrchestrateDemandPayload = {
+  tenantId: string;
+  userId: string;
+  demandId: string;
+  jobId: string;
+  demandInput?: {
+    titulo: string;
+    descricao: string;
+    area: string;
+    urgencia: string;
+    resultadosEsperados?: string[];
+    slaHoras?: number;
+  };
+};
+
 export type AgentEvents = {
   "agent/generate.workflow": { data: AgentEventPayload };
   "agent/normalize.workflow": { data: AgentEventPayload };
   "agent/assign.workflow": { data: AgentEventPayload };
+  "agent/orchestrate.demand": { data: OrchestrateDemandPayload };
 };
