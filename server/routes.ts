@@ -3609,8 +3609,8 @@ Texto original: ${demand.rawText}`;
           meta: {
             version: "2.1",
             author: "ai-agents",
-            model: "gpt-4-turbo",
-            temperature: 0.7,
+            model: "gpt-4o-mini",
+            temperature: 0.5,
             inputs: ["validated_demand"],
             outputs: ["workflow_structure"],
             timeout_ms: 30000
@@ -3638,8 +3638,8 @@ Texto original: ${demand.rawText}`;
           meta: {
             version: "1.5",
             author: "ai-agents",
-            model: "gpt-4-turbo",
-            temperature: 0.5,
+            model: "gpt-4o-mini",
+            temperature: 0.3,
             inputs: ["workflow_structure"],
             outputs: ["bottleneck_report"],
             timeout_ms: 25000
@@ -3661,8 +3661,8 @@ Texto original: ${demand.rawText}`;
           meta: {
             version: "1.3",
             author: "ai-agents",
-            model: "gpt-4-turbo",
-            temperature: 0.6,
+            model: "gpt-4o-mini",
+            temperature: 0.7,
             inputs: ["workflow_structure", "bottleneck_report"],
             outputs: ["insights_analysis"],
             timeout_ms: 20000
