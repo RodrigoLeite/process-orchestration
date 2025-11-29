@@ -2057,8 +2057,43 @@ Texto original: ${demand.rawText}`;
       const tenantId = headerTenantId || req.tenantContext?.id;
       
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      const logs = await storage.getAgentLogs(id, tenantId);
       
+      // Get the agent first to find its internalKey
+      const agent = await storage.getAgent(id);
+      if (!agent) {
+        return res.json([]);
+      }
+      
+      console.log(`[AGENT LOGS] Fetching logs for agent ${id} (${agent.internalKey})`);
+      
+      // Get logs by the agent's internalKey (matches across different agent IDs)
+      if (agent.internalKey) {
+        const logs = await storage.getAgentLogs(id, tenantId);
+        
+        // If no logs by ID, try to find logs from agents with same internalKey
+        if (logs.length === 0) {
+          console.log(`[AGENT LOGS] No logs for ID ${id}, searching by internalKey ${agent.internalKey}`);
+          // Search all agents with same internalKey and get their logs
+          const allAgentsWithKey = await storage.db.select().from(agents).where(eq(agents.internalKey, agent.internalKey));
+          const agentIds = allAgentsWithKey.map(a => a.id);
+          
+          if (agentIds.length > 0) {
+            const allLogs = await Promise.all(
+              agentIds.map(agentId => storage.getAgentLogs(agentId, undefined))
+            );
+            const mergedLogs = allLogs.flat()
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .slice(0, 20);
+            
+            console.log(`[AGENT LOGS] Found ${mergedLogs.length} logs from ${agentIds.length} agents`);
+            return res.json(mergedLogs);
+          }
+        }
+        
+        return res.json(logs.slice(0, 20));
+      }
+      
+      const logs = await storage.getAgentLogs(id, tenantId);
       res.json(logs.slice(0, 20));
     } catch (error) {
       console.error("Error fetching agent logs:", error);
