@@ -3566,12 +3566,13 @@ Texto original: ${demand.rawText}`;
   });
 
   // GET /api/ai/graph/:nodeId - Returns details of a specific node (with dynamic Agent Studio config)
-  app.get("/api/ai/graph/:nodeId", async (req, res) => {
+  app.get("/api/ai/graph/:nodeId", async (req: any, res) => {
     try {
       const { nodeId } = req.params;
       const lang = (req.query.lang as string) || 'pt-BR';
       const labels = getGraphLabels(lang);
-      const tenantId = req.tenantContext?.id;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
 
       // Map nodeId to agentId
       const nodeToAgentMap: Record<string, string> = {
