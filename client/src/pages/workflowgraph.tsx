@@ -130,9 +130,10 @@ export default function WorkflowGraph() {
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.5));
   const handleResetZoom = () => setZoom(1);
 
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
+      e.stopPropagation();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       setZoom((z) => Math.min(Math.max(z + delta, 0.5), 2));
     }
