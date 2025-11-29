@@ -37,6 +37,97 @@ async function ensureDir(tenantId?: string) {
   }
 }
 
+/**
+ * Create default agents for a new tenant
+ * Called when a new workspace is created
+ */
+export async function createDefaultAgentsForTenant(tenantId: string): Promise<void> {
+  console.log(`[AGENTS STORAGE] Creating default agents for tenant: ${tenantId}`);
+  
+  const defaultAgents = [
+    {
+      agentId: "workflow-generator",
+      name: "Gerador de Workflow",
+      description: "Gera workflows customizados para demandas",
+      temperature: 0.7,
+      model: "gpt-4-turbo"
+    },
+    {
+      agentId: "bottleneck-detector",
+      name: "Detector de Gargalos",
+      description: "Detecta gargalos potenciais em workflows",
+      temperature: 0.7,
+      model: "gpt-4-turbo"
+    },
+    {
+      agentId: "insights-ai",
+      name: "Gerador de Insights",
+      description: "Gera insights e recomendações baseados em dados",
+      temperature: 0.7,
+      model: "gpt-4-turbo"
+    }
+  ];
+  
+  for (const agent of defaultAgents) {
+    try {
+      // Check if agent already exists
+      const existing = await loadAgent(agent.agentId, tenantId);
+      if (existing?.graph?.nodes?.length > 0) {
+        console.log(`[AGENTS STORAGE] Agent ${agent.agentId} already exists for tenant ${tenantId}`);
+        continue;
+      }
+      
+      // Create default graph structure
+      const defaultGraph: AgentGraph = {
+        nodes: [
+          {
+            id: "input-1",
+            type: "chatInput",
+            position: { x: 100, y: 200 },
+            data: {
+              label: "Entrada",
+              description: "Entrada de dados para o agente"
+            }
+          },
+          {
+            id: "agent-1",
+            type: "agent",
+            position: { x: 350, y: 200 },
+            data: {
+              label: agent.name,
+              description: agent.description,
+              temperature: agent.temperature,
+              modelName: agent.model,
+              modelProvider: "OpenAI"
+            }
+          },
+          {
+            id: "output-1",
+            type: "output",
+            position: { x: 600, y: 200 },
+            data: {
+              label: "Saída",
+              description: "Resultado do agente"
+            }
+          }
+        ],
+        edges: [
+          { id: "e1-2", source: "input-1", target: "agent-1" },
+          { id: "e2-3", source: "agent-1", target: "output-1" }
+        ],
+        viewport: { x: 0, y: 0, zoom: 1 }
+      };
+      
+      await saveAgent(agent.agentId, defaultGraph, tenantId);
+      console.log(`[AGENTS STORAGE] Created default agent: ${agent.agentId} for tenant ${tenantId}`);
+    } catch (error) {
+      console.error(`[AGENTS STORAGE] Error creating default agent ${agent.agentId}:`, error);
+    }
+  }
+  
+  console.log(`[AGENTS STORAGE] Default agents created for tenant: ${tenantId}`);
+}
+
 export async function saveAgent(agentId: string, graph: AgentGraph, tenantId?: string): Promise<AgentStorage> {
   await ensureDir(tenantId);
   

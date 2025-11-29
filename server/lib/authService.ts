@@ -114,6 +114,14 @@ export async function ensureTenantForUser(user: User): Promise<{ tenant: Tenant;
       role: 'owner',
     });
 
+    // Create default agents for the new tenant
+    try {
+      const { createDefaultAgentsForTenant } = await import('./agentsStorage');
+      await createDefaultAgentsForTenant(newTenant.id);
+    } catch (agentError) {
+      console.error('[AUTH] Error creating default agents:', agentError);
+    }
+
     return { tenant: newTenant, tenantUser: newTenantUser, isNew: true };
   } catch (error) {
     console.error('Error in ensureTenantForUser:', error);
