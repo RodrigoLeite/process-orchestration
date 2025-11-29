@@ -34,7 +34,11 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
   const { data: logs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery<AgentLog[]>({
     queryKey: ["agent-logs", id],
     queryFn: async () => {
-      const res = await fetch(`/api/agents/${id}/logs`);
+      const headers: any = {};
+      const tenantId = localStorage.getItem("currentTenantId");
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+
+      const res = await fetch(`/api/agents/${id}/logs`, { headers });
       if (!res.ok) return [];
       return res.json();
     },
@@ -64,9 +68,13 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
         return;
       }
 
+      const headers: any = { "Content-Type": "application/json" };
+      const tenantId = localStorage.getItem("currentTenantId");
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+
       const res = await fetch(`/api/agents/${id}/execute`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ input: inputData })
       });
 
