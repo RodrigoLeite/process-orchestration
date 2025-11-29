@@ -7,8 +7,14 @@ This project is an AI-driven process orchestration system designed to classify, 
 ## Inngest Queue Infrastructure (Latest)
 - **Job Queue System**: Added Inngest-based queue for async agent execution
 - **Database Schema**: New `jobs` table for tracking job execution
-- **Agent Workers**: 3 workers (generate, normalize, assign workflow)
+- **Full Orchestration Queue**: All AI orchestration endpoints refactored to use Inngest
+- **Sync/Async Mode**: `/api/ai/orchestrate` supports both modes:
+  - `sync: true` - Executes synchronously (backward compatibility for `/api/demands`)
+  - `sync: false/undefined` - Queues job via Inngest (async mode)
 - **API Routes**:
+  - `POST /api/ai/orchestrate` - Complete demand orchestration (sync or async mode)
+  - `POST /api/ai/graph` - Execute LangGraph pipeline (async via Inngest)
+  - `POST /api/orchestration/process-demand` - Process demand object (async via Inngest)
   - `POST /api/agents/workflow/generate` - Trigger workflow generation job
   - `POST /api/agents/workflow/normalize` - Trigger workflow normalization job
   - `POST /api/agents/workflow/assign` - Trigger workflow assignment job
@@ -18,6 +24,7 @@ This project is an AI-driven process orchestration system designed to classify, 
 - **Files**:
   - `server/inngest/client.ts` - Inngest client configuration
   - `server/inngest/serve.ts` - Express serve endpoint
+  - `server/inngest/functions/orchestrateDemand.ts` - Full orchestration worker
   - `server/inngest/functions/` - Worker functions
   - `server/agents/` - Agent implementations (generator, normalizer, assigner)
   - `server/routes/agentRoutes.ts` - Agent job trigger routes
