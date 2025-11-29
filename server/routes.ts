@@ -3120,8 +3120,13 @@ Texto original: ${demand.rawText}`;
         console.log(`[ORCHESTRATE-SYNC] Starting for demand ${demandId}`);
         
         try {
+          // Load agent configurations from Agent Studio
+          const { loadGraphAgentConfigs } = await import("./lib/agentsStorage");
+          const agentConfig = await loadGraphAgentConfigs(effectiveTenantId);
+          console.log(`[ORCHESTRATE-SYNC] Using agent config:`, agentConfig);
+          
           const { executeAgentGraph } = await import("./ai/lc/graphs");
-          const orchestrationResult = await executeAgentGraph(demandInput);
+          const orchestrationResult = await executeAgentGraph(demandInput, agentConfig);
           const resultData = orchestrationResult.data || orchestrationResult;
           
           let createdWorkflowId: string | null = null;

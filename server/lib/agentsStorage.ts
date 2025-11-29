@@ -131,6 +131,73 @@ export async function loadAgent(agentId: string, tenantId?: string): Promise<Age
   }
 }
 
+/**
+ * Load agent configurations for the orchestration graph
+ * Returns combined config from all saved agents (workflow-generator, bottleneck-detector, insights-ai)
+ */
+export async function loadGraphAgentConfigs(tenantId?: string): Promise<{
+  temperature: number;
+  model: string;
+  workflowBuilder?: { temperature: number; model: string };
+  bottleneckDetector?: { temperature: number; model: string };
+  insightsGenerator?: { temperature: number; model: string };
+}> {
+  const defaultConfig = { temperature: 0.7, model: "gpt-4-turbo" };
+  
+  try {
+    // Load workflow generator config
+    let workflowConfig = { ...defaultConfig };
+    const workflowAgent = await loadAgent("workflow-generator", tenantId);
+    if (workflowAgent?.graph?.nodes) {
+      const agentNode = workflowAgent.graph.nodes.find((n: any) => n.type === "agent");
+      if (agentNode?.data) {
+        workflowConfig = {
+          temperature: agentNode.data.temperature ?? 0.7,
+          model: agentNode.data.modelName || "gpt-4-turbo"
+        };
+      }
+    }
+    
+    // Load bottleneck detector config
+    let bottleneckConfig = { ...defaultConfig };
+    const bottleneckAgent = await loadAgent("bottleneck-detector", tenantId);
+    if (bottleneckAgent?.graph?.nodes) {
+      const agentNode = bottleneckAgent.graph.nodes.find((n: any) => n.type === "agent");
+      if (agentNode?.data) {
+        bottleneckConfig = {
+          temperature: agentNode.data.temperature ?? 0.7,
+          model: agentNode.data.modelName || "gpt-4-turbo"
+        };
+      }
+    }
+    
+    // Load insights generator config
+    let insightsConfig = { ...defaultConfig };
+    const insightsAgent = await loadAgent("insights-ai", tenantId);
+    if (insightsAgent?.graph?.nodes) {
+      const agentNode = insightsAgent.graph.nodes.find((n: any) => n.type === "agent");
+      if (agentNode?.data) {
+        insightsConfig = {
+          temperature: agentNode.data.temperature ?? 0.7,
+          model: agentNode.data.modelName || "gpt-4-turbo"
+        };
+      }
+    }
+    
+    console.log(`[AGENTS STORAGE] Loaded graph configs - workflow: ${workflowConfig.model}, bottleneck: ${bottleneckConfig.model}, insights: ${insightsConfig.model}`);
+    
+    return {
+      ...workflowConfig, // Use workflow config as default
+      workflowBuilder: workflowConfig,
+      bottleneckDetector: bottleneckConfig,
+      insightsGenerator: insightsConfig
+    };
+  } catch (error) {
+    console.warn(`[AGENTS STORAGE] Error loading graph configs, using defaults:`, error);
+    return defaultConfig;
+  }
+}
+
 // Helper to build execution order from nodes and edges (topological sort)
 function getExecutionOrder(nodes: any[], edges: any[]): any[] {
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
