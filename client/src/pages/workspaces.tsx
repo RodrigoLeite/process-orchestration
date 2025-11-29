@@ -12,6 +12,7 @@ interface Workspace {
   id: string;
   name: string;
   role: string;
+  isCurrent?: boolean;
 }
 
 export default function WorkspacesPage() {
@@ -72,53 +73,71 @@ export default function WorkspacesPage() {
           {workspaces.map((workspace: Workspace) => (
             <Card
               key={workspace.id}
-              className="p-6 hover:shadow-lg transition-shadow"
+              className={`p-6 hover:shadow-lg transition-shadow ${workspace.isCurrent ? 'ring-2 ring-primary border-primary' : ''}`}
               data-testid={`card-workspace-${workspace.id}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate" data-testid={`text-workspace-name-${workspace.id}`}>
-                    {workspace.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 truncate" data-testid={`text-workspace-name-${workspace.id}`}>
+                      {workspace.name}
+                    </h3>
+                    {workspace.isCurrent && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-white" data-testid={`badge-current-${workspace.id}`}>
+                        Atual
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-3">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800" data-testid={`badge-role-${workspace.id}`}>
                       {workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}
                     </span>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    try {
-                      console.log('[WORKSPACE SWITCH] Attempting to switch to', workspace.id);
-                      // Switch to this workspace
-                      const res = await fetch(`/api/workspaces/${workspace.id}/switch`, {
-                        method: 'POST',
-                        credentials: 'include',
-                      });
-                      console.log('[WORKSPACE SWITCH] Response status:', res.status);
-                      if (res.ok) {
-                        console.log('[WORKSPACE SWITCH] Success, invalidating session and redirecting');
-                        // Invalidate auth session to reload the new workspace
-                        await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
-                        // Redirect to the workspace
-                        setTimeout(() => {
-                          window.location.href = '/';
-                        }, 200);
-                      } else {
-                        console.error('[WORKSPACE SWITCH] Failed with status', res.status);
+                {workspace.isCurrent ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    data-testid={`button-current-${workspace.id}`}
+                  >
+                    Conectado
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      try {
+                        console.log('[WORKSPACE SWITCH] Attempting to switch to', workspace.id);
+                        // Switch to this workspace
+                        const res = await fetch(`/api/workspaces/${workspace.id}/switch`, {
+                          method: 'POST',
+                          credentials: 'include',
+                        });
+                        console.log('[WORKSPACE SWITCH] Response status:', res.status);
+                        if (res.ok) {
+                          console.log('[WORKSPACE SWITCH] Success, invalidating session and redirecting');
+                          // Invalidate auth session to reload the new workspace
+                          await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
+                          // Redirect to the workspace
+                          setTimeout(() => {
+                            window.location.href = '/';
+                          }, 200);
+                        } else {
+                          console.error('[WORKSPACE SWITCH] Failed with status', res.status);
+                        }
+                      } catch (error) {
+                        console.error('[WORKSPACE SWITCH] Error:', error);
                       }
-                    } catch (error) {
-                      console.error('[WORKSPACE SWITCH] Error:', error);
-                    }
-                  }}
-                  data-testid={`button-switch-to-${workspace.id}`}
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Acessar
-                </Button>
+                    }}
+                    data-testid={`button-switch-to-${workspace.id}`}
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Acessar
+                  </Button>
+                )}
               </div>
             </Card>
           ))}
