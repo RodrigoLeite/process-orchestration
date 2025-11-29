@@ -85,6 +85,37 @@ export async function loadAgent(agentId: string, tenantId?: string): Promise<Age
     console.log(`[AGENTS STORAGE] Loaded agent: ${agentId}, nodes: ${parsed.graph?.nodes?.length || 0}`);
     return parsed;
   } catch (error) {
+    // Fallback: try loading from root agents directory (for backward compatibility)
+    if (tenantId) {
+      try {
+        const fallbackDir = getTenantAgentsDir(); // root directory
+        const fallbackPath = path.join(fallbackDir, `${agentId}.json`);
+        const data = await fs.readFile(fallbackPath, 'utf-8');
+        const parsed = JSON.parse(data);
+        
+        if (parsed.graph?.nodes) {
+          parsed.graph.nodes = parsed.graph.nodes.map((node: any) => {
+            if (node.type === 'agent' && !node.data?.modelName) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  modelName: 'gpt-4-turbo',
+                  modelProvider: 'OpenAI'
+                }
+              };
+            }
+            return node;
+          });
+        }
+        
+        console.log(`[AGENTS STORAGE] Loaded agent from fallback: ${agentId}, nodes: ${parsed.graph?.nodes?.length || 0}`);
+        return parsed;
+      } catch (fallbackError) {
+        console.error(`[AGENTS STORAGE] Error loading agent ${agentId} from fallback:`, fallbackError);
+      }
+    }
+    
     console.error(`[AGENTS STORAGE] Error loading agent ${agentId}:`, error);
     // Return empty graph if not found
     return {
