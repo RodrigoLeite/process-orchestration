@@ -1927,10 +1927,11 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents", async (req: any, res) => {
     try {
       const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = headerTenantId || req.tenantContext?.id || "00000000-0000-0000-0000-000000000000";
       
-      // Agents are isolated by tenant
+      // Agents are isolated by tenant - only return agents for current tenant
       const dbAgents = await storage.getAgents(tenantId);
+      console.log(`[API] GET /api/agents for tenant ${tenantId}: ${dbAgents.length} agents`);
       res.json(dbAgents);
     } catch (error) {
       console.error("Error fetching agents:", error);
