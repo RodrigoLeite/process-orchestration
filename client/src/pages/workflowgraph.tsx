@@ -137,6 +137,8 @@ export default function WorkflowGraph() {
       return json.data;
     },
     enabled: !!selectedNodeId,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Execute graph test
