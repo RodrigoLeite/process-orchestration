@@ -3565,15 +3565,23 @@ Texto original: ${demand.rawText}`;
     }
   });
 
-  // GET /api/ai/graph/:nodeId - Returns details of a specific node
+  // GET /api/ai/graph/:nodeId - Returns details of a specific node (with dynamic Agent Studio config)
   app.get("/api/ai/graph/:nodeId", async (req, res) => {
     try {
       const { nodeId } = req.params;
       const lang = (req.query.lang as string) || 'pt-BR';
       const labels = getGraphLabels(lang);
+      const tenantId = req.tenantContext?.id;
 
-      // Define node details with metadata and last runs
-      const nodeDetails: Record<string, any> = {
+      // Map nodeId to agentId
+      const nodeToAgentMap: Record<string, string> = {
+        workflow_builder_node: "workflow-generator",
+        bottleneck_detector_node: "bottleneck-detector",
+        insights_node: "insights"
+      };
+
+      // Define static node details (non-agent nodes)
+      const staticNodeDetails: Record<string, any> = {
         input_node: {
           id: "input_node",
           label: labels.inputValidation,
@@ -3585,96 +3593,7 @@ Texto original: ${demand.rawText}`;
             inputs: ["demand_title", "demand_description", "demand_area"],
             outputs: ["validated_demand"],
             timeout_ms: 5000
-          },
-          lastRuns: [
-            {
-              id: "run-001",
-              status: "success",
-              timestamp: new Date(Date.now() - 3600000).toISOString(),
-              duration: 245
-            },
-            {
-              id: "run-002",
-              status: "success",
-              timestamp: new Date(Date.now() - 7200000).toISOString(),
-              duration: 189
-            }
-          ]
-        },
-        workflow_builder_node: {
-          id: "workflow_builder_node",
-          label: labels.workflowGenerator,
-          type: "agent",
-          description: labels.workflowGeneratorDetailedDesc,
-          meta: {
-            version: "2.1",
-            author: "ai-agents",
-            model: "gpt-4o-mini",
-            temperature: 0.5,
-            inputs: ["validated_demand"],
-            outputs: ["workflow_structure"],
-            timeout_ms: 30000
-          },
-          lastRuns: [
-            {
-              id: "run-003",
-              status: "success",
-              timestamp: new Date(Date.now() - 1800000).toISOString(),
-              duration: 8234
-            },
-            {
-              id: "run-004",
-              status: "error",
-              timestamp: new Date(Date.now() - 5400000).toISOString(),
-              duration: 15000
-            }
-          ]
-        },
-        bottleneck_detector_node: {
-          id: "bottleneck_detector_node",
-          label: labels.bottleneckMonitor,
-          type: "agent",
-          description: labels.bottleneckMonitorDetailedDesc,
-          meta: {
-            version: "1.5",
-            author: "ai-agents",
-            model: "gpt-4o-mini",
-            temperature: 0.3,
-            inputs: ["workflow_structure"],
-            outputs: ["bottleneck_report"],
-            timeout_ms: 25000
-          },
-          lastRuns: [
-            {
-              id: "run-005",
-              status: "success",
-              timestamp: new Date(Date.now() - 900000).toISOString(),
-              duration: 6543
-            }
-          ]
-        },
-        insights_node: {
-          id: "insights_node",
-          label: labels.smartInsights,
-          type: "agent",
-          description: labels.smartInsightsDetailedDesc,
-          meta: {
-            version: "1.3",
-            author: "ai-agents",
-            model: "gpt-4o-mini",
-            temperature: 0.7,
-            inputs: ["workflow_structure", "bottleneck_report"],
-            outputs: ["insights_analysis"],
-            timeout_ms: 20000
-          },
-          lastRuns: [
-            {
-              id: "run-006",
-              status: "success",
-              timestamp: new Date(Date.now() - 300000).toISOString(),
-              duration: 4521
-            }
-          ]
+          }
         },
         output_node: {
           id: "output_node",
@@ -3687,26 +3606,79 @@ Texto original: ${demand.rawText}`;
             inputs: ["workflow_structure", "bottleneck_report", "insights_analysis"],
             outputs: ["execution_record"],
             timeout_ms: 10000
-          },
-          lastRuns: [
-            {
-              id: "run-007",
-              status: "success",
-              timestamp: new Date(Date.now() - 200000).toISOString(),
-              duration: 1234
-            }
-          ]
+          }
         }
       };
 
-      const details = nodeDetails[nodeId];
+      // Check if static node
+      if (staticNodeDetails[nodeId]) {
+        return res.json({
+          success: true,
+          data: staticNodeDetails[nodeId]
+        });
+      }
 
-      if (!details) {
+      // For agent nodes, load from Agent Studio
+      const agentId = nodeToAgentMap[nodeId];
+      if (!agentId) {
         return res.status(404).json({
           success: false,
           error: "Node not found"
         });
       }
+
+      // Build node labels
+      const nodeLabels: Record<string, any> = {
+        workflow_builder_node: {
+          label: labels.workflowGenerator,
+          description: labels.workflowGeneratorDetailedDesc,
+          inputs: ["validated_demand"],
+          outputs: ["workflow_structure"]
+        },
+        bottleneck_detector_node: {
+          label: labels.bottleneckMonitor,
+          description: labels.bottleneckMonitorDetailedDesc,
+          inputs: ["workflow_structure"],
+          outputs: ["bottleneck_report"]
+        },
+        insights_node: {
+          label: labels.smartInsights,
+          description: labels.smartInsightsDetailedDesc,
+          inputs: ["workflow_structure", "bottleneck_report"],
+          outputs: ["insights_analysis"]
+        }
+      };
+
+      const nodeLabel = nodeLabels[nodeId];
+
+      // Try to load agent config, use defaults if not found
+      let modelName = "gpt-4o-mini";
+      let temperature = 0.3;
+
+      const agentStorage = await loadAgent(agentId, tenantId);
+      if (agentStorage && agentStorage.graph.nodes.length > 0) {
+        const agentNode = agentStorage.graph.nodes.find((n: any) => n.type === 'agent');
+        if (agentNode) {
+          modelName = agentNode.data?.modelName || "gpt-4o-mini";
+          temperature = agentNode.data?.temperature !== undefined ? agentNode.data.temperature : 0.3;
+        }
+      }
+
+      const details = {
+        id: nodeId,
+        label: nodeLabel.label,
+        type: "agent",
+        description: nodeLabel.description,
+        meta: {
+          version: "1.0",
+          author: "ai-agents",
+          model: modelName,
+          temperature: temperature,
+          inputs: nodeLabel.inputs,
+          outputs: nodeLabel.outputs,
+          timeout_ms: 30000
+        }
+      };
 
       res.json({
         success: true,
