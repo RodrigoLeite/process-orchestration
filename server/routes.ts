@@ -355,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const orchestrationResult = await fetch("http://localhost:5000/api/ai/orchestrate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ demandId: demand.id, manual: false })
+          body: JSON.stringify({ demandId: demand.id, manual: false, sync: true })
         });
         const orchestrationDuration = Date.now() - orchestrationStart;
         
@@ -3004,12 +3004,13 @@ Texto original: ${demand.rawText}`;
   // Import LangGraph orchestration
   const { withTracing, logAgentExecution } = await import("./lib/ai/lc/telemetry");
 
-  // Orchestration endpoint - Execute complete demand pipeline using NEW agent-based architecture
+  // Orchestration endpoint - Uses Inngest queue for async processing
   app.post("/api/orchestration/process-demand", async (req: any, res) => {
     try {
       const { demand, demand_id } = req.body;
       const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = headerTenantId || req.tenantContext?.id || "00000000-0000-0000-0000-000000000000";
+      const userId = req.user?.id || "system";
 
       if (!demand) {
         return res.status(400).json({
@@ -3018,20 +3019,50 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      // Execute the full orchestration graph using new agent-based architecture
-      const { executeAgentGraph } = await import("./ai/lc/graphs");
-      const result = await executeAgentGraph({ ...demand, tenantId });
+      const jobId = crypto.randomUUID();
+      const demandId = demand_id || crypto.randomUUID();
+      
+      await storage.createJob({
+        id: jobId,
+        tenantId,
+        userId,
+        agentType: "orchestrate_process",
+        payload: { demand, demand_id: demandId },
+        status: "pending",
+      });
+
+      const { inngest } = await import("./inngest/client");
+      await inngest.send({
+        name: "agent/orchestrate.demand",
+        data: {
+          tenantId,
+          userId,
+          demandId,
+          jobId,
+          demandInput: {
+            titulo: demand.titulo,
+            descricao: demand.descricao || "",
+            area: demand.area,
+            urgencia: demand.urgencia || "média",
+            resultadosEsperados: demand.resultadosEsperados || [],
+            slaHoras: demand.slaHoras || 24,
+          },
+        },
+      });
+
+      console.log(`[PROCESS-DEMAND] Job ${jobId} queued`);
 
       res.json({
-        success: result.success,
-        data: result.data,
-        timestamp: new Date().toISOString()
+        success: true,
+        jobId,
+        status: "pending",
+        message: "Process demand job queued. Poll /api/jobs/:jobId for status.",
       });
     } catch (error) {
-      console.error("Error in orchestration:", error);
+      console.error("[PROCESS-DEMAND] Error queuing job:", error);
       res.status(500).json({
         success: false,
-        error: "Orchestration failed",
+        error: "Failed to queue process demand job",
         details: error instanceof Error ? error.message : String(error)
       });
     }
@@ -3039,12 +3070,13 @@ Texto original: ${demand.rawText}`;
 
   // ============ AI Orchestration Endpoint (from database) ============
   // Orchestrate demand from database with full persistence
-  // Implements workflow-per-demand with deduplication via hash
-  app.post("/api/ai/orchestrate", async (req, res) => {
-    const startTime = Date.now();
-    
+  // Uses Inngest queue for async processing (default) or sync mode with ?sync=true
+  app.post("/api/ai/orchestrate", async (req: any, res) => {
     try {
-      const { demandId, manual } = req.body;
+      const { demandId, manual, sync } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      const userId = req.user?.id || "system";
 
       if (!demandId) {
         return res.status(400).json({
@@ -3053,9 +3085,6 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      console.log(`[ORCHESTRATE] Starting orchestration for demand: ${demandId}`);
-
-      // Load demand from database
       const demandRecord = await storage.getDemand(demandId);
       if (!demandRecord) {
         return res.status(404).json({
@@ -3064,155 +3093,166 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      // Convert database demand to DemandInput format
-      const parsed = demandRecord.parsed || {};
+      if (demandRecord.tenantId && tenantId && demandRecord.tenantId !== tenantId) {
+        return res.status(403).json({
+          success: false,
+          error: "Access denied to this demand"
+        });
+      }
+
+      const effectiveTenantId = demandRecord.tenantId || tenantId || "00000000-0000-0000-0000-000000000000";
+      
+      const parsed: Record<string, any> = demandRecord.parsed || {};
       const demandInput = {
         titulo: parsed.titulo || parsed.area || demandRecord.rawText?.substring(0, 100) || "Unknown",
         descricao: parsed.descricao_estruturada || demandRecord.rawText || "",
         area: (parsed.area || demandRecord.assignedTo || "TECH").toUpperCase(),
-        urgencia: (parsed.prioridade || "média") as any,
+        urgencia: (parsed.prioridade || "média") as string,
         resultadosEsperados: parsed.resultados_esperados || [],
         slaHoras: 24,
-        demandId: demandId,
-        tenantId: demandRecord.tenantId
+        demandId,
+        tenantId: effectiveTenantId,
       };
 
-      console.log(`[ORCHESTRATE] Loaded demand: ${demandInput.titulo}`);
-
-      // Execute orchestration graph with NEW agent-based architecture
-      const orchestrationResult = await withTracing("orchestrateFromDatabase", async () => {
-        const { executeAgentGraph } = await import("./ai/lc/graphs");
-        return await executeAgentGraph(demandInput);
-      }, { demand_id: demandId, demand_title: demandInput.titulo, manual });
-
-      // Save workflow if generated successfully - USING DEDUPLICATION
-      let createdWorkflowId: string | null = null;
-      const resultData = orchestrationResult.data || orchestrationResult;
-      
-      if (resultData.workflow) {
+      // Sync mode: Execute directly (for backward compatibility with /api/demands)
+      if (sync === true) {
+        const startTime = Date.now();
+        console.log(`[ORCHESTRATE-SYNC] Starting for demand ${demandId}`);
+        
         try {
-          // Import workflow service for deduplication
-          const { getOrCreateWorkflow, createWorkflowStages } = await import("./lib/workflowService");
+          const { executeAgentGraph } = await import("./ai/lc/graphs");
+          const orchestrationResult = await executeAgentGraph(demandInput);
+          const resultData = orchestrationResult.data || orchestrationResult;
           
-          // Get or create workflow using deduplication (by hash, including area, with tenant isolation)
-          const workflowName = resultData.workflow?.titulo || demandInput.titulo || "Workflow";
-          const workflow = await getOrCreateWorkflow(resultData.workflow.etapas, workflowName, demandInput.area, demandRecord.tenantId);
-          console.log(`[ORCHESTRATE] Using workflow: ${workflow.id} (hash: ${workflow.workflowHash}, name: ${workflow.name}, tenantId: ${demandRecord.tenantId})`);
-
-          // Create workflow stages if this is a new workflow
-          let stages = await storage.getWorkflowStages(workflow.id);
-          if (stages.length === 0) {
-            console.log(`[ORCHESTRATE] Creating stages for new workflow: ${workflow.id}`);
-            const stageIds = await createWorkflowStages(workflow.id, workflow.steps);
-            stages = await storage.getWorkflowStages(workflow.id);
-            console.log(`[ORCHESTRATE] Created ${stageIds.length} stages for workflow`);
+          let createdWorkflowId: string | null = null;
+          
+          if (resultData.workflow) {
+            try {
+              const { getOrCreateWorkflow, createWorkflowStages } = await import("./lib/workflowService");
+              const workflowName = resultData.workflow?.titulo || demandInput.titulo || "Workflow";
+              const workflow = await getOrCreateWorkflow(resultData.workflow.etapas, workflowName, demandInput.area, effectiveTenantId);
+              
+              let stages = await storage.getWorkflowStages(workflow.id);
+              if (stages.length === 0) {
+                await createWorkflowStages(workflow.id, workflow.steps);
+                stages = await storage.getWorkflowStages(workflow.id);
+              }
+              
+              const firstStageId = stages.length > 0 ? stages[0].id : undefined;
+              await storage.updateDemandWithSLA(demandId, {
+                workflowId: workflow.id,
+                stageId: firstStageId,
+              });
+              createdWorkflowId = workflow.id;
+            } catch (error) {
+              console.error("[ORCHESTRATE-SYNC] Error saving workflow:", error);
+            }
           }
-
-          // Update demand with workflow ID and first stage
-          const firstStageId = stages.length > 0 ? stages[0].id : undefined;
-          await storage.updateDemandWithSLA(demandId, {
-            workflowId: workflow.id,
-            stageId: firstStageId
+          
+          if (resultData.bottlenecks?.length > 0) {
+            try {
+              await storage.createBottleneckReport({
+                agentKey: "bottleneck-detector-sync",
+                data: {
+                  demandId,
+                  workflow: resultData.workflow?.titulo || "Unknown",
+                  bottlenecks: resultData.bottlenecks,
+                  severity: resultData.bottlenecks[0]?.severity || "média",
+                  detectedAt: new Date().toISOString(),
+                } as any,
+              });
+            } catch (e) { /* ignore */ }
+          }
+          
+          if (resultData.insights) {
+            try {
+              await storage.createInsightsReport({
+                agentKey: "insights-ai-sync",
+                data: {
+                  demandId,
+                  workflow: resultData.workflow?.titulo || "Unknown",
+                  insights: resultData.insights,
+                  generatedAt: new Date().toISOString(),
+                } as any,
+              });
+            } catch (e) { /* ignore */ }
+          }
+          
+          const duration = Date.now() - startTime;
+          console.log(`[ORCHESTRATE-SYNC] Completed in ${duration}ms`);
+          
+          return res.json({
+            success: true,
+            data: {
+              demand_id: demandId,
+              workflow: resultData.workflow || null,
+              bottlenecks: resultData.bottlenecks || [],
+              insights: resultData.insights || null,
+              workflow_id: createdWorkflowId,
+              duration_ms: duration,
+              status: "success",
+            },
           });
-          console.log(`[ORCHESTRATE] Updated demand with workflowId: ${workflow.id}, stageId: ${firstStageId}`);
-          createdWorkflowId = workflow.id;
         } catch (error) {
-          console.error("[ORCHESTRATE] Error saving workflow:", error);
-        }
-      } else {
-        console.warn(`[ORCHESTRATE] No workflow generated. Result data:`, resultData);
-      }
-
-      // Save bottleneck report if identified
-      if (resultData.bottlenecks && resultData.bottlenecks.length > 0) {
-        try {
-          const bottleneckData = {
-            agentKey: "bottleneck-detector-orchestration",
-            data: {
-              demandId,
-              workflow: resultData.workflow?.titulo || "Unknown",
-              bottlenecks: resultData.bottlenecks,
-              severity: resultData.bottlenecks[0]?.severity || "média",
-              detectedAt: new Date().toISOString()
-            }
-          };
-          
-          await storage.createBottleneckReport(bottleneckData);
-          console.log(`[ORCHESTRATE] Saved ${resultData.bottlenecks.length} bottlenecks`);
-        } catch (error) {
-          console.error("[ORCHESTRATE] Error saving bottlenecks:", error);
+          console.error("[ORCHESTRATE-SYNC] Error:", error);
+          return res.status(500).json({
+            success: false,
+            error: "Orchestration failed",
+            details: error instanceof Error ? error.message : String(error),
+          });
         }
       }
 
-      // Save insights report if generated
-      if (resultData.insights) {
-        try {
-          const insightsData = {
-            agentKey: "insights-ai-orchestration",
-            data: {
-              demandId,
-              workflow: resultData.workflow?.titulo || "Unknown",
-              insights: resultData.insights,
-              generatedAt: new Date().toISOString()
-            }
-          };
-          
-          await storage.createInsightsReport(insightsData);
-          console.log(`[ORCHESTRATE] Saved insights report`);
-        } catch (error) {
-          console.error("[ORCHESTRATE] Error saving insights:", error);
-        }
-      }
+      // Async mode: Queue job via Inngest
+      const jobId = crypto.randomUUID();
+      
+      await storage.createJob({
+        id: jobId,
+        tenantId: effectiveTenantId,
+        userId,
+        agentType: "orchestrate_demand",
+        payload: { demandId, demandInput },
+        status: "pending",
+      });
 
-      const duration = Date.now() - startTime;
-      console.log(`[ORCHESTRATE] Completed in ${duration}ms`);
-
-      // Log to telemetry
-      await logAgentExecution("orchestrateFromDatabase", { demandId, manual }, 
-        { success: orchestrationResult.status === "success", ...orchestrationResult },
-        { demand_id: demandId, endpoint: "/api/ai/orchestrate" },
-        duration
-      );
-
-      // Return consolidated result
-      res.json({
-        success: orchestrationResult.success || orchestrationResult.status === "success",
+      const { inngest } = await import("./inngest/client");
+      await inngest.send({
+        name: "agent/orchestrate.demand",
         data: {
-          demand_id: demandId,
-          demand: demandInput,
-          workflow: resultData.workflow || null,
-          bottlenecks: resultData.bottlenecks || [],
-          insights: resultData.insights || null,
-          error: resultData.error || null,
-          timestamp: new Date().toISOString(),
-          duration_ms: duration,
-          workflow_id: createdWorkflowId,
-          status: "success"
-        }
+          tenantId: effectiveTenantId,
+          userId,
+          demandId,
+          jobId,
+          demandInput,
+        },
+      });
+
+      console.log(`[ORCHESTRATE-ASYNC] Job ${jobId} queued for demand ${demandId}`);
+
+      res.json({
+        success: true,
+        jobId,
+        status: "pending",
+        message: "Orchestration job queued successfully. Poll /api/jobs/:jobId for status.",
       });
     } catch (error) {
-      const duration = Date.now() - startTime;
       console.error("[ORCHESTRATE] Error:", error);
-      
       res.status(500).json({
         success: false,
-        error: "Orchestration failed",
+        error: "Failed to process orchestration request",
         details: error instanceof Error ? error.message : String(error),
-        duration_ms: duration
       });
     }
   });
 
   // ============ Agent Orchestration Graph Endpoint ============
-  // New endpoint using LangChain + LangGraph architecture
-  // Executes the 3 agents in sequence: Workflow Builder → Bottleneck Detector → Insights
+  // Uses Inngest queue for async processing
   app.post("/api/ai/graph", async (req: any, res) => {
-    const startTime = Date.now();
-    const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-    const tenantId = headerTenantId || req.tenantContext?.id;
-    
     try {
       const { demandInput } = req.body;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id || "00000000-0000-0000-0000-000000000000";
+      const userId = req.user?.id || "system";
 
       if (!demandInput || !demandInput.titulo || !demandInput.area) {
         return res.status(400).json({
@@ -3221,55 +3261,51 @@ Texto original: ${demand.rawText}`;
         });
       }
 
-      // Import and execute the agent graph
-      const { executeAgentGraph } = await import("./ai/lc/graphs");
+      const jobId = crypto.randomUUID();
+      const tempDemandId = crypto.randomUUID();
       
-      console.log("[API:GRAPH] Executing agent graph for:", demandInput.titulo);
-      
-      const result = await executeAgentGraph({ ...demandInput, tenantId });
-      
-      const duration = Date.now() - startTime;
-      console.log(`[API:GRAPH] Graph execution completed in ${duration}ms`);
+      await storage.createJob({
+        id: jobId,
+        tenantId,
+        userId,
+        agentType: "orchestrate_graph",
+        payload: { demandInput },
+        status: "pending",
+      });
 
-      // Log execution to system events if needed
-      try {
-        if (result.success) {
-          // Generate a UUID for this graph execution event
-          const graphExecutionId = crypto.randomUUID();
-          await storage.createSystemEvent({
-            type: "agent_graph_execution",
-            agentKey: "agent_graph",
-            demandId: graphExecutionId,
-            metadata: {
-              demand_title: demandInput.titulo,
-              demand_area: demandInput.area,
-              workflow_generated: !!result.data?.workflow,
-              bottlenecks_detected: !!result.data?.bottlenecks,
-              insights_generated: !!result.data?.insights
-            },
-            status: result.success ? "success" : "failed",
-            durationMs: duration
-          });
-        }
-      } catch (logError) {
-        console.warn("[API:GRAPH] Error logging execution:", logError);
-      }
+      const { inngest } = await import("./inngest/client");
+      await inngest.send({
+        name: "agent/orchestrate.demand",
+        data: {
+          tenantId,
+          userId,
+          demandId: tempDemandId,
+          jobId,
+          demandInput: {
+            titulo: demandInput.titulo,
+            descricao: demandInput.descricao || "",
+            area: demandInput.area,
+            urgencia: demandInput.urgencia || "média",
+            resultadosEsperados: demandInput.resultadosEsperados || [],
+            slaHoras: demandInput.slaHoras || 24,
+          },
+        },
+      });
+
+      console.log(`[API:GRAPH] Job ${jobId} queued for graph execution`);
 
       res.json({
-        success: result.success,
-        data: result.data,
-        error: result.error || null,
-        duration_ms: duration
+        success: true,
+        jobId,
+        status: "pending",
+        message: "Graph execution job queued. Poll /api/jobs/:jobId for status.",
       });
     } catch (error) {
-      const duration = Date.now() - startTime;
-      console.error("[API:GRAPH] Error:", error);
-      
+      console.error("[API:GRAPH] Error queuing job:", error);
       res.status(500).json({
         success: false,
-        error: "Agent graph execution failed",
+        error: "Failed to queue graph execution job",
         details: error instanceof Error ? error.message : String(error),
-        duration_ms: duration
       });
     }
   });
