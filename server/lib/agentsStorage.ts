@@ -73,7 +73,7 @@ export async function loadAgent(agentId: string, tenantId?: string): Promise<Age
             ...node,
             data: {
               ...node.data,
-              modelName: 'gpt-4-turbo',
+              modelName: 'gpt-4o-mini',
               modelProvider: 'OpenAI'
             }
           };
@@ -100,7 +100,7 @@ export async function loadAgent(agentId: string, tenantId?: string): Promise<Age
                 ...node,
                 data: {
                   ...node.data,
-                  modelName: 'gpt-4-turbo',
+                  modelName: 'gpt-4o-mini',
                   modelProvider: 'OpenAI'
                 }
               };
