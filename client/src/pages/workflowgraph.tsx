@@ -130,6 +130,14 @@ export default function WorkflowGraph() {
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.5));
   const handleResetZoom = () => setZoom(1);
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom((z) => Math.min(Math.max(z + delta, 0.5), 2));
+    }
+  };
+
   // Fetch graph data
   const { data: graphData, isLoading: graphLoading } = useQuery<GraphData>({
     queryKey: ["workflow-graph", language],
@@ -280,13 +288,18 @@ export default function WorkflowGraph() {
 
         {/* Pipeline Container - Top (60%) */}
         <div
-          className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300"
+          className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300 relative"
           style={{
             backgroundImage: `radial-gradient(circle, #d1d5db 1px, transparent 1px)`,
             backgroundSize: "20px 20px",
             backgroundColor: "#f3f4f6",
           }}
+          onWheel={handleWheel}
         >
+          {/* Zoom hint */}
+          <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded border border-gray-200 pointer-events-none">
+            Ctrl + Scroll para zoom
+          </div>
           {graphLoading ? (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-gray-500">{t("executionGraph.loadingGraph")}</div>
