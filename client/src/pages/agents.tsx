@@ -24,7 +24,11 @@ export default function AgentsPage() {
   const { data: allAgents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["agents"],
     queryFn: async () => {
-      const res = await fetch("/api/agents");
+      const headers: any = {};
+      const tenantId = localStorage.getItem("currentTenantId");
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+
+      const res = await fetch("/api/agents", { headers });
       if (!res.ok) throw new Error("Failed to fetch agents");
       return res.json();
     },
