@@ -234,7 +234,14 @@ export default function WorkflowGraph() {
       {/* Main content */}
       <div className="flex flex-1 min-h-0 overflow-hidden gap-0">
         {/* Pipeline Container (70%) */}
-        <div className="flex-1 bg-white overflow-x-auto overflow-y-auto">
+        <div
+          className="flex-1 overflow-x-auto overflow-y-auto"
+          style={{
+            backgroundImage: `radial-gradient(circle, #d1d5db 1px, transparent 1px)`,
+            backgroundSize: "20px 20px",
+            backgroundColor: "#f3f4f6",
+          }}
+        >
           {graphLoading ? (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-gray-500">{t("executionGraph.loadingGraph")}</div>
@@ -242,7 +249,7 @@ export default function WorkflowGraph() {
           ) : pipelineNodes.length > 0 ? (
             <div className="p-8 min-h-full flex flex-col justify-center">
               {/* Pipeline visualization */}
-              <div className="flex items-center gap-4 pb-8 overflow-x-auto">
+              <div className="flex items-center gap-4 pb-8 w-max">
                 {pipelineNodes.map((node, index) => (
                   <div key={node.id} className="flex items-center gap-4 flex-shrink-0">
                     {/* Node Card */}
