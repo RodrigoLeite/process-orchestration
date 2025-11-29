@@ -513,7 +513,10 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAgents(): Promise<Agent[]> {
+  async getAgents(tenantId?: string): Promise<Agent[]> {
+    if (tenantId) {
+      return await this.db.select().from(agents).where(eq(agents.tenantId, tenantId as any));
+    }
     return await this.db.select().from(agents);
   }
 

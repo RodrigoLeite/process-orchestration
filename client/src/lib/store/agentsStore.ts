@@ -211,9 +211,13 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
         viewport: state.viewport,
       };
 
+      const headers: any = { 'Content-Type': 'application/json' };
+      const tenantId = localStorage.getItem('currentTenantId');
+      if (tenantId) headers['x-tenant-id'] = tenantId;
+
       const response = await fetch('/api/agents/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           agentId: state.currentAgentId,
           graph,
@@ -233,7 +237,11 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
   loadGraph: async (agentId: string) => {
     set({ isLoading: true, error: null, currentAgentId: agentId });
     try {
-      const response = await fetch(`/api/agents/load?agentId=${agentId}`);
+      const headers: any = {};
+      const tenantId = localStorage.getItem('currentTenantId');
+      if (tenantId) headers['x-tenant-id'] = tenantId;
+
+      const response = await fetch(`/api/agents/load?agentId=${agentId}`, { headers });
       if (!response.ok) throw new Error('Failed to load graph');
 
       const { graph } = await response.json();
@@ -269,9 +277,13 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
       const chatNode = state.nodes.find((n: AgentNode) => n.type === 'chatInput');
       const initialInput = chatNode?.data?.value || '';
 
+      const headers: any = { 'Content-Type': 'application/json' };
+      const tenantId = localStorage.getItem('currentTenantId');
+      if (tenantId) headers['x-tenant-id'] = tenantId;
+
       const response = await fetch('/api/agents/execute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           agentId: state.currentAgentId,
           graph: {

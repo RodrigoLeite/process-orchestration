@@ -2,7 +2,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import OpenAI from 'openai';
 
-const AGENTS_DIR = path.join(process.cwd(), 'server', 'data', 'agents');
+function getTenantAgentsDir(tenantId?: string) {
+  const basePath = path.join(process.cwd(), 'server', 'data', 'agents');
+  if (tenantId) {
+    return path.join(basePath, tenantId);
+  }
+  return basePath;
+}
 
 export interface AgentGraph {
   nodes: any[];
@@ -16,39 +22,44 @@ export interface AgentGraph {
 
 export interface AgentStorage {
   agentId: string;
+  tenantId?: string;
   graph: AgentGraph;
   createdAt: string;
   updatedAt: string;
 }
 
-async function ensureDir() {
+async function ensureDir(tenantId?: string) {
+  const dir = getTenantAgentsDir(tenantId);
   try {
-    await fs.access(AGENTS_DIR);
+    await fs.access(dir);
   } catch {
-    await fs.mkdir(AGENTS_DIR, { recursive: true });
+    await fs.mkdir(dir, { recursive: true });
   }
 }
 
-export async function saveAgent(agentId: string, graph: AgentGraph): Promise<AgentStorage> {
-  await ensureDir();
+export async function saveAgent(agentId: string, graph: AgentGraph, tenantId?: string): Promise<AgentStorage> {
+  await ensureDir(tenantId);
   
   const storage: AgentStorage = {
     agentId,
+    tenantId,
     graph,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
-  const filepath = path.join(AGENTS_DIR, `${agentId}.json`);
+  const dir = getTenantAgentsDir(tenantId);
+  const filepath = path.join(dir, `${agentId}.json`);
   await fs.writeFile(filepath, JSON.stringify(storage, null, 2), 'utf-8');
   
   return storage;
 }
 
-export async function loadAgent(agentId: string): Promise<AgentStorage | null> {
-  await ensureDir();
+export async function loadAgent(agentId: string, tenantId?: string): Promise<AgentStorage | null> {
+  await ensureDir(tenantId);
   
-  const filepath = path.join(AGENTS_DIR, `${agentId}.json`);
+  const dir = getTenantAgentsDir(tenantId);
+  const filepath = path.join(dir, `${agentId}.json`);
   
   try {
     const data = await fs.readFile(filepath, 'utf-8');
@@ -150,7 +161,7 @@ function getNodeInput(nodeId: string, nodeOutputs: Map<string, any>, edges: any[
   return merged;
 }
 
-export async function executeAgent(agentId: string, graph: AgentGraph, initialInput?: string) {
+export async function executeAgent(agentId: string, graph: AgentGraph, initialInput?: string, tenantId?: string) {
   const startTime = Date.now();
   const traces: any[] = [];
   const nodeOutputs = new Map<string, any>();

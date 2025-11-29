@@ -348,6 +348,7 @@ export type WorkflowStage = typeof workflowStages.$inferSelect;
 
 export const agents = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().default(sql`'00000000-0000-0000-0000-000000000000'`),
   name: text("name").notNull(),
   description: text("description"),
   internalKey: text("internal_key"),
