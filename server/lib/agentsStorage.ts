@@ -84,7 +84,7 @@ export async function loadAgent(agentId: string, tenantId?: string): Promise<Age
     
     console.log(`[AGENTS STORAGE] Loaded agent: ${agentId}, nodes: ${parsed.graph?.nodes?.length || 0}`);
     return parsed;
-  } catch (error) {
+  } catch (error: any) {
     // Fallback: try loading from root agents directory (for backward compatibility)
     if (tenantId) {
       try {
@@ -111,23 +111,21 @@ export async function loadAgent(agentId: string, tenantId?: string): Promise<Age
         
         console.log(`[AGENTS STORAGE] Loaded agent from fallback: ${agentId}, nodes: ${parsed.graph?.nodes?.length || 0}`);
         return parsed;
-      } catch (fallbackError) {
-        console.error(`[AGENTS STORAGE] Error loading agent ${agentId} from fallback:`, fallbackError);
+      } catch (fallbackError: any) {
+        // Only log as error if it's not a "file not found" error
+        if (fallbackError.code !== 'ENOENT') {
+          console.error(`[AGENTS STORAGE] Error loading agent ${agentId} from fallback:`, fallbackError);
+        }
       }
     }
     
-    console.error(`[AGENTS STORAGE] Error loading agent ${agentId}:`, error);
-    // Return empty graph if not found
-    return {
-      agentId,
-      graph: {
-        nodes: [],
-        edges: [],
-        viewport: { x: 0, y: 0, zoom: 1 },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Only log as error if it's not a "file not found" error - otherwise use defaults silently
+    if (error.code !== 'ENOENT') {
+      console.error(`[AGENTS STORAGE] Error loading agent ${agentId}:`, error);
+    }
+    
+    // Return null to indicate no saved config (caller will use defaults)
+    return null;
   }
 }
 
