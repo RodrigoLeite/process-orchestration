@@ -30,11 +30,13 @@ Return ONLY valid JSON matching this exact structure:
 }}`;
 
 export class InsightsAgent extends BaseAgent {
-  constructor() {
+  constructor(agentConfig?: any) {
+    const model = agentConfig?.model || "gpt-4-turbo";
+    const temperature = agentConfig?.temperature !== undefined ? agentConfig.temperature : 0.7;
     const llm = new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4-turbo",
-      temperature: 0.7,
+      modelName: model,
+      temperature,
       maxTokens: 2048
     });
     super("InsightsInteligentes", INSIGHTS_SYSTEM_PROMPT, llm);
@@ -70,6 +72,6 @@ Return ONLY valid JSON.`;
 /**
  * Factory function
  */
-export function createInsightsAgent(): InsightsAgent {
-  return new InsightsAgent();
+export function createInsightsAgent(agentConfig?: any): InsightsAgent {
+  return new InsightsAgent(agentConfig);
 }

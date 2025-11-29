@@ -104,20 +104,20 @@ async function saveInsightsToDb(
 /**
  * Workflow Builder Node
  */
-async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphState> {
+async function workflowBuilderNode(state: AgentGraphState, agentConfig?: any): Promise<AgentGraphState> {
   if (state.error) {
     console.log("[GRAPH:WorkflowBuilder] Skipped - error in state");
     return state;
   }
 
   try {
-    console.log("[GRAPH:WorkflowBuilder] Starting workflow generation");
+    console.log("[GRAPH:WorkflowBuilder] Starting workflow generation with config:", agentConfig);
     
-    const agent = createWorkflowBuilderAgent();
+    const agent = createWorkflowBuilderAgent(agentConfig);
     const result = await agent.buildWorkflow(state.demandInput);
 
     if (result.success && result.data) {
-      console.log("[GRAPH:WorkflowBuilder] Workflow generated successfully");
+      console.log("[GRAPH:WorkflowBuilder] Workflow generated successfully with model:", agentConfig?.model);
       
       // Save agent log
       await saveAgentLog(
@@ -125,7 +125,9 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
         {
           area: state.demandInput?.area,
           demandId: state.demandInput?.demandId,
-          demandDescription: state.demandInput?.descricao
+          demandDescription: state.demandInput?.descricao,
+          modelUsed: agentConfig?.model,
+          temperatureUsed: agentConfig?.temperature
         },
         result.data,
         "success",
@@ -185,16 +187,16 @@ async function workflowBuilderNode(state: AgentGraphState): Promise<AgentGraphSt
 /**
  * Insights Node
  */
-async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
+async function insightsNode(state: AgentGraphState, agentConfig?: any): Promise<AgentGraphState> {
   if (state.error) {
     console.log("[GRAPH:Insights] Skipped - error in state");
     return state;
   }
 
   try {
-    console.log("[GRAPH:Insights] Starting insights generation");
+    console.log("[GRAPH:Insights] Starting insights generation with config:", agentConfig);
     
-    const agent = createInsightsAgent();
+    const agent = createInsightsAgent(agentConfig);
     const result = await agent.generateInsights({
       demandTitle: state.demandInput?.titulo || "",
       demandDescription: state.demandInput?.descricao || "",
@@ -273,7 +275,7 @@ async function insightsNode(state: AgentGraphState): Promise<AgentGraphState> {
 /**
  * Bottleneck Detector Node
  */
-async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGraphState> {
+async function bottleneckDetectorNode(state: AgentGraphState, agentConfig?: any): Promise<AgentGraphState> {
   if (state.error) {
     console.log("[GRAPH:BottleneckDetector] Skipped - error in state");
     return state;
@@ -285,9 +287,9 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
   }
 
   try {
-    console.log("[GRAPH:BottleneckDetector] Starting bottleneck detection");
+    console.log("[GRAPH:BottleneckDetector] Starting bottleneck detection with config:", agentConfig);
     
-    const agent = createBottleneckDetectorAgent();
+    const agent = createBottleneckDetectorAgent(agentConfig);
     const result = await agent.detectBottlenecks(state.workflow);
 
     if (result.success && result.data) {
@@ -358,13 +360,13 @@ async function bottleneckDetectorNode(state: AgentGraphState): Promise<AgentGrap
 /**
  * Build the agent orchestration graph
  */
-export function buildAgentGraph() {
+export function buildAgentGraph(agentConfig?: any) {
   const workflow = new StateGraph(AgentState);
 
   // Add nodes in execution order
-  workflow.addNode("workflow_builder", workflowBuilderNode);
-  workflow.addNode("bottleneck_detector", bottleneckDetectorNode);
-  workflow.addNode("insights_generator", insightsNode);
+  workflow.addNode("workflow_builder", (state) => workflowBuilderNode(state, agentConfig));
+  workflow.addNode("bottleneck_detector", (state) => bottleneckDetectorNode(state, agentConfig));
+  workflow.addNode("insights_generator", (state) => insightsNode(state, agentConfig));
 
   // Define linear flow: workflow_builder -> bottleneck_detector -> insights_generator -> END
   workflow.addEdge(START, "workflow_builder");
@@ -384,11 +386,12 @@ export async function executeAgentGraph(demandInput: {
   area: string;
   urgencia: string;
   resultadosEsperados?: string[];
-}): Promise<any> {
+  tenantId?: string;
+}, agentConfig?: any): Promise<any> {
   const startTime = Date.now();
 
   try {
-    const graph = buildAgentGraph();
+    const graph = buildAgentGraph(agentConfig);
     
     const initialState = {
       demand: demandInput.titulo,
