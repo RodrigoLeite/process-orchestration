@@ -35,12 +35,12 @@
         "id": "agent-insights",
         "type": "agent",
         "position": {
-          "x": 700,
-          "y": -100
+          "x": 679.9224151035232,
+          "y": -100.74361425542503
         },
         "data": {
           "label": "Gerar Insights",
-          "temperature": 0.4,
+          "temperature": 0.3,
           "maxTokens": 2500,
           "logicType": "none",
           "modelProvider": "OpenAI",
@@ -48,7 +48,12 @@
         },
         "width": 320,
         "height": 574,
-        "dragging": false
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 679.9224151035232,
+          "y": -100.74361425542503
+        },
+        "selected": true
       },
       {
         "id": "output-insights",
@@ -88,6 +93,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-29T03:24:13.232Z",
-  "updatedAt": "2025-11-29T03:24:13.232Z"
+  "createdAt": "2025-11-29T03:31:18.941Z",
+  "updatedAt": "2025-11-29T03:31:18.941Z"
 }

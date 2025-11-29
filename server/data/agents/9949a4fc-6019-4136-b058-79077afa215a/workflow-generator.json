@@ -52,12 +52,12 @@
         "id": "agent-generate-workflow",
         "type": "agent",
         "position": {
-          "x": 861.68,
-          "y": -363.7
+          "x": 855.2589101130903,
+          "y": -361.86540288945434
         },
         "data": {
           "label": "Gerar Workflow",
-          "temperature": 0.4,
+          "temperature": 0.3,
           "maxTokens": 3000,
           "logicType": "none",
           "modelProvider": "OpenAI",
@@ -65,7 +65,11 @@
         },
         "width": 320,
         "height": 574,
-        "dragging": false
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 855.2589101130903,
+          "y": -361.86540288945434
+        }
       },
       {
         "id": "output-workflow",
@@ -110,6 +114,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-29T03:24:09.974Z",
-  "updatedAt": "2025-11-29T03:24:09.974Z"
+  "createdAt": "2025-11-29T03:31:08.104Z",
+  "updatedAt": "2025-11-29T03:31:08.104Z"
 }
