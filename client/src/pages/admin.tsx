@@ -4,8 +4,6 @@ import { Card } from '@/components/ui/card';
 import { 
   Shield, 
   Users, 
-  UserPlus, 
-  Upload, 
   UsersRound, 
   Key,
   ChevronRight,
@@ -37,22 +35,6 @@ export default function AdminPanel() {
       href: '/admin/users',
       permission: 'tenant.manage_users',
       color: 'bg-blue-500',
-    },
-    {
-      title: t('admin.inviteUsers'),
-      description: t('admin.inviteUsersDesc'),
-      icon: <UserPlus className="w-8 h-8" />,
-      href: '/admin/users',
-      permission: 'tenant.manage_users',
-      color: 'bg-green-500',
-    },
-    {
-      title: t('admin.importCSV'),
-      description: t('admin.importCSVDesc'),
-      icon: <Upload className="w-8 h-8" />,
-      href: '/admin/users/import',
-      permission: 'tenant.manage_users',
-      color: 'bg-purple-500',
     },
     {
       title: t('admin.manageTeams'),
