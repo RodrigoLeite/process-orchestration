@@ -247,9 +247,9 @@ export async function loadGraphAgentConfigs(tenantId?: string): Promise<{
       }
     }
     
-    // Load bottleneck detector config
+    // Load bottleneck detector config (Agent Studio uses "monitor-gargalos")
     let bottleneckConfig = { ...defaultConfig };
-    const bottleneckAgent = await loadAgent("bottleneck-detector", tenantId);
+    const bottleneckAgent = await loadAgent("monitor-gargalos", tenantId);
     if (bottleneckAgent?.graph?.nodes) {
       const agentNode = bottleneckAgent.graph.nodes.find((n: any) => n.type === "agent");
       if (agentNode?.data) {
@@ -260,9 +260,9 @@ export async function loadGraphAgentConfigs(tenantId?: string): Promise<{
       }
     }
     
-    // Load insights generator config
+    // Load insights generator config (Agent Studio uses "insights-inteligentes")
     let insightsConfig = { ...defaultConfig };
-    const insightsAgent = await loadAgent("insights-ai", tenantId);
+    const insightsAgent = await loadAgent("insights-inteligentes", tenantId);
     if (insightsAgent?.graph?.nodes) {
       const agentNode = insightsAgent.graph.nodes.find((n: any) => n.type === "agent");
       if (agentNode?.data) {
