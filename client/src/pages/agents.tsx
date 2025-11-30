@@ -43,7 +43,7 @@ export default function AgentsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
       </div>
     );
   }
@@ -53,7 +53,7 @@ export default function AgentsPage() {
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Bot className="w-8 h-8 text-blue-600" />
+          <Bot className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           <h1 className="text-4xl font-bold" data-testid="title-agents">
             {t("agents.title")}
           </h1>
@@ -87,7 +87,7 @@ export default function AgentsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <CardTitle className="text-lg flex items-center gap-2" data-testid={`agent-name-${agent.id}`}>
-                      <Bot className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <Bot className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                       <span className="truncate">{getAgentName(agent.internalKey, agent.name, language)}</span>
                     </CardTitle>
                     <CardDescription className="mt-2 line-clamp-2">
@@ -137,7 +137,7 @@ export default function AgentsPage() {
       )}
 
       {/* Statistics */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-blue-500/10 border-blue-500/30">
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
             <div>
@@ -146,11 +146,11 @@ export default function AgentsPage() {
             </div>
             <div>
               <p className="text-muted-foreground">{t("agents.activeAgents")}</p>
-              <p className="text-2xl font-bold text-green-600">{agents.length}</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{agents.length}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("agents.inactive")}</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {allAgents.filter(a => a.active !== 't' && a.active !== true && a.active !== "true").length}
               </p>
             </div>
