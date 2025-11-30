@@ -217,7 +217,7 @@ export default function BoardViewPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/kanban/boards")}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ArrowLeft className="w-4 h-4" />

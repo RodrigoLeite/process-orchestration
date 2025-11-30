@@ -316,12 +316,12 @@ export default function AreaDetailsPage() {
                         {demand.status === "completed" ? "✓" : demand.status === "blocked" ? "✕" : "→"}
                       </span>
                       <Button
-                        size="sm"
-                        variant="outline"
                         onClick={() => handleOpenKanban(demand.id)}
                         data-testid={`button-kanban-${demand.id}`}
+                        className="gap-2"
                       >
-                        {t("workflows.viewKanban")}
+                        <ExternalLink className="w-4 h-4" />
+                        {t("demandDetail.openKanban")}
                       </Button>
                     </div>
                   </div>
