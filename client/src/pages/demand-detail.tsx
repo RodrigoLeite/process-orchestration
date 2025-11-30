@@ -19,6 +19,13 @@ interface AreaWorkflow {
   name: string;
 }
 
+interface DemandCard {
+  id: string;
+  boardId: string;
+  phaseId: string;
+  title: string;
+}
+
 interface StageBottleneck {
   id: string;
   stageName: string;
@@ -102,6 +109,21 @@ export default function DemandDetail() {
     enabled: !!params?.id,
     staleTime: 0,
     gcTime: 0
+  });
+
+  // Fetch kanban card for this demand
+  const { data: demandCard } = useQuery<DemandCard | null>({
+    queryKey: ["demand-card", params?.id],
+    queryFn: async () => {
+      if (!params?.id) return null;
+      const tenantId = localStorage.getItem("tenantId");
+      const headers: Record<string, string> = {};
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+      const res = await fetch(`/api/demands/${params.id}/card`, { headers });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!params?.id
   });
 
   if (!match) return null;
@@ -386,7 +408,7 @@ export default function DemandDetail() {
       )}
 
       {/* Kanban Button */}
-      {workflow && (
+      {demandCard && (
         <Card className="bg-blue-500/10 border-blue-500/30">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between gap-4">
@@ -395,7 +417,7 @@ export default function DemandDetail() {
                 <p className="text-sm text-muted-foreground">{t("demandDetail.manageKanban")}</p>
               </div>
               <Button
-                onClick={() => navigate(`/app/kanban/workflow/${workflow.id}`)}
+                onClick={() => navigate(`/kanban/board/${demandCard.boardId}`)}
                 data-testid="button-open-kanban"
                 className="gap-2"
               >

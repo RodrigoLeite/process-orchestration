@@ -2128,6 +2128,31 @@ Texto original: ${demand.rawText}`;
     }
   });
 
+  // Get kanban card by demand ID
+  app.get("/api/demands/:id/card", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID required" });
+      }
+      
+      const { kanbanStorage } = await import("./kanban/storage");
+      const card = await kanbanStorage.getCardByDemandId(id, tenantId);
+      
+      if (!card) {
+        return res.status(404).json({ error: "Card not found for this demand" });
+      }
+      
+      res.json(card);
+    } catch (error) {
+      console.error("Error fetching card by demand:", error);
+      res.status(500).json({ error: "Failed to fetch card" });
+    }
+  });
+
   // Custom Agents endpoint (legacy agents removed - all agents are LangGraph-managed)
   app.get("/api/custom-agents", async (req, res) => {
     try {

@@ -180,6 +180,14 @@ export const kanbanStorage = {
       .orderBy(asc(cards.position));
   },
 
+  async getCardByDemandId(demandId: string, tenantId: string): Promise<Card | undefined> {
+    const [card] = await db
+      .select()
+      .from(cards)
+      .where(and(eq(cards.demandId, demandId), eq(cards.tenantId, tenantId)));
+    return card;
+  },
+
   async updateCard(id: string, tenantId: string, data: Partial<InsertCard>): Promise<Card | undefined> {
     const [card] = await db
       .update(cards)

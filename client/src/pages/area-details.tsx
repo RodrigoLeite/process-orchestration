@@ -49,6 +49,21 @@ export default function AreaDetailsPage() {
   const [, navigate] = useLocation();
   const areaId = params?.id;
 
+  const handleOpenKanban = async (demandId: string) => {
+    try {
+      const tenantId = localStorage.getItem("tenantId");
+      const headers: Record<string, string> = {};
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+      const res = await fetch(`/api/demands/${demandId}/card`, { headers });
+      if (res.ok) {
+        const card = await res.json();
+        navigate(`/kanban/board/${card.boardId}`);
+      }
+    } catch (error) {
+      console.error("Error opening kanban:", error);
+    }
+  };
+
   // Fetch demands for this area
   const { data: demands = [], isLoading: demandsLoading, refetch } = useQuery<Demand[]>({
     queryKey: ["area-demands", areaId, tenant?.id],
@@ -283,16 +298,14 @@ export default function AreaDetailsPage() {
                       }`}>
                         {demand.status === "completed" ? "✓" : demand.status === "blocked" ? "✕" : "→"}
                       </span>
-                      {demand.workflowId && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/app/kanban/workflow/${demand.workflowId}`)}
-                          data-testid={`button-kanban-${demand.id}`}
-                        >
-                          {t("workflows.viewKanban")}
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenKanban(demand.id)}
+                        data-testid={`button-kanban-${demand.id}`}
+                      >
+                        {t("workflows.viewKanban")}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
