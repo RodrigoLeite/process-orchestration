@@ -86,11 +86,11 @@ export default function AILogsPage() {
           <h1 className="text-3xl font-bold" data-testid="page-title">
             📊 {t("aiLogs.title")}
           </h1>
-          <p className="text-gray-600 mt-1" data-testid="page-description">
+          <p className="text-muted-foreground mt-1" data-testid="page-description">
             {t("aiLogs.subtitle")}
           </p>
         </div>
-        <Activity className="w-8 h-8 text-blue-600" />
+        <Activity className="w-8 h-8 text-blue-600 dark:text-blue-400" />
       </div>
 
       {/* Stats */}
@@ -115,7 +115,7 @@ export default function AILogsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="stat-success">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="stat-success">
               {filteredLogs.length > 0
                 ? `${Math.round((filteredLogs.filter(l => l.status === "success").length / filteredLogs.length) * 100)}%`
                 : "—"}
@@ -193,13 +193,13 @@ export default function AILogsPage() {
       <div className="space-y-3" data-testid="logs-list">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : sortedLogs.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">{t("aiLogs.noLogs")}</p>
+              <Activity className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground">{t("aiLogs.noLogs")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -208,8 +208,8 @@ export default function AILogsPage() {
               key={log.executionId}
               className={`border-2 cursor-pointer transition-all hover:shadow-md ${
                 log.status === "success"
-                  ? "border-green-200 bg-green-50 hover:border-green-300"
-                  : "border-red-200 bg-red-50 hover:border-red-300"
+                  ? "border-green-200 bg-green-50 hover:border-green-300 dark:border-green-800 dark:bg-green-950/30 dark:hover:border-green-700"
+                  : "border-red-200 bg-red-50 hover:border-red-300 dark:border-red-800 dark:bg-red-950/30 dark:hover:border-red-700"
               }`}
               onClick={() => navigate(`/app/ai/logs/${log.executionId}`)}
               data-testid={`log-card-${log.executionId}`}
@@ -241,30 +241,30 @@ export default function AILogsPage() {
                       {new Date(log.timestamp).toLocaleString()}
                     </CardDescription>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </CardHeader>
 
               <CardContent className="space-y-2">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div data-testid={`demand-${log.executionId}`}>
-                    <p className="text-xs font-semibold text-gray-600">{t("aiLogs.demand")}</p>
+                    <p className="text-xs font-semibold text-muted-foreground">{t("aiLogs.demand")}</p>
                     <p className="font-mono text-xs break-all">
                       {log.demandId === "unknown" ? "—" : log.demandId.substring(0, 12)}...
                     </p>
                   </div>
                   {log.workflow && (
                     <div data-testid={`workflow-${log.executionId}`}>
-                      <p className="text-xs font-semibold text-gray-600">{t("aiLogs.generatedWorkflow")}</p>
-                      <p className="text-xs text-gray-700 truncate">{log.workflow.title}</p>
+                      <p className="text-xs font-semibold text-muted-foreground">{t("aiLogs.generatedWorkflow")}</p>
+                      <p className="text-xs text-foreground truncate">{log.workflow.title}</p>
                     </div>
                   )}
                 </div>
 
                 {log.metadata && Object.keys(log.metadata).length > 0 && (
-                  <div className="mt-2 p-2 bg-white/50 rounded text-xs" data-testid={`metadata-${log.executionId}`}>
-                    <p className="font-semibold text-gray-700 mb-1">{t("aiLogs.details")}:</p>
-                    <pre className="whitespace-pre-wrap break-words text-xs text-gray-600 max-h-20 overflow-hidden">
+                  <div className="mt-2 p-2 bg-background/50 rounded text-xs" data-testid={`metadata-${log.executionId}`}>
+                    <p className="font-semibold text-foreground mb-1">{t("aiLogs.details")}:</p>
+                    <pre className="whitespace-pre-wrap break-words text-xs text-muted-foreground max-h-20 overflow-hidden">
                       {JSON.stringify(log.metadata, null, 2).substring(0, 150)}
                       {JSON.stringify(log.metadata, null, 2).length > 150 ? "..." : ""}
                     </pre>
