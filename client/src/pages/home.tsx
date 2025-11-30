@@ -47,9 +47,13 @@ export default function Dashboard() {
     setCreateStatus({ type: null, message: "" });
 
     try {
+      const tenantId = localStorage.getItem("tenantId");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+      
       const res = await fetch("/api/demands", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ rawText: demandText })
       });
 
