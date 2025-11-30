@@ -248,9 +248,19 @@ export const kanbanStorage = {
         )
       );
 
+    const updateData: Record<string, any> = { 
+      phaseId: targetPhaseId, 
+      position: targetPosition, 
+      updatedAt: new Date() 
+    };
+    
+    if (oldPhaseId !== targetPhaseId) {
+      updateData.phaseEnteredAt = new Date();
+    }
+
     const [updated] = await db
       .update(cards)
-      .set({ phaseId: targetPhaseId, position: targetPosition, updatedAt: new Date() })
+      .set(updateData)
       .where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)))
       .returning();
 
