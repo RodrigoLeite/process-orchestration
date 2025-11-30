@@ -6,6 +6,7 @@ import { Loader2, Activity, CheckCircle2, AlertCircle, ChevronRight, X } from "l
 import Badge from "@/components/Badge";
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ExecutionLog {
   id: string;
@@ -22,19 +23,29 @@ interface ExecutionLog {
 export default function AILogsPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
+  const { tenant } = useAuth();
   const [sortBy, setSortBy] = useState<"newest" | "slowest">("newest");
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
+  const getHeaders = (): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (tenant?.id) {
+      (headers as Record<string, string>)["x-tenant-id"] = tenant.id;
+    }
+    return headers;
+  };
+
   const { data: logsData, isLoading } = useQuery({
-    queryKey: ["ai-logs"],
+    queryKey: ["ai-logs", tenant?.id],
     queryFn: async () => {
-      const res = await fetch("/api/ai/logs");
+      const res = await fetch("/api/ai/logs", { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch logs");
       return res.json();
     },
-    refetchInterval: 5000, // Update every 5 seconds
+    refetchInterval: 5000,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
+    enabled: !!tenant?.id,
   });
 
   const allLogs: ExecutionLog[] = logsData?.data || [];
