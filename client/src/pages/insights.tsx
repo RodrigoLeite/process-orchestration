@@ -217,9 +217,9 @@ export default function InsightsPage() {
               {t("insightsPage.criticalInsights")}
             </h2>
             {criticalInsights.length === 0 ? (
-              <Card className="border-green-200 bg-green-50">
+              <Card className="border-green-500/30 bg-green-500/10">
                 <CardContent className="pt-6">
-                  <p className="text-center text-green-700">{t("insightsPage.noCriticalInsights")}</p>
+                  <p className="text-center text-green-600 dark:text-green-400">{t("insightsPage.noCriticalInsights")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -291,8 +291,8 @@ export default function InsightsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">{t("insightsPage.bottleneckAnalysis")}</h3>
-                  <p className="text-sm text-gray-700">
+                  <h3 className="font-semibold text-sm text-foreground">{t("insightsPage.bottleneckAnalysis")}</h3>
+                  <p className="text-sm text-muted-foreground">
                     {t("insightsPage.bottleneckAnalysisText")
                       .replace("{count}", String(bottlenecks.length))
                       .replace("{highCount}", String(bottlenecks.filter(b => b.severity === "high").length))}
@@ -300,20 +300,20 @@ export default function InsightsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">{t("insightsPage.loadForecast")}</h3>
-                  <p className="text-sm text-gray-700">
+                  <h3 className="font-semibold text-sm text-foreground">{t("insightsPage.loadForecast")}</h3>
+                  <p className="text-sm text-muted-foreground">
                     {t("insightsPage.loadForecastText").replace("{days}", String(randomDays))}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">{t("insightsPage.proposedOptimizations")}</h3>
-                  <p className="text-sm text-gray-700">
+                  <h3 className="font-semibold text-sm text-foreground">{t("insightsPage.proposedOptimizations")}</h3>
+                  <p className="text-sm text-muted-foreground">
                     {t("insightsPage.optimizationsText")}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-gray-200">
+                <div className="pt-3 border-t border-border">
                   <Badge color="blue">{t("insightsPage.confidence")}: 94% | {t("insightsPage.data")}: 30 days | {t("insightsPage.model")}: GPT-4 Turbo</Badge>
                 </div>
               </CardContent>
