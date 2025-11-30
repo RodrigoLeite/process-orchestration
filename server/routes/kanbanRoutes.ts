@@ -49,7 +49,6 @@ router.get("/boards/:id", async (req: Request, res: Response) => {
     if (!data) {
       return res.status(404).json({ error: "Board not found" });
     }
-    console.log("[DEBUG] Board phases:", JSON.stringify(data.phases.map(p => ({ id: p.id, name: p.name, slaHours: p.slaHours })), null, 2));
     res.json(data);
   } catch (error) {
     console.error("Error fetching board:", error);

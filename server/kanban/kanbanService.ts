@@ -12,7 +12,7 @@ export function convertEtapasToSteps(etapas: any[]): WorkflowStep[] {
     assignee: etapa.responsavel || etapa.assignee || "",
     dependencies: etapa.dependencias || etapa.dependencies || [],
     acceptanceCriteria: etapa.criterios_aceitacao || etapa.acceptanceCriteria || "",
-    duration: etapa.duracao || etapa.duration || ""
+    duration: String(etapa.duracao_estimada_horas || etapa.duracao || etapa.duration || "")
   }));
 }
 
