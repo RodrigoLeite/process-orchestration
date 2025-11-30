@@ -76,40 +76,40 @@ export default function AdminPanel() {
 
   if (!tenant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="p-8">
-          <p className="text-red-500">{t('admin.tenantNotFound')}</p>
+          <p className="text-red-500 dark:text-red-400">{t('admin.tenantNotFound')}</p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-2" data-testid="text-admin-title">
+          <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center gap-2" data-testid="text-admin-title">
             <Shield className="w-8 h-8 text-primary" />
             {t('admin.title')}
           </h1>
-          <p className="text-gray-600">{t('admin.subtitle')}</p>
+          <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
 
         {/* Usuários */}
-        <Card className="p-6 border-gray-200">
+        <Card className="p-6 border-border">
           <div className="flex items-center gap-2 mb-6">
             <Users className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-gray-900">{t('admin.workspaceMembers')}</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t('admin.workspaceMembers')}</h2>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="table-users">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnName')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnEmail')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnRole')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('admin.columnActions')}</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnName')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnEmail')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnRole')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,12 +119,12 @@ export default function AdminPanel() {
                   const currentRoleId = roles.find((r: Role) => r.name.toLowerCase() === tenantUser.roleName)?.id || '';
 
                   return (
-                    <tr key={tenantUser.id} className="border-b border-gray-100 hover:bg-gray-50" data-testid={`row-user-${tenantUser.id}`}>
-                      <td className="py-3 px-4 text-gray-900 font-medium">{tenantUser.name}</td>
-                      <td className="py-3 px-4 text-gray-600">{tenantUser.email}</td>
+                    <tr key={tenantUser.id} className="border-b border-border/50 hover:bg-muted/50" data-testid={`row-user-${tenantUser.id}`}>
+                      <td className="py-3 px-4 text-foreground font-medium">{tenantUser.name}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{tenantUser.email}</td>
                       <td className="py-3 px-4">
                         {isOwner ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full text-sm font-medium">
                             <Lock className="w-4 h-4" />
                             Owner
                           </span>
@@ -152,8 +152,8 @@ export default function AdminPanel() {
                           </Select>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
-                        {isCurrentUser && <span className="text-blue-600 font-medium">{t('admin.you')}</span>}
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {isCurrentUser && <span className="text-blue-600 dark:text-blue-400 font-medium">{t('admin.you')}</span>}
                       </td>
                     </tr>
                   );
@@ -163,19 +163,19 @@ export default function AdminPanel() {
           </div>
 
           {tenantUsers.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <p>{t('admin.noUsers')}</p>
             </div>
           )}
         </Card>
 
         {/* Info */}
-        <Card className="p-6 border-gray-200 mt-8 bg-blue-50">
+        <Card className="p-6 border-border mt-8 bg-blue-50 dark:bg-blue-950/30">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
+            <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-blue-900 mb-2">{t('admin.availableRoles')}</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">{t('admin.availableRoles')}</h3>
+              <ul className="text-sm text-blue-800 dark:text-blue-300/80 space-y-1">
                 <li>• <strong>Owner</strong>: {t('admin.ownerDescription')}</li>
                 <li>• <strong>Admin</strong>: {t('admin.adminDescription')}</li>
                 <li>• <strong>Manager</strong>: {t('admin.managerDescription')}</li>
