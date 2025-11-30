@@ -121,7 +121,7 @@ export default function DemandDetail() {
         </Button>
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
-            <p className="text-red-700 font-semibold">❌ {t("demandDetail.notFound")}</p>
+            <p className="text-red-700 dark:text-red-400 font-semibold">❌ {t("demandDetail.notFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -231,10 +231,10 @@ export default function DemandDetail() {
             <div 
               className={`text-2xl font-bold ${
                 demand.status === "completed"
-                  ? "text-green-600"
+                  ? "text-green-600 dark:text-green-400"
                   : demand.status === "blocked"
-                  ? "text-red-600"
-                  : "text-blue-600"
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-blue-600 dark:text-blue-400"
               }`}
               data-testid="text-status"
             >
@@ -289,7 +289,7 @@ export default function DemandDetail() {
         <CardContent className="space-y-4">
           {parsed?.descricao_estruturada && (
             <div>
-              <p className="text-xs text-gray-600 mb-2 font-semibold">{t("demandDetail.structuredDescription")}</p>
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">{t("demandDetail.structuredDescription")}</p>
               <p className="text-foreground bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
                 {parsed.descricao_estruturada}
               </p>
@@ -298,8 +298,8 @@ export default function DemandDetail() {
 
           {(demand.rawText || demand.raw_text) && (
             <div>
-              <p className="text-xs text-gray-600 mb-2 font-semibold">{t("demandDetail.originalText")}</p>
-              <p className="text-foreground/80 bg-gray-100 p-4 rounded-lg italic">
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">{t("demandDetail.originalText")}</p>
+              <p className="text-foreground/80 bg-muted p-4 rounded-lg italic">
                 {demand.rawText || demand.raw_text}
               </p>
             </div>
@@ -307,7 +307,7 @@ export default function DemandDetail() {
 
           {parsed?.sugestao_proximo_passo && (
             <div>
-              <p className="text-xs text-gray-600 mb-2 font-semibold">{t("demandDetail.nextStep")}</p>
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">{t("demandDetail.nextStep")}</p>
               <p className="text-foreground bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
                 💡 {parsed.sugestao_proximo_passo}
               </p>
@@ -318,17 +318,17 @@ export default function DemandDetail() {
 
       {/* Stage Bottlenecks */}
       {bottlenecks.length > 0 && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-500/30 bg-red-500/10">
           <CardHeader>
-            <CardTitle className="text-red-900">{t("demandDetail.bottlenecksDetected")}</CardTitle>
-            <CardDescription className="text-red-800">{t("demandDetail.problemsFound")}</CardDescription>
+            <CardTitle className="text-red-700 dark:text-red-400">{t("demandDetail.bottlenecksDetected")}</CardTitle>
+            <CardDescription className="text-red-600 dark:text-red-300">{t("demandDetail.problemsFound")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {bottlenecks.map(bottleneck => (
-                <div key={bottleneck.id} className="border border-red-200 bg-white p-3 rounded-lg" data-testid={`bottleneck-${bottleneck.id}`}>
+                <div key={bottleneck.id} className="border border-red-500/30 bg-card p-3 rounded-lg" data-testid={`bottleneck-${bottleneck.id}`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="font-semibold text-red-900">{bottleneck.stageName}</p>
+                    <p className="font-semibold text-red-700 dark:text-red-400">{bottleneck.stageName}</p>
                     <span className={`text-xs px-2 py-1 rounded font-semibold ${
                       bottleneck.severity === 'crítica' ? 'bg-red-600 text-white' :
                       bottleneck.severity === 'alta' ? 'bg-orange-600 text-white' :
@@ -338,9 +338,9 @@ export default function DemandDetail() {
                       {bottleneck.severity?.toUpperCase()}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-2">💡 {bottleneck.reason}</p>
+                  <p className="text-sm text-muted-foreground mb-2">💡 {bottleneck.reason}</p>
                   {bottleneck.recommendedAction && (
-                    <p className="text-sm text-blue-700 bg-blue-100 p-2 rounded">✓ {bottleneck.recommendedAction}</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400 bg-blue-500/10 p-2 rounded">✓ {bottleneck.recommendedAction}</p>
                   )}
                 </div>
               ))}
@@ -351,32 +351,32 @@ export default function DemandDetail() {
 
       {/* Stage Insights */}
       {insights.length > 0 && (
-        <Card className="border-purple-200 bg-purple-50">
+        <Card className="border-purple-500/30 bg-purple-500/10">
           <CardHeader>
-            <CardTitle className="text-purple-900">{t("demandDetail.insightsRecommendations")}</CardTitle>
-            <CardDescription className="text-purple-800">{t("demandDetail.smartAnalysis")}</CardDescription>
+            <CardTitle className="text-purple-700 dark:text-purple-400">{t("demandDetail.insightsRecommendations")}</CardTitle>
+            <CardDescription className="text-purple-600 dark:text-purple-300">{t("demandDetail.smartAnalysis")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {insights.map(insight => (
-                <div key={insight.id} className="border border-purple-200 bg-white p-3 rounded-lg" data-testid={`insight-${insight.id}`}>
-                  <p className="font-semibold text-purple-900 mb-1">{insight.title}</p>
+                <div key={insight.id} className="border border-purple-500/30 bg-card p-3 rounded-lg" data-testid={`insight-${insight.id}`}>
+                  <p className="font-semibold text-purple-700 dark:text-purple-400 mb-1">{insight.title}</p>
                   {insight.stageName && (
-                    <p className="text-xs text-gray-500 mb-1">📍 {insight.stageName}</p>
+                    <p className="text-xs text-muted-foreground mb-1">📍 {insight.stageName}</p>
                   )}
-                  <p className="text-sm text-gray-700 mb-2">{insight.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs px-2 py-1 rounded font-semibold ${
-                      insight.impact === 'crítico' ? 'bg-red-100 text-red-800' :
-                      insight.impact === 'alto' ? 'bg-orange-100 text-orange-800' :
-                      insight.impact === 'médio' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
+                      insight.impact === 'crítico' ? 'bg-red-500/20 text-red-700 dark:text-red-400' :
+                      insight.impact === 'alto' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' :
+                      insight.impact === 'médio' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
+                      'bg-green-500/20 text-green-700 dark:text-green-400'
                     }`}>
                       {insight.impact?.toUpperCase()}
                     </span>
                   </div>
                   {insight.recommendation && (
-                    <p className="text-sm text-green-700 bg-green-100 p-2 rounded mt-2">➜ {insight.recommendation}</p>
+                    <p className="text-sm text-green-700 dark:text-green-400 bg-green-500/10 p-2 rounded mt-2">➜ {insight.recommendation}</p>
                   )}
                 </div>
               ))}
@@ -387,7 +387,7 @@ export default function DemandDetail() {
 
       {/* Kanban Button */}
       {workflow && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-500/10 border-blue-500/30">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -408,9 +408,9 @@ export default function DemandDetail() {
       )}
 
       {/* Metadata */}
-      <Card className="border-gray-200 bg-gray-50">
+      <Card className="border-border bg-muted">
         <CardContent className="pt-6">
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-muted-foreground">
             {t("demandDetail.createdAt")}: {demand.createdAt ? new Date(demand.createdAt).toLocaleString("pt-BR", {
               day: "2-digit",
               month: "2-digit",
