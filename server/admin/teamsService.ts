@@ -1,0 +1,141 @@
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { storage } from '../storage';
+import { 
+  teams, 
+  userTeams,
+  users,
+  type InsertTeam,
+  type Team,
+} from '@shared/schema';
+
+export interface TeamWithMembers extends Team {
+  memberCount: number;
+  members: { id: string; name: string | null; email: string | null; image: string | null }[];
+}
+
+export const teamsService = {
+  async listTeams(tenantId: string): Promise<TeamWithMembers[]> {
+    const teamRows = await storage.db
+      .select()
+      .from(teams)
+      .where(eq(teams.tenantId, tenantId))
+      .orderBy(desc(teams.createdAt));
+
+    const result: TeamWithMembers[] = [];
+
+    for (const team of teamRows) {
+      const members = await storage.db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+        })
+        .from(userTeams)
+        .innerJoin(users, eq(users.id, userTeams.userId))
+        .where(eq(userTeams.teamId, team.id));
+
+      result.push({
+        ...team,
+        memberCount: members.length,
+        members,
+      });
+    }
+
+    return result;
+  },
+
+  async getTeam(tenantId: string, teamId: string): Promise<TeamWithMembers | null> {
+    const team = await storage.db
+      .select()
+      .from(teams)
+      .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)))
+      .limit(1)
+      .then((rows: any[]) => rows[0]);
+
+    if (!team) {
+      return null;
+    }
+
+    const members = await storage.db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        image: users.image,
+      })
+      .from(userTeams)
+      .innerJoin(users, eq(users.id, userTeams.userId))
+      .where(eq(userTeams.teamId, team.id));
+
+    return {
+      ...team,
+      memberCount: members.length,
+      members,
+    };
+  },
+
+  async createTeam(tenantId: string, data: Omit<InsertTeam, 'tenantId'>): Promise<Team> {
+    const [team] = await storage.db
+      .insert(teams)
+      .values({
+        ...data,
+        tenantId,
+      })
+      .returning();
+
+    return team;
+  },
+
+  async updateTeam(tenantId: string, teamId: string, data: Partial<Omit<InsertTeam, 'tenantId'>>): Promise<Team> {
+    const [team] = await storage.db
+      .update(teams)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)))
+      .returning();
+
+    return team;
+  },
+
+  async deleteTeam(tenantId: string, teamId: string): Promise<void> {
+    await storage.db
+      .delete(userTeams)
+      .where(eq(userTeams.teamId, teamId));
+
+    await storage.db
+      .delete(teams)
+      .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)));
+  },
+
+  async addMemberToTeam(tenantId: string, teamId: string, userId: string): Promise<void> {
+    const existing = await storage.db
+      .select()
+      .from(userTeams)
+      .where(and(
+        eq(userTeams.teamId, teamId),
+        eq(userTeams.userId, userId),
+        eq(userTeams.tenantId, tenantId)
+      ))
+      .limit(1)
+      .then((rows: any[]) => rows[0]);
+
+    if (!existing) {
+      await storage.db
+        .insert(userTeams)
+        .values({ tenantId, teamId, userId });
+    }
+  },
+
+  async removeMemberFromTeam(tenantId: string, teamId: string, userId: string): Promise<void> {
+    await storage.db
+      .delete(userTeams)
+      .where(and(
+        eq(userTeams.teamId, teamId),
+        eq(userTeams.userId, userId),
+        eq(userTeams.tenantId, tenantId)
+      ));
+  },
+};

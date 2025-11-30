@@ -22,6 +22,7 @@ import workspacesRouter from "./routes/workspacesRoutes";
 import agentRoutes from "./routes/agentRoutes";
 import jobRoutes from "./routes/jobRoutes";
 import kanbanRoutes from "./routes/kanbanRoutes";
+import adminRoutes from "./routes/adminRoutes";
 import { inngestServe } from "./inngest/serve";
 
 // Calculate delay risk based on SLA
@@ -4199,6 +4200,9 @@ Texto original: ${demand.rawText}`;
 
   // Register Kanban 2.0 routes
   app.use("/api/kanban", kanbanRoutes);
+
+  // Register Admin routes (user management, teams, roles)
+  app.use("/api/admin", adminRoutes);
 
   // Inngest serve endpoint
   app.use("/api/inngest", inngestServe);

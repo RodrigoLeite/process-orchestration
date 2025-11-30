@@ -1,0 +1,174 @@
+Quero que você gere todo o código completo para implementar a gestão de usuários do meu SaaS BPA. Minha stack é:
+
+– Frontend: React + Vite + TypeScript  
+– UI: ShadCN UI (APENAS TEMA CLARO, sem dark mode)  
+– Backend: Node + Express  
+– ORM: Drizzle ORM (PostgreSQL)  
+– Autenticação: Google OAuth + JWT, multitenant já implementado  
+– Estrutura: cada usuário pertence a um ou mais tenants, e cada tenant possui seus próprios usuários, roles e times.
+
+Quero que você gere o código completo (frontend + backend + migrations) para implementar a área de GESTÃO DE USUÁRIOS com as seguintes funcionalidades:
+
+================================================================
+🔥 1. CONVITE INDIVIDUAL
+================================================================
+• Tela no painel de admin do tenant: /admin/users  
+• Botão “Invite User” abre modal  
+• Campos:
+  – Email
+  – Role (dropdown)
+  – Time/Grupo (dropdown)
+• Backend:
+  – Rota POST /api/tenants/:tenantId/invitations
+  – Gera convite pendente
+  – Envia email (mock por enquanto)
+  – Cria registro invitation com token
+  – Usuário só vira ativo após aceitar
+
+================================================================
+🔥 2. CONVITE MÚLTIPLO (copiar e colar vários e-mails)
+================================================================
+• Modal com textarea onde o gestor cola vários e-mails:
+  joao@empresa.com
+  maria@empresa.com
+  fernanda@empresa.com
+• O backend cria várias invitations em lote
+• Todos com a mesma role e time escolhidos
+• Validar e-mails duplicados / já existentes no tenant
+
+================================================================
+🔥 3. IMPORTAÇÃO CSV (bulk import)
+================================================================
+• Página /admin/users/import  
+• O usuário sobe um arquivo CSV com colunas:
+  email,name,role,team
+• O backend:
+  – Valida cada linha
+  – Cria invitations em lote
+  – Retorna um relatório:
+      linhas válidas
+      e-mails já existentes
+      erros de formatação
+• UI mostra preview do CSV antes de enviar
+
+================================================================
+🔥 4. TIMES / GRUPOS / DEPARTAMENTOS
+================================================================
+Quero funcionalidades completas:
+
+• CRUD de times no painel admin:
+  – Nome
+  – Descrição
+  – Cor (tag color)
+• Usuários podem pertencer a múltiplos times
+• Ao convidar usuários, gestor escolhe o time
+• Backend:
+  – /api/tenants/:tenantId/teams (CRUD)
+  – Tabela: teams
+  – Join table: user_teams
+
+================================================================
+🔥 5. RBAC GRANULAR (Role-Based Access Control)
+================================================================
+Quero implementar o seguinte modelo de roles:
+
+ROLES DO TENANT:
+• Owner – controle total
+• Admin – gerencia usuários, automações, workflows
+• Manager – gerencia apenas workflows do departamento
+• Member – executa tarefas
+• Viewer – só leitura
+
+PERMISSÕES:
+• tenant.manage_users
+• tenant.manage_roles
+• tenant.view_audit_logs
+• workflow.edit
+• workflow.create
+• workflow.delete
+• workflow.run_agents
+• workflow.view
+• card.create
+• card.move
+• card.edit
+• card.comment
+• card.delete
+
+Estrutura no banco:
+– Tabela: roles
+– Tabela: permissions
+– Join: role_permissions
+– Join: user_roles (multirole por tenant)
+
+Backend precisa:
+• Middleware de autorização:
+    checkPermission("workflow.edit")
+• Autorização por tenantId isolada
+
+Frontend:
+• Bloquear botões com base nas permissões
+• Habilitar/Desabilitar funcionalidades dinamicamente
+• Página /admin/roles com:
+  – Lista de roles
+  – Editor de permissões (checkbox grid)
+  – Assign roles to users
+
+================================================================
+🔥 6. UX / UI (TEMA CLARO)
+================================================================
+Use:
+– ShadCN UI
+– tabelas com paginação
+– modais
+– dropdowns
+– toasts
+– skeletons
+– loading states
+
+Páginas necessárias:
+• /admin/users
+  – lista de usuários do tenant
+  – status: active / pending invite
+  – Invite
+  – Bulk Invite
+  – Import CSV
+• /admin/users/import
+• /admin/teams
+• /admin/roles
+
+================================================================
+🔥 7. ESTRUTURA MULTI-TENANT
+================================================================
+Cada rota backend deve validar:
+– JWT do usuário
+– tenantId vindo do path
+– se o usuário pertence ao tenant
+– se tem permissão para acessar a rota
+
+Os dados nunca podem vazar entre tenants.
+
+================================================================
+🔥 8. ENTREGÁVEIS
+================================================================
+Gerar:
+
+✔ Backend Express completo  
+✔ Migrations Drizzle completas  
+✔ Frontend React + Vite + ShadCN (tema claro)  
+✔ Páginas  
+✔ Componentes  
+✔ Modais  
+✔ Formulários  
+✔ API client  
+✔ Middlewares de permissão  
+✔ Tudo pronto para usar no meu projeto  
+
+================================================================
+IMPORTANTE
+================================================================
+• Pode organizar o código em múltiplos arquivos.  
+• Se mudar estrutura das pastas, explique.  
+• Respeite estritamente minha stack.  
+• Não reimplemente login nem onboarding — isso já existe.  
+
+Agora gere TODO o código completo.
