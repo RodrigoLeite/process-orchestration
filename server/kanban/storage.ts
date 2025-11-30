@@ -54,15 +54,33 @@ export const kanbanStorage = {
     return board;
   },
 
-  async getBoardsByTenant(tenantId: string): Promise<Board[]> {
-    return db
-      .select()
+  async getBoardsByTenant(tenantId: string): Promise<(Board & { cardsCount: number })[]> {
+    const result = await db
+      .select({
+        id: boards.id,
+        tenantId: boards.tenantId,
+        name: boards.name,
+        description: boards.description,
+        color: boards.color,
+        icon: boards.icon,
+        isArchived: boards.isArchived,
+        settings: boards.settings,
+        createdBy: boards.createdBy,
+        createdAt: boards.createdAt,
+        updatedAt: boards.updatedAt,
+        areaId: boards.areaId,
+        workflowHash: boards.workflowHash,
+        cardsCount: sql<number>`CAST(COUNT(${cards.id}) AS INTEGER)`,
+      })
       .from(boards)
+      .leftJoin(cards, eq(cards.boardId, boards.id))
       .where(and(
         eq(boards.tenantId, tenantId), 
         or(isNull(boards.isArchived), eq(boards.isArchived, "false"))
       ))
+      .groupBy(boards.id)
       .orderBy(desc(boards.createdAt));
+    return result;
   },
 
   async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {

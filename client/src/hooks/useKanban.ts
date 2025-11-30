@@ -11,6 +11,8 @@ export interface Board {
   isArchived?: string;
   settings?: Record<string, any>;
   createdBy?: string;
+  areaId?: string;
+  cardsCount?: number;
   createdAt: string;
   updatedAt: string;
 }
