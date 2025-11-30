@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { eq, and, asc, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, asc, desc, sql, inArray, or, isNull } from "drizzle-orm";
 import {
   boards,
   phases,
@@ -58,7 +58,10 @@ export const kanbanStorage = {
     return db
       .select()
       .from(boards)
-      .where(and(eq(boards.tenantId, tenantId), eq(boards.isArchived, "false")))
+      .where(and(
+        eq(boards.tenantId, tenantId), 
+        or(isNull(boards.isArchived), eq(boards.isArchived, "false"))
+      ))
       .orderBy(desc(boards.createdAt));
   },
 
