@@ -34,8 +34,7 @@ export default function Navigation() {
   const navItems = [
     { label: t("nav.home"), href: "/", icon: HomeIcon },
     { label: t("nav.demands"), href: "/app/demands", icon: Grid3x3 },
-    { label: "Boards", href: "/kanban/boards", icon: Trello },
-    { label: t("nav.workflows"), href: "/app/workflows", icon: LayoutGrid },
+    { label: t("nav.boards"), href: "/kanban/boards", icon: Trello },
     { label: t("nav.areas"), href: "/app/areas", icon: BarChart3 },
     { label: t("nav.bottlenecks"), href: "/app/bottlenecks", icon: AlertTriangle },
     { label: t("nav.insights"), href: "/app/insights", icon: Zap },

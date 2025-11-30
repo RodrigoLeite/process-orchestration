@@ -17,7 +17,7 @@ export const translations = {
     nav: {
       home: 'Home',
       demands: 'Demandas',
-      workflows: 'Workflows',
+      boards: 'Boards',
       areas: 'Áreas',
       bottlenecks: 'Gargalos (IA)',
       insights: 'Insights IA',
@@ -700,7 +700,7 @@ export const translations = {
     nav: {
       home: 'Home',
       demands: 'Demands',
-      workflows: 'Workflows',
+      boards: 'Boards',
       areas: 'Areas',
       bottlenecks: 'Bottlenecks (AI)',
       insights: 'AI Insights',

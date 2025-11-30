@@ -93,41 +93,44 @@ export const orchestrateDemandFn = inngest.createFunction(
     const successResult = result as { success: true; output: any };
     const resultData = successResult.output?.data || successResult.output;
 
-    const workflowId = await step.run("save-workflow", async () => {
+    const boardResult = await step.run("save-board", async () => {
       if (!resultData?.workflow) {
-        console.log("[ORCHESTRATE-QUEUE] No workflow generated");
         return null;
       }
 
       try {
-        const { getOrCreateWorkflow, createWorkflowStages } = await import("../../lib/workflowService");
+        const { getOrCreateBoard, createCardFromDemand } = await import("../../kanban/kanbanService");
+        const { kanbanStorage } = await import("../../kanban/storage");
         
-        const workflowName = resultData.workflow?.titulo || demandInput.titulo || "Workflow";
-        const workflow = await getOrCreateWorkflow(
+        const boardName = resultData.workflow?.titulo || demandInput.titulo || "Board";
+        const board = await getOrCreateBoard(
           resultData.workflow.etapas,
-          workflowName,
+          boardName,
           demandInput.area,
           tenantId
         );
-        
-        console.log(`[ORCHESTRATE-QUEUE] Using workflow: ${workflow.id}`);
 
-        let stages = await storage.getWorkflowStages(workflow.id);
-        if (stages.length === 0) {
-          await createWorkflowStages(workflow.id, workflow.steps);
-          stages = await storage.getWorkflowStages(workflow.id);
+        const phases = await kanbanStorage.getPhasesByBoard(board.id, tenantId);
+        const firstPhase = phases.find(p => p.isInitial === "true") || phases[0];
+
+        if (!firstPhase) {
+          throw new Error(`No phases found for board ${board.id}`);
         }
 
-        const firstStageId = stages.length > 0 ? stages[0].id : undefined;
+        const demand = await storage.getDemandById(demandId);
+        if (demand) {
+          await createCardFromDemand(board.id, firstPhase.id, tenantId, demand);
+        }
+
         await storage.updateDemandWithSLA(demandId, {
-          workflowId: workflow.id,
-          stageId: firstStageId,
+          workflowId: board.id,
+          stageId: firstPhase.id,
         });
 
-        return workflow.id;
+        return { boardId: board.id, phaseId: firstPhase.id };
       } catch (error) {
-        console.error("[ORCHESTRATE-QUEUE] Error saving workflow:", error);
-        return null;
+        console.error("[ORCHESTRATE-QUEUE] Error saving board:", error);
+        throw error;
       }
     });
 
@@ -179,7 +182,8 @@ export const orchestrateDemandFn = inngest.createFunction(
         status: "completed",
         output: {
           success: true,
-          workflowId,
+          boardId: boardResult?.boardId,
+          phaseId: boardResult?.phaseId,
           workflow: resultData?.workflow,
           bottlenecks: resultData?.bottlenecks,
           insights: resultData?.insights,
