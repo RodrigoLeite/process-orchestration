@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, CheckCircle2, AlertCircle, Zap, Target, Lightbulb } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ExecutionDetail {
   executionId: string;
@@ -49,17 +50,26 @@ interface ExecutionDetail {
 
 export default function AILogsDetailPage() {
   const { t } = useTranslation();
+  const { tenant } = useAuth();
   const [match, params] = useRoute("/app/ai/logs/:id");
   const [, navigate] = useLocation();
 
+  const getHeaders = (): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (tenant?.id) {
+      (headers as Record<string, string>)["x-tenant-id"] = tenant.id;
+    }
+    return headers;
+  };
+
   const { data: detailData, isLoading, error } = useQuery<{ success: boolean; data: ExecutionDetail }>({
-    queryKey: ["ai-logs-detail", params?.id],
+    queryKey: ["ai-logs-detail", params?.id, tenant?.id],
     queryFn: async () => {
-      const res = await fetch(`/api/ai/logs/${params?.id}`);
+      const res = await fetch(`/api/ai/logs/${params?.id}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch execution details");
       return res.json();
     },
-    enabled: !!params?.id,
+    enabled: !!params?.id && !!tenant?.id,
     staleTime: 0,
     gcTime: 0
   });

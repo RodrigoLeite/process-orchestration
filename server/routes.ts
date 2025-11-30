@@ -3323,8 +3323,12 @@ Texto original: ${demand.rawText}`;
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
       
-      // Get all agents
-      const agents = await storage.getAgents();
+      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
+      // Get all agents (filtered by tenant if available)
+      const agents = await storage.getAgents(tenantId);
       
       // Get logs from all agents and group by execution (by timestamp and demand)
       const executionMap = new Map<string, any>();
@@ -3394,8 +3398,12 @@ Texto original: ${demand.rawText}`;
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const { executionId } = req.params;
 
-      // Get all agents and search for the execution log
-      const agents = await storage.getAgents();
+      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+
+      // Get all agents (filtered by tenant) and search for the execution log
+      const agents = await storage.getAgents(tenantId);
       let foundLog = null;
       let foundAgent = null;
       
