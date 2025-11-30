@@ -142,7 +142,7 @@ export default function Canvas() {
 
   return (
     <div 
-      className="w-full h-full bg-gray-100"
+      className="w-full h-full bg-muted"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -155,8 +155,8 @@ export default function Canvas() {
         nodeTypes={nodeTypes}
         fitView
       >
-        <Background color="#9ca3af" gap={12} />
-        <Controls />
+        <Background color="hsl(var(--muted-foreground))" gap={12} />
+        <Controls className="!bg-card !border-border" />
         <MiniMap
           nodeColor={(node) => {
             switch (node.type) {
@@ -177,7 +177,7 @@ export default function Canvas() {
             }
           }}
           maskColor="rgba(0, 0, 0, 0.05)"
-          className="bg-white border border-gray-300"
+          className="!bg-card !border-border"
         />
       </ReactFlow>
     </div>

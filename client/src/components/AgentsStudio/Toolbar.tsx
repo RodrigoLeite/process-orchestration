@@ -56,10 +56,10 @@ export default function Toolbar({ onBack }: ToolbarProps) {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200">
+    <div className="bg-card border-b border-border">
       {/* Agent Name Header */}
-      <div className="h-12 px-4 flex items-center border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
-        <h2 className="text-sm font-semibold text-gray-900">
+      <div className="h-12 px-4 flex items-center border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
+        <h2 className="text-sm font-semibold text-foreground">
           {currentAgentName && `📋 ${currentAgentName}`}
         </h2>
       </div>
@@ -71,7 +71,6 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={toggleSidebar}
-          className="bg-white hover:bg-gray-100 border-gray-300"
           title={isSidebarOpen ? t("agentStudio.closePanel") : t("agentStudio.openPanel")}
           data-testid="button-toggle-sidebar"
         >
@@ -82,7 +81,6 @@ export default function Toolbar({ onBack }: ToolbarProps) {
             size="sm"
             variant="outline"
             onClick={onBack}
-            className="bg-white hover:bg-gray-100 border-gray-300"
             data-testid="button-back-to-agents"
           >
             <ArrowLeft size={16} className="mr-2" />
@@ -94,7 +92,6 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Save size={16} className="mr-2" />
           {isSaving ? t("agentStudio.saving") : t("agentStudio.save")}
@@ -105,7 +102,7 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           variant="outline"
           onClick={handleExecute}
           disabled={isExecuting}
-          className="bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-600"
+          className="bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
         >
           <Play size={16} className="mr-2" />
           {isExecuting ? t("agentStudio.executing") : t("agentStudio.execute")}
@@ -117,7 +114,6 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={undo}
-          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Undo size={16} />
         </Button>
@@ -126,7 +122,6 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={redo}
-          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <Redo size={16} />
         </Button>
@@ -135,7 +130,6 @@ export default function Toolbar({ onBack }: ToolbarProps) {
           size="sm"
           variant="outline"
           onClick={handleReset}
-          className="bg-white hover:bg-gray-100 border-gray-300"
         >
           <RotateCcw size={16} />
         </Button>
