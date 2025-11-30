@@ -195,15 +195,15 @@ export default function AreaDetailsPage() {
           {t("areaDetails.bottlenecks")}
         </h2>
         {areaBottlenecks.length === 0 ? (
-          <Card className="border-green-200 bg-green-50">
+          <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30">
             <CardContent className="pt-6">
-              <p className="text-center text-green-700">✅ {t("areaDetails.bottlenecksDetected")}</p>
+              <p className="text-center text-green-700 dark:text-green-400">✅ {t("areaDetails.bottlenecksDetected")}</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3" data-testid="bottlenecks-list">
             {areaBottlenecks.map((bottleneck, idx) => (
-              <Card key={idx} className="border-red-200 bg-red-50">
+              <Card key={idx} className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -219,16 +219,16 @@ export default function AreaDetailsPage() {
                           : "🟢 Baixo"}
                       </Badge>
                     </div>
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <p className="text-xs text-gray-600 mb-2">{t("areaDetails.recommendedActions")}</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t("areaDetails.recommendedActions")}</p>
                     <ul className="space-y-1">
                       {bottleneck.actions.map((action, i) => (
                         <li key={i} className="text-sm flex gap-2">
-                          <span className="text-gray-400">•</span>
+                          <span className="text-muted-foreground">•</span>
                           <span>{action}</span>
                         </li>
                       ))}
@@ -249,7 +249,7 @@ export default function AreaDetailsPage() {
         {demands.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
-              <p className="text-center text-gray-400">{t("areaDetails.noDemands")}</p>
+              <p className="text-center text-muted-foreground">{t("areaDetails.noDemands")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -277,9 +277,9 @@ export default function AreaDetailsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-medium px-2 py-1 rounded ${
-                        demand.status === "completed" ? "bg-green-100 text-green-700" :
-                        demand.status === "blocked" ? "bg-red-100 text-red-700" :
-                        "bg-blue-100 text-blue-700"
+                        demand.status === "completed" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" :
+                        demand.status === "blocked" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" :
+                        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                       }`}>
                         {demand.status === "completed" ? "✓" : demand.status === "blocked" ? "✕" : "→"}
                       </span>
@@ -323,7 +323,7 @@ export default function AreaDetailsPage() {
         <h2 className="text-2xl font-bold" data-testid="section-settings">
           {t("areaDetails.settings")}
         </h2>
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
           <CardContent className="pt-6">
             <div className="space-y-3">
               <p className="text-sm font-medium text-foreground">{t("workflows.workflowManagement")}</p>
