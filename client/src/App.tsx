@@ -38,6 +38,8 @@ import MonitoringPage from "@/pages/monitoring";
 import SettingsPage from "@/pages/settings";
 import AdminPanel from "@/pages/admin";
 import NotFound from "@/pages/not-found";
+import KanbanBoards from "@/pages/kanban/boards";
+import KanbanBoardView from "@/pages/kanban/board-view";
 
 function ProtectedRoutes() {
   const { isAuthenticated, isLoading, tenant } = useAuth();
@@ -105,6 +107,8 @@ function AppRoutes() {
         <Route path="/settings" component={SettingsPage} />
         <Route path="/admin" component={AdminPanel} />
         <Route path="/observability" component={ObservabilityPage} />
+        <Route path="/kanban/boards" component={KanbanBoards} />
+        <Route path="/kanban/board/:boardId" component={KanbanBoardView} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

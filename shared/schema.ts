@@ -539,3 +539,291 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// ========== KANBAN 2.0 ==========
+
+// BOARDS
+export const boards = pgTable("boards", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#3b82f6"),
+  icon: text("icon").default("layout-kanban"),
+  isArchived: text("is_archived").default("false"),
+  settings: jsonb("settings").$type<{
+    allowComments?: boolean;
+    allowAttachments?: boolean;
+    requireDescription?: boolean;
+    defaultAssignee?: string;
+  }>(),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertBoardSchema = createInsertSchema(boards).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertBoard = z.infer<typeof insertBoardSchema>;
+export type Board = typeof boards.$inferSelect;
+
+// PHASES (Columns)
+export const phases = pgTable("phases", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  boardId: uuid("board_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#6b7280"),
+  position: integer("position").notNull().default(0),
+  isInitial: text("is_initial").default("false"),
+  isFinal: text("is_final").default("false"),
+  triggerAgent: text("trigger_agent"),
+  slaHours: integer("sla_hours"),
+  wipLimit: integer("wip_limit"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPhaseSchema = createInsertSchema(phases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPhase = z.infer<typeof insertPhaseSchema>;
+export type Phase = typeof phases.$inferSelect;
+
+// CARDS
+export const cards = pgTable("cards", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  boardId: uuid("board_id").notNull(),
+  phaseId: uuid("phase_id").notNull(),
+  demandId: uuid("demand_id"),
+  workflowId: uuid("workflow_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  position: integer("position").notNull().default(0),
+  priority: text("priority").default("medium"),
+  assigneeId: varchar("assignee_id"),
+  reporterId: varchar("reporter_id"),
+  deadline: timestamp("deadline"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  slaDeadline: timestamp("sla_deadline"),
+  areaId: text("area_id"),
+  labels: text("labels").array(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCardSchema = createInsertSchema(cards).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCard = z.infer<typeof insertCardSchema>;
+export type Card = typeof cards.$inferSelect;
+
+// CARD FIELDS (Custom Field Definitions)
+export const cardFields = pgTable("card_fields", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  boardId: uuid("board_id").notNull(),
+  name: text("name").notNull(),
+  key: text("key").notNull(),
+  fieldType: text("field_type").notNull(),
+  options: jsonb("options").$type<{
+    choices?: Array<{ value: string; label: string; color?: string }>;
+    min?: number;
+    max?: number;
+    placeholder?: string;
+    required?: boolean;
+    currency?: string;
+  }>(),
+  position: integer("position").notNull().default(0),
+  isRequired: text("is_required").default("false"),
+  isVisible: text("is_visible").default("true"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCardFieldSchema = createInsertSchema(cardFields).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCardField = z.infer<typeof insertCardFieldSchema>;
+export type CardField = typeof cardFields.$inferSelect;
+
+// CARD FIELD VALUES
+export const cardFieldValues = pgTable("card_field_values", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  cardId: uuid("card_id").notNull(),
+  fieldId: uuid("field_id").notNull(),
+  value: text("value"),
+  jsonValue: jsonb("json_value").$type<any>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCardFieldValueSchema = createInsertSchema(cardFieldValues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCardFieldValue = z.infer<typeof insertCardFieldValueSchema>;
+export type CardFieldValue = typeof cardFieldValues.$inferSelect;
+
+// CARD COMMENTS
+export const cardComments = pgTable("card_comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  cardId: uuid("card_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  content: text("content").notNull(),
+  parentId: uuid("parent_id"),
+  isEdited: text("is_edited").default("false"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCardCommentSchema = createInsertSchema(cardComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCardComment = z.infer<typeof insertCardCommentSchema>;
+export type CardComment = typeof cardComments.$inferSelect;
+
+// CARD ATTACHMENTS
+export const cardAttachments = pgTable("card_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  cardId: uuid("card_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  path: text("path").notNull(),
+  url: text("url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCardAttachmentSchema = createInsertSchema(cardAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCardAttachment = z.infer<typeof insertCardAttachmentSchema>;
+export type CardAttachment = typeof cardAttachments.$inferSelect;
+
+// CARD ACTIVITY LOG
+export const cardActivityLogs = pgTable("card_activity_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  cardId: uuid("card_id").notNull(),
+  userId: varchar("user_id"),
+  action: text("action").notNull(),
+  entityType: text("entity_type"),
+  entityId: text("entity_id"),
+  oldValue: jsonb("old_value").$type<any>(),
+  newValue: jsonb("new_value").$type<any>(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCardActivityLogSchema = createInsertSchema(cardActivityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCardActivityLog = z.infer<typeof insertCardActivityLogSchema>;
+export type CardActivityLog = typeof cardActivityLogs.$inferSelect;
+
+// AUTOMATIONS
+export const automations = pgTable("automations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  boardId: uuid("board_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: text("is_active").default("true"),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertAutomationSchema = createInsertSchema(automations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAutomation = z.infer<typeof insertAutomationSchema>;
+export type Automation = typeof automations.$inferSelect;
+
+// AUTOMATION TRIGGERS
+export const automationTriggers = pgTable("automation_triggers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  automationId: uuid("automation_id").notNull(),
+  triggerType: text("trigger_type").notNull(),
+  conditions: jsonb("conditions").$type<{
+    phaseId?: string;
+    fieldId?: string;
+    fieldValue?: any;
+    priority?: string;
+    schedule?: string;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAutomationTriggerSchema = createInsertSchema(automationTriggers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAutomationTrigger = z.infer<typeof insertAutomationTriggerSchema>;
+export type AutomationTrigger = typeof automationTriggers.$inferSelect;
+
+// AUTOMATION ACTIONS
+export const automationActions = pgTable("automation_actions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  automationId: uuid("automation_id").notNull(),
+  actionType: text("action_type").notNull(),
+  config: jsonb("config").$type<{
+    targetPhaseId?: string;
+    fieldId?: string;
+    fieldValue?: any;
+    assigneeId?: string;
+    emailTemplate?: string;
+    emailRecipients?: string[];
+    agentId?: string;
+    commentText?: string;
+  }>(),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAutomationActionSchema = createInsertSchema(automationActions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAutomationAction = z.infer<typeof insertAutomationActionSchema>;
+export type AutomationAction = typeof automationActions.$inferSelect;

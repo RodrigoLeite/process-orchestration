@@ -21,6 +21,7 @@ import { getGraphLabels } from "./lib/graphTranslations";
 import workspacesRouter from "./routes/workspacesRoutes";
 import agentRoutes from "./routes/agentRoutes";
 import jobRoutes from "./routes/jobRoutes";
+import kanbanRoutes from "./routes/kanbanRoutes";
 import { inngestServe } from "./inngest/serve";
 
 // Calculate delay risk based on SLA
@@ -4142,6 +4143,9 @@ Texto original: ${demand.rawText}`;
   // Register agent job routes (Inngest)
   app.use("/api/agents", agentRoutes);
   app.use("/api/jobs", jobRoutes);
+
+  // Register Kanban 2.0 routes
+  app.use("/api/kanban", kanbanRoutes);
 
   // Inngest serve endpoint
   app.use("/api/inngest", inngestServe);

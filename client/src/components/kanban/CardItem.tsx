@@ -1,0 +1,129 @@
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { type Card } from "@/hooks/useKanban";
+import { Card as UICard, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, AlertCircle, User } from "lucide-react";
+import { format, isPast, isToday } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface CardItemProps {
+  card: Card;
+  onClick: () => void;
+  isDragging?: boolean;
+}
+
+const priorityColors: Record<string, string> = {
+  critical: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-yellow-500",
+  low: "bg-green-500",
+};
+
+const priorityLabels: Record<string, string> = {
+  critical: "Crítica",
+  high: "Alta",
+  medium: "Média",
+  low: "Baixa",
+};
+
+export default function KanbanCardItem({
+  card,
+  onClick,
+  isDragging = false,
+}: CardItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({ id: card.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const isOverdue = card.deadline ? isPast(new Date(card.deadline)) : false;
+  const isDueToday = card.deadline ? isToday(new Date(card.deadline)) : false;
+
+  return (
+    <UICard
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`cursor-pointer hover:shadow-md transition-shadow ${
+        isDragging || isSortableDragging ? "opacity-50 shadow-lg rotate-2" : ""
+      }`}
+      onClick={onClick}
+      data-testid={`card-item-${card.id}`}
+    >
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="text-sm font-medium line-clamp-2">{card.title}</h4>
+          {card.priority && card.priority !== "medium" && (
+            <div
+              className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
+                priorityColors[card.priority] || "bg-gray-400"
+              }`}
+              title={priorityLabels[card.priority]}
+            />
+          )}
+        </div>
+
+        {card.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {card.description}
+          </p>
+        )}
+
+        {card.labels && card.labels.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {card.labels.slice(0, 3).map((label, i) => (
+              <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0">
+                {label}
+              </Badge>
+            ))}
+            {card.labels.length > 3 && (
+              <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                +{card.labels.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-2">
+            {card.deadline && (
+              <div
+                className={`flex items-center gap-1 text-xs ${
+                  isOverdue
+                    ? "text-red-500"
+                    : isDueToday
+                    ? "text-orange-500"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {isOverdue && <AlertCircle className="w-3 h-3" />}
+                <Calendar className="w-3 h-3" />
+                {format(new Date(card.deadline), "dd MMM", { locale: ptBR })}
+              </div>
+            )}
+          </div>
+
+          {card.assigneeId && (
+            <Avatar className="w-6 h-6">
+              <AvatarFallback className="text-[10px]">
+                <User className="w-3 h-3" />
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
+      </CardContent>
+    </UICard>
+  );
+}
