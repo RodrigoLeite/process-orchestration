@@ -69,6 +69,24 @@ const priorityOptions = [
   { value: "low", label: "Baixa", color: "bg-green-500" },
 ];
 
+function mapPriorityToEnglish(priority: string | undefined): string {
+  if (!priority) return "medium";
+  const normalized = priority.toLowerCase().trim();
+  const mapping: Record<string, string> = {
+    "baixa": "low",
+    "média": "medium",
+    "media": "medium",
+    "alta": "high",
+    "crítica": "critical",
+    "critica": "critical",
+    "low": "low",
+    "medium": "medium",
+    "high": "high",
+    "critical": "critical"
+  };
+  return mapping[normalized] || "medium";
+}
+
 export default function CardModal({ cardId, open, onClose }: CardModalProps) {
   const { data: cardData, isLoading } = useCard(cardId);
   const updateCard = useUpdateCard();
@@ -87,7 +105,7 @@ export default function CardModal({ cardId, open, onClose }: CardModalProps) {
     if (cardData?.card) {
       setTitle(cardData.card.title);
       setDescription(cardData.card.description || "");
-      setPriority(cardData.card.priority || "medium");
+      setPriority(mapPriorityToEnglish(cardData.card.priority));
     }
   }, [cardData]);
 

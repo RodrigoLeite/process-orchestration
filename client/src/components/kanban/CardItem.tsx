@@ -28,6 +28,11 @@ const priorityColors: Record<string, string> = {
   high: "bg-orange-500",
   medium: "bg-yellow-500",
   low: "bg-green-500",
+  "crítica": "bg-red-500",
+  "alta": "bg-orange-500",
+  "média": "bg-yellow-500",
+  "media": "bg-yellow-500",
+  "baixa": "bg-green-500",
 };
 
 const priorityLabels: Record<string, string> = {
@@ -35,6 +40,11 @@ const priorityLabels: Record<string, string> = {
   high: "Alta",
   medium: "Média",
   low: "Baixa",
+  "crítica": "Crítica",
+  "alta": "Alta",
+  "média": "Média",
+  "media": "Média",
+  "baixa": "Baixa",
 };
 
 export default function KanbanCardItem({
@@ -75,13 +85,15 @@ export default function KanbanCardItem({
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <h4 className="text-sm font-medium line-clamp-2">{card.title}</h4>
-          {card.priority && card.priority !== "medium" && (
-            <div
-              className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
-                priorityColors[card.priority] || "bg-gray-400"
+          {card.priority && (
+            <Badge 
+              variant="secondary" 
+              className={`text-xs px-1.5 py-0 flex-shrink-0 text-white ${
+                priorityColors[card.priority.toLowerCase()] || "bg-gray-400"
               }`}
-              title={priorityLabels[card.priority]}
-            />
+            >
+              {priorityLabels[card.priority.toLowerCase()] || card.priority}
+            </Badge>
           )}
         </div>
 
