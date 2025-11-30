@@ -51,6 +51,7 @@ export default function BoardSettingsPage() {
     setName(boardData.board.name);
     setDescription(boardData.board.description || "");
     setIsInitialized(true);
+    console.log("[DEBUG] Board phases loaded:", boardData.phases.map(p => ({ name: p.name, slaHours: p.slaHours })));
   }
 
   const handleSaveBoard = async () => {
