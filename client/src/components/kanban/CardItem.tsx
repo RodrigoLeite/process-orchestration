@@ -4,9 +4,18 @@ import { type Card } from "@/hooks/useKanban";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, AlertCircle, User } from "lucide-react";
-import { format, isPast, isToday } from "date-fns";
+import { Calendar, AlertCircle, User, Clock } from "lucide-react";
+import { format, isPast, isToday, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+function formatTimeInPhase(phaseEnteredAt: string | undefined): string | null {
+  if (!phaseEnteredAt) return null;
+  try {
+    return formatDistanceToNow(new Date(phaseEnteredAt), { locale: ptBR, addSuffix: false });
+  } catch {
+    return null;
+  }
+}
 
 interface CardItemProps {
   card: Card;
@@ -49,6 +58,7 @@ export default function KanbanCardItem({
 
   const isOverdue = card.deadline ? isPast(new Date(card.deadline)) : false;
   const isDueToday = card.deadline ? isToday(new Date(card.deadline)) : false;
+  const timeInPhase = formatTimeInPhase(card.phaseEnteredAt);
 
   return (
     <UICard
@@ -98,6 +108,12 @@ export default function KanbanCardItem({
 
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2">
+            {timeInPhase && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Tempo nesta fase">
+                <Clock className="w-3 h-3" />
+                {timeInPhase}
+              </div>
+            )}
             {card.deadline && (
               <div
                 className={`flex items-center gap-1 text-xs ${
