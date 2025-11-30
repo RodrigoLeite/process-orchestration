@@ -1,5 +1,5 @@
 import { storage } from "../../storage";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import {
   workflows,
   workflowStages,
@@ -23,7 +23,10 @@ async function migrateWorkflowsToBoards() {
     const existingBoard = await db
       .select()
       .from(boards)
-      .where(eq(boards.workflowHash, workflow.workflowHash));
+      .where(and(
+        eq(boards.workflowHash, workflow.workflowHash),
+        eq(boards.tenantId, tenantId)
+      ));
     
     if (existingBoard.length > 0) {
       console.log(`Skipping workflow ${workflow.id} - already migrated as board ${existingBoard[0].id}`);
