@@ -1,7 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { 
   Shield, 
   Users, 
@@ -32,40 +31,40 @@ export default function AdminPanel() {
 
   const adminCards: AdminCard[] = [
     {
-      title: 'Gerenciar Usuários',
-      description: 'Visualize, convide e gerencie os membros do seu workspace',
+      title: t('admin.manageUsers'),
+      description: t('admin.manageUsersDesc'),
       icon: <Users className="w-8 h-8" />,
       href: '/admin/users',
       permission: 'tenant.manage_users',
       color: 'bg-blue-500',
     },
     {
-      title: 'Convidar Usuários',
-      description: 'Envie convites individuais ou em lote para novos membros',
+      title: t('admin.inviteUsers'),
+      description: t('admin.inviteUsersDesc'),
       icon: <UserPlus className="w-8 h-8" />,
       href: '/admin/users',
       permission: 'tenant.manage_users',
       color: 'bg-green-500',
     },
     {
-      title: 'Importar via CSV',
-      description: 'Importe múltiplos usuários de uma só vez usando arquivo CSV',
+      title: t('admin.importCSV'),
+      description: t('admin.importCSVDesc'),
       icon: <Upload className="w-8 h-8" />,
       href: '/admin/users/import',
       permission: 'tenant.manage_users',
       color: 'bg-purple-500',
     },
     {
-      title: 'Gerenciar Times',
-      description: 'Crie e organize times para melhor colaboração',
+      title: t('admin.manageTeams'),
+      description: t('admin.manageTeamsDesc'),
       icon: <UsersRound className="w-8 h-8" />,
       href: '/admin/teams',
       permission: 'tenant.manage_teams',
       color: 'bg-orange-500',
     },
     {
-      title: 'Funções e Permissões',
-      description: 'Configure funções e controle o que cada grupo pode acessar',
+      title: t('admin.rolesPermissions'),
+      description: t('admin.rolesPermissionsDesc'),
       icon: <Key className="w-8 h-8" />,
       href: '/admin/roles',
       permission: 'tenant.manage_roles',
@@ -97,10 +96,10 @@ export default function AdminPanel() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground" data-testid="text-admin-title">
-                Painel de Administração
+                {t('admin.title')}
               </h1>
               <p className="text-muted-foreground">
-                Gerencie usuários, times e permissões do seu workspace
+                {t('admin.subtitle')}
               </p>
             </div>
           </div>
@@ -110,7 +109,7 @@ export default function AdminPanel() {
           <div className="flex items-center gap-3">
             <Building2 className="w-5 h-5 text-muted-foreground" />
             <div>
-              <span className="text-sm text-muted-foreground">Workspace atual:</span>
+              <span className="text-sm text-muted-foreground">{t('admin.currentWorkspace')}:</span>
               <span className="ml-2 font-semibold text-foreground">{tenant.name}</span>
             </div>
           </div>
@@ -120,11 +119,10 @@ export default function AdminPanel() {
           <Card className="p-8 text-center border-border">
             <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              Acesso Restrito
+              {t('admin.restrictedAccess')}
             </h3>
             <p className="text-muted-foreground">
-              Você não tem permissão para acessar as funcionalidades de administração.
-              Entre em contato com o administrador do workspace.
+              {t('admin.noPermissionMessage')}
             </p>
           </Card>
         ) : (
@@ -147,7 +145,7 @@ export default function AdminPanel() {
                     {card.description}
                   </p>
                   <div className="flex items-center text-primary text-sm font-medium">
-                    Acessar
+                    {t('admin.access')}
                     <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -161,14 +159,14 @@ export default function AdminPanel() {
             <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                Sobre as Funções de Acesso
+                {t('admin.availableRoles')}
               </h3>
               <ul className="text-sm text-blue-800 dark:text-blue-300/80 space-y-1">
-                <li>• <strong>Owner</strong>: Controle total sobre o workspace e todas as configurações</li>
-                <li>• <strong>Admin</strong>: Pode gerenciar usuários, times e a maioria das configurações</li>
-                <li>• <strong>Manager</strong>: Pode criar e editar workflows e cards</li>
-                <li>• <strong>Member</strong>: Pode visualizar e interagir com cards atribuídos</li>
-                <li>• <strong>Viewer</strong>: Acesso somente leitura</li>
+                <li>• <strong>Owner</strong>: {t('admin.ownerDescription')}</li>
+                <li>• <strong>Admin</strong>: {t('admin.adminDescription')}</li>
+                <li>• <strong>Manager</strong>: {t('admin.managerDescription')}</li>
+                <li>• <strong>Member</strong>: {t('admin.memberDescription')}</li>
+                <li>• <strong>Viewer</strong>: {t('admin.viewerDescription')}</li>
               </ul>
             </div>
           </div>

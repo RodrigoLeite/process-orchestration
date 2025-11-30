@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import {
   ArrowLeft,
   Upload,
@@ -72,7 +73,7 @@ function parseCSV(content: string): ParsedRow[] {
 
     if (!email || !emailRegex.test(email)) {
       valid = false;
-      error = "Invalid email format";
+      error = "Invalid email";
     } else if (role && !validRoles.includes(role)) {
       valid = false;
       error = `Invalid role: ${role}`;
@@ -84,6 +85,7 @@ function parseCSV(content: string): ParsedRow[] {
 
 export default function AdminUsersImportPage() {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const { data: teamsData } = useAdminTeams();
   const csvImport = useCSVImport();
   
@@ -124,7 +126,7 @@ export default function AdminUsersImportPage() {
       }));
 
     if (validRows.length === 0) {
-      toast.error("No valid rows to import");
+      toast.error(t('admin.invalidCSV'));
       return;
     }
 
@@ -137,13 +139,13 @@ export default function AdminUsersImportPage() {
       setImportResult(result);
       
       if (result.invitations?.length > 0) {
-        toast.success(`${result.invitations.length} invitations sent successfully`);
+        toast.success(t('admin.importSuccess').replace('{count}', result.invitations.length.toString()));
       }
       if (result.invalid?.length > 0) {
-        toast.warning(`${result.invalid.length} rows had errors`);
+        toast.warning(t('admin.importError'));
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to import users");
+      toast.error(error.message || t('admin.importError'));
     }
   };
 
@@ -173,17 +175,17 @@ export default function AdminUsersImportPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Import Users from CSV</h1>
-          <p className="text-muted-foreground">Upload a CSV file to invite multiple users at once</p>
+          <h1 className="text-2xl font-bold">{t('admin.importTitle')}</h1>
+          <p className="text-muted-foreground">{t('admin.importSubtitle')}</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Upload CSV File</CardTitle>
+            <CardTitle>{t('admin.uploadFile')}</CardTitle>
             <CardDescription>
-              Your CSV should have columns: email, name (optional), role (optional), team (optional)
+              {t('admin.csvFormatDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -206,7 +208,7 @@ export default function AdminUsersImportPage() {
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    Choose Different File
+                    {t('common.edit')}
                   </Button>
                 </div>
               ) : (
@@ -214,11 +216,11 @@ export default function AdminUsersImportPage() {
                   <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
                   <div>
                     <Button onClick={() => fileInputRef.current?.click()} data-testid="button-upload-csv">
-                      Choose CSV File
+                      {t('admin.uploadFile')}
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    or drag and drop your file here
+                    {t('admin.dragDropHint')}
                   </p>
                 </div>
               )}
@@ -232,11 +234,11 @@ export default function AdminUsersImportPage() {
                 data-testid="button-download-template"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download Template
+                {t('admin.downloadTemplate')}
               </Button>
 
               <div className="flex items-center gap-2">
-                <Label htmlFor="default-role" className="text-sm">Default Role:</Label>
+                <Label htmlFor="default-role" className="text-sm">{t('admin.inviteRole')}:</Label>
                 <Select value={defaultRole} onValueChange={setDefaultRole}>
                   <SelectTrigger className="w-32" data-testid="select-default-role">
                     <SelectValue />
@@ -256,27 +258,21 @@ export default function AdminUsersImportPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>CSV Format Guide</CardTitle>
+            <CardTitle>{t('admin.csvFormat')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <h4 className="font-medium">Required Columns</h4>
+              <h4 className="font-medium">{t('admin.csvFormatDesc')}</h4>
               <ul className="text-sm text-muted-foreground list-disc list-inside">
-                <li><strong>email</strong> - User email address</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-medium">Optional Columns</h4>
-              <ul className="text-sm text-muted-foreground list-disc list-inside">
-                <li><strong>name</strong> - User display name</li>
-                <li><strong>role</strong> - admin, manager, member, or viewer</li>
-                <li><strong>team</strong> - Team name (must exist in workspace)</li>
+                <li>{t('admin.csvColumnEmail')}</li>
+                <li>{t('admin.csvColumnName')}</li>
+                <li>{t('admin.csvColumnRole')}</li>
+                <li>{t('admin.csvColumnTeam')}</li>
               </ul>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">Available Teams</h4>
+              <h4 className="font-medium">{t('admin.columnTeams')}</h4>
               <div className="flex flex-wrap gap-2">
                 {teamsData?.teams?.map((team) => (
                   <Badge key={team.id} variant="outline" style={{ borderColor: team.color }}>
@@ -284,7 +280,7 @@ export default function AdminUsersImportPage() {
                   </Badge>
                 ))}
                 {(!teamsData?.teams || teamsData.teams.length === 0) && (
-                  <span className="text-sm text-muted-foreground">No teams created yet</span>
+                  <span className="text-sm text-muted-foreground">{t('admin.noTeams')}</span>
                 )}
               </div>
             </div>
@@ -297,11 +293,11 @@ export default function AdminUsersImportPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Preview ({parsedRows.length} rows)</CardTitle>
+                <CardTitle>{t('admin.previewData')} ({parsedRows.length})</CardTitle>
                 <CardDescription>
                   <span className="text-green-600">{validCount} valid</span>
                   {invalidCount > 0 && (
-                    <span className="text-red-600 ml-2">{invalidCount} with errors</span>
+                    <span className="text-red-600 ml-2">{invalidCount} errors</span>
                   )}
                 </CardDescription>
               </div>
@@ -312,7 +308,7 @@ export default function AdminUsersImportPage() {
                   disabled={csvImport.isPending || validCount === 0}
                   data-testid="button-import"
                 >
-                  {csvImport.isPending ? "Importing..." : `Import ${validCount} Users`}
+                  {csvImport.isPending ? t('admin.importing') : t('admin.startImport')}
                 </Button>
               )}
             </div>
@@ -321,12 +317,11 @@ export default function AdminUsersImportPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">Status</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Notes</TableHead>
+                  <TableHead className="w-12">{t('admin.columnStatus')}</TableHead>
+                  <TableHead>{t('admin.columnEmail')}</TableHead>
+                  <TableHead>{t('admin.columnName')}</TableHead>
+                  <TableHead>{t('admin.columnRole')}</TableHead>
+                  <TableHead>{t('admin.columnTeams')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -344,10 +339,10 @@ export default function AdminUsersImportPage() {
                     <TableCell>
                       <Badge variant="outline">{row.role || defaultRole}</Badge>
                     </TableCell>
-                    <TableCell>{row.team || "-"}</TableCell>
                     <TableCell>
+                      {row.team || "-"}
                       {row.error && (
-                        <span className="text-red-600 text-sm">{row.error}</span>
+                        <span className="text-red-600 text-sm ml-2">{row.error}</span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -361,7 +356,7 @@ export default function AdminUsersImportPage() {
       {importResult && (
         <Card>
           <CardHeader>
-            <CardTitle>Import Results</CardTitle>
+            <CardTitle>{t('admin.previewData')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {importResult.invitations?.length > 0 && (
@@ -369,7 +364,7 @@ export default function AdminUsersImportPage() {
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>Success</AlertTitle>
                 <AlertDescription>
-                  {importResult.invitations.length} invitations sent successfully
+                  {t('admin.importSuccess').replace('{count}', importResult.invitations.length.toString())}
                 </AlertDescription>
               </Alert>
             )}
@@ -377,12 +372,12 @@ export default function AdminUsersImportPage() {
             {importResult.invalid?.length > 0 && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Some rows failed</AlertTitle>
+                <AlertTitle>{t('admin.importError')}</AlertTitle>
                 <AlertDescription>
                   <ul className="mt-2 list-disc list-inside">
                     {importResult.invalid.map((item: any, index: number) => (
                       <li key={index}>
-                        Line {item.line}: {item.email} - {item.error}
+                        {item.email} - {item.error}
                       </li>
                     ))}
                   </ul>
@@ -399,10 +394,10 @@ export default function AdminUsersImportPage() {
                   setImportResult(null);
                 }}
               >
-                Import More Users
+                {t('admin.importCSV')}
               </Button>
               <Button onClick={() => navigate("/admin/users")}>
-                Back to User Management
+                {t('admin.back')}
               </Button>
             </div>
           </CardContent>
