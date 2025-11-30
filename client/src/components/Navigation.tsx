@@ -65,7 +65,7 @@ export default function Navigation() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-screen bg-white border-r border-border transition-all duration-200 z-30 
+        className={`fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-200 z-30 
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           ${isSidebarCollapsed ? "w-20" : "w-64"}`}
         data-testid="navigation-sidebar"
@@ -74,8 +74,8 @@ export default function Navigation() {
           {/* Logo + Collapse Toggle */}
           <div className="flex items-center justify-between mb-8">
             {!isSidebarCollapsed && (
-              <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity flex-1 bg-transparent border-none cursor-pointer">
-                <HomeIcon className="w-8 h-8 text-primary flex-shrink-0" />
+              <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity flex-1 bg-transparent border-none cursor-pointer text-sidebar-foreground">
+                <HomeIcon className="w-8 h-8 text-sidebar-primary flex-shrink-0" />
                 <span className="truncate">{t("nav.orchestration")}</span>
               </button>
             )}
@@ -106,8 +106,8 @@ export default function Navigation() {
                   }}
                   className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors border-none bg-transparent cursor-pointer ${
                     active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   }`}
                   data-testid={`nav-link-${item.label.toLowerCase()}`}
                   title={isSidebarCollapsed ? item.label : undefined}
@@ -121,7 +121,7 @@ export default function Navigation() {
 
           {/* Footer info */}
           {!isSidebarCollapsed && (
-            <div className="pt-4 border-t border-border text-xs text-muted-foreground">
+            <div className="pt-4 border-t border-sidebar-border text-xs text-sidebar-foreground/70">
               <p>{t("branding.systemShortName")}</p>
               <p className="mt-1">© 2024</p>
             </div>
