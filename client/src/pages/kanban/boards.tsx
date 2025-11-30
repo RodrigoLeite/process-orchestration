@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useBoards, useCreateBoard, useDeleteBoard, type Board } from "@/hooks/useKanban";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -30,6 +38,8 @@ import {
   Trash2,
   Settings,
   Archive,
+  LayoutGrid,
+  Filter,
 } from "lucide-react";
 
 const BOARD_COLORS = [
@@ -50,11 +60,26 @@ export default function BoardsPage() {
   const deleteBoard = useDeleteBoard();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [areaFilter, setAreaFilter] = useState<string>("all");
   const [newBoard, setNewBoard] = useState({
     name: "",
     description: "",
     color: BOARD_COLORS[0],
   });
+
+  const uniqueAreas = useMemo(() => {
+    if (!boards) return [];
+    const areas = boards
+      .map(b => b.areaId)
+      .filter((area): area is string => !!area);
+    return Array.from(new Set(areas)).sort();
+  }, [boards]);
+
+  const filteredBoards = useMemo(() => {
+    if (!boards) return [];
+    if (areaFilter === "all") return boards;
+    return boards.filter(b => b.areaId === areaFilter);
+  }, [boards, areaFilter]);
 
   const handleCreateBoard = async () => {
     if (!newBoard.name.trim()) {
@@ -96,13 +121,33 @@ export default function BoardsPage() {
           </p>
         </div>
         
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-board">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Board
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-3">
+          {uniqueAreas.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={areaFilter} onValueChange={setAreaFilter}>
+                <SelectTrigger className="w-[180px]" data-testid="select-area-filter">
+                  <SelectValue placeholder="Filtrar por área" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as áreas</SelectItem>
+                  {uniqueAreas.map((area) => (
+                    <SelectItem key={area} value={area}>
+                      {area}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-board">
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Board
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Criar Novo Board</DialogTitle>
@@ -172,7 +217,8 @@ export default function BoardsPage() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {isLoading ? (
@@ -189,9 +235,9 @@ export default function BoardsPage() {
             </Card>
           ))}
         </div>
-      ) : boards && boards.length > 0 ? (
+      ) : filteredBoards && filteredBoards.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {boards.map((board) => (
+          {filteredBoards.map((board) => (
             <Card
               key={board.id}
               className="hover:shadow-lg transition-shadow cursor-pointer group"
@@ -209,7 +255,7 @@ export default function BoardsPage() {
                     >
                       <Trello className="w-5 h-5 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg">{board.name}</CardTitle>
                       {board.description && (
                         <CardDescription className="line-clamp-1">
@@ -258,10 +304,19 @@ export default function BoardsPage() {
               </CardHeader>
               
               <CardContent onClick={() => navigate(`/kanban/board/${board.id}`)}>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>
-                    Criado em {new Date(board.createdAt).toLocaleDateString("pt-BR")}
-                  </span>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {board.areaId && (
+                    <Badge variant="secondary" data-testid={`badge-area-${board.id}`}>
+                      {board.areaId}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" data-testid={`badge-cards-${board.id}`}>
+                    <LayoutGrid className="w-3 h-3 mr-1" />
+                    {board.cardsCount ?? 0} {(board.cardsCount ?? 0) === 1 ? 'demanda' : 'demandas'}
+                  </Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Criado em {new Date(board.createdAt).toLocaleDateString("pt-BR")}
                 </div>
               </CardContent>
             </Card>
