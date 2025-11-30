@@ -11,10 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Demand } from "@/lib/types";
 
 const statusColors = {
-  pending: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
-  routed: "bg-blue-500/20 text-blue-700 border-blue-500/30",
-  in_progress: "bg-purple-500/20 text-purple-700 border-purple-500/30",
-  done: "bg-green-500/20 text-green-700 border-green-500/30"
+  pending: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+  routed: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30",
+  in_progress: "bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30",
+  done: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30"
 };
 
 const statusLabels = {
@@ -25,10 +25,10 @@ const statusLabels = {
 };
 
 const priorityColors = {
-  baixa: "bg-slate-500/20 text-slate-700 border-slate-500/30",
-  média: "bg-blue-500/20 text-blue-700 border-blue-500/30",
-  alta: "bg-orange-500/20 text-orange-700 border-orange-500/30",
-  crítica: "bg-red-500/20 text-red-700 border-red-500/30"
+  baixa: "bg-slate-500/20 text-slate-700 dark:text-slate-400 border-slate-500/30",
+  média: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30",
+  alta: "bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30",
+  crítica: "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30"
 };
 
 export default function Demands() {
@@ -259,7 +259,7 @@ export default function Demands() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="font-semibold hover:bg-blue-500/10 hover:text-blue-700 transition-all"
+                        className="font-semibold hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-400 transition-all"
                         onClick={() => navigate(`/app/demands/${demand.id}`)}
                       >
                         <ArrowRight className="w-4 h-4 mr-1" />
