@@ -1,0 +1,292 @@
+Quero que você gere o Kanban 2.0 completo do meu SaaS BPA.  
+Minha stack é:
+
+Frontend: Vite + React + TypeScript  
+UI: ShadCN UI (APENAS TEMA CLARO)  
+Backend: Node + Express  
+Auth: Google OAuth + JWT (já implementado)  
+ORM: Drizzle ORM com PostgreSQL  
+Multi-tenant: já implementado  
+RBAC: em progresso  
+Agentes internos: LangChain + LangGraph + LangSmith (já funcionando)
+
+Quero implementar um Kanban completo com nível de qualidade similar ao Pipefy/Jira, com:
+
+================================================================
+🔥 1. BOARD + LIST + CARD (estrutura base)
+================================================================
+• Cada tenant tem múltiplos boards  
+• Cada board tem múltiplas fases (lists)  
+• Cada fase contém múltiplos cards (com ordenação)  
+• Os cards representam demandas / itens de workflow
+
+Tabelas necessárias:
+- boards
+- phases
+- cards
+- card_fields (custom fields)
+- card_field_values
+- card_comments
+- card_attachments
+- card_activity_log
+- automations
+- automation_triggers
+- automation_actions
+
+================================================================
+🔥 2. UI RESPONSIVA (React + ShadCN)
+================================================================
+Gerar páginas:
+
+/boards  
+/boards/:boardId  
+/card/:cardId (modal route overlay)
+
+Componentes necessários:
+- BoardView (colunas com drag & drop)
+- PhaseColumn
+- CardItem
+- CardModal (detalhes do card)
+- CardComments
+- CardAttachments
+- CardActivityLog
+- CustomFieldRenderer
+- CardForm
+- MoveCardDialog
+- DeleteCardDialog
+- AddPhaseModal
+- EditPhaseModal
+- CreateCardModal
+- Filters + SearchArea
+- InlineEditor (para editar nome no clique)
+- KanbanToolbar (botões do topo)
+
+Usar:
+✔ ShadCN UI (tema claro)  
+✔ @dnd-kit para drag & drop  
+✔ React Query para estados remotos  
+✔ Toaster de feedback  
+✔ Skeletons durante loading  
+✔ Dialogs e Sheet (lateral)  
+
+================================================================
+🔥 3. CARD MODAL COMPLETO (igual Pipefy/Jira)
+================================================================
+Ao clicar no card abre modal com:
+
+1) Header  
+- Título (editável inline)  
+- Status (fase atual)  
+- Botões: mover, deletar, etc.  
+
+2) Aba: **Detalhes**  
+- Campos customizados  
+- Campos do sistema:
+  - descrição (rich text)
+  - responsável (user picker)
+  - deadline
+  - SLA (calculado)
+  - prioridade
+  - área/departamento
+  - workflow vinculado
+  - link da demanda original  
+- Histórico do agente (se originado por agente)
+
+3) Aba: **Comentários**  
+4) Aba: **Anexos**  
+5) Aba: **Atividade** (auditoria por evento)
+
+================================================================
+🔥 4. CAMPOS CUSTOMIZÁVEIS (super importante)
+================================================================
+Cada board pode ter seus próprios campos customizados:
+
+Tipos suportados:
+- texto curto  
+- texto longo  
+- número  
+- data  
+- select  
+- multi-select  
+- usuário (user picker)  
+- checkbox  
+- link  
+- moeda  
+- arquivo (upload)  
+
+Backend deve gerar:
+- CRUD de campos  
+- CRUD de valores dos campos por card  
+- Validação por tipo  
+- Preenchimento no modal  
+
+================================================================
+🔥 5. DRAG & DROP COMPLETO
+================================================================
+• Mover cards entre fases com persistência imediata  
+• Ordenação dentro da fase com server-side ordering  
+• Reordenar fases do board  
+• Animação suave  
+• Optimistic updates no frontend
+
+================================================================
+🔥 6. GESTÃO DE FASES (LISTAS)
+================================================================
+Tela de gestão de fases com:
+
+- Criar fase  
+- Editar fase  
+- Reordenar fase  
+- Cor da fase  
+- Definir comportamento:
+  – fase inicial  
+  – fase final  
+  – fase que dispara agente  
+  – fase para SLA  
+
+================================================================
+🔥 7. AUTOMAÇÕES
+================================================================
+Implementar estrutura para automações (Pipefy-like):
+
+Tabela automations:
+- id
+- tenantId
+- boardId
+- name
+- active
+
+Tabela triggers:
+- on_card_created
+- on_card_moved
+- on_field_updated
+- schedule (cron)
+- evento de agente finalizado
+
+Tabela actions:
+- enviar e-mail
+- mover card
+- preencher campo
+- chamar agente
+- criar card vinculado
+- adicionar comentário
+- mudar responsável
+
+Backend:
+– filas/execução via Inngest (e não BullMQ)  
+– cada trigger dispara um evento inngest  
+– cada ação é um step no inngest function  
+
+================================================================
+🔥 8. ACTIVITY LOG COMPLETO
+================================================================
+Gravar:
+- criação de card  
+- edição  
+- movimentação  
+- mudança de responsável  
+- anexos adicionados  
+- automações disparadas  
+- resultados de agentes  
+
+Interface:
+- timeline estilo Linear.app
+
+================================================================
+🔥 9. ANEXOS
+================================================================
+Implementar:
+- upload via backend (Express)  
+- salvar metadados no banco  
+- preview no modal  
+- deletar anexo  
+
+Armazenamento:
+- colocar implementação mock usando local filesystem  
+- deixar interface para trocar para S3 mais tarde
+
+================================================================
+🔥 10. FILTROS / BUSCA / ORDENAÇÃO
+================================================================
+Componente avançado de filtros:
+
+Filtros por:
+- responsável  
+- fase  
+- prioridade  
+- campos customizados  
+- datas  
+- texto livre  
+
+Ordenação:
+- criação  
+- deadline  
+- prioridade  
+- ordem manual  
+
+================================================================
+🔥 11. MULTI-TENANT
+================================================================
+• Todo board pertence a 1 tenant  
+• Todo card pertence a 1 tenant  
+• Toda ação precisa validar:
+  – JWT  
+  – tenantId  
+  – permissões (RBAC granular)
+
+================================================================
+🔥 12. RBAC
+================================================================
+Usar permissões que já pedi antes:
+- board.view  
+- board.edit  
+- card.create  
+- card.edit  
+- card.move  
+- card.delete  
+- card.comment  
+- card.attachment  
+- automation.manage  
+- fields.manage  
+
+Interface:
+- esconder botões sem permissão  
+- bloquear ações no backend  
+
+================================================================
+🔥 13. INTEGRAÇÃO COM WORKFLOWS E AGENTES
+================================================================
+Cada card pode estar vinculado a um workflow (gerado pelos agentes).
+
+• Quando o card muda de fase → agente pode ser acionado  
+• Quando o agente gera um resultado → atualizar campos ou mover card  
+• Logs do agente devem aparecer na aba “Atividade”
+
+================================================================
+🔥 14. ENTREGÁVEIS
+================================================================
+Quero **TODO o código**:
+
+✔ Backend Express (rotas, validações, controllers)  
+✔ Migrations Drizzle ORM  
+✔ React frontend completo  
+✔ Componentes de UI  
+✔ Toda a estrutura de drag & drop  
+✔ Modal avançado  
+✔ Campos customizados  
+✔ Automations skeleton (com Inngest)  
+✔ Activity log  
+✔ Upload de arquivos  
+✔ RBAC aplicado  
+✔ Multi-tenant aplicado  
+✔ Comentários, anexos e histórico  
+
+Pode criar quantos arquivos forem necessários.
+
+IMPORTANTE:
+• Não mexer no login nem onboarding.  
+• Tema claro apenas.  
+• Organizar código em pastas bem definidas.  
+• Usar React Query para dados remotos.  
+
+Agora gere **todo o código completo**, backend + frontend + migrations, seguindo exatamente tudo acima.

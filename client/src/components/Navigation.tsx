@@ -17,7 +17,8 @@ import {
   GitBranch,
   Sparkles,
   TrendingUp,
-  Shield
+  Shield,
+  Trello
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export default function Navigation() {
   const navItems = [
     { label: t("nav.home"), href: "/", icon: HomeIcon },
     { label: t("nav.demands"), href: "/app/demands", icon: Grid3x3 },
+    { label: "Boards", href: "/kanban/boards", icon: Trello },
     { label: t("nav.workflows"), href: "/app/workflows", icon: LayoutGrid },
     { label: t("nav.areas"), href: "/app/areas", icon: BarChart3 },
     { label: t("nav.bottlenecks"), href: "/app/bottlenecks", icon: AlertTriangle },
