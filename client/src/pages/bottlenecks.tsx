@@ -141,14 +141,14 @@ export default function BottlenecksPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Purpose Banner */}
-      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4" data-testid="purpose-banner">
+      <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-4" data-testid="purpose-banner">
         <div className="flex gap-3">
           <div className="flex-shrink-0">
-            <Brain className="w-6 h-6 text-blue-600 mt-0.5" />
+            <Brain className="w-6 h-6 text-primary mt-0.5" />
           </div>
           <div>
-            <h3 className="font-semibold text-blue-900">{t("bottlenecks.technicalAnalysis")}</h3>
-            <p className="text-sm text-blue-800 mt-1">
+            <h3 className="font-semibold text-foreground">{t("bottlenecks.technicalAnalysis")}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
               {t("bottlenecks.technicalAnalysisDesc")}
             </p>
           </div>
@@ -194,9 +194,9 @@ export default function BottlenecksPage() {
               {t("bottlenecks.bottleneckMap")}
             </h2>
             {bottlenecks.length === 0 ? (
-              <Card className="border-green-200 bg-green-50">
+              <Card className="border-green-500/30 bg-green-500/10">
                 <CardContent className="pt-6">
-                  <p className="text-center text-green-700">{t("bottlenecks.noBottlenecks")}</p>
+                  <p className="text-center text-green-600 dark:text-green-400">{t("bottlenecks.noBottlenecks")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -238,10 +238,10 @@ export default function BottlenecksPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-muted-foreground">
                   {t("bottlenecks.reorchestrationNote")}
                   {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length > 0 && (
-                    <span className="font-bold ml-1">
+                    <span className="font-bold ml-1 text-foreground">
                       {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length} {t("bottlenecks.demandsFound")}.
                     </span>
                   )}
@@ -265,9 +265,9 @@ export default function BottlenecksPage() {
                   )}
                 </Button>
 
-                <div className="pt-4 border-t border-gray-200 space-y-2">
-                  <p className="text-xs text-gray-600 font-semibold">{t("bottlenecks.otherActions")}</p>
-                  <ul className="space-y-1 text-xs">
+                <div className="pt-4 border-t border-border space-y-2">
+                  <p className="text-xs text-muted-foreground font-semibold">{t("bottlenecks.otherActions")}</p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
                     <li>{t("bottlenecks.redistributeLoad")}</li>
                     <li>{t("bottlenecks.activateFallback")}</li>
                     <li>{t("bottlenecks.adjustRouting")}</li>
@@ -279,18 +279,18 @@ export default function BottlenecksPage() {
           </div>
 
           {/* Summary Stats */}
-          <Card className="border-blue-200 bg-blue-50">
+          <Card className="border-primary/30 bg-primary/10">
             <CardContent className="pt-6 space-y-3">
-              <p className="text-sm">
+              <p className="text-sm text-foreground">
                 <strong>{t("bottlenecks.totalBottlenecks")}</strong> {bottlenecks.length}
               </p>
-              <p className="text-sm">
+              <p className="text-sm text-foreground">
                 <strong>{t("bottlenecks.overloadedAreas")}</strong> {overloadAreas.filter(a => a.isOverloaded).length}
               </p>
-              <p className="text-sm">
+              <p className="text-sm text-foreground">
                 <strong>{t("bottlenecks.demandsAtRisk")}</strong> {demands.filter(d => parseInt((d.delay_risk || "0").replace("%", "")) > 50).length}
               </p>
-              <p className="text-xs text-gray-600 pt-2 border-t border-blue-200">
+              <p className="text-xs text-muted-foreground pt-2 border-t border-primary/30">
                 {t("bottlenecks.lastUpdate")} {new Date().toLocaleTimeString(language)}
               </p>
             </CardContent>
