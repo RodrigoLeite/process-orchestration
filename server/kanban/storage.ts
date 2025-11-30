@@ -62,6 +62,14 @@ export const kanbanStorage = {
       .orderBy(desc(boards.createdAt));
   },
 
+  async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {
+    const [board] = await db
+      .select()
+      .from(boards)
+      .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, tenantId)));
+    return board;
+  },
+
   async updateBoard(id: string, tenantId: string, data: Partial<InsertBoard>): Promise<Board | undefined> {
     const [board] = await db
       .update(boards)
