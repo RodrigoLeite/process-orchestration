@@ -282,7 +282,7 @@ export default function BoardSettingsPage() {
               <Label>SLA (horas)</Label>
               <Input
                 type="number"
-                value={editingPhase?.slaHours || ""}
+                value={editingPhase?.slaHours ?? ""}
                 onChange={(e) =>
                   setEditingPhase((prev) =>
                     prev ? { ...prev, slaHours: e.target.value } : null
@@ -291,6 +291,11 @@ export default function BoardSettingsPage() {
                 placeholder="Opcional"
                 data-testid="input-phase-sla"
               />
+              {editingPhase?.slaHours && (
+                <p className="text-xs text-muted-foreground">
+                  Gerado automaticamente: {editingPhase.slaHours}h
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
