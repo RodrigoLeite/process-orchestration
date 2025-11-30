@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { useBoard, useUpdateBoard, useDeleteBoard, useUpdatePhase, useDeletePhase } from "@/hooks/useKanban";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,9 @@ export default function BoardSettingsPage() {
   const [, params] = useRoute("/kanban/board/:boardId/settings");
   const [, navigate] = useLocation();
   const boardId = params?.boardId;
+  const queryClient = useQueryClient();
 
-  const { data: boardData, isLoading } = useBoard(boardId);
+  const { data: boardData, isLoading, refetch } = useBoard(boardId);
   const updateBoard = useUpdateBoard();
   const deleteBoard = useDeleteBoard();
   const updatePhase = useUpdatePhase();
@@ -215,13 +217,15 @@ export default function BoardSettingsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() =>
+                      onClick={async () => {
+                        await refetch();
+                        const refreshedPhase = boardData?.phases.find(p => p.id === phase.id);
                         setEditingPhase({
                           id: phase.id,
-                          name: phase.name,
-                          slaHours: phase.slaHours?.toString() || "",
-                        })
-                      }
+                          name: refreshedPhase?.name || phase.name,
+                          slaHours: refreshedPhase?.slaHours?.toString() || "",
+                        });
+                      }}
                       data-testid={`button-edit-phase-${phase.id}`}
                     >
                       <Pencil className="w-4 h-4" />
