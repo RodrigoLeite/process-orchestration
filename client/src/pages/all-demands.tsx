@@ -20,13 +20,13 @@ const areaIcons: Record<string, string> = {
 };
 
 const areaColors: Record<string, string> = {
-  "ti": "bg-blue-500/20 text-blue-700 border-blue-500/30",
-  "financeiro": "bg-green-500/20 text-green-700 border-green-500/30",
-  "rh": "bg-pink-500/20 text-pink-700 border-pink-500/30",
-  "operações": "bg-orange-500/20 text-orange-700 border-orange-500/30",
-  "vendas": "bg-purple-500/20 text-purple-700 border-purple-500/30",
-  "jurídico": "bg-red-500/20 text-red-700 border-red-500/30",
-  "facilities": "bg-yellow-500/20 text-yellow-700 border-yellow-500/30"
+  "ti": "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30",
+  "financeiro": "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30",
+  "rh": "bg-pink-500/20 text-pink-700 dark:text-pink-400 border-pink-500/30",
+  "operações": "bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30",
+  "vendas": "bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30",
+  "jurídico": "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30",
+  "facilities": "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30"
 };
 
 export default function AllDemands() {
@@ -128,7 +128,7 @@ export default function AllDemands() {
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([area, areaDemands]) => {
                 const icon = areaIcons[area.toLowerCase()] || "📋";
-                const colorClass = areaColors[area.toLowerCase()] || "bg-gray-500/20 text-gray-700 border-gray-500/30";
+                const colorClass = areaColors[area.toLowerCase()] || "bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30";
                 
                 return (
                   <div key={area} className="space-y-4">
@@ -168,7 +168,7 @@ export default function AllDemands() {
                                         {demand.status}
                                       </Badge>
                                       {(demand.assignedTo || demand.assigned_to) && (
-                                        <Badge className="text-xs bg-blue-500/20 text-blue-700">
+                                        <Badge className="text-xs bg-blue-500/20 text-blue-700 dark:text-blue-400">
                                           👤 {demand.assignedTo || demand.assigned_to}
                                         </Badge>
                                       )}
@@ -178,7 +178,7 @@ export default function AllDemands() {
                                         </Badge>
                                       )}
                                       {parsed?.prioridade && (
-                                        <Badge className="text-xs bg-orange-500/20 text-orange-700">
+                                        <Badge className="text-xs bg-orange-500/20 text-orange-700 dark:text-orange-400">
                                           {parsed.prioridade}
                                         </Badge>
                                       )}

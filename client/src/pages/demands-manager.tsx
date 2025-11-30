@@ -109,7 +109,7 @@ export default function DemandsManager() {
                   const parsed = demand.parsed as any;
 
                   return (
-                    <tr key={demand.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}>
+                    <tr key={demand.id} className={idx % 2 === 0 ? "bg-card" : "bg-muted/30"}>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">
                           {truncateText(parsed?.descricao_estruturada || demand.rawText || demand.raw_text || t("demandsManager.noDescription"))}
