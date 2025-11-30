@@ -1,12 +1,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useI18nStore } from "@/lib/store/i18nStore";
+import { useUIStore } from "@/lib/store/uiStore";
 import type { Language } from "@/lib/i18n";
+import { Moon, Sun } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { language, setLanguage } = useI18nStore();
+  const { theme, setTheme } = useUIStore();
 
   const languageOptions: { value: Language; label: string }[] = [
     { value: "pt-BR", label: t("settings.portuguese") },
@@ -24,6 +28,35 @@ export default function SettingsPage() {
           {t("settings.subtitle")}
         </p>
       </div>
+
+      {/* Theme Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            {language === 'pt-BR' ? 'Aparência' : 'Appearance'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'pt-BR' ? 'Escolha entre modo claro ou escuro' : 'Choose between light or dark mode'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
+            <div className="flex items-center gap-3">
+              <Sun className="w-5 h-5 text-muted-foreground" />
+              <Label htmlFor="theme-switch" className="cursor-pointer font-medium">
+                {language === 'pt-BR' ? 'Modo Escuro' : 'Dark Mode'}
+              </Label>
+            </div>
+            <Switch
+              id="theme-switch"
+              checked={theme === 'dark'}
+              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              data-testid="switch-theme"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Language Settings */}
       <Card>
