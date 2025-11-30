@@ -33,9 +33,9 @@ export default function BottleneckCard({
   };
 
   const colorClasses: Record<string, string> = {
-    red: "border-red-200 bg-red-50",
-    yellow: "border-yellow-200 bg-yellow-50",
-    green: "border-green-200 bg-green-50"
+    red: "border-red-500/30 bg-red-500/10",
+    yellow: "border-yellow-500/30 bg-yellow-500/10",
+    green: "border-green-500/30 bg-green-500/10"
   };
 
   return (
@@ -55,20 +55,20 @@ export default function BottleneckCard({
               </Badge>
             </div>
           </div>
-          <AlertTriangle className="w-6 h-6 text-red-600" />
+          <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="text-sm font-semibold mb-1">{t("bottlenecks.reason")}</p>
-          <p className="text-sm text-gray-700" data-testid={`bottleneck-reason-${area}`}>
+          <p className="text-sm font-semibold mb-1 text-foreground">{t("bottlenecks.reason")}</p>
+          <p className="text-sm text-muted-foreground" data-testid={`bottleneck-reason-${area}`}>
             {reason}
           </p>
         </div>
 
         {demandCount > 0 && (
-          <div className="text-xs text-gray-600 bg-white/50 p-2 rounded">
-            <strong>{demandCount}</strong> {t("bottlenecks.demandsImpacted")}
+          <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded">
+            <strong className="text-foreground">{demandCount}</strong> {t("bottlenecks.demandsImpacted")}
           </div>
         )}
 

@@ -26,7 +26,7 @@ export default function AreaImpactTable({ data }: AreaImpactTableProps) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-center text-gray-400">{t("bottlenecks.noImpactData")}</p>
+          <p className="text-center text-muted-foreground">{t("bottlenecks.noImpactData")}</p>
         </CardContent>
       </Card>
     );
@@ -41,21 +41,21 @@ export default function AreaImpactTable({ data }: AreaImpactTableProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnArea")}</th>
-                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnDemandsAtRisk")}</th>
-                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnSlaViolations")}</th>
-                <th className="px-4 py-3 text-left font-semibold">{t("bottlenecks.columnRiskScore")}</th>
+              <tr className="border-b border-border bg-muted">
+                <th className="px-4 py-3 text-left font-semibold text-foreground">{t("bottlenecks.columnArea")}</th>
+                <th className="px-4 py-3 text-left font-semibold text-foreground">{t("bottlenecks.columnDemandsAtRisk")}</th>
+                <th className="px-4 py-3 text-left font-semibold text-foreground">{t("bottlenecks.columnSlaViolations")}</th>
+                <th className="px-4 py-3 text-left font-semibold text-foreground">{t("bottlenecks.columnRiskScore")}</th>
               </tr>
             </thead>
             <tbody>
               {data.map((item, idx) => (
                 <tr
                   key={idx}
-                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  className={idx % 2 === 0 ? "bg-card" : "bg-muted/50"}
                   data-testid={`impact-row-${idx}`}
                 >
-                  <td className="px-4 py-3 font-medium" data-testid={`area-${idx}`}>
+                  <td className="px-4 py-3 font-medium text-foreground" data-testid={`area-${idx}`}>
                     {item.area}
                   </td>
                   <td className="px-4 py-3" data-testid={`at-risk-${idx}`}>
@@ -71,7 +71,7 @@ export default function AreaImpactTable({ data }: AreaImpactTableProps) {
                       <Badge color={getRiskColor(item.riskScore)}>
                         {item.riskScore}%
                       </Badge>
-                      <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className={`h-full ${
                             getRiskColor(item.riskScore) === "red"

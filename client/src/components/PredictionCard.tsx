@@ -22,11 +22,11 @@ export default function PredictionCard({
   const getStatusColor = (status: string): string => {
     switch (status) {
       case "critical":
-        return "bg-red-100 border-red-300";
+        return "bg-red-500/20 border-red-500/40";
       case "warning":
-        return "bg-yellow-100 border-yellow-300";
+        return "bg-yellow-500/20 border-yellow-500/40";
       default:
-        return "bg-green-100 border-green-300";
+        return "bg-green-500/20 border-green-500/40";
     }
   };
 
@@ -40,10 +40,10 @@ export default function PredictionCard({
     <Card data-testid="prediction-card">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
+          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <CardTitle className="text-lg">{title}</CardTitle>
         </div>
-        {description && <p className="text-xs text-gray-600 mt-1">{description}</p>}
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Grid of predictions */}
@@ -61,7 +61,7 @@ export default function PredictionCard({
                   className={`w-full rounded-t transition-all ${getStatusColor(point.status)}`}
                   style={{ height: `${Math.max(heightPercent, 20)}px` }}
                 >
-                  <div className="text-xs font-bold text-center pt-1 h-full flex items-center justify-center">
+                  <div className="text-xs font-bold text-center pt-1 h-full flex items-center justify-center text-foreground">
                     {point.value}
                   </div>
                 </div>
@@ -70,7 +70,7 @@ export default function PredictionCard({
                 <div className="text-lg">{getTrendIcon(point.trend)}</div>
 
                 {/* Day label */}
-                <p className="text-xs font-medium text-gray-700" data-testid={`prediction-label-${idx}`}>
+                <p className="text-xs font-medium text-muted-foreground" data-testid={`prediction-label-${idx}`}>
                   {point.day}
                 </p>
               </div>
@@ -79,17 +79,17 @@ export default function PredictionCard({
         </div>
 
         {/* Legend */}
-        <div className="grid grid-cols-3 gap-2 text-xs pt-3 border-t border-gray-200">
+        <div className="grid grid-cols-3 gap-2 text-xs pt-3 border-t border-border text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-green-300" />
+            <div className="w-3 h-3 rounded bg-green-500" />
             <span>Bom</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-yellow-300" />
+            <div className="w-3 h-3 rounded bg-yellow-500" />
             <span>Alerta</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-red-300" />
+            <div className="w-3 h-3 rounded bg-red-500" />
             <span>Crítico</span>
           </div>
         </div>
