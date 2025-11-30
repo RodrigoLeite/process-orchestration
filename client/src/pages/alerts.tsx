@@ -87,14 +87,14 @@ export default function AlertsPage() {
   return (
     <div className="space-y-6" data-testid="alerts-page">
       {/* Purpose Banner */}
-      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4" data-testid="purpose-banner">
+      <div className="bg-red-500/10 border-2 border-red-500/30 rounded-lg p-4" data-testid="purpose-banner">
         <div className="flex gap-3">
           <div className="flex-shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
+            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5" />
           </div>
           <div>
-            <h3 className="font-semibold text-red-900">{t("alerts.crisisCenter")}</h3>
-            <p className="text-sm text-red-800 mt-1">
+            <h3 className="font-semibold text-red-700 dark:text-red-400">{t("alerts.crisisCenter")}</h3>
+            <p className="text-sm text-red-600 dark:text-red-300 mt-1">
               {t("alerts.crisiscenterDescription")}
             </p>
           </div>
@@ -107,17 +107,17 @@ export default function AlertsPage() {
           <h1 className="text-3xl font-bold" data-testid="page-title">
             🚨 {t("alerts.title")}
           </h1>
-          <p className="text-gray-600 mt-1" data-testid="page-description">
+          <p className="text-muted-foreground mt-1" data-testid="page-description">
             {t("alerts.subtitle")}
           </p>
         </div>
-        <Bell className="w-8 h-8 text-red-600" />
+        <Bell className="w-8 h-8 text-red-600 dark:text-red-400" />
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-3 gap-4">
         <Card
-          className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100"
+          className="border-red-500/30 bg-red-500/10 cursor-pointer hover:bg-red-500/20"
           data-testid="kpi-active"
           onClick={() => setFilter("active")}
         >
@@ -125,13 +125,13 @@ export default function AlertsPage() {
             <CardTitle className="text-sm font-medium">{t("alerts.activeAlerts")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-600">{counts.active}</p>
-            <p className="text-xs text-gray-600 mt-1">{t("alerts.requireAction")}</p>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{counts.active}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("alerts.requireAction")}</p>
           </CardContent>
         </Card>
 
         <Card
-          className="border-yellow-200 bg-yellow-50 cursor-pointer hover:bg-yellow-100"
+          className="border-yellow-500/30 bg-yellow-500/10 cursor-pointer hover:bg-yellow-500/20"
           data-testid="kpi-acknowledged"
           onClick={() => setFilter("acknowledged")}
         >
@@ -139,13 +139,13 @@ export default function AlertsPage() {
             <CardTitle className="text-sm font-medium">{t("alerts.acknowledged")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-yellow-600">{counts.acknowledged}</p>
-            <p className="text-xs text-gray-600 mt-1">{t("alerts.inProgress")}</p>
+            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{counts.acknowledged}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("alerts.inProgress")}</p>
           </CardContent>
         </Card>
 
         <Card
-          className="border-green-200 bg-green-50 cursor-pointer hover:bg-green-100"
+          className="border-green-500/30 bg-green-500/10 cursor-pointer hover:bg-green-500/20"
           data-testid="kpi-resolved"
           onClick={() => setFilter("resolved")}
         >
@@ -153,8 +153,8 @@ export default function AlertsPage() {
             <CardTitle className="text-sm font-medium">{t("alerts.resolved")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">{counts.resolved}</p>
-            <p className="text-xs text-gray-600 mt-1">{t("alerts.problemSolved")}</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{counts.resolved}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("alerts.problemSolved")}</p>
           </CardContent>
         </Card>
       </div>
@@ -199,13 +199,13 @@ export default function AlertsPage() {
       <div className="space-y-3" data-testid="alerts-list">
         {alertsLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : filteredAlerts.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
-              <p className="text-gray-600 font-medium">{t("alerts.noAlert")}</p>
+              <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-3" />
+              <p className="text-muted-foreground font-medium">{t("alerts.noAlert")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -214,10 +214,10 @@ export default function AlertsPage() {
               key={alert.id}
               className={`border-2 ${
                 alert.status === "resolved"
-                  ? "border-green-200 bg-green-50"
+                  ? "border-green-500/30 bg-green-500/10"
                   : alert.status === "acknowledged"
-                  ? "border-yellow-200 bg-yellow-50"
-                  : "border-red-200 bg-red-50"
+                  ? "border-yellow-500/30 bg-yellow-500/10"
+                  : "border-red-500/30 bg-red-500/10"
               }`}
               data-testid={`alert-card-${alert.id}`}
             >
@@ -256,14 +256,14 @@ export default function AlertsPage() {
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-sm font-semibold mb-1">{t("alerts.cause")}</p>
-                  <p className="text-sm text-gray-700" data-testid={`cause-${alert.id}`}>
+                  <p className="text-sm text-muted-foreground" data-testid={`cause-${alert.id}`}>
                     {alert.causa_provavel}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm font-semibold mb-1">{t("alerts.recommendation")}</p>
-                  <p className="text-sm text-gray-700" data-testid={`recommendation-${alert.id}`}>
+                  <p className="text-sm text-muted-foreground" data-testid={`recommendation-${alert.id}`}>
                     {alert.sugestao_correcao}
                   </p>
                 </div>
@@ -294,11 +294,11 @@ export default function AlertsPage() {
 
       {/* Auto-Escalation Info */}
       {counts.active > 0 && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-500/30 bg-red-500/10">
           <CardHeader>
             <CardTitle className="text-sm">🤖 Escalação Automática</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-gray-700">
+          <CardContent className="text-sm text-muted-foreground">
             <p>
               Alertas com Severity Score &gt; 80 acionam automaticamente:
             </p>
