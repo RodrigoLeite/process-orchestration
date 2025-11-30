@@ -3159,6 +3159,7 @@ Texto original: ${demand.rawText}`;
           
           if (resultData.workflow) {
             try {
+              console.log("[ORCHESTRATE-SYNC] DEBUG - workflow object:", JSON.stringify(resultData.workflow, null, 2).substring(0, 500));
               const { getOrCreateWorkflow, createWorkflowStages } = await import("./lib/workflowService");
               const workflowName = resultData.workflow?.titulo || demandInput.titulo || "Workflow";
               const workflow = await getOrCreateWorkflow(resultData.workflow.etapas, workflowName, demandInput.area, effectiveTenantId);
