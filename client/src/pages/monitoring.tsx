@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MonitoringData {
   total: number;
@@ -40,19 +41,29 @@ const statusColors: Record<string, string> = {
 
 export default function MonitoringPage() {
   const { t } = useTranslation();
+  const { tenant } = useAuth();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const getHeaders = (): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (tenant?.id) {
+      (headers as Record<string, string>)["x-tenant-id"] = tenant.id;
+    }
+    return headers;
+  };
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["monitoring-status"],
+    queryKey: ["monitoring-status", tenant?.id],
     queryFn: async () => {
-      const res = await fetch("/api/monitoring/status");
+      const res = await fetch("/api/monitoring/status", { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch monitoring data");
       const json = await res.json();
       return json.data as MonitoringData;
     },
-    refetchInterval: 5000, // Atualizar a cada 5 segundos
+    refetchInterval: 5000,
     refetchOnWindowFocus: true,
+    enabled: !!tenant?.id,
   });
 
   useEffect(() => {
