@@ -130,28 +130,28 @@ export default function AreasListPage() {
       </div>
 
       {/* Statistics */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-primary/10 border-primary/30">
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">{t("areas.totalAreas")}</p>
-              <p className="text-2xl font-bold">{areas.length}</p>
+              <p className="text-2xl font-bold text-foreground">{areas.length}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.activeDemands")}</p>
-              <p className="text-2xl font-bold">{activeDemands}</p>
+              <p className="text-2xl font-bold text-foreground">{activeDemands}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.avgSLA")}</p>
-              <p className="text-2xl font-bold">{avgSLA}h</p>
+              <p className="text-2xl font-bold text-foreground">{avgSLA}h</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.completionRate")}</p>
-              <p className="text-2xl font-bold">{completionRate}%</p>
+              <p className="text-2xl font-bold text-foreground">{completionRate}%</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t("areas.criticalAreas")}</p>
-              <p className="text-2xl font-bold text-red-600">{criticalAreas}</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{criticalAreas}</p>
             </div>
           </div>
         </CardContent>
