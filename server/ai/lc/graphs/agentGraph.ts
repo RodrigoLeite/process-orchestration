@@ -120,6 +120,8 @@ async function workflowBuilderNode(state: AgentGraphState, agentConfig?: any): P
 
     if (result.success && result.data) {
       console.log("[GRAPH:WorkflowBuilder] Workflow generated successfully with model:", agentConfig?.model);
+      console.log("[GRAPH:WorkflowBuilder] DEBUG result.data keys:", Object.keys(result.data));
+      console.log("[GRAPH:WorkflowBuilder] DEBUG has etapas?", !!result.data?.etapas, "length:", result.data?.etapas?.length);
       
       // Save agent log
       await saveAgentLog(

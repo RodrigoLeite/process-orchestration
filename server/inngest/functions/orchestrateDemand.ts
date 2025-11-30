@@ -92,6 +92,9 @@ export const orchestrateDemandFn = inngest.createFunction(
 
     const successResult = result as { success: true; output: any };
     const resultData = successResult.output?.data || successResult.output;
+    
+    console.log("[ORCHESTRATE-QUEUE] DEBUG resultData.workflow keys:", resultData?.workflow ? Object.keys(resultData.workflow) : "null");
+    console.log("[ORCHESTRATE-QUEUE] DEBUG etapas exists?", !!resultData?.workflow?.etapas, "length:", resultData?.workflow?.etapas?.length);
 
     const boardResult = await step.run("save-board", async () => {
       if (!resultData?.workflow) {
