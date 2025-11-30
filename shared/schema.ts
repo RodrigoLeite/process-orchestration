@@ -625,6 +625,7 @@ export const cards = pgTable("cards", {
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   slaDeadline: timestamp("sla_deadline"),
+  phaseEnteredAt: timestamp("phase_entered_at").defaultNow(),
   areaId: text("area_id"),
   labels: text("labels").array(),
   metadata: jsonb("metadata").$type<Record<string, any>>(),
