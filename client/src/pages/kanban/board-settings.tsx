@@ -218,8 +218,10 @@ export default function BoardSettingsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={async () => {
-                        await refetch();
-                        const refreshedPhase = boardData?.phases.find(p => p.id === phase.id);
+                        // Invalidate cache to force fresh fetch from server
+                        await queryClient.invalidateQueries({ queryKey: ["kanban", "board", boardId] });
+                        const result = await refetch();
+                        const refreshedPhase = result.data?.phases.find((p: any) => p.id === phase.id);
                         setEditingPhase({
                           id: phase.id,
                           name: refreshedPhase?.name || phase.name,
