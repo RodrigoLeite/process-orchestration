@@ -3850,7 +3850,11 @@ Texto original: ${demand.rawText}`;
   // GET /api/monitoring/status - Real-time monitoring of demand processing
   app.get("/api/monitoring/status", async (req, res) => {
     try {
-      const demands = await storage.getDemands();
+      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
+      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
+      const tenantId = headerTenantId || req.tenantContext?.id;
+      
+      const demands = await storage.getDemands(tenantId);
       
       const stats = {
         total: demands.length,
