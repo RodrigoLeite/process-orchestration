@@ -7,16 +7,19 @@ import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import type { Demand } from "@/lib/types";
 
-interface WorkflowStage {
+interface BoardPhase {
   id: string;
   name: string;
-  orderIndex: string;
+  order: number;
 }
 
-interface AreaWorkflow {
-  id: string;
-  areaName: string;
-  name: string;
+interface BoardData {
+  board: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  phases: BoardPhase[];
 }
 
 interface DemandCard {
@@ -59,29 +62,21 @@ export default function DemandDetail() {
     enabled: !!params?.id
   });
 
-  // Fetch workflow for this demand
-  const { data: workflow } = useQuery<AreaWorkflow>({
-    queryKey: ["demand-workflow", demand?.workflowId],
+  // Fetch board for this demand (Kanban 2.0)
+  const { data: boardData } = useQuery<BoardData>({
+    queryKey: ["demand-board", demand?.workflowId],
     queryFn: async () => {
       if (!demand?.workflowId) return null;
-      const res = await fetch(`/api/workflows/${demand.workflowId}`);
+      const res = await fetch(`/api/kanban/boards/${demand.workflowId}`);
       if (!res.ok) return null;
       return res.json();
     },
     enabled: !!demand?.workflowId
   });
 
-  // Fetch workflow stages
-  const { data: stages = [] } = useQuery<WorkflowStage[]>({
-    queryKey: ["demand-workflow-stages", workflow?.id],
-    queryFn: async () => {
-      if (!workflow?.id) return [];
-      const res = await fetch(`/api/workflows/${workflow.id}/stages`);
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!workflow?.id
-  });
+  // Extract board and phases from response
+  const board = boardData?.board;
+  const phases = boardData?.phases || [];
 
   // Fetch stage bottlenecks
   const { data: bottlenecks = [] } = useQuery<StageBottleneck[]>({
@@ -164,7 +159,10 @@ export default function DemandDetail() {
   const area = parsed?.area || "—";
   const priority = parsed?.prioridade || "média";
   const type = parsed?.tipo || "—";
-  const currentStage = stages.find(s => s.id === demand.stageId);
+  // Find current phase from demandCard or demand.stageId
+  const currentPhase = demandCard?.phaseId 
+    ? phases.find(p => p.id === demandCard.phaseId)
+    : phases.find(p => p.id === demand.stageId);
 
   const getPriorityColor = (p: string) => {
     if (p === "crítica") return "red";
@@ -268,24 +266,24 @@ export default function DemandDetail() {
           </CardContent>
         </Card>
 
-        {/* Workflow Card */}
+        {/* Board Card */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("demandDetail.workflow")}
+              Board
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-workflow">
-              {workflow?.name || "—"}
+              {board?.name || "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {workflow?.areaName || "—"}
+              {board?.description || "Kanban Board"}
             </p>
           </CardContent>
         </Card>
 
-        {/* Current Stage Card */}
+        {/* Current Phase Card */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -294,10 +292,14 @@ export default function DemandDetail() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-stage">
-              {currentStage?.name || "—"}
+              {currentPhase?.name || "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {stages.length > 0 ? t("demandDetail.stageOf", "Etapa {current} de {total}").replace("{current}", String(stages.findIndex(s => s.id === demand.stageId) + 1)).replace("{total}", String(stages.length)) : t("demandDetail.unknownStages")}
+              {phases.length > 0 
+                ? t("demandDetail.stageOf", "Etapa {current} de {total}")
+                    .replace("{current}", String((currentPhase ? phases.findIndex(p => p.id === currentPhase.id) : 0) + 1))
+                    .replace("{total}", String(phases.length)) 
+                : t("demandDetail.unknownStages")}
             </p>
           </CardContent>
         </Card>
