@@ -47,8 +47,13 @@ export class BaseAgent {
 
     // Create chain: prompt -> model -> format output
     const outputFormatter = async (output: any) => {
-      const content = output.content || "";
+      let content = output.content || "";
       try {
+        // Remove markdown code blocks if present (```json ... ``` or ``` ... ```)
+        const jsonBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonBlockMatch) {
+          content = jsonBlockMatch[1].trim();
+        }
         // Try to parse as JSON
         return JSON.parse(content);
       } catch {
