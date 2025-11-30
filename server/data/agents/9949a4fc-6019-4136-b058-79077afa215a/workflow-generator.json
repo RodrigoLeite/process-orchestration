@@ -57,7 +57,7 @@
         },
         "data": {
           "label": "Gerar Workflow",
-          "temperature": 0.4,
+          "temperature": 0.3,
           "maxTokens": 3000,
           "logicType": "none",
           "modelProvider": "OpenAI",
@@ -114,6 +114,6 @@
       "zoom": 1
     }
   },
-  "createdAt": "2025-11-29T03:34:46.670Z",
-  "updatedAt": "2025-11-29T03:34:46.670Z"
+  "createdAt": "2025-11-30T05:10:03.137Z",
+  "updatedAt": "2025-11-30T05:10:03.138Z"
 }

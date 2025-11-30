@@ -307,7 +307,7 @@ export default function BoardsPage() {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {board.areaId && (
                     <Badge variant="secondary" data-testid={`badge-area-${board.id}`}>
-                      {board.areaId}
+                      {board.areaId.toUpperCase()}
                     </Badge>
                   )}
                   <Badge variant="outline" data-testid={`badge-cards-${board.id}`}>
