@@ -19,19 +19,19 @@ export default function DashboardKPICard({
   color = "blue"
 }: DashboardKPICardProps) {
   const colorClasses: Record<string, string> = {
-    blue: "border-blue-200 bg-blue-50",
-    green: "border-green-200 bg-green-50",
-    red: "border-red-200 bg-red-50",
-    yellow: "border-yellow-200 bg-yellow-50",
-    purple: "border-purple-200 bg-purple-50"
+    blue: "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30",
+    green: "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30",
+    red: "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30",
+    yellow: "border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/30",
+    purple: "border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30"
   };
 
   const iconColorClasses: Record<string, string> = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    red: "text-red-600",
-    yellow: "text-yellow-600",
-    purple: "text-purple-600"
+    blue: "text-blue-600 dark:text-blue-400",
+    green: "text-green-600 dark:text-green-400",
+    red: "text-red-600 dark:text-red-400",
+    yellow: "text-yellow-600 dark:text-yellow-400",
+    purple: "text-purple-600 dark:text-purple-400"
   };
 
   return (
@@ -56,7 +56,7 @@ export default function DashboardKPICard({
               {value}
             </p>
             {trend !== undefined && (
-              <p className={`text-xs mt-1 flex items-center gap-1 ${trend > 0 ? "text-red-600" : "text-green-600"}`}>
+              <p className={`text-xs mt-1 flex items-center gap-1 ${trend > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                 {trend > 0 ? (
                   <>
                     <TrendingUp className="w-3 h-3" />
