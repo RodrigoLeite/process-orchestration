@@ -15,9 +15,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Pencil, Trash2, Settings } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Settings, Timer } from "lucide-react";
 import { useState } from "react";
 import KanbanCardItem from "./CardItem";
+
+function formatSlaHours(hours: number | undefined): string | null {
+  if (!hours) return null;
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  if (remainingHours === 0) return `${days}d`;
+  return `${days}d ${remainingHours}h`;
+}
 
 interface PhaseColumnProps {
   phase: Phase;
@@ -120,6 +129,15 @@ export default function KanbanPhaseColumn({
             <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
               {cards.length}
             </span>
+            {phase.slaHours && (
+              <span 
+                className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded"
+                title={`SLA: ${formatSlaHours(phase.slaHours)}`}
+              >
+                <Timer className="w-3 h-3" />
+                {formatSlaHours(phase.slaHours)}
+              </span>
+            )}
           </div>
         )}
 

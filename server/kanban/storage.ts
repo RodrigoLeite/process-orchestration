@@ -151,7 +151,11 @@ export const kanbanStorage = {
     
     const [card] = await db
       .insert(cards)
-      .values({ ...data, position: (maxPosition[0]?.max ?? -1) + 1 })
+      .values({ 
+        ...data, 
+        position: (maxPosition[0]?.max ?? -1) + 1,
+        phaseEnteredAt: new Date()
+      })
       .returning();
     return card;
   },
