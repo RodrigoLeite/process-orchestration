@@ -112,7 +112,7 @@ export default function Dashboard() {
             value={demandText}
             onChange={(e) => setDemandText(e.target.value)}
             placeholder={t("home.demandPlaceholder")}
-            className="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            className="w-full h-24 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none bg-background text-foreground"
             disabled={isCreating}
             data-testid="textarea-demand"
           />
@@ -120,8 +120,8 @@ export default function Dashboard() {
           {createStatus.type && (
             <div className={`flex items-center gap-2 p-3 rounded-lg ${
               createStatus.type === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
+                ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                : "bg-red-500/10 text-red-700 dark:text-red-400"
             }`}>
               {createStatus.type === "success" ? (
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -170,7 +170,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.waiting")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-600">{newDemands}</div>
+            <div className="text-3xl font-bold text-muted-foreground">{newDemands}</div>
             <p className="text-xs text-muted-foreground mt-1">new/pending/routed</p>
           </CardContent>
         </Card>
@@ -179,7 +179,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.inProgress")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{inProgressDemands}</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{inProgressDemands}</div>
             <p className="text-xs text-muted-foreground mt-1">status: in_progress</p>
           </CardContent>
         </Card>
@@ -188,7 +188,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.completed")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{completedDemands}</div>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{completedDemands}</div>
             <p className="text-xs text-muted-foreground mt-1">status: completed</p>
           </CardContent>
         </Card>
@@ -198,7 +198,7 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-muted-foreground">{t("home.blocked")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600">{blockedDemands}</div>
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{blockedDemands}</div>
               <p className="text-xs text-muted-foreground mt-1">status: blocked</p>
             </CardContent>
           </Card>
@@ -207,13 +207,13 @@ export default function Dashboard() {
 
       {/* Process Pending Demands Section */}
       {newDemands > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-500/30 bg-blue-500/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900">
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
               <Zap className="w-5 h-5" />
               {t("home.pendingDemands")}
             </CardTitle>
-            <CardDescription className="text-blue-700">
+            <CardDescription className="text-blue-600 dark:text-blue-300">
               {t("home.pendingDemandsDesc", `Você tem ${newDemands} demanda(s) aguardando orquestração. Clique no botão abaixo para processar agora.`)}
             </CardDescription>
           </CardHeader>
@@ -266,7 +266,7 @@ export default function Dashboard() {
                 return (
                   <div
                     key={demand.id}
-                    className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="p-3 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer"
                     onClick={() => navigate(`/app/demands/${demand.id}`)}
                     data-testid={`recent-demand-${demand.id}`}
                   >
@@ -387,7 +387,7 @@ export default function Dashboard() {
               ).map(([area, count]) => (
                 <div
                   key={area}
-                  className="flex items-center justify-between p-2 rounded border border-gray-200"
+                  className="flex items-center justify-between p-2 rounded border border-border"
                 >
                   <span className="font-medium">{area}</span>
                   <Badge color="blue">{count}</Badge>
