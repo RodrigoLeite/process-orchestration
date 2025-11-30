@@ -3155,28 +3155,43 @@ Texto original: ${demand.rawText}`;
           const orchestrationResult = await executeAgentGraph(demandInput, agentConfig);
           const resultData = orchestrationResult.data || orchestrationResult;
           
-          let createdWorkflowId: string | null = null;
+          let createdBoardId: string | null = null;
           
           if (resultData.workflow) {
             try {
-              const { getOrCreateWorkflow, createWorkflowStages } = await import("./lib/workflowService");
-              const workflowName = resultData.workflow?.titulo || demandInput.titulo || "Workflow";
-              const workflow = await getOrCreateWorkflow(resultData.workflow.etapas, workflowName, demandInput.area, effectiveTenantId);
+              // Use Kanban 2.0 Board system instead of legacy workflows
+              const { getOrCreateBoard, createCardFromDemand } = await import("./kanban/kanbanService");
+              const { kanbanStorage } = await import("./kanban/storage");
               
-              let stages = await storage.getWorkflowStages(workflow.id);
-              if (stages.length === 0) {
-                await createWorkflowStages(workflow.id, workflow.steps);
-                stages = await storage.getWorkflowStages(workflow.id);
+              const boardName = resultData.workflow?.titulo || demandInput.titulo || "Board";
+              const board = await getOrCreateBoard(
+                resultData.workflow.etapas || [],
+                boardName,
+                demandInput.area,
+                effectiveTenantId
+              );
+              
+              // Get phases for the board
+              const phases = await kanbanStorage.getPhasesByBoard(board.id, effectiveTenantId);
+              const firstPhase = phases.find(p => p.isInitial === "true") || phases[0];
+              
+              // Create card from demand if we have a phase
+              if (firstPhase) {
+                const demand = await storage.getDemand(demandId);
+                if (demand) {
+                  await createCardFromDemand(board.id, firstPhase.id, effectiveTenantId, demand);
+                }
               }
               
-              const firstStageId = stages.length > 0 ? stages[0].id : undefined;
+              // Update demand with board reference (using workflowId field for compatibility)
               await storage.updateDemandWithSLA(demandId, {
-                workflowId: workflow.id,
-                stageId: firstStageId,
+                workflowId: board.id,
+                stageId: firstPhase?.id,
               });
-              createdWorkflowId = workflow.id;
+              createdBoardId = board.id;
+              console.log(`[ORCHESTRATE-SYNC] Created board ${board.id} with ${phases.length} phases`);
             } catch (error) {
-              console.error("[ORCHESTRATE-SYNC] Error saving workflow:", error);
+              console.error("[ORCHESTRATE-SYNC] Error saving board:", error);
             }
           }
           
@@ -3219,7 +3234,8 @@ Texto original: ${demand.rawText}`;
               workflow: resultData.workflow || null,
               bottlenecks: resultData.bottlenecks || [],
               insights: resultData.insights || null,
-              workflow_id: createdWorkflowId,
+              board_id: createdBoardId,
+              workflow_id: createdBoardId, // For backward compatibility
               duration_ms: duration,
               status: "success",
             },
