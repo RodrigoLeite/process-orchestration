@@ -76,6 +76,24 @@ function parseDuration(duration: string | undefined): number | undefined {
   return undefined;
 }
 
+function mapPriorityToEnglish(prioridade: string | undefined): string {
+  if (!prioridade) return "medium";
+  const normalized = prioridade.toLowerCase().trim();
+  const mapping: Record<string, string> = {
+    "baixa": "low",
+    "média": "medium",
+    "media": "medium",
+    "alta": "high",
+    "crítica": "critical",
+    "critica": "critical",
+    "low": "low",
+    "medium": "medium",
+    "high": "high",
+    "critical": "critical"
+  };
+  return mapping[normalized] || "medium";
+}
+
 export async function createBoardPhases(
   boardId: string,
   tenantId: string,
@@ -129,7 +147,7 @@ export async function createCardFromDemand(
     title,
     description: demand.rawText || undefined,
     position: 0,
-    priority: demand.parsed?.prioridade || "medium",
+    priority: mapPriorityToEnglish(demand.parsed?.prioridade),
     areaId: demand.parsed?.area || undefined,
     slaDeadline: demand.slaDeadline || undefined,
     metadata: {
