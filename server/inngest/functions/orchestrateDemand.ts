@@ -92,9 +92,6 @@ export const orchestrateDemandFn = inngest.createFunction(
 
     const successResult = result as { success: true; output: any };
     const resultData = successResult.output?.data || successResult.output;
-    
-    console.log("[ORCHESTRATE-QUEUE] DEBUG resultData.workflow keys:", resultData?.workflow ? Object.keys(resultData.workflow) : "null");
-    console.log("[ORCHESTRATE-QUEUE] DEBUG etapas exists?", !!resultData?.workflow?.etapas, "length:", resultData?.workflow?.etapas?.length);
 
     const boardResult = await step.run("save-board", async () => {
       if (!resultData?.workflow) {
@@ -120,7 +117,7 @@ export const orchestrateDemandFn = inngest.createFunction(
           throw new Error(`No phases found for board ${board.id}`);
         }
 
-        const demand = await storage.getDemandById(demandId);
+        const demand = await storage.getDemand(demandId);
         if (demand) {
           await createCardFromDemand(board.id, firstPhase.id, tenantId, demand);
         }
@@ -204,7 +201,7 @@ export const orchestrateDemandFn = inngest.createFunction(
           jobId,
           tenantId,
           userId,
-          workflowId,
+          workflowId: boardResult?.boardId,
           hasBottlenecks: !!resultData?.bottlenecks?.length,
           hasInsights: !!resultData?.insights,
         } as any,
@@ -215,7 +212,7 @@ export const orchestrateDemandFn = inngest.createFunction(
     return {
       jobId,
       status: "completed",
-      workflowId,
+      workflowId: boardResult?.boardId,
       output: resultData,
     };
   }
