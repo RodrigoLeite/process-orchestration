@@ -19,6 +19,7 @@ export interface AuthSession {
   user?: AuthUser;
   tenant?: AuthTenant;
   role?: string;
+  permissions?: string[];
 }
 
 export function useAuth() {
@@ -71,6 +72,7 @@ export function useAuth() {
     user: session?.user,
     tenant: session?.tenant,
     role: session?.role,
+    permissions: session?.permissions || [],
     login,
     logout,
   };

@@ -41,6 +41,10 @@ import NotFound from "@/pages/not-found";
 import KanbanBoards from "@/pages/kanban/boards";
 import KanbanBoardView from "@/pages/kanban/board-view";
 import KanbanBoardSettings from "@/pages/kanban/board-settings";
+import AdminUsersPage from "@/pages/admin/users";
+import AdminUsersImportPage from "@/pages/admin/users-import";
+import AdminTeamsPage from "@/pages/admin/teams";
+import AdminRolesPage from "@/pages/admin/roles";
 
 function ProtectedRoutes() {
   const { isAuthenticated, isLoading, tenant } = useAuth();
@@ -111,6 +115,10 @@ function AppRoutes() {
         <Route path="/kanban/boards" component={KanbanBoards} />
         <Route path="/kanban/board/:boardId/settings" component={KanbanBoardSettings} />
         <Route path="/kanban/board/:boardId" component={KanbanBoardView} />
+        <Route path="/admin/users" component={AdminUsersPage} />
+        <Route path="/admin/users/import" component={AdminUsersImportPage} />
+        <Route path="/admin/teams" component={AdminTeamsPage} />
+        <Route path="/admin/roles" component={AdminRolesPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

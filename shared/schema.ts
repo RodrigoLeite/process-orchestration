@@ -111,6 +111,150 @@ export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
 export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
 export type TenantUser = typeof tenantUsers.$inferSelect;
 
+// ========== TEAMS ==========
+export const teams = pgTable("teams", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#6366f1"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Team = typeof teams.$inferSelect;
+
+export const userTeams = pgTable("user_teams", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  teamId: uuid("team_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertUserTeamSchema = createInsertSchema(userTeams).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserTeam = z.infer<typeof insertUserTeamSchema>;
+export type UserTeam = typeof userTeams.$inferSelect;
+
+// ========== INVITATIONS ==========
+export const invitations = pgTable("invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("member"),
+  teamId: uuid("team_id"),
+  token: text("token").notNull().unique(),
+  status: text("status").notNull().default("pending"),
+  invitedBy: varchar("invited_by").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertInvitationSchema = createInsertSchema(invitations).omit({
+  id: true,
+  createdAt: true,
+  acceptedAt: true,
+});
+
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
+export type Invitation = typeof invitations.$inferSelect;
+
+// ========== USER ROLES (Multiple roles per user per tenant) ==========
+export const userRoles = pgTable("user_roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  roleId: uuid("role_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+
+// ========== PERMISSION CONSTANTS ==========
+export const PERMISSIONS = {
+  TENANT_MANAGE_USERS: "tenant.manage_users",
+  TENANT_MANAGE_ROLES: "tenant.manage_roles",
+  TENANT_VIEW_AUDIT_LOGS: "tenant.view_audit_logs",
+  TENANT_MANAGE_TEAMS: "tenant.manage_teams",
+  WORKFLOW_VIEW: "workflow.view",
+  WORKFLOW_CREATE: "workflow.create",
+  WORKFLOW_EDIT: "workflow.edit",
+  WORKFLOW_DELETE: "workflow.delete",
+  WORKFLOW_RUN_AGENTS: "workflow.run_agents",
+  CARD_VIEW: "card.view",
+  CARD_CREATE: "card.create",
+  CARD_MOVE: "card.move",
+  CARD_EDIT: "card.edit",
+  CARD_COMMENT: "card.comment",
+  CARD_DELETE: "card.delete",
+} as const;
+
+export type PermissionKey = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+
+// ========== DEFAULT ROLE PERMISSIONS ==========
+export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
+  owner: Object.values(PERMISSIONS),
+  admin: [
+    PERMISSIONS.TENANT_MANAGE_USERS,
+    PERMISSIONS.TENANT_MANAGE_ROLES,
+    PERMISSIONS.TENANT_VIEW_AUDIT_LOGS,
+    PERMISSIONS.TENANT_MANAGE_TEAMS,
+    PERMISSIONS.WORKFLOW_VIEW,
+    PERMISSIONS.WORKFLOW_CREATE,
+    PERMISSIONS.WORKFLOW_EDIT,
+    PERMISSIONS.WORKFLOW_DELETE,
+    PERMISSIONS.WORKFLOW_RUN_AGENTS,
+    PERMISSIONS.CARD_VIEW,
+    PERMISSIONS.CARD_CREATE,
+    PERMISSIONS.CARD_MOVE,
+    PERMISSIONS.CARD_EDIT,
+    PERMISSIONS.CARD_COMMENT,
+    PERMISSIONS.CARD_DELETE,
+  ],
+  manager: [
+    PERMISSIONS.WORKFLOW_VIEW,
+    PERMISSIONS.WORKFLOW_CREATE,
+    PERMISSIONS.WORKFLOW_EDIT,
+    PERMISSIONS.WORKFLOW_RUN_AGENTS,
+    PERMISSIONS.CARD_VIEW,
+    PERMISSIONS.CARD_CREATE,
+    PERMISSIONS.CARD_MOVE,
+    PERMISSIONS.CARD_EDIT,
+    PERMISSIONS.CARD_COMMENT,
+    PERMISSIONS.CARD_DELETE,
+  ],
+  member: [
+    PERMISSIONS.WORKFLOW_VIEW,
+    PERMISSIONS.CARD_VIEW,
+    PERMISSIONS.CARD_CREATE,
+    PERMISSIONS.CARD_MOVE,
+    PERMISSIONS.CARD_EDIT,
+    PERMISSIONS.CARD_COMMENT,
+  ],
+  viewer: [
+    PERMISSIONS.WORKFLOW_VIEW,
+    PERMISSIONS.CARD_VIEW,
+  ],
+};
+
 // ========== DEMANDS ==========
 export const demands = pgTable("demands", {
   id: uuid("id").primaryKey().defaultRandom(),

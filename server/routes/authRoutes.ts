@@ -3,6 +3,7 @@ import { getAuthUrl, getTokensFromCode, getProfileFromIdToken, getUserInfoFromAc
 import { createOrUpdateUserFromGoogle, ensureTenantForUser, issueTokensForUser } from '../lib/authService';
 import { deleteRefreshToken, getRefreshToken, setRefreshToken } from '../lib/redisClient';
 import { jwtMiddleware, requireAuth, AuthRequest } from '../middleware/jwtMiddleware';
+import { getUserPermissions } from '../middleware/permissionMiddleware';
 import { signAccessToken } from '../lib/jwt';
 import { randomUUID } from 'crypto';
 import { storage } from '../storage';
@@ -270,7 +271,7 @@ router.post('/auth/logout', async (req: Request, res: Response) => {
 
 /**
  * GET /api/auth/session
- * Get current session info
+ * Get current session info including resolved permissions
  */
 router.get('/auth/session', jwtMiddleware as any, async (req: any, res: Response): Promise<void> => {
   try {
@@ -292,6 +293,8 @@ router.get('/auth/session', jwtMiddleware as any, async (req: any, res: Response
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
+    const permissions = await getUserPermissions(req.user.id, req.user.tenantId);
+
     res.json({
       authenticated: true,
       user: {
@@ -306,6 +309,7 @@ router.get('/auth/session', jwtMiddleware as any, async (req: any, res: Response
         isConfigured: tenant?.isConfigured === 'true',
       },
       role: req.user.role,
+      permissions: Array.from(permissions),
     });
   } catch (error) {
     console.error('Session error:', error);
