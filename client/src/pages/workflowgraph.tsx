@@ -55,31 +55,31 @@ const getNodeColor = (
   switch (type) {
     case "agent":
       return {
-        bg: "bg-blue-50",
-        border: "border-blue-200",
+        bg: "bg-blue-500/10",
+        border: "border-blue-500/30",
         topBar: "bg-blue-500",
-        icon: "text-blue-600",
+        icon: "text-blue-600 dark:text-blue-400",
       };
     case "system":
       return {
-        bg: "bg-purple-50",
-        border: "border-purple-200",
+        bg: "bg-purple-500/10",
+        border: "border-purple-500/30",
         topBar: "bg-purple-500",
-        icon: "text-purple-600",
+        icon: "text-purple-600 dark:text-purple-400",
       };
     case "decision":
       return {
-        bg: "bg-green-50",
-        border: "border-green-200",
+        bg: "bg-green-500/10",
+        border: "border-green-500/30",
         topBar: "bg-green-500",
-        icon: "text-green-600",
+        icon: "text-green-600 dark:text-green-400",
       };
     default:
       return {
-        bg: "bg-gray-50",
-        border: "border-gray-200",
-        topBar: "bg-gray-500",
-        icon: "text-gray-600",
+        bg: "bg-muted",
+        border: "border-border",
+        topBar: "bg-muted-foreground",
+        icon: "text-muted-foreground",
       };
   }
 };
@@ -107,11 +107,11 @@ const PipelineNode = ({ node, isSelected, onClick }: PipelineNodeProps) => {
 
       {/* Content */}
       <div className={`p-4 ${colors.bg}`}>
-        <div className="font-semibold text-sm text-gray-900 mb-1">
+        <div className="font-semibold text-sm text-foreground mb-1">
           {node.label}
         </div>
-        <div className="text-xs text-gray-500 mb-2">{node.type}</div>
-        <div className="text-xs text-gray-600 line-clamp-2">
+        <div className="text-xs text-muted-foreground mb-2">{node.type}</div>
+        <div className="text-xs text-muted-foreground line-clamp-2">
           {node.description}
         </div>
       </div>
@@ -212,21 +212,21 @@ export default function WorkflowGraph() {
   const pipelineNodes = graphData?.nodes.filter((n) => n.type !== "decision") || [];
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="border-b border-gray-300 bg-gray-50 p-6">
+      <div className="border-b border-border bg-muted p-6">
         <div className="flex flex-col gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            <h2 className="text-2xl font-bold text-foreground mb-1">
               {t("executionGraph.title") || "Execution Pipeline"}
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               {t("executionGraph.subtitle") ||
                 "Visualize your AI workflow execution pipeline"}
             </p>
           </div>
           <div className="flex-1">
-            <label className="text-sm text-gray-700 block mb-2">
+            <label className="text-sm text-foreground block mb-2">
               {t("executionGraph.testInputLabel")}
             </label>
             <div className="flex gap-2">
@@ -234,7 +234,7 @@ export default function WorkflowGraph() {
                 value={testInput}
                 onChange={(e) => setTestInput(e.target.value)}
                 placeholder={t("executionGraph.testInputPlaceholder")}
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 flex-1"
+                className="bg-background border-border text-foreground placeholder:text-muted-foreground flex-1"
                 data-testid="input-test-graph"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleExecute();
@@ -259,7 +259,7 @@ export default function WorkflowGraph() {
       {/* Main content */}
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Zoom Controls Bar */}
-        <div className="bg-white border-b border-gray-300 px-4 py-2 flex items-center gap-2">
+        <div className="bg-card border-b border-border px-4 py-2 flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
@@ -290,7 +290,7 @@ export default function WorkflowGraph() {
           >
             <RotateCcw className="w-4 h-4" />
           </Button>
-          <div className="text-sm text-gray-600 ml-2">
+          <div className="text-sm text-muted-foreground ml-2">
             {Math.round(zoom * 100)}%
           </div>
         </div>
@@ -298,20 +298,19 @@ export default function WorkflowGraph() {
         {/* Pipeline Container - Top (60%) */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-x-auto overflow-y-auto border-b border-gray-300 relative cursor-grab active:cursor-grabbing"
+          className="flex-1 overflow-x-auto overflow-y-auto border-b border-border relative cursor-grab active:cursor-grabbing bg-muted/50 dark:bg-muted/20"
           style={{
-            backgroundImage: `radial-gradient(circle, #d1d5db 1px, transparent 1px)`,
+            backgroundImage: `radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)`,
             backgroundSize: "20px 20px",
-            backgroundColor: "#f3f4f6",
           }}
         >
           {/* Zoom hint */}
-          <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded border border-gray-200 pointer-events-none">
+          <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-card px-2 py-1 rounded border border-border pointer-events-none">
             Ctrl + Scroll para zoom
           </div>
           {graphLoading ? (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-500">{t("executionGraph.loadingGraph")}</div>
+              <div className="text-muted-foreground">{t("executionGraph.loadingGraph")}</div>
             </div>
           ) : pipelineNodes.length > 0 ? (
             <div
@@ -332,9 +331,9 @@ export default function WorkflowGraph() {
                   {/* Arrow connector (except for last node) */}
                   {index < pipelineNodes.length - 1 && (
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="w-6 h-0.5 bg-gradient-to-r from-gray-400 to-gray-300"></div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                      <div className="w-6 h-0.5 bg-gradient-to-r from-gray-300 to-gray-400"></div>
+                      <div className="w-6 h-0.5 bg-gradient-to-r from-muted-foreground/50 to-muted-foreground/30"></div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      <div className="w-6 h-0.5 bg-gradient-to-r from-muted-foreground/30 to-muted-foreground/50"></div>
                     </div>
                   )}
                 </div>
@@ -342,25 +341,25 @@ export default function WorkflowGraph() {
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-500">{t("executionGraph.noNodesFound")}</div>
+              <div className="text-muted-foreground">{t("executionGraph.noNodesFound")}</div>
             </div>
           )}
         </div>
 
         {/* Details Panel - Bottom (40%) */}
-        <div className="h-[40%] bg-gray-50 overflow-y-auto">
+        <div className="h-[40%] bg-muted overflow-y-auto">
           {!selectedNodeId ? (
             <div className="h-full flex items-center justify-center p-4">
               <div className="text-center">
-                <Zap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">
+                <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">
                   {t("executionGraph.selectNodeHint")}
                 </p>
               </div>
             </div>
           ) : nodeLoading ? (
             <div className="p-4">
-              <div className="text-gray-500 text-sm">{t("executionGraph.loading")}</div>
+              <div className="text-muted-foreground text-sm">{t("executionGraph.loading")}</div>
             </div>
           ) : nodeDetail ? (
             <div className="p-6 space-y-6">
@@ -368,12 +367,12 @@ export default function WorkflowGraph() {
                 {/* Left column - Node Info */}
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    <h3 className="text-lg font-bold text-foreground mb-3">
                       {nodeDetail.label}
                     </h3>
                     <Badge
                       variant="outline"
-                      className="bg-white text-gray-700 border-gray-300"
+                      className="bg-card text-foreground border-border"
                       data-testid="badge-node-type"
                     >
                       {nodeDetail.type}
@@ -381,10 +380,10 @@ export default function WorkflowGraph() {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                    <h4 className="text-sm font-semibold text-foreground mb-2">
                       {t("executionGraph.nodeDescription")}
                     </h4>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {nodeDetail.description}
                     </p>
                   </div>
@@ -393,19 +392,19 @@ export default function WorkflowGraph() {
                 {/* Middle column - Configuration */}
                 {nodeDetail.meta && Object.keys(nodeDetail.meta).length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                    <h4 className="text-sm font-semibold text-foreground mb-3">
                       {t("executionGraph.nodeMetadata")}
                     </h4>
                     <div className="space-y-2">
                       {Object.entries(nodeDetail.meta).map(([key, value]) => (
                         <div
                           key={key}
-                          className="bg-white rounded-lg p-3 border border-gray-200"
+                          className="bg-card rounded-lg p-3 border border-border"
                         >
-                          <div className="text-xs font-medium text-gray-500 mb-1 uppercase">
+                          <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
                             {key}
                           </div>
-                          <div className="text-sm text-gray-900 font-semibold">
+                          <div className="text-sm text-foreground font-semibold">
                             {typeof value === "object"
                               ? JSON.stringify(value)
                               : String(value)}
@@ -419,31 +418,31 @@ export default function WorkflowGraph() {
                 {/* Right column - Last Runs */}
                 {nodeDetail.lastRuns && nodeDetail.lastRuns.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                    <h4 className="text-sm font-semibold text-foreground mb-3">
                       {t("executionGraph.nodeLastRuns")}
                     </h4>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {nodeDetail.lastRuns.map((run) => (
                         <div
                           key={run.id}
-                          className="bg-white rounded-lg p-3 border border-gray-200"
+                          className="bg-card rounded-lg p-3 border border-border"
                           data-testid={`run-item-${run.id}`}
                         >
                           <div className="flex items-center gap-2 mb-2">
                             {run.status === "success" ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <AlertCircle className="w-4 h-4 text-red-600" />
+                              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
                             )}
-                            <span className="text-xs text-gray-600 font-medium">
+                            <span className="text-xs text-muted-foreground font-medium">
                               {run.status === "success" ? "Success" : "Failed"}
                             </span>
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             {new Date(run.timestamp).toLocaleString("pt-BR")}
                           </div>
                           {run.duration && (
-                            <div className="text-xs text-gray-600 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               ⏱ {(run.duration / 1000).toFixed(2)}s
                             </div>
                           )}
@@ -455,10 +454,10 @@ export default function WorkflowGraph() {
               </div>
 
               {/* Actions */}
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-border">
                 <Button
                   variant="outline"
-                  className="gap-2 border-gray-300 hover:bg-gray-100"
+                  className="gap-2"
                   disabled
                   data-testid="button-run-agent"
                   title={t("executionGraph.notImplemented")}
