@@ -25,17 +25,17 @@ export default function InsightCard({
   details
 }: InsightCardProps) {
   const colorClasses: Record<string, string> = {
-    red: "border-red-200 bg-red-50",
-    yellow: "border-yellow-200 bg-yellow-50",
-    blue: "border-blue-200 bg-blue-50",
-    purple: "border-purple-200 bg-purple-50"
+    red: "border-red-500/30 bg-red-500/10",
+    yellow: "border-yellow-500/30 bg-yellow-500/10",
+    blue: "border-blue-500/30 bg-blue-500/10",
+    purple: "border-purple-500/30 bg-purple-500/10"
   };
 
   const iconColors: Record<string, string> = {
-    red: "text-red-600",
-    yellow: "text-yellow-600",
-    blue: "text-blue-600",
-    purple: "text-purple-600"
+    red: "text-red-600 dark:text-red-400",
+    yellow: "text-yellow-600 dark:text-yellow-400",
+    blue: "text-blue-600 dark:text-blue-400",
+    purple: "text-purple-600 dark:text-purple-400"
   };
 
   const DefaultIcon = iconMap[type];
@@ -59,14 +59,14 @@ export default function InsightCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm leading-relaxed" data-testid={`insight-description`}>
+        <p className="text-sm leading-relaxed text-foreground" data-testid={`insight-description`}>
           {description}
         </p>
         {details && details.length > 0 && (
           <ul className="space-y-2">
             {details.map((detail, idx) => (
-              <li key={idx} className="text-xs flex gap-2" data-testid={`insight-detail-${idx}`}>
-                <span className="font-bold">•</span>
+              <li key={idx} className="text-xs flex gap-2 text-muted-foreground" data-testid={`insight-detail-${idx}`}>
+                <span className="font-bold text-foreground">•</span>
                 <span>{detail}</span>
               </li>
             ))}
