@@ -542,7 +542,7 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 
 // ========== KANBAN 2.0 ==========
 
-// BOARDS
+// BOARDS (unified with Workflows)
 export const boards = pgTable("boards", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull(),
@@ -551,6 +551,15 @@ export const boards = pgTable("boards", {
   color: text("color").default("#3b82f6"),
   icon: text("icon").default("layout-kanban"),
   isArchived: text("is_archived").default("false"),
+  areaId: text("area_id"),
+  workflowHash: text("workflow_hash"),
+  steps: jsonb("steps").$type<Array<{
+    order: number;
+    name: string;
+    type?: string;
+    description?: string;
+    priority?: string;
+  }>>(),
   settings: jsonb("settings").$type<{
     allowComments?: boolean;
     allowAttachments?: boolean;
