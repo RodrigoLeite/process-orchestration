@@ -11,6 +11,7 @@ import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useI18nStore } from "@/lib/store/i18nStore";
 import { useAuth } from "@/hooks/useAuth";
 import { getAreaName } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
 
 interface Demand {
   id: string;
@@ -45,6 +46,7 @@ export default function AreaDetailsPage() {
   const { t } = useTranslation();
   const { language } = useI18nStore();
   const { tenant } = useAuth();
+  const { toast } = useToast();
   const [match, params] = useRoute("/app/areas/:id");
   const [, navigate] = useLocation();
   const areaId = params?.id;
@@ -58,9 +60,24 @@ export default function AreaDetailsPage() {
       if (res.ok) {
         const card = await res.json();
         navigate(`/kanban/board/${card.boardId}`);
+      } else if (res.status === 404) {
+        toast({
+          title: language === "pt-BR" ? "Kanban indisponível" : "Kanban unavailable",
+          description: language === "pt-BR" 
+            ? "Esta demanda ainda não possui um board Kanban. Execute o processamento da demanda para criar o workflow." 
+            : "This demand doesn't have a Kanban board yet. Run demand processing to create the workflow.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error opening kanban:", error);
+      toast({
+        title: language === "pt-BR" ? "Erro" : "Error",
+        description: language === "pt-BR" 
+          ? "Não foi possível abrir o Kanban." 
+          : "Could not open Kanban.",
+        variant: "destructive",
+      });
     }
   };
 
