@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import {
   ArrowLeft,
   UserPlus,
@@ -63,27 +64,27 @@ import {
   RefreshCw,
   Upload,
   Trash2,
-  Shield,
 } from "lucide-react";
 
 const ROLE_OPTIONS = [
-  { value: "owner", label: "Owner", description: "Full control" },
-  { value: "admin", label: "Admin", description: "Manage users, workflows" },
-  { value: "manager", label: "Manager", description: "Manage department workflows" },
-  { value: "member", label: "Member", description: "Execute tasks" },
-  { value: "viewer", label: "Viewer", description: "Read only" },
+  { value: "owner", label: "Owner" },
+  { value: "admin", label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "member", label: "Member" },
+  { value: "viewer", label: "Viewer" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  owner: "bg-purple-100 text-purple-800",
-  admin: "bg-blue-100 text-blue-800",
-  manager: "bg-green-100 text-green-800",
-  member: "bg-gray-100 text-gray-800",
-  viewer: "bg-yellow-100 text-yellow-800",
+  owner: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  admin: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  manager: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  member: "bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300",
+  viewer: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
 };
 
 export default function AdminUsersPage() {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const { data, isLoading, error } = useAdminUsers();
   const { data: teamsData } = useAdminTeams();
   
@@ -105,7 +106,7 @@ export default function AdminUsersPage() {
 
   const handleInvite = async () => {
     if (!inviteEmail) {
-      toast.error("Please enter an email address");
+      toast.error(t('admin.inviteError'));
       return;
     }
 
@@ -115,13 +116,13 @@ export default function AdminUsersPage() {
         role: inviteRole,
         teamId: inviteTeamId,
       });
-      toast.success(`Invitation sent to ${inviteEmail}`);
+      toast.success(t('admin.inviteSent'));
       setInviteModalOpen(false);
       setInviteEmail("");
       setInviteRole("member");
       setInviteTeamId(null);
     } catch (error: any) {
-      toast.error(error.message || "Failed to send invitation");
+      toast.error(error.message || t('admin.inviteError'));
     }
   };
 
@@ -132,7 +133,7 @@ export default function AdminUsersPage() {
       .filter(e => e && e.includes("@"));
 
     if (emails.length === 0) {
-      toast.error("Please enter at least one valid email address");
+      toast.error(t('admin.inviteError'));
       return;
     }
 
@@ -144,10 +145,10 @@ export default function AdminUsersPage() {
       });
       
       if (result.success?.length > 0) {
-        toast.success(`${result.success.length} invitations sent successfully`);
+        toast.success(t('admin.inviteCount').replace('{count}', result.success.length.toString()));
       }
       if (result.errors?.length > 0) {
-        toast.warning(`${result.errors.length} emails failed: ${result.errors.map((e: any) => e.email).join(", ")}`);
+        toast.warning(`${result.errors.length} emails failed`);
       }
       
       setBulkInviteModalOpen(false);
@@ -155,47 +156,47 @@ export default function AdminUsersPage() {
       setBulkRole("member");
       setBulkTeamId(null);
     } catch (error: any) {
-      toast.error(error.message || "Failed to send invitations");
+      toast.error(error.message || t('admin.inviteError'));
     }
   };
 
   const handleCancelInvitation = async (invitation: Invitation) => {
     try {
       await cancelInvitation.mutateAsync(invitation.id);
-      toast.success(`Invitation to ${invitation.email} cancelled`);
+      toast.success(t('admin.inviteCancelled'));
     } catch (error: any) {
-      toast.error(error.message || "Failed to cancel invitation");
+      toast.error(error.message);
     }
   };
 
   const handleResendInvitation = async (invitation: Invitation) => {
     try {
       await resendInvitation.mutateAsync(invitation.id);
-      toast.success(`Invitation resent to ${invitation.email}`);
+      toast.success(t('admin.inviteResent'));
     } catch (error: any) {
-      toast.error(error.message || "Failed to resend invitation");
+      toast.error(error.message);
     }
   };
 
   const handleUpdateRole = async (user: TenantUser, newRole: string) => {
     try {
       await updateUserRole.mutateAsync({ userId: user.id, role: newRole });
-      toast.success(`Role updated for ${user.email}`);
+      toast.success(t('admin.successUpdateRole'));
     } catch (error: any) {
-      toast.error(error.message || "Failed to update role");
+      toast.error(error.message || t('admin.errorUpdateRole'));
     }
   };
 
   const handleRemoveUser = async (user: TenantUser) => {
-    if (!confirm(`Are you sure you want to remove ${user.email} from this workspace?`)) {
+    if (!confirm(t('admin.removeUserConfirm'))) {
       return;
     }
 
     try {
       await removeUser.mutateAsync(user.id);
-      toast.success(`${user.email} removed from workspace`);
+      toast.success(t('admin.userRemoved'));
     } catch (error: any) {
-      toast.error(error.message || "Failed to remove user");
+      toast.error(error.message);
     }
   };
 
@@ -215,7 +216,7 @@ export default function AdminUsersPage() {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-destructive">Error loading users: {(error as Error).message}</p>
+            <p className="text-destructive">{t('admin.errorLoadUsers')}: {(error as Error).message}</p>
           </CardContent>
         </Card>
       </div>
@@ -235,8 +236,8 @@ export default function AdminUsersPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">User Management</h1>
-            <p className="text-muted-foreground">Manage users and invitations for your workspace</p>
+            <h1 className="text-2xl font-bold">{t('admin.usersTitle')}</h1>
+            <p className="text-muted-foreground">{t('admin.usersSubtitle')}</p>
           </div>
         </div>
 
@@ -248,7 +249,7 @@ export default function AdminUsersPage() {
               data-testid="button-import-csv"
             >
               <Upload className="h-4 w-4 mr-2" />
-              Import CSV
+              {t('admin.importCSV')}
             </Button>
             <Button
               variant="outline"
@@ -256,14 +257,14 @@ export default function AdminUsersPage() {
               data-testid="button-bulk-invite"
             >
               <Users className="h-4 w-4 mr-2" />
-              Bulk Invite
+              {t('admin.bulkInvite')}
             </Button>
             <Button
               onClick={() => setInviteModalOpen(true)}
               data-testid="button-invite-user"
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Invite User
+              {t('admin.inviteUser')}
             </Button>
           </div>
         )}
@@ -272,27 +273,27 @@ export default function AdminUsersPage() {
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
           <TabsTrigger value="active" data-testid="tab-active-users">
-            Active Users ({data?.users?.length || 0})
+            {t('admin.activeUsers')} ({data?.users?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="pending" data-testid="tab-pending-invites">
-            Pending Invites ({data?.pendingInvitations?.length || 0})
+            {t('admin.pendingInvitations')} ({data?.pendingInvitations?.length || 0})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active">
           <Card>
             <CardHeader>
-              <CardTitle>Active Users</CardTitle>
-              <CardDescription>Users with access to this workspace</CardDescription>
+              <CardTitle>{t('admin.activeUsers')}</CardTitle>
+              <CardDescription>{t('admin.usersSubtitle')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Teams</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>{t('admin.columnName')}</TableHead>
+                    <TableHead>{t('admin.columnRole')}</TableHead>
+                    <TableHead>{t('admin.columnTeams')}</TableHead>
+                    <TableHead>{t('common.createdAt')}</TableHead>
                     {canManageUsers && <TableHead className="w-12"></TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -308,7 +309,7 @@ export default function AdminUsersPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{user.name || "No name"}</div>
+                            <div className="font-medium">{user.name || "-"}</div>
                             <div className="text-sm text-muted-foreground">{user.email}</div>
                           </div>
                         </div>
@@ -349,12 +350,12 @@ export default function AdminUsersPage() {
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-muted-foreground text-sm">No teams</span>
+                            <span className="text-muted-foreground text-sm">{t('admin.noTeam')}</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+                        {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                       {canManageUsers && (
                         <TableCell>
@@ -371,7 +372,7 @@ export default function AdminUsersPage() {
                                   onClick={() => handleRemoveUser(user)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  Remove from workspace
+                                  {t('admin.removeUser')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -383,7 +384,7 @@ export default function AdminUsersPage() {
                   {(!data?.users || data.users.length === 0) && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No users found
+                        {t('admin.noUsersFound')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -396,18 +397,16 @@ export default function AdminUsersPage() {
         <TabsContent value="pending">
           <Card>
             <CardHeader>
-              <CardTitle>Pending Invitations</CardTitle>
-              <CardDescription>Invitations waiting to be accepted</CardDescription>
+              <CardTitle>{t('admin.pendingInvitations')}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead>Invited By</TableHead>
+                    <TableHead>{t('admin.columnEmail')}</TableHead>
+                    <TableHead>{t('admin.columnRole')}</TableHead>
+                    <TableHead>{t('admin.columnTeams')}</TableHead>
+                    <TableHead>{t('admin.expiresAt')}</TableHead>
                     {canManageUsers && <TableHead className="w-12"></TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -431,11 +430,8 @@ export default function AdminUsersPage() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-4 w-4" />
-                          {new Date(invitation.expiresAt).toLocaleDateString("pt-BR")}
+                          {new Date(invitation.expiresAt).toLocaleDateString()}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {invitation.invitedByName || "-"}
                       </TableCell>
                       {canManageUsers && (
                         <TableCell>
@@ -448,7 +444,7 @@ export default function AdminUsersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleResendInvitation(invitation)}>
                                 <RefreshCw className="h-4 w-4 mr-2" />
-                                Resend invitation
+                                {t('admin.resendInvite')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -456,7 +452,7 @@ export default function AdminUsersPage() {
                                 onClick={() => handleCancelInvitation(invitation)}
                               >
                                 <X className="h-4 w-4 mr-2" />
-                                Cancel invitation
+                                {t('admin.cancelInvite')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -467,7 +463,7 @@ export default function AdminUsersPage() {
                   {(!data?.pendingInvitations || data.pendingInvitations.length === 0) && (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No pending invitations
+                        {t('admin.noPendingInvitations')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -481,19 +477,16 @@ export default function AdminUsersPage() {
       <Dialog open={inviteModalOpen} onOpenChange={setInviteModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite User</DialogTitle>
-            <DialogDescription>
-              Send an invitation to join your workspace
-            </DialogDescription>
+            <DialogTitle>{t('admin.inviteTitle')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">{t('admin.inviteEmail')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="user@example.com"
+                placeholder={t('admin.inviteEmailPlaceholder')}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 data-testid="input-invite-email"
@@ -501,7 +494,7 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('admin.inviteRole')}</Label>
               <Select value={inviteRole} onValueChange={setInviteRole}>
                 <SelectTrigger data-testid="select-invite-role">
                   <SelectValue />
@@ -509,10 +502,7 @@ export default function AdminUsersPage() {
                 <SelectContent>
                   {ROLE_OPTIONS.filter(r => r.value !== "owner").map((role) => (
                     <SelectItem key={role.value} value={role.value}>
-                      <div className="flex flex-col">
-                        <span>{role.label}</span>
-                        <span className="text-xs text-muted-foreground">{role.description}</span>
-                      </div>
+                      {role.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -520,13 +510,13 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="team">Team (optional)</Label>
+              <Label htmlFor="team">{t('admin.inviteTeam')}</Label>
               <Select value={inviteTeamId || "none"} onValueChange={(v) => setInviteTeamId(v === "none" ? null : v)}>
                 <SelectTrigger data-testid="select-invite-team">
-                  <SelectValue placeholder="Select a team" />
+                  <SelectValue placeholder={t('admin.selectTeam')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No team</SelectItem>
+                  <SelectItem value="none">{t('admin.noTeam')}</SelectItem>
                   {teamsData?.teams?.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
@@ -539,14 +529,14 @@ export default function AdminUsersPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteModalOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleInvite}
               disabled={inviteUser.isPending}
               data-testid="button-send-invite"
             >
-              {inviteUser.isPending ? "Sending..." : "Send Invitation"}
+              {inviteUser.isPending ? t('admin.sending') : t('admin.sendInvite')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -555,30 +545,30 @@ export default function AdminUsersPage() {
       <Dialog open={bulkInviteModalOpen} onOpenChange={setBulkInviteModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Bulk Invite Users</DialogTitle>
+            <DialogTitle>{t('admin.bulkInviteTitle')}</DialogTitle>
             <DialogDescription>
-              Paste multiple email addresses, one per line or separated by commas
+              {t('admin.bulkInviteDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="emails">Email addresses</Label>
+              <Label htmlFor="emails">{t('admin.inviteEmail')}</Label>
               <Textarea
                 id="emails"
-                placeholder="john@example.com&#10;jane@example.com&#10;bob@example.com"
+                placeholder={t('admin.emailsPlaceholder')}
                 value={bulkEmails}
                 onChange={(e) => setBulkEmails(e.target.value)}
                 rows={6}
                 data-testid="textarea-bulk-emails"
               />
               <p className="text-xs text-muted-foreground">
-                {bulkEmails.split(/[\n,;]+/).filter(e => e.trim() && e.includes("@")).length} valid emails detected
+                {bulkEmails.split(/[\n,;]+/).filter(e => e.trim() && e.includes("@")).length} emails
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bulk-role">Role for all users</Label>
+              <Label htmlFor="bulk-role">{t('admin.inviteRole')}</Label>
               <Select value={bulkRole} onValueChange={setBulkRole}>
                 <SelectTrigger data-testid="select-bulk-role">
                   <SelectValue />
@@ -594,13 +584,13 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bulk-team">Team for all users (optional)</Label>
+              <Label htmlFor="bulk-team">{t('admin.inviteTeam')}</Label>
               <Select value={bulkTeamId || "none"} onValueChange={(v) => setBulkTeamId(v === "none" ? null : v)}>
                 <SelectTrigger data-testid="select-bulk-team">
-                  <SelectValue placeholder="Select a team" />
+                  <SelectValue placeholder={t('admin.selectTeam')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No team</SelectItem>
+                  <SelectItem value="none">{t('admin.noTeam')}</SelectItem>
                   {teamsData?.teams?.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
@@ -613,14 +603,14 @@ export default function AdminUsersPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkInviteModalOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleBulkInvite}
               disabled={bulkInvite.isPending}
               data-testid="button-send-bulk-invite"
             >
-              {bulkInvite.isPending ? "Sending..." : "Send Invitations"}
+              {bulkInvite.isPending ? t('admin.sending') : t('admin.sendInvite')}
             </Button>
           </DialogFooter>
         </DialogContent>

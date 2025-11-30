@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import {
   ArrowLeft,
   Plus,
@@ -52,6 +52,7 @@ const COLOR_OPTIONS = [
 
 export default function AdminTeamsPage() {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const { data, isLoading, error } = useAdminTeams();
   
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -82,7 +83,7 @@ export default function AdminTeamsPage() {
 
   const handleSubmit = async () => {
     if (!formName.trim()) {
-      toast.error("Team name is required");
+      toast.error(t('admin.teamName') + " required");
       return;
     }
 
@@ -94,31 +95,31 @@ export default function AdminTeamsPage() {
           description: formDescription || undefined,
           color: formColor,
         });
-        toast.success("Team updated successfully");
+        toast.success(t('admin.teamUpdated'));
       } else {
         await createTeam.mutateAsync({
           name: formName,
           description: formDescription || undefined,
           color: formColor,
         });
-        toast.success("Team created successfully");
+        toast.success(t('admin.teamCreated'));
       }
       setCreateModalOpen(false);
     } catch (error: any) {
-      toast.error(error.message || "Failed to save team");
+      toast.error(error.message);
     }
   };
 
   const handleDelete = async (team: Team) => {
-    if (!confirm(`Are you sure you want to delete the team "${team.name}"? This will remove all members from this team.`)) {
+    if (!confirm(t('admin.deleteTeamConfirm'))) {
       return;
     }
 
     try {
       await deleteTeam.mutateAsync(team.id);
-      toast.success("Team deleted successfully");
+      toast.success(t('admin.teamDeleted'));
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete team");
+      toast.error(error.message);
     }
   };
 
@@ -140,7 +141,7 @@ export default function AdminTeamsPage() {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-destructive">Error loading teams: {(error as Error).message}</p>
+            <p className="text-destructive">{t('common.error')}: {(error as Error).message}</p>
           </CardContent>
         </Card>
       </div>
@@ -160,14 +161,14 @@ export default function AdminTeamsPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Teams</h1>
-            <p className="text-muted-foreground">Organize users into teams and groups</p>
+            <h1 className="text-2xl font-bold">{t('admin.teamsTitle')}</h1>
+            <p className="text-muted-foreground">{t('admin.teamsSubtitle')}</p>
           </div>
         </div>
 
         <Button onClick={openCreateModal} data-testid="button-create-team">
           <Plus className="h-4 w-4 mr-2" />
-          Create Team
+          {t('admin.createTeam')}
         </Button>
       </div>
 
@@ -175,13 +176,13 @@ export default function AdminTeamsPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No teams yet</h3>
+            <h3 className="text-lg font-medium mb-2">{t('admin.noTeams')}</h3>
             <p className="text-muted-foreground mb-4">
-              Create your first team to organize users
+              {t('admin.createFirstTeam')}
             </p>
             <Button onClick={openCreateModal} data-testid="button-create-first-team">
               <Plus className="h-4 w-4 mr-2" />
-              Create First Team
+              {t('admin.createTeam')}
             </Button>
           </CardContent>
         </Card>
@@ -200,7 +201,7 @@ export default function AdminTeamsPage() {
                   <div>
                     <CardTitle className="text-lg">{team.name}</CardTitle>
                     <CardDescription>
-                      {team.memberCount} {team.memberCount === 1 ? "member" : "members"}
+                      {team.memberCount} {t('admin.teamMembers').toLowerCase()}
                     </CardDescription>
                   </div>
                 </div>
@@ -214,14 +215,14 @@ export default function AdminTeamsPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => openEditModal(team)}>
                       <Pencil className="h-4 w-4 mr-2" />
-                      Edit
+                      {t('admin.editTeam')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive"
                       onClick={() => handleDelete(team)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      {t('admin.deleteTeam')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -233,7 +234,7 @@ export default function AdminTeamsPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Members</Label>
+                  <Label className="text-xs text-muted-foreground">{t('admin.teamMembers')}</Label>
                   {team.members.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {team.members.slice(0, 5).map((member) => (
@@ -251,7 +252,7 @@ export default function AdminTeamsPage() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No members yet</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.noTeam')}</p>
                   )}
                 </div>
               </CardContent>
@@ -263,18 +264,18 @@ export default function AdminTeamsPage() {
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editTeam ? "Edit Team" : "Create Team"}</DialogTitle>
+            <DialogTitle>{editTeam ? t('admin.editTeam') : t('admin.createTeam')}</DialogTitle>
             <DialogDescription>
-              {editTeam ? "Update team details" : "Create a new team to organize users"}
+              {t('admin.teamsSubtitle')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Team Name</Label>
+              <Label htmlFor="name">{t('admin.teamName')}</Label>
               <Input
                 id="name"
-                placeholder="Engineering"
+                placeholder={t('admin.teamNamePlaceholder')}
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 data-testid="input-team-name"
@@ -282,10 +283,10 @@ export default function AdminTeamsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
+              <Label htmlFor="description">{t('admin.teamDescription')}</Label>
               <Textarea
                 id="description"
-                placeholder="A brief description of this team..."
+                placeholder={t('admin.teamDescriptionPlaceholder')}
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 rows={3}
@@ -294,7 +295,7 @@ export default function AdminTeamsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Color</Label>
+              <Label>{t('admin.teamColor')}</Label>
               <div className="flex gap-2">
                 {COLOR_OPTIONS.map((color) => (
                   <button
@@ -314,7 +315,7 @@ export default function AdminTeamsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -322,10 +323,8 @@ export default function AdminTeamsPage() {
               data-testid="button-save-team"
             >
               {createTeam.isPending || updateTeam.isPending
-                ? "Saving..."
-                : editTeam
-                ? "Save Changes"
-                : "Create Team"}
+                ? t('common.loading')
+                : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
