@@ -49,6 +49,7 @@ export interface Card {
   startedAt?: string;
   completedAt?: string;
   slaDeadline?: string;
+  phaseEnteredAt?: string;
   areaId?: string;
   labels?: string[];
   metadata?: Record<string, any>;
