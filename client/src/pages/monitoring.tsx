@@ -30,12 +30,12 @@ interface MonitoringData {
 }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  routed: "bg-blue-100 text-blue-800",
-  in_progress: "bg-purple-100 text-purple-800",
-  completed: "bg-green-100 text-green-800",
-  done: "bg-green-100 text-green-800",
-  blocked: "bg-red-100 text-red-800",
+  pending: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  routed: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+  in_progress: "bg-purple-500/20 text-purple-700 dark:text-purple-400",
+  completed: "bg-green-500/20 text-green-700 dark:text-green-400",
+  done: "bg-green-500/20 text-green-700 dark:text-green-400",
+  blocked: "bg-red-500/20 text-red-700 dark:text-red-400",
 };
 
 export default function MonitoringPage() {
@@ -78,12 +78,12 @@ export default function MonitoringPage() {
   };
 
   const statusDistribution = [
-    { label: t("monitoring.waiting"), value: data?.byStatus.pending || 0, color: "text-yellow-600" },
-    { label: t("monitoring.routed"), value: data?.byStatus.routed || 0, color: "text-blue-600" },
-    { label: t("monitoring.inProcessing"), value: data?.byStatus.in_progress || 0, color: "text-purple-600" },
-    { label: t("monitoring.completed"), value: data?.byStatus.completed || 0, color: "text-green-600" },
-    { label: t("monitoring.finished"), value: data?.byStatus.done || 0, color: "text-emerald-600" },
-    { label: t("monitoring.blocked"), value: data?.byStatus.blocked || 0, color: "text-red-600" },
+    { label: t("monitoring.waiting"), value: data?.byStatus.pending || 0, color: "text-yellow-600 dark:text-yellow-400" },
+    { label: t("monitoring.routed"), value: data?.byStatus.routed || 0, color: "text-blue-600 dark:text-blue-400" },
+    { label: t("monitoring.inProcessing"), value: data?.byStatus.in_progress || 0, color: "text-purple-600 dark:text-purple-400" },
+    { label: t("monitoring.completed"), value: data?.byStatus.completed || 0, color: "text-green-600 dark:text-green-400" },
+    { label: t("monitoring.finished"), value: data?.byStatus.done || 0, color: "text-emerald-600 dark:text-emerald-400" },
+    { label: t("monitoring.blocked"), value: data?.byStatus.blocked || 0, color: "text-red-600 dark:text-red-400" },
   ];
 
   return (
@@ -94,14 +94,14 @@ export default function MonitoringPage() {
           <h1 className="text-3xl font-bold tracking-tight" data-testid="text-monitoring-title">
             {t("monitoring.title")}
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             {lastUpdated && `${t("monitoring.lastUpdate")}: ${lastUpdated.toLocaleTimeString("pt-BR")}`}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-500 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-primary/50 transition-colors"
           data-testid="button-refresh"
           title={isRefreshing ? t("monitoring.refreshing") : t("monitoring.refresh")}
         >
@@ -115,7 +115,7 @@ export default function MonitoringPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               {t("monitoring.generalProgress")}
             </CardTitle>
             <CardDescription>
@@ -128,12 +128,12 @@ export default function MonitoringPage() {
               <div className="flex justify-between mb-3">
                 <span className="text-sm font-semibold">{t("monitoring.processingStatus")}</span>
                 <div className="flex gap-2 text-xs">
-                  <span className="text-green-600 font-bold">{data.byStatus.completed + data.byStatus.done} ✓</span>
-                  <span className="text-blue-600 font-bold">{data.byStatus.in_progress + data.byStatus.routed} ⏳</span>
-                  <span className="text-gray-600">{data.total}</span>
+                  <span className="text-green-600 dark:text-green-400 font-bold">{data.byStatus.completed + data.byStatus.done} ✓</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">{data.byStatus.in_progress + data.byStatus.routed} ⏳</span>
+                  <span className="text-muted-foreground">{data.total}</span>
                 </div>
               </div>
-              <div className="w-full h-8 bg-gray-100 rounded-lg overflow-hidden flex border border-gray-300">
+              <div className="w-full h-8 bg-muted rounded-lg overflow-hidden flex border border-border">
                 {/* Completed */}
                 <div
                   style={{
@@ -167,27 +167,27 @@ export default function MonitoringPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-4 gap-3">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xs text-gray-600">{t("monitoring.processed")}</p>
-                <p className="text-2xl font-bold text-green-600" data-testid="text-processed">
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <p className="text-xs text-muted-foreground">{t("monitoring.processed")}</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="text-processed">
                   {data.byStatus.completed + data.byStatus.done}
                 </p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-600">{t("monitoring.waiting")}</p>
-                <p className="text-2xl font-bold text-blue-600" data-testid="text-pending">
+              <div className="p-3 bg-blue-500/10 rounded-lg">
+                <p className="text-xs text-muted-foreground">{t("monitoring.waiting")}</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400" data-testid="text-pending">
                   {data.byStatus.in_progress + data.byStatus.routed}
                 </p>
               </div>
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <p className="text-xs text-gray-600">{t("monitoring.avgTime")}</p>
-                <p className="text-2xl font-bold text-purple-600" data-testid="text-avg-time">
+              <div className="p-3 bg-purple-500/10 rounded-lg">
+                <p className="text-xs text-muted-foreground">{t("monitoring.avgTime")}</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400" data-testid="text-avg-time">
                   {data.averageProcessingTime}m
                 </p>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600">{t("monitoring.total")}</p>
-                <p className="text-2xl font-bold text-gray-600" data-testid="text-total-demands">
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground">{t("monitoring.total")}</p>
+                <p className="text-2xl font-bold text-muted-foreground" data-testid="text-total-demands">
                   {data.total}
                 </p>
               </div>
@@ -195,11 +195,11 @@ export default function MonitoringPage() {
 
             {/* ETA Info */}
             {data.byStatus.routed + data.byStatus.in_progress > 0 && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-900">
+              <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-400">
                   <span className="font-semibold">⏳ {t("monitoring.processing")}:</span> {data.byStatus.routed + data.byStatus.in_progress} {t("monitoring.demandsInQueue")}
                 </p>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
                   {t("monitoring.estimatedTime")}: {Math.ceil((data.byStatus.routed + data.byStatus.in_progress) * 0.4)} {t("monitoring.minutesPerDemand")}
                 </p>
               </div>
@@ -216,7 +216,7 @@ export default function MonitoringPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {statusDistribution.map((status) => (
-              <div key={status.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={status.label} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <span className="text-sm font-medium">{status.label}</span>
                 <span className={`text-lg font-bold ${status.color}`} data-testid={`text-status-${status.label.toLowerCase()}`}>
                   {status.value}
@@ -236,7 +236,7 @@ export default function MonitoringPage() {
           <CardContent>
             <div className="space-y-3">
               {Object.entries(data.byArea).map(([area, count]) => (
-                <div key={area} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={area} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <span className="font-medium">{area}</span>
                   <Badge variant="outline">{count} {t("common.demands")}</Badge>
                 </div>
@@ -251,7 +251,7 @@ export default function MonitoringPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
               {t("monitoring.lastProcessed")}
             </CardTitle>
           </CardHeader>
@@ -260,12 +260,12 @@ export default function MonitoringPage() {
               {data.recentDemands.map((demand) => (
                 <div
                   key={demand.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   data-testid={`card-recent-${demand.id}`}
                 >
                   <div>
                     <p className="font-medium" data-testid={`text-demand-title-${demand.id}`}>{demand.title}</p>
-                    <p className="text-sm text-gray-600" data-testid={`text-demand-area-${demand.id}`}>{demand.area}</p>
+                    <p className="text-sm text-muted-foreground" data-testid={`text-demand-area-${demand.id}`}>{demand.area}</p>
                   </div>
                   <Badge className={statusColors[demand.status]} data-testid={`badge-status-${demand.id}`}>
                     {demand.status === "completed" ? t("monitoring.completedStatus") : t("monitoring.finishedStatus")}
@@ -281,10 +281,10 @@ export default function MonitoringPage() {
       {!isLoading && !data && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-gray-600">{t("monitoring.noMonitoringData")}</p>
+            <p className="text-muted-foreground">{t("monitoring.noMonitoringData")}</p>
             <button
               onClick={() => refetch()}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-4 text-primary hover:text-primary/80 font-medium"
               data-testid="button-retry"
             >
               {t("monitoring.retry")}
@@ -297,7 +297,7 @@ export default function MonitoringPage() {
       {isLoading && !data && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-gray-600 flex items-center justify-center gap-2">
+            <p className="text-muted-foreground flex items-center justify-center gap-2">
               <RefreshCw className="w-4 h-4 animate-spin" />
               {t("monitoring.loading")}
             </p>
