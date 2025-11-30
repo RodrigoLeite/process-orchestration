@@ -104,11 +104,11 @@ export default function Navigation() {
                     navigate(item.href);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors border-none bg-transparent cursor-pointer ${
-                    active
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  }`}
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2 rounded-lg transition-colors border-none cursor-pointer`}
+                  style={{
+                    backgroundColor: active ? 'hsl(var(--sidebar-primary))' : 'transparent',
+                    color: active ? 'hsl(var(--sidebar-primary-foreground))' : 'hsl(var(--sidebar-foreground))'
+                  }}
                   data-testid={`nav-link-${item.label.toLowerCase()}`}
                   title={isSidebarCollapsed ? item.label : undefined}
                 >
