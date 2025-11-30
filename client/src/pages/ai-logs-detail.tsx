@@ -83,7 +83,7 @@ export default function AILogsDetailPage() {
         </Button>
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
-            <p className="text-red-700 font-semibold">{t('aiLogsDetail.notFound')}</p>
+            <p className="text-red-700 dark:text-red-400 font-semibold">{t('aiLogsDetail.notFound')}</p>
           </CardContent>
         </Card>
       </div>
@@ -199,9 +199,9 @@ export default function AILogsDetailPage() {
           <CardContent>
             <div className="flex items-center gap-2">
               {detail.execution.status === "success" ? (
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-red-600" />
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
               )}
               <span className="font-semibold" data-testid="text-status">
                 {detail.execution.status === "success" ? t('aiLogsDetail.statusSuccessText') : t('aiLogsDetail.statusErrorText')}
@@ -213,9 +213,9 @@ export default function AILogsDetailPage() {
 
       {/* Error Message / Input & Output (if error) */}
       {detail.execution.status === "error" && (
-        <Card className="border-red-500/20 bg-red-50">
+        <Card className="border-red-500/20 bg-red-50 dark:bg-red-950/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
+            <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
               <AlertCircle className="w-5 h-5" />
               Erro na Execução
             </CardTitle>
@@ -225,16 +225,16 @@ export default function AILogsDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {detail.execution.inputJson && (
                 <div>
-                  <p className="text-xs font-semibold mb-2 text-red-700">INPUT</p>
-                  <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-32 font-mono">
+                  <p className="text-xs font-semibold mb-2 text-red-700 dark:text-red-400">INPUT</p>
+                  <pre className="bg-card p-2 rounded text-xs overflow-auto max-h-32 font-mono">
                     {JSON.stringify(detail.execution.inputJson, null, 2)}
                   </pre>
                 </div>
               )}
               {detail.execution.outputJson && (
                 <div>
-                  <p className="text-xs font-semibold mb-2 text-red-700">OUTPUT</p>
-                  <pre className="bg-white p-2 rounded text-xs overflow-auto max-h-32 font-mono">
+                  <p className="text-xs font-semibold mb-2 text-red-700 dark:text-red-400">OUTPUT</p>
+                  <pre className="bg-card p-2 rounded text-xs overflow-auto max-h-32 font-mono">
                     {JSON.stringify(detail.execution.outputJson, null, 2)}
                   </pre>
                 </div>
@@ -243,7 +243,7 @@ export default function AILogsDetailPage() {
             
             {/* Fallback error message */}
             {!detail.execution.outputJson && (
-              <p className="text-sm text-red-700 bg-white p-3 rounded font-mono whitespace-pre-wrap break-words" data-testid="text-error-message">
+              <p className="text-sm text-red-700 dark:text-red-400 bg-card p-3 rounded font-mono whitespace-pre-wrap break-words" data-testid="text-error-message">
                 {detail.execution.errorMessage || detail.execution.metadata?.error || "Erro desconhecido"}
               </p>
             )}
@@ -266,33 +266,33 @@ export default function AILogsDetailPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.title')}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{t('aiLogsDetail.title')}</p>
                 <p className="text-base mt-1" data-testid="text-demand-title">
                   {detail.demandData?.title || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.id')}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{t('aiLogsDetail.id')}</p>
                 <p className="font-mono text-sm mt-1" data-testid="text-demand-id">
                   {detail.demandData?.id || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.priority')}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{t('aiLogsDetail.priority')}</p>
                 <Badge color={getPriorityColor(detail.demandData?.priority)} data-testid="badge-demand-priority">
                   {(detail.demandData?.priority || "desconhecida").toUpperCase()}
                 </Badge>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-600">{t('aiLogsDetail.area')}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{t('aiLogsDetail.area')}</p>
                 <p className="text-base mt-1" data-testid="text-demand-area">
                   {detail.demandData?.area || "—"}
                 </p>
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 mb-2">{t('aiLogsDetail.description')}</p>
-              <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded" data-testid="text-demand-description">
+              <p className="text-sm font-semibold text-muted-foreground mb-2">{t('aiLogsDetail.description')}</p>
+              <p className="text-sm text-foreground bg-muted p-3 rounded" data-testid="text-demand-description">
                 {detail.demandData?.description || "—"}
               </p>
             </div>
@@ -314,12 +314,12 @@ export default function AILogsDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {detail.workflows?.map((workflow, idx) => workflow && (
-              <div key={workflow.id} className="border-l-4 border-blue-500 pl-4 py-2">
+              <div key={workflow.id} className="border-l-4 border-blue-500 dark:border-blue-400 pl-4 py-2">
                 <p className="font-semibold text-base" data-testid={`workflow-title-${idx}`}>
                   {workflow.title || "—"}
                 </p>
-                <p className="text-sm text-gray-600 mt-1">{workflow.description || "—"}</p>
-                <p className="font-mono text-xs text-gray-500 mt-2">{workflow.id || "—"}</p>
+                <p className="text-sm text-muted-foreground mt-1">{workflow.description || "—"}</p>
+                <p className="font-mono text-xs text-muted-foreground/70 mt-2">{workflow.id || "—"}</p>
               </div>
             ))}
           </CardContent>
@@ -331,7 +331,7 @@ export default function AILogsDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
+              <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               {t('aiLogsDetail.bottlenecksIdentified')} ({detail.bottlenecks.length})
             </CardTitle>
             <CardDescription>
@@ -340,7 +340,7 @@ export default function AILogsDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {detail.bottlenecks?.map((bottleneck, idx) => bottleneck && (
-              <div key={bottleneck.id} className="border-l-4 border-orange-500 pl-4 py-2">
+              <div key={bottleneck.id} className="border-l-4 border-orange-500 dark:border-orange-400 pl-4 py-2">
                 <div className="flex items-center gap-2 mb-2">
                   <p className="font-semibold text-base">{bottleneck.workflow || "—"}</p>
                   <Badge
@@ -353,11 +353,11 @@ export default function AILogsDetailPage() {
                 {Array.isArray(bottleneck.bottlenecks) && bottleneck.bottlenecks.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {bottleneck.bottlenecks.map((item: any, i: number) => (
-                      <div key={i} className="text-sm bg-orange-50 p-2 rounded">
-                        <p className="font-semibold text-gray-700">{item.stage || item.title || t('aiLogsDetail.bottleneck')}</p>
-                        <p className="text-gray-600">{item.reason || item.description || "—"}</p>
+                      <div key={i} className="text-sm bg-orange-50 dark:bg-orange-950/30 p-2 rounded">
+                        <p className="font-semibold text-foreground">{item.stage || item.title || t('aiLogsDetail.bottleneck')}</p>
+                        <p className="text-muted-foreground">{item.reason || item.description || "—"}</p>
                         {item.recommended_action && (
-                          <p className="text-gray-700 mt-1">
+                          <p className="text-foreground mt-1">
                             <strong>{t('aiLogsDetail.recommendationLabel')}:</strong> {item.recommended_action}
                           </p>
                         )}
@@ -365,7 +365,7 @@ export default function AILogsDetailPage() {
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground/70 mt-2">
                   {new Date(bottleneck.detectedAt).toLocaleString()}
                 </p>
               </div>
@@ -379,7 +379,7 @@ export default function AILogsDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-yellow-600" />
+              <Lightbulb className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               {t('aiLogsDetail.insightsRecommendations')} ({detail.insights.length})
             </CardTitle>
             <CardDescription>
@@ -388,15 +388,15 @@ export default function AILogsDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {detail.insights?.map((insight, idx) => insight && (
-              <div key={insight.id} className="border-l-4 border-yellow-500 pl-4 py-2">
+              <div key={insight.id} className="border-l-4 border-yellow-500 dark:border-yellow-400 pl-4 py-2">
                 <p className="font-semibold text-base mb-2">{insight.workflow || "—"}</p>
 
                 {insight.insights && (
                   <div className="space-y-3">
                     {insight.insights.key_insights && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.keyInsights')}</p>
-                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                        <p className="text-sm font-semibold text-foreground mb-2">{t('aiLogsDetail.keyInsights')}</p>
+                        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                           {Array.isArray(insight.insights.key_insights) &&
                             insight.insights.key_insights.map((item: any, i: number) => (
                               <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
@@ -407,8 +407,8 @@ export default function AILogsDetailPage() {
 
                     {insight.insights.recommendations && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.recommendations')}</p>
-                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                        <p className="text-sm font-semibold text-foreground mb-2">{t('aiLogsDetail.recommendations')}</p>
+                        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                           {Array.isArray(insight.insights.recommendations) &&
                             insight.insights.recommendations.map((item: any, i: number) => (
                               <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
@@ -419,8 +419,8 @@ export default function AILogsDetailPage() {
 
                     {insight.insights.risk_factors && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.riskFactors')}</p>
-                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                        <p className="text-sm font-semibold text-foreground mb-2">{t('aiLogsDetail.riskFactors')}</p>
+                        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                           {Array.isArray(insight.insights.risk_factors) &&
                             insight.insights.risk_factors.map((item: any, i: number) => (
                               <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
@@ -431,8 +431,8 @@ export default function AILogsDetailPage() {
 
                     {insight.insights.optimization_opportunities && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">{t('aiLogsDetail.optimizationOpportunities')}</p>
-                        <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                        <p className="text-sm font-semibold text-foreground mb-2">{t('aiLogsDetail.optimizationOpportunities')}</p>
+                        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                           {Array.isArray(insight.insights.optimization_opportunities) &&
                             insight.insights.optimization_opportunities.map((item: any, i: number) => (
                               <li key={i}>• {typeof item === "string" ? item : item.title || JSON.stringify(item)}</li>
@@ -443,7 +443,7 @@ export default function AILogsDetailPage() {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-500 mt-3">
+                <p className="text-xs text-muted-foreground/70 mt-3">
                   {new Date(insight.generatedAt).toLocaleString()}
                 </p>
               </div>
@@ -458,8 +458,8 @@ export default function AILogsDetailPage() {
         (!detail.insights || detail.insights.length === 0) && (
           <Card>
             <CardContent className="py-12 text-center">
-              <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">{t('aiLogsDetail.noResults')}</p>
+              <AlertCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground">{t('aiLogsDetail.noResults')}</p>
             </CardContent>
           </Card>
         )}
