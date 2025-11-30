@@ -103,11 +103,6 @@ export const orchestrateDemandFn = inngest.createFunction(
         const { kanbanStorage } = await import("../../kanban/storage");
         
         const boardName = resultData.workflow?.titulo || demandInput.titulo || "Board";
-        console.log("[ORCHESTRATE-QUEUE] DEBUG - workflow object:", {
-          titulo: resultData.workflow?.titulo,
-          etapasLength: resultData.workflow?.etapas?.length,
-          etapas: resultData.workflow?.etapas
-        });
         const board = await getOrCreateBoard(
           resultData.workflow.etapas || [],
           boardName,

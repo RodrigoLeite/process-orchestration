@@ -3,7 +3,11 @@ import { generateWorkflowHash, WorkflowStep } from "../lib/workflowHash";
 import type { Board, Phase } from "@shared/schema";
 
 export function convertEtapasToSteps(etapas: any[]): WorkflowStep[] {
-  return (etapas || []).map((etapa, index) => ({
+  // Accept both 'etapas' and 'stages' formats  
+  const steps = etapas || [];
+  console.log("[CONVERT] Input etapas length:", steps.length, "first item:", steps[0]);
+  
+  return steps.map((etapa, index) => ({
     order: index,
     name: etapa.nome || etapa.name || `Step ${index + 1}`,
     type: etapa.tipo || etapa.type || "process",
@@ -50,9 +54,33 @@ export async function getOrCreateBoard(
 }
 
 async function createBoardPhasesFromSteps(boardId: string, tenantId: string, steps: WorkflowStep[]): Promise<void> {
+  // If no steps provided, create default phases
+  if (!steps || steps.length === 0) {
+    const defaultPhases = [
+      { name: "Planejamento", description: "Planning and analysis phase", slaHours: 24 },
+      { name: "Processamento", description: "Processing and execution phase", slaHours: 48 },
+      { name: "Revisão", description: "Review and quality assurance phase", slaHours: 24 },
+      { name: "Finalização", description: "Completion and delivery phase", slaHours: 24 }
+    ];
+    
+    for (let i = 0; i < defaultPhases.length; i++) {
+      await kanbanStorage.createPhase({
+        tenantId,
+        boardId,
+        name: defaultPhases[i].name,
+        description: defaultPhases[i].description,
+        position: i,
+        isInitial: i === 0 ? "true" : "false",
+        isFinal: i === defaultPhases.length - 1 ? "true" : "false",
+        slaHours: defaultPhases[i].slaHours
+      });
+    }
+    return;
+  }
+  
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
-    const slaHours = parseDuration(step.duration);
+    const slaHours = parseDuration(step.duration) || 24; // Default to 24 hours if duration not found
     await kanbanStorage.createPhase({
       tenantId,
       boardId,
@@ -61,7 +89,7 @@ async function createBoardPhasesFromSteps(boardId: string, tenantId: string, ste
       position: step.order,
       isInitial: i === 0 ? "true" : "false",
       isFinal: i === steps.length - 1 ? "true" : "false",
-      slaHours: slaHours || undefined
+      slaHours: slaHours
     });
   }
 }
