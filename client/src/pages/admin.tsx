@@ -1,78 +1,81 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Lock, Users, Shield } from 'lucide-react';
+import { 
+  Shield, 
+  Users, 
+  UserPlus, 
+  Upload, 
+  UsersRound, 
+  Key,
+  ChevronRight,
+  Building2
+} from 'lucide-react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { usePermissions } from '@/components/permission-guard';
 
-interface TenantUserWithRole {
-  id: string;
-  userId: string;
-  email: string;
-  name: string;
-  roleId: string;
-  roleName: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  description?: string;
+interface AdminCard {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  permission?: string;
+  color: string;
 }
 
 export default function AdminPanel() {
-  const { tenant, user } = useAuth();
+  const { tenant } = useAuth();
   const { t } = useTranslation();
   const [, navigate] = useLocation();
+  const { hasPermission } = usePermissions();
 
-  const { data: tenantUsers = [] } = useQuery({
-    queryKey: ['tenant-users', tenant?.id],
-    queryFn: async () => {
-      const res = await fetch(`/api/rbac/users?tenantId=${tenant?.id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error(t('admin.errorLoadUsers'));
-      return res.json();
+  const adminCards: AdminCard[] = [
+    {
+      title: 'Gerenciar Usuários',
+      description: 'Visualize, convide e gerencie os membros do seu workspace',
+      icon: <Users className="w-8 h-8" />,
+      href: '/admin/users',
+      permission: 'tenant.manage_users',
+      color: 'bg-blue-500',
     },
-    enabled: !!tenant?.id,
-  });
+    {
+      title: 'Convidar Usuários',
+      description: 'Envie convites individuais ou em lote para novos membros',
+      icon: <UserPlus className="w-8 h-8" />,
+      href: '/admin/users',
+      permission: 'tenant.manage_users',
+      color: 'bg-green-500',
+    },
+    {
+      title: 'Importar via CSV',
+      description: 'Importe múltiplos usuários de uma só vez usando arquivo CSV',
+      icon: <Upload className="w-8 h-8" />,
+      href: '/admin/users/import',
+      permission: 'tenant.manage_users',
+      color: 'bg-purple-500',
+    },
+    {
+      title: 'Gerenciar Times',
+      description: 'Crie e organize times para melhor colaboração',
+      icon: <UsersRound className="w-8 h-8" />,
+      href: '/admin/teams',
+      permission: 'tenant.manage_teams',
+      color: 'bg-orange-500',
+    },
+    {
+      title: 'Funções e Permissões',
+      description: 'Configure funções e controle o que cada grupo pode acessar',
+      icon: <Key className="w-8 h-8" />,
+      href: '/admin/roles',
+      permission: 'tenant.manage_roles',
+      color: 'bg-red-500',
+    },
+  ];
 
-  const { data: roles = [] } = useQuery({
-    queryKey: ['tenant-roles', tenant?.id],
-    queryFn: async () => {
-      const res = await fetch(`/api/rbac/roles?tenantId=${tenant?.id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error(t('admin.errorLoadRoles'));
-      return res.json();
-    },
-    enabled: !!tenant?.id,
-  });
-
-  const updateRoleMutation = useMutation({
-    mutationFn: async (variables: { tenantUserId: string; roleId: string }) => {
-      const res = await fetch(`/api/rbac/users/${variables.tenantUserId}/role`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ roleId: variables.roleId }),
-      });
-      if (!res.ok) throw new Error(t('admin.errorUpdateRole'));
-      return res.json();
-    },
-    onSuccess: () => {
-      toast.success(t('admin.successUpdateRole'));
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
-    },
-  });
+  const visibleCards = adminCards.filter(
+    card => !card.permission || hasPermission(card.permission)
+  );
 
   if (!tenant) {
     return (
@@ -88,99 +91,84 @@ export default function AdminPanel() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center gap-2" data-testid="text-admin-title">
-            <Shield className="w-8 h-8 text-primary" />
-            {t('admin.title')}
-          </h1>
-          <p className="text-muted-foreground">{t('admin.subtitle')}</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-primary/10 rounded-xl">
+              <Shield className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground" data-testid="text-admin-title">
+                Painel de Administração
+              </h1>
+              <p className="text-muted-foreground">
+                Gerencie usuários, times e permissões do seu workspace
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Usuários */}
-        <Card className="p-6 border-border">
-          <div className="flex items-center gap-2 mb-6">
-            <Users className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">{t('admin.workspaceMembers')}</h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full" data-testid="table-users">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnName')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnEmail')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnRole')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">{t('admin.columnActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tenantUsers.map((tenantUser: TenantUserWithRole) => {
-                  const isCurrentUser = tenantUser.userId === user?.id;
-                  const isOwner = tenantUser.roleName === 'owner';
-                  const currentRoleId = roles.find((r: Role) => r.name.toLowerCase() === tenantUser.roleName)?.id || '';
-
-                  return (
-                    <tr key={tenantUser.id} className="border-b border-border/50 hover:bg-muted/50" data-testid={`row-user-${tenantUser.id}`}>
-                      <td className="py-3 px-4 text-foreground font-medium">{tenantUser.name}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{tenantUser.email}</td>
-                      <td className="py-3 px-4">
-                        {isOwner ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full text-sm font-medium">
-                            <Lock className="w-4 h-4" />
-                            Owner
-                          </span>
-                        ) : (
-                          <Select
-                            value={currentRoleId}
-                            onValueChange={(roleId) =>
-                              updateRoleMutation.mutate({
-                                tenantUserId: tenantUser.id,
-                                roleId,
-                              })
-                            }
-                            disabled={isCurrentUser || isOwner}
-                          >
-                            <SelectTrigger className="w-40" data-testid={`select-role-${tenantUser.id}`}>
-                              <SelectValue placeholder={t('admin.selectRole')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roles.map((role: Role) => (
-                                <SelectItem key={role.id} value={role.id}>
-                                  {role.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {isCurrentUser && <span className="text-blue-600 dark:text-blue-400 font-medium">{t('admin.you')}</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {tenantUsers.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>{t('admin.noUsers')}</p>
+        <Card className="p-4 mb-8 border-border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <Building2 className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <span className="text-sm text-muted-foreground">Workspace atual:</span>
+              <span className="ml-2 font-semibold text-foreground">{tenant.name}</span>
             </div>
-          )}
+          </div>
         </Card>
 
-        {/* Info */}
+        {visibleCards.length === 0 ? (
+          <Card className="p-8 text-center border-border">
+            <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Acesso Restrito
+            </h3>
+            <p className="text-muted-foreground">
+              Você não tem permissão para acessar as funcionalidades de administração.
+              Entre em contato com o administrador do workspace.
+            </p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleCards.map((card, index) => (
+              <Card
+                key={index}
+                className="group cursor-pointer border-border hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+                onClick={() => navigate(card.href)}
+                data-testid={`card-admin-${card.href.replace(/\//g, '-')}`}
+              >
+                <div className="p-6">
+                  <div className={`inline-flex p-3 rounded-xl ${card.color} text-white mb-4`}>
+                    {card.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                    {card.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {card.description}
+                  </p>
+                  <div className="flex items-center text-primary text-sm font-medium">
+                    Acessar
+                    <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
         <Card className="p-6 border-border mt-8 bg-blue-50 dark:bg-blue-950/30">
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">{t('admin.availableRoles')}</h3>
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                Sobre as Funções de Acesso
+              </h3>
               <ul className="text-sm text-blue-800 dark:text-blue-300/80 space-y-1">
-                <li>• <strong>Owner</strong>: {t('admin.ownerDescription')}</li>
-                <li>• <strong>Admin</strong>: {t('admin.adminDescription')}</li>
-                <li>• <strong>Manager</strong>: {t('admin.managerDescription')}</li>
-                <li>• <strong>Member</strong>: {t('admin.memberDescription')}</li>
-                <li>• <strong>Viewer</strong>: {t('admin.viewerDescription')}</li>
+                <li>• <strong>Owner</strong>: Controle total sobre o workspace e todas as configurações</li>
+                <li>• <strong>Admin</strong>: Pode gerenciar usuários, times e a maioria das configurações</li>
+                <li>• <strong>Manager</strong>: Pode criar e editar workflows e cards</li>
+                <li>• <strong>Member</strong>: Pode visualizar e interagir com cards atribuídos</li>
+                <li>• <strong>Viewer</strong>: Acesso somente leitura</li>
               </ul>
             </div>
           </div>
