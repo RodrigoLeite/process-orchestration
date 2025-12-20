@@ -16,49 +16,62 @@ interface GoogleProfile {
  * Create or update user from Google profile
  */
 export async function createOrUpdateUserFromGoogle(profile: GoogleProfile): Promise<User> {
+  console.log('[AUTH SERVICE] createOrUpdateUserFromGoogle called with:', JSON.stringify(profile));
   try {
+    const { users } = await import('@shared/schema');
+    
     // Try to find existing user by Google ID
+    console.log('[AUTH SERVICE] Looking for user by Google ID:', profile.id);
     let user = await storage.db
       .select()
-      .from((await import('@shared/schema')).users)
-      .where(eq((await import('@shared/schema')).users.googleId, profile.id))
+      .from(users)
+      .where(eq(users.googleId, profile.id))
       .limit(1)
       .then((rows: any[]) => rows[0]);
+    
+    console.log('[AUTH SERVICE] Found by Google ID:', user ? 'yes' : 'no');
 
     if (user) {
       // Update existing user
+      console.log('[AUTH SERVICE] Updating existing user:', user.id);
       user = await storage.db
-        .update((await import('@shared/schema')).users)
+        .update(users)
         .set({
           name: profile.name,
           image: profile.picture,
         })
-        .where(eq((await import('@shared/schema')).users.id, user.id))
+        .where(eq(users.id, user.id))
         .returning()
         .then((rows: any[]) => rows[0]);
+      console.log('[AUTH SERVICE] Updated user:', user);
       return user;
     }
 
     // Try to find by email
+    console.log('[AUTH SERVICE] Looking for user by email:', profile.email);
     user = await storage.db
       .select()
-      .from((await import('@shared/schema')).users)
-      .where(eq((await import('@shared/schema')).users.email, profile.email))
+      .from(users)
+      .where(eq(users.email, profile.email))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
+    console.log('[AUTH SERVICE] Found by email:', user ? 'yes' : 'no');
+
     if (user) {
       // Link Google ID to existing user
+      console.log('[AUTH SERVICE] Linking Google ID to existing user:', user.id);
       user = await storage.db
-        .update((await import('@shared/schema')).users)
+        .update(users)
         .set({
           googleId: profile.id,
           name: profile.name || user.name,
           image: profile.picture || user.image,
         })
-        .where(eq((await import('@shared/schema')).users.id, user.id))
+        .where(eq(users.id, user.id))
         .returning()
         .then((rows: any[]) => rows[0]);
+      console.log('[AUTH SERVICE] Linked user:', user);
       return user;
     }
 
