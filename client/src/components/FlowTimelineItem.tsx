@@ -1,5 +1,6 @@
 import { formatDistanceToNow, parseISO } from "date-fns";
 import Badge from "@/components/Badge";
+import { formatDateTime } from "@/lib/dateUtils";
 
 interface FlowTimelineItemProps {
   index: number;
@@ -136,7 +137,7 @@ export default function FlowTimelineItem({
             {/* Timestamp */}
             <div className="pt-2 border-t border-gray-100">
               <p className="text-xs text-gray-500" data-testid={`text-timestamp-${index}`}>
-                {new Date(timestamp).toLocaleString("pt-BR")}
+                {formatDateTime(timestamp)}
               </p>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { Loader2, MapPin, ListIcon, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDateTime } from "@/lib/dateUtils";
 import type { Demand } from "@/lib/types";
 
 const areaIcons: Record<string, string> = {
@@ -192,7 +193,7 @@ export default function AllDemands() {
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <span>ID: {demand.id.slice(0, 8)}</span>
                                     <span className="text-border/50">•</span>
-                                    <span>Criado: {(demand.createdAt || demand.created_at) ? new Date(demand.createdAt || demand.created_at || '').toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                                    <span>Criado: {formatDateTime(demand.createdAt || demand.created_at)}</span>
                                   </div>
                                 </div>
                               </div>

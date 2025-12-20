@@ -14,6 +14,7 @@ import {
   ZoomOut,
   RotateCcw,
 } from "lucide-react";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface GraphNode {
@@ -439,7 +440,7 @@ export default function WorkflowGraph() {
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(run.timestamp).toLocaleString("pt-BR")}
+                            {formatDateTime(run.timestamp)}
                           </div>
                           {run.duration && (
                             <div className="text-xs text-muted-foreground mt-1">

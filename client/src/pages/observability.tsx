@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, Activity, CheckCircle2, AlertCircle } from "lucide-react";
 import Badge from "@/components/Badge";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useState } from "react";
 
 interface SystemEvent {
@@ -84,7 +85,7 @@ export default function ObservabilityPage() {
               key={agent}
               variant={filterAgent === agent ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilterAgent(agent)}
+              onClick={() => setFilterAgent(agent || null)}
               data-testid={`filter-${agent}`}
             >
               {agent} ({allEvents.filter((e: SystemEvent) => e.agentKey === agent).length})
@@ -135,7 +136,7 @@ export default function ObservabilityPage() {
                       {event.type}
                     </CardTitle>
                     <CardDescription className="text-xs mt-1">
-                      {new Date(event.createdAt).toLocaleString()} 
+                      {formatDateTime(event.createdAt)} 
                       {event.durationMs && ` • ${event.durationMs}ms`}
                     </CardDescription>
                   </div>

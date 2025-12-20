@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, Clock, CheckCircle2, ArrowRight, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDateTime } from "@/lib/dateUtils";
 import type { Demand } from "@/lib/types";
 
 const statusColors = {
@@ -270,7 +271,7 @@ export default function Demands() {
                     {/* Metadata */}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border/50">
                       <span>ID: {demand.id.slice(0, 8)}...</span>
-                      <span>Criado: {(demand.createdAt || demand.created_at) ? new Date(demand.createdAt || demand.created_at || '').toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                      <span>Criado: {formatDateTime(demand.createdAt || demand.created_at)}</span>
                     </div>
                   </CardContent>
                 </Card>

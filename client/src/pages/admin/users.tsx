@@ -12,6 +12,7 @@ import {
   type TenantUser,
   type Invitation,
 } from "@/hooks/useAdmin";
+import { formatDate } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -355,7 +356,7 @@ export default function AdminUsersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {formatDate(user.createdAt)}
                       </TableCell>
                       {canManageUsers && (
                         <TableCell>
@@ -430,7 +431,7 @@ export default function AdminUsersPage() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-4 w-4" />
-                          {new Date(invitation.expiresAt).toLocaleDateString()}
+                          {formatDate(invitation.expiresAt)}
                         </div>
                       </TableCell>
                       {canManageUsers && (

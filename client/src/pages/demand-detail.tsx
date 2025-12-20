@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, ExternalLink } from "lucide-react";
 import Badge from "@/components/Badge";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import type { Demand } from "@/lib/types";
 
@@ -435,13 +436,7 @@ export default function DemandDetail() {
       <Card className="border-border bg-muted">
         <CardContent className="pt-6">
           <p className="text-xs text-muted-foreground">
-            {t("demandDetail.createdAt")}: {demand.createdAt ? new Date(demand.createdAt).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit"
-            }) : "—"}
+            {t("demandDetail.createdAt")}: {formatDateTime(demand.createdAt)}
           </p>
         </CardContent>
       </Card>

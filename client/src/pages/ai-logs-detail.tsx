@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft, CheckCircle2, AlertCircle, Zap, Target, Lightbulb } from "lucide-react";
 import Badge from "@/components/Badge";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -182,7 +183,7 @@ export default function AILogsDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-sm font-mono" data-testid="text-timestamp">
-              {new Date(detail.execution.timestamp).toLocaleString()}
+              {formatDateTime(detail.execution.timestamp)}
             </div>
           </CardContent>
         </Card>
@@ -376,7 +377,7 @@ export default function AILogsDetailPage() {
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground/70 mt-2">
-                  {new Date(bottleneck.detectedAt).toLocaleString()}
+                  {formatDateTime(bottleneck.detectedAt)}
                 </p>
               </div>
             ))}
@@ -454,7 +455,7 @@ export default function AILogsDetailPage() {
                 )}
 
                 <p className="text-xs text-muted-foreground/70 mt-3">
-                  {new Date(insight.generatedAt).toLocaleString()}
+                  {formatDateTime(insight.generatedAt)}
                 </p>
               </div>
             ))}
