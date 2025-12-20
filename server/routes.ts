@@ -1930,13 +1930,13 @@ Texto original: ${demand.rawText}`;
 
   app.get("/api/agents", async (req: any, res) => {
     try {
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id || "00000000-0000-0000-0000-000000000000";
+      const tenantId = getTenantId(req);
       
       // Agents are isolated by tenant - only return agents for current tenant
       const dbAgents = await storage.getAgents(tenantId);
       console.log(`[API] GET /api/agents for tenant ${tenantId}: ${dbAgents.length} agents`);
-      res.json(dbAgents);
+      // Normalize UUIDs in response to prevent byte-format IDs
+      res.json(normalizeRecords(dbAgents));
     } catch (error) {
       console.error("Error fetching agents:", error);
       res.status(500).json({ error: "Failed to fetch agents" });
@@ -2037,11 +2037,12 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const normalizedId = normalizeUUID(id);
       
       // Query database agents only (legacy agents removed)
-      const dbAgent = await storage.getAgent(id);
+      const dbAgent = await storage.getAgent(normalizedId);
       if (dbAgent) {
-        return res.json(dbAgent);
+        return res.json(normalizeRecord(dbAgent));
       }
       
       res.status(404).json({ error: "Agent not found" });
@@ -2054,12 +2055,13 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id/logs", async (req: any, res) => {
     try {
       const { id } = req.params;
+      const normalizedId = normalizeUUID(id);
       const tenantId = getTenantId(req);
       
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       
       // Get the agent first to find its internalKey
-      const agent = await storage.getAgent(id);
+      const agent = await storage.getAgent(normalizedId);
       if (!agent) {
         return res.json([]);
       }

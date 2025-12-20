@@ -104,6 +104,7 @@ export const userManagementService = {
   },
 
   async listPendingInvitations(tenantId: string): Promise<InvitationWithDetails[]> {
+    const normalizedTenantId = normalizeUUID(tenantId);
     const invitationRows = await storage.db
       .select({
         invitation: invitations,
@@ -114,12 +115,13 @@ export const userManagementService = {
       .leftJoin(teams, eq(teams.id, invitations.teamId))
       .leftJoin(users, eq(users.id, invitations.invitedBy))
       .where(and(
-        eq(invitations.tenantId, tenantId),
+        eq(invitations.tenantId, normalizedTenantId),
         eq(invitations.status, 'pending')
       ))
-      .orderBy(desc(invitations.createdAt));
+      .orderBy(desc(invitations.createdAt))
+      .catch(() => [] as any[]);
 
-    return invitationRows.map(row => ({
+    return (invitationRows || []).map(row => ({
       ...row.invitation,
       teamName: row.teamName || undefined,
       invitedByName: row.invitedByName || undefined,
