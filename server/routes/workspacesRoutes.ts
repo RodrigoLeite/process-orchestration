@@ -31,7 +31,13 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
       .from(tenantUsers)
       .where(eq(tenantUsers.userId, userId));
 
-    console.log('[WORKSPACES] Found tenant_users records:', userTenants.length, userTenants);
+    // Normalize tenantIds from query results (may come as byte arrays)
+    const normalizedUserTenants = userTenants.map(ut => ({
+      tenantId: normalizeUUID(ut.tenantId),
+      role: ut.role,
+    }));
+    
+    console.log('[WORKSPACES] Found tenant_users records:', normalizedUserTenants.length, normalizedUserTenants);
 
     // Always get the current tenant from session as fallback
     let currentTenantData: any = null;
@@ -44,11 +50,15 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
         .limit(1)
         .then((rows: any[]) => rows[0]);
       
+      if (currentTenantData) {
+        currentTenantData = { ...currentTenantData, id: normalizeUUID(currentTenantData.id) };
+      }
+      
       console.log('[WORKSPACES] Current tenant from session:', currentTenantData?.id, currentTenantData?.name);
     }
 
     // If no tenant_users found, return current tenant only
-    if (userTenants.length === 0) {
+    if (normalizedUserTenants.length === 0) {
       if (currentTenantData) {
         res.json([{
           id: currentTenantData.id,
@@ -63,29 +73,33 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
     }
 
     // Get tenant details for each
-    const workspaceIds = userTenants.map(ut => ut.tenantId);
+    const workspaceIds = normalizedUserTenants.map(ut => ut.tenantId);
     
     // Include current tenant in the list if not already there
     if (currentTenantId && !workspaceIds.includes(currentTenantId)) {
       workspaceIds.push(currentTenantId);
     }
     
-    const tenantDetails = await storage.db
+    const tenantDetailsRaw = await storage.db
       .select()
       .from(tenants)
       .where(inArray(tenants.id, workspaceIds));
+    
+    // Normalize tenant IDs in results
+    const tenantDetails = tenantDetailsRaw.map(t => ({ ...t, id: normalizeUUID(t.id) }));
 
     console.log('[WORKSPACES] Tenant details found:', tenantDetails.length);
 
     // Build response with tenant details and roles
     const workspaces = workspaceIds.map(tenantId => {
-      const tenant = tenantDetails.find(t => t.id === tenantId);
-      const userTenant = userTenants.find(ut => ut.tenantId === tenantId);
+      const normalizedTenantId = normalizeUUID(tenantId);
+      const tenant = tenantDetails.find(t => t.id === normalizedTenantId);
+      const userTenant = normalizedUserTenants.find(ut => ut.tenantId === normalizedTenantId);
       return {
-        id: tenantId,
+        id: normalizedTenantId,
         name: tenant?.name || 'Unknown Workspace',
         role: userTenant?.role || 'owner',
-        isCurrent: tenantId === currentTenantId,
+        isCurrent: normalizedTenantId === currentTenantId,
       };
     });
 
