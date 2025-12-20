@@ -1,6 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 import { storage } from "../storage";
+import { normalizeUUID } from "../lib/uuidUtils";
 
 const router = Router();
 
@@ -87,12 +88,13 @@ router.get("/auth/tenants", async (req, res) => {
   }
 
   try {
-    const userId = (req.user as any)?.id;
+    const userId = normalizeUUID((req.user as any)?.id);
     const tenantUsers = await storage.getTenantUsersByUserId(userId);
 
     const tenantsData = [];
     for (const tu of tenantUsers) {
-      const tenant = await storage.getTenant(tu.tenantId);
+      const tenantId = normalizeUUID(tu.tenantId);
+      const tenant = await storage.getTenant(tenantId);
       if (tenant) {
         tenantsData.push({
           ...tenant,
@@ -115,8 +117,8 @@ router.post("/auth/switch-tenant/:tenantId", async (req, res) => {
   }
 
   try {
-    const userId = (req.user as any)?.id;
-    const tenantId = req.params.tenantId;
+    const userId = normalizeUUID((req.user as any)?.id);
+    const tenantId = normalizeUUID(req.params.tenantId);
 
     // Verify user has access to this tenant
     const tenantUser = await storage.getTenantUser(tenantId, userId);

@@ -1,23 +1,43 @@
-import { Router, Response } from 'express';
-import { AuthRequest } from '../middleware/jwtMiddleware';
+import { Router, Response, Request } from 'express';
 import { storage } from '../storage';
 import { tenants, tenantUsers, users } from '@shared/schema';
 import { eq, and, inArray } from 'drizzle-orm';
+import { normalizeUUID } from '../lib/uuidUtils';
 
 const router = Router();
+
+interface SessionUser {
+  id: string;
+  tenantId?: string;
+  [key: string]: any;
+}
+
+function getSessionUser(req: Request): SessionUser | null {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return null;
+  }
+  const user = req.user as any;
+  if (!user?.id) return null;
+  
+  const tenantId = (req.session as any)?.tenantId || user.tenantId;
+  return { ...user, tenantId };
+}
 
 /**
  * GET /api/workspaces
  * List all workspaces for the current user
  */
-router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/api/workspaces', async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.user) {
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    console.log('[WORKSPACES] Fetching for user:', req.user.id, 'current tenant:', req.user.tenantId);
+    const userId = normalizeUUID(sessionUser.id);
+    const currentTenantId = sessionUser.tenantId ? normalizeUUID(sessionUser.tenantId) : null;
+    console.log('[WORKSPACES] Fetching for user:', userId, 'current tenant:', currentTenantId);
 
     // Get all tenant_users records for this user
     const userTenants = await storage.db
@@ -26,12 +46,11 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
         role: tenantUsers.role,
       })
       .from(tenantUsers)
-      .where(eq(tenantUsers.userId, req.user.id));
+      .where(eq(tenantUsers.userId, userId));
 
     console.log('[WORKSPACES] Found tenant_users records:', userTenants.length, userTenants);
 
     // Always get the current tenant from session as fallback
-    const currentTenantId = req.user.tenantId;
     let currentTenantData: any = null;
     
     if (currentTenantId) {
@@ -105,14 +124,16 @@ router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<v
  * POST /api/workspaces/:workspaceId/switch
  * Switch to a different workspace
  */
-router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/api/workspaces/:workspaceId/switch', async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.user) {
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    const { workspaceId } = req.params;
+    const workspaceId = normalizeUUID(req.params.workspaceId);
+    const userId = normalizeUUID(sessionUser.id);
 
     // Verify user has access to this workspace
     const tenantUser = await storage.db
@@ -120,7 +141,7 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res:
       .from(tenantUsers)
       .where(
         and(
-          eq(tenantUsers.userId, req.user.id),
+          eq(tenantUsers.userId, userId),
           eq(tenantUsers.tenantId, workspaceId)
         )
       )
@@ -132,24 +153,18 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res:
       return;
     }
 
-    // Generate new JWT with the new tenantId
-    const { signAccessToken } = await import('../lib/jwt');
-    const newAccessToken = await signAccessToken({
-      sub: req.user.id,
-      tenantId: workspaceId,
-      role: tenantUser.role,
-      email: req.user.email,
+    // Update session with new tenant
+    (req.session as any).tenantId = workspaceId;
+    
+    // Save session to ensure change persists
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+        res.status(500).json({ error: 'Failed to switch workspace' });
+        return;
+      }
+      res.json({ success: true, message: 'Workspace switched successfully' });
     });
-
-    // Set the new token in the cookie
-    res.cookie('access_token', newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
-
-    res.json({ success: true, message: 'Workspace switched successfully' });
   } catch (error) {
     console.error('Error switching workspace:', error);
     res.status(500).json({ error: 'Failed to switch workspace' });
@@ -160,9 +175,10 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res:
  * POST /api/workspaces
  * Create a new workspace for the current user
  */
-router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/api/workspaces', async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.user) {
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
@@ -198,11 +214,12 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
     }
 
     // Add user as owner to the new tenant
+    const userId = normalizeUUID(sessionUser.id);
     const newTenantUser = await storage.db
       .insert(tenantUsers)
       .values({
         tenantId: newTenant.id,
-        userId: req.user.id,
+        userId: userId,
         role: 'owner',
       })
       .returning()
