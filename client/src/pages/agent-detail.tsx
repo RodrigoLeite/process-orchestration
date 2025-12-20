@@ -7,6 +7,7 @@ import { ChevronLeft, Bot, Loader2, Play, Copy, Check } from "lucide-react";
 import Badge from "@/components/Badge";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { getAgentDescription, getAgentName } from "@/lib/agentDescriptions";
+import { formatDate, formatDateTime } from "@/lib/dateUtils";
 import type { Agent, AgentLog } from "@shared/schema";
 
 export default function AgentDetailPage({ params }: { params: { id: string } }) {
@@ -168,7 +169,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground mb-2">{t("agentDetail.createdAt")}</p>
             <p className="font-semibold">
-              {new Date(agent.createdAt).toLocaleDateString("pt-BR")}
+              {formatDate(agent.createdAt)}
             </p>
           </CardContent>
         </Card>
@@ -206,13 +207,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                           {log.status === "success" ? t("agentDetail.success") : t("agentDetail.error")}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(log.createdAt).toLocaleString("pt-BR", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
+                          {formatDateTime(log.createdAt)}
                         </span>
                       </div>
                     </div>

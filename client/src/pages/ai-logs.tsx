@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, Activity, CheckCircle2, AlertCircle, ChevronRight, X } from "lucide-react";
 import Badge from "@/components/Badge";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
@@ -249,7 +250,7 @@ export default function AILogsPage() {
                       {t("aiLogs.execution")} #{log.executionId.substring(0, 8)}
                     </CardTitle>
                     <CardDescription className="text-xs mt-1">
-                      {new Date(log.timestamp).toLocaleString()}
+                      {formatDateTime(log.timestamp)}
                     </CardDescription>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
