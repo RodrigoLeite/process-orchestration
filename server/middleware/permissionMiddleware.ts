@@ -11,6 +11,7 @@ import {
   DEFAULT_ROLE_PERMISSIONS,
   type PermissionKey 
 } from '@shared/schema';
+import { normalizeUUID } from '../lib/uuidUtils';
 
 export interface PermissionRequest extends AuthRequest {
   userPermissions?: Set<string>;
@@ -19,11 +20,18 @@ export interface PermissionRequest extends AuthRequest {
 async function getUserPermissions(userId: string, tenantId: string): Promise<Set<string>> {
   const permissionSet = new Set<string>();
 
+  const normalizedUserId = normalizeUUID(userId);
+  const normalizedTenantId = normalizeUUID(tenantId);
+
+  if (!normalizedUserId || !normalizedTenantId) {
+    return permissionSet;
+  }
+
   try {
     const tenantUser = await storage.db
       .select()
       .from(tenantUsers)
-      .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)))
+      .where(and(eq(tenantUsers.userId, normalizedUserId), eq(tenantUsers.tenantId, normalizedTenantId)))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
@@ -42,18 +50,24 @@ async function getUserPermissions(userId: string, tenantId: string): Promise<Set
       })
       .from(userRoles)
       .innerJoin(roles, eq(roles.id, userRoles.roleId))
-      .where(and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId)));
+      .where(and(eq(userRoles.userId, normalizedUserId), eq(userRoles.tenantId, normalizedTenantId)))
+      .catch(() => [] as any[]);
 
-    for (const customRole of customRoles) {
-      const rolePerms = await storage.db
-        .select({
-          permissionKey: permissions.key,
-        })
-        .from(rolePermissions)
-        .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-        .where(eq(rolePermissions.roleId, customRole.roleId));
+    if (customRoles && Array.isArray(customRoles)) {
+      for (const customRole of customRoles) {
+        const rolePerms = await storage.db
+          .select({
+            permissionKey: permissions.key,
+          })
+          .from(rolePermissions)
+          .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+          .where(eq(rolePermissions.roleId, customRole.roleId))
+          .catch(() => [] as any[]);
 
-      rolePerms.forEach(rp => permissionSet.add(rp.permissionKey));
+        if (rolePerms && Array.isArray(rolePerms)) {
+          rolePerms.forEach(rp => permissionSet.add(rp.permissionKey));
+        }
+      }
     }
 
     return permissionSet;
@@ -74,7 +88,9 @@ export function permissionMiddleware(
         return next();
       }
 
-      req.userPermissions = await getUserPermissions(req.user.id, req.tenant.tenantId);
+      const normalizedUserId = normalizeUUID(req.user.id);
+      const normalizedTenantId = normalizeUUID(req.tenant.tenantId);
+      req.userPermissions = await getUserPermissions(normalizedUserId || '', normalizedTenantId || '');
       next();
     } catch (error) {
       console.error('Permission middleware error:', error);
