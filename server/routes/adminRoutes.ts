@@ -7,8 +7,21 @@ import { userManagementService } from '../admin/userManagementService';
 import { teamsService } from '../admin/teamsService';
 import { rolesService } from '../admin/rolesService';
 import { PERMISSIONS } from '@shared/schema';
+import { normalizeUUID } from '../lib/uuidUtils';
 
 const router = Router();
+
+const getTenantId = (req: Request): string => {
+  const permReq = req as PermissionRequest;
+  const rawId = permReq.tenant?.tenantId || "";
+  return normalizeUUID(rawId) || "";
+};
+
+const getUserId = (req: Request): string => {
+  const authReq = req as AuthRequest;
+  const rawId = authReq.user?.id || "";
+  return normalizeUUID(rawId) || "";
+};
 
 router.use(requireAuth as any);
 router.use(requireTenant as any);
@@ -47,12 +60,12 @@ const roleSchema = z.object({
 
 router.get('/users', async (req: Request, res: Response) => {
   try {
-    const permReq = req as PermissionRequest;
-    const tenantId = permReq.tenant!.tenantId;
+    const tenantId = getTenantId(req);
     
     const users = await userManagementService.listTenantUsers(tenantId);
     const pendingInvitations = await userManagementService.listPendingInvitations(tenantId);
     
+    const permReq = req as PermissionRequest;
     res.json({ 
       users, 
       pendingInvitations,
@@ -69,9 +82,8 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
-      const userId = authReq.user!.id;
+      const tenantId = getTenantId(req);
+      const userId = getUserId(req);
       
       const data = inviteSchema.parse(req.body);
       
@@ -99,9 +111,8 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
-      const userId = authReq.user!.id;
+      const tenantId = getTenantId(req);
+      const userId = getUserId(req);
       
       const data = bulkInviteSchema.parse(req.body);
       
@@ -129,9 +140,8 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
-      const userId = authReq.user!.id;
+      const tenantId = getTenantId(req);
+      const userId = getUserId(req);
       
       const { rows, defaultRole } = req.body as { rows: any[]; defaultRole: string };
       
@@ -160,8 +170,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { invitationId } = req.params;
       
       await userManagementService.cancelInvitation(tenantId, invitationId);
@@ -179,8 +188,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { invitationId } = req.params;
       
       const invitation = await userManagementService.resendInvitation(tenantId, invitationId);
@@ -198,8 +206,7 @@ router.patch(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { userId } = req.params;
       const { role } = req.body;
       
@@ -218,11 +225,11 @@ router.delete(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
+      const currentUserId = getUserId(req);
       const { userId } = req.params;
       
-      if (userId === authReq.user!.id) {
+      if (userId === currentUserId) {
         return res.status(400).json({ error: 'Cannot remove yourself from the tenant' });
       }
       
@@ -241,8 +248,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { userId, teamId } = req.params;
       
       await userManagementService.assignUserToTeam(tenantId, userId, teamId);
@@ -260,8 +266,7 @@ router.delete(
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { userId, teamId } = req.params;
       
       await userManagementService.removeUserFromTeam(tenantId, userId, teamId);
@@ -311,8 +316,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const data = teamSchema.parse(req.body);
       
       const team = await teamsService.createTeam(tenantId, data);
@@ -333,8 +337,7 @@ router.patch(
   checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { teamId } = req.params;
       const data = teamSchema.partial().parse(req.body);
       
@@ -356,8 +359,7 @@ router.delete(
   checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { teamId } = req.params;
       
       await teamsService.deleteTeam(tenantId, teamId);
@@ -375,8 +377,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { teamId, userId } = req.params;
       
       await teamsService.addMemberToTeam(tenantId, teamId, userId);
@@ -394,8 +395,7 @@ router.delete(
   checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { teamId, userId } = req.params;
       
       await teamsService.removeMemberFromTeam(tenantId, teamId, userId);
@@ -468,8 +468,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const data = roleSchema.parse(req.body);
       
       const role = await rolesService.createRole(tenantId, data);
@@ -490,8 +489,7 @@ router.patch(
   checkPermission(PERMISSIONS.TENANT_MANAGE_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { roleId } = req.params;
       const data = roleSchema.partial().parse(req.body);
       
@@ -513,8 +511,7 @@ router.delete(
   checkPermission(PERMISSIONS.TENANT_MANAGE_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { roleId } = req.params;
       
       await rolesService.deleteRole(tenantId, roleId);
@@ -532,8 +529,7 @@ router.post(
   checkPermission(PERMISSIONS.TENANT_MANAGE_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { roleId, userId } = req.params;
       
       await rolesService.assignRoleToUser(tenantId, userId, roleId);
@@ -551,8 +547,7 @@ router.delete(
   checkPermission(PERMISSIONS.TENANT_MANAGE_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const tenantId = authReq.tenant!.tenantId;
+      const tenantId = getTenantId(req);
       const { roleId, userId } = req.params;
       
       await rolesService.removeRoleFromUser(tenantId, userId, roleId);

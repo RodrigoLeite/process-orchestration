@@ -3,8 +3,20 @@ import { z } from "zod";
 import { inngest } from "../inngest/client";
 import { storage } from "../storage";
 import { randomUUID } from "crypto";
+import { normalizeUUID } from "../lib/uuidUtils";
 
 const router = Router();
+
+const getTenantId = (req: any): string => {
+  const headerTenantId = req.headers?.['x-tenant-id'] as string | undefined;
+  const rawId = headerTenantId || req.tenantContext?.id || "";
+  return normalizeUUID(rawId) || "";
+};
+
+const getUserId = (req: any): string => {
+  const rawId = req.user?.id || "";
+  return normalizeUUID(rawId) || "";
+};
 
 const generateSchema = z.object({
   demandId: z.string().uuid(),
@@ -23,8 +35,8 @@ const assignSchema = z.object({
 
 router.post("/workflow/generate", async (req: any, res) => {
   try {
-    const tenantId = req.tenantContext?.id;
-    const userId = req.user?.id;
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
@@ -82,8 +94,8 @@ router.post("/workflow/generate", async (req: any, res) => {
 
 router.post("/workflow/normalize", async (req: any, res) => {
   try {
-    const tenantId = req.tenantContext?.id;
-    const userId = req.user?.id;
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
@@ -151,8 +163,8 @@ router.post("/workflow/normalize", async (req: any, res) => {
 
 router.post("/workflow/assign", async (req: any, res) => {
   try {
-    const tenantId = req.tenantContext?.id;
-    const userId = req.user?.id;
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
@@ -220,7 +232,7 @@ router.post("/workflow/assign", async (req: any, res) => {
 
 router.get("/jobs", async (req: any, res) => {
   try {
-    const tenantId = req.tenantContext?.id;
+    const tenantId = getTenantId(req);
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
     }
