@@ -6,6 +6,7 @@ import { storage } from '../storage';
 import { tenants, tenantUsers, users } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { TenantInfo } from './context';
+import { normalizeUUID, normalizeTenantUser } from '../lib/uuidUtils';
 
 /**
  * Load tenant for user with optional tenant switching support
@@ -18,12 +19,14 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
     
     // If a preferred tenant is specified, try to load that one
     if (preferredTenantId) {
-      tenantUser = await storage.db
+      const rawTenantUser = await storage.db
         .select()
         .from(tenantUsers)
         .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, preferredTenantId)))
         .limit(1)
         .then((rows: any[]) => rows[0]);
+      
+      tenantUser = normalizeTenantUser(rawTenantUser);
       
       if (tenantUser) {
         console.log(`[TENANT LOADER] Using preferred tenant ${preferredTenantId} for user ${userId}`);
@@ -32,13 +35,15 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
     
     // If no preferred tenant or user doesn't have access to it, get first tenant (primary tenant)
     if (!tenantUser) {
-      tenantUser = await storage.db
+      const rawTenantUser = await storage.db
         .select()
         .from(tenantUsers)
         .where(eq(tenantUsers.userId, userId))
         .orderBy(tenantUsers.createdAt)
         .limit(1)
         .then((rows: any[]) => rows[0]);
+      
+      tenantUser = normalizeTenantUser(rawTenantUser);
       
       if (tenantUser) {
         console.log(`[TENANT LOADER] Using primary tenant ${tenantUser.tenantId} for user ${userId}`);
@@ -49,11 +54,12 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
       return null;
     }
 
-    // Get tenant info
+    // Get tenant info - normalize the tenantId before querying
+    const normalizedTenantId = normalizeUUID(tenantUser.tenantId);
     const tenant = await storage.db
       .select()
       .from(tenants)
-      .where(eq(tenants.id, tenantUser.tenantId))
+      .where(eq(tenants.id, normalizedTenantId))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
@@ -80,17 +86,20 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
  */
 export async function loadTenantsForUser(userId: string): Promise<TenantInfo[]> {
   try {
-    const tenantUsers_ = await storage.db
+    const rawTenantUsers = await storage.db
       .select()
       .from(tenantUsers)
       .where(eq(tenantUsers.userId, userId));
 
+    const tenantUsers_ = rawTenantUsers.map(normalizeTenantUser);
+
     const tenantList = await Promise.all(
       tenantUsers_.map(async (tu: any) => {
+        const normalizedTenantId = normalizeUUID(tu.tenantId);
         const tenant = await storage.db
           .select()
           .from(tenants)
-          .where(eq(tenants.id, tu.tenantId))
+          .where(eq(tenants.id, normalizedTenantId))
           .limit(1)
           .then((rows: any[]) => rows[0]);
 

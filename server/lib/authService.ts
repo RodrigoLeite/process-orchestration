@@ -118,32 +118,9 @@ export async function ensureTenantForUser(user: User): Promise<{ tenant: Tenant;
     console.log('[AUTH SERVICE] existingTenantUser:', existingTenantUser);
 
     if (existingTenantUser) {
-      // Handle UUID that might be returned as comma-separated bytes string or buffer
-      let tenantId: string = existingTenantUser.tenantId as any;
-      
-      // Check if it's a comma-separated string of bytes (e.g., "153,73,164,...")
-      if (typeof tenantId === 'string' && tenantId.includes(',')) {
-        const bytes: number[] = tenantId.split(',').map(n => parseInt(n.trim(), 10));
-        const toHex = (b: number) => b.toString(16).padStart(2, '0');
-        tenantId = [
-          bytes.slice(0, 4).map(toHex).join(''),
-          bytes.slice(4, 6).map(toHex).join(''),
-          bytes.slice(6, 8).map(toHex).join(''),
-          bytes.slice(8, 10).map(toHex).join(''),
-          bytes.slice(10, 16).map(toHex).join('')
-        ].join('-');
-      } else if (Array.isArray(tenantId) || (tenantId as any) instanceof Uint8Array) {
-        // Convert buffer/array to UUID string
-        const bytes: number[] = Array.from(tenantId as any);
-        const toHex = (b: number) => b.toString(16).padStart(2, '0');
-        tenantId = [
-          bytes.slice(0, 4).map(toHex).join(''),
-          bytes.slice(4, 6).map(toHex).join(''),
-          bytes.slice(6, 8).map(toHex).join(''),
-          bytes.slice(8, 10).map(toHex).join(''),
-          bytes.slice(10, 16).map(toHex).join('')
-        ].join('-');
-      }
+      // Normalize tenant ID from database format to UUID string
+      const { normalizeUUID } = await import('./uuidUtils');
+      const tenantId = normalizeUUID(existingTenantUser.tenantId);
       console.log('[AUTH SERVICE] tenantId after conversion:', tenantId);
       
       const tenant = await storage.getTenant(tenantId);
