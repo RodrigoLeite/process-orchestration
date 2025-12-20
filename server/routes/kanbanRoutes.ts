@@ -12,17 +12,21 @@ import {
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
+import { normalizeUUID } from "../lib/uuidUtils";
 
 const router = Router();
 
 const getTenantId = (req: Request): string => {
+  const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
   const tenantContext = (req as any).tenantContext;
-  return tenantContext?.id || "";
+  const rawId = headerTenantId || tenantContext?.id || "";
+  return normalizeUUID(rawId) || "";
 };
 
 const getUserId = (req: Request): string => {
   const user = (req as any).user;
-  return user?.sub || user?.id || "";
+  const rawId = user?.sub || user?.id || "";
+  return normalizeUUID(rawId) || "";
 };
 
 // ========== BOARDS ==========
