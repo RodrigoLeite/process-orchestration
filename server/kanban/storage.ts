@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import { eq, and, asc, desc, sql, inArray, or, isNull } from "drizzle-orm";
+import { normalizeUUID } from "../lib/uuidUtils";
 import {
   boards,
   phases,
@@ -358,10 +359,12 @@ export const kanbanStorage = {
   },
 
   async getCardFieldValues(cardId: string, tenantId: string): Promise<CardFieldValue[]> {
-    return db
+    const result = await db
       .select()
       .from(cardFieldValues)
-      .where(and(eq(cardFieldValues.cardId, cardId), eq(cardFieldValues.tenantId, tenantId)));
+      .where(and(eq(cardFieldValues.cardId, cardId), eq(cardFieldValues.tenantId, tenantId)))
+      .catch(() => [] as CardFieldValue[]);
+    return result || [];
   },
 
   // ========== CARD COMMENTS ==========
@@ -375,14 +378,17 @@ export const kanbanStorage = {
       .select()
       .from(cardComments)
       .where(and(eq(cardComments.cardId, cardId), eq(cardComments.tenantId, tenantId)))
-      .orderBy(desc(cardComments.createdAt));
+      .orderBy(desc(cardComments.createdAt))
+      .catch(() => [] as CardComment[]);
+
+    if (!comments || comments.length === 0) return [];
 
     const userIds = Array.from(new Set(comments.map((c: CardComment) => c.userId)));
     const usersData = userIds.length > 0
-      ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds))
+      ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds)).catch(() => [])
       : [];
 
-    const userMap = new Map(usersData.map((u: { id: string; name: string | null; image: string | null }) => [u.id, u]));
+    const userMap = new Map((usersData || []).map((u: { id: string; name: string | null; image: string | null }) => [u.id, u]));
 
     return comments.map((c: CardComment) => ({
       ...c,
@@ -411,11 +417,13 @@ export const kanbanStorage = {
   },
 
   async getAttachmentsByCard(cardId: string, tenantId: string): Promise<CardAttachment[]> {
-    return db
+    const result = await db
       .select()
       .from(cardAttachments)
       .where(and(eq(cardAttachments.cardId, cardId), eq(cardAttachments.tenantId, tenantId)))
-      .orderBy(desc(cardAttachments.createdAt));
+      .orderBy(desc(cardAttachments.createdAt))
+      .catch(() => [] as CardAttachment[]);
+    return result || [];
   },
 
   async deleteAttachment(id: string, tenantId: string): Promise<CardAttachment | undefined> {
@@ -437,14 +445,17 @@ export const kanbanStorage = {
       .select()
       .from(cardActivityLogs)
       .where(and(eq(cardActivityLogs.cardId, cardId), eq(cardActivityLogs.tenantId, tenantId)))
-      .orderBy(desc(cardActivityLogs.createdAt));
+      .orderBy(desc(cardActivityLogs.createdAt))
+      .catch(() => [] as CardActivityLog[]);
+
+    if (!logs || logs.length === 0) return [];
 
     const userIds = Array.from(new Set(logs.filter((l: CardActivityLog) => l.userId).map((l: CardActivityLog) => l.userId!)));
     const usersData = userIds.length > 0
-      ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds))
+      ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds)).catch(() => [])
       : [];
 
-    const userMap = new Map(usersData.map((u: { id: string; name: string | null; image: string | null }) => [u.id, u]));
+    const userMap = new Map((usersData || []).map((u: { id: string; name: string | null; image: string | null }) => [u.id, u]));
 
     return logs.map((l: CardActivityLog) => ({
       ...l,
@@ -602,9 +613,13 @@ export const kanbanStorage = {
     const card = await this.getCardById(cardId, tenantId);
     if (!card) return null;
 
+    const normalizedPhaseId = normalizeUUID(card.phaseId);
+    const normalizedBoardId = normalizeUUID(card.boardId);
+    const normalizedAssigneeId = card.assigneeId ? normalizeUUID(card.assigneeId) : null;
+
     const [phase, board, fieldValues, comments, attachments, activities] = await Promise.all([
-      this.getPhaseById(card.phaseId, tenantId),
-      this.getBoardById(card.boardId, tenantId),
+      this.getPhaseById(normalizedPhaseId, tenantId),
+      this.getBoardById(normalizedBoardId, tenantId),
       this.getCardFieldValues(cardId, tenantId),
       this.getCommentsByCard(cardId, tenantId),
       this.getAttachmentsByCard(cardId, tenantId),
@@ -612,11 +627,12 @@ export const kanbanStorage = {
     ]);
 
     let assignee: { id: string; name: string | null; image: string | null } | undefined;
-    if (card.assigneeId) {
+    if (normalizedAssigneeId) {
       const [user] = await db
         .select({ id: users.id, name: users.name, image: users.image })
         .from(users)
-        .where(eq(users.id, card.assigneeId));
+        .where(eq(users.id, normalizedAssigneeId))
+        .catch(() => [undefined]);
       assignee = user;
     }
 

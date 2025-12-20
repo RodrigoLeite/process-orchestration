@@ -120,9 +120,9 @@ router.delete("/boards/:id", async (req: Request, res: Response) => {
 router.get("/boards/:boardId/phases", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { boardId } = req.params;
+    const boardId = normalizeUUID(req.params.boardId);
     const phases = await kanbanStorage.getPhasesByBoard(boardId, tenantId);
-    res.json(phases);
+    res.json(normalizeRecords(phases || []));
   } catch (error) {
     console.error("Error fetching phases:", error);
     res.status(500).json({ error: "Failed to fetch phases" });
@@ -187,9 +187,9 @@ router.post("/boards/:boardId/phases/reorder", async (req: Request, res: Respons
 router.get("/boards/:boardId/cards", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { boardId } = req.params;
+    const boardId = normalizeUUID(req.params.boardId);
     const cards = await kanbanStorage.getCardsByBoard(boardId, tenantId);
-    res.json(cards);
+    res.json(normalizeRecords(cards || []));
   } catch (error) {
     console.error("Error fetching cards:", error);
     res.status(500).json({ error: "Failed to fetch cards" });
@@ -199,12 +199,19 @@ router.get("/boards/:boardId/cards", async (req: Request, res: Response) => {
 router.get("/cards/:id", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { id } = req.params;
-    const data = await kanbanStorage.getCardWithDetails(id, tenantId);
+    const cardId = normalizeUUID(req.params.id);
+    const data = await kanbanStorage.getCardWithDetails(cardId, tenantId);
     if (!data) {
       return res.status(404).json({ error: "Card not found" });
     }
-    res.json(data);
+    const normalizedData = {
+      card: normalizeRecord(data.card),
+      fieldValues: normalizeRecords(data.fieldValues || []),
+      comments: normalizeRecords(data.comments || []),
+      attachments: normalizeRecords(data.attachments || []),
+      activities: normalizeRecords(data.activities || [])
+    };
+    res.json(normalizedData);
   } catch (error) {
     console.error("Error fetching card:", error);
     res.status(500).json({ error: "Failed to fetch card" });
@@ -244,10 +251,10 @@ router.put("/cards/:id", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { id } = req.params;
+    const cardId = normalizeUUID(req.params.id);
     
-    const oldCard = await kanbanStorage.getCardById(id, tenantId);
-    const card = await kanbanStorage.updateCard(id, tenantId, req.body);
+    const oldCard = await kanbanStorage.getCardById(cardId, tenantId);
+    const card = await kanbanStorage.updateCard(cardId, tenantId, req.body);
     
     if (!card) {
       return res.status(404).json({ error: "Card not found" });
@@ -282,8 +289,8 @@ router.put("/cards/:id", async (req: Request, res: Response) => {
 router.delete("/cards/:id", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { id } = req.params;
-    await kanbanStorage.deleteCard(id, tenantId);
+    const cardId = normalizeUUID(req.params.id);
+    await kanbanStorage.deleteCard(cardId, tenantId);
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting card:", error);
@@ -295,11 +302,12 @@ router.post("/cards/:id/move", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { id } = req.params;
+    const cardId = normalizeUUID(req.params.id);
     const { phaseId, position } = req.body;
+    const normalizedPhaseId = normalizeUUID(phaseId);
     
-    const oldCard = await kanbanStorage.getCardById(id, tenantId);
-    const card = await kanbanStorage.moveCard(id, tenantId, phaseId, position);
+    const oldCard = await kanbanStorage.getCardById(cardId, tenantId);
+    const card = await kanbanStorage.moveCard(cardId, tenantId, normalizedPhaseId, position);
     
     if (!card) {
       return res.status(404).json({ error: "Card not found" });
@@ -333,9 +341,9 @@ router.post("/cards/:id/move", async (req: Request, res: Response) => {
 router.get("/boards/:boardId/fields", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { boardId } = req.params;
+    const boardId = normalizeUUID(req.params.boardId);
     const fields = await kanbanStorage.getCardFieldsByBoard(boardId, tenantId);
-    res.json(fields);
+    res.json(normalizeRecords(fields || []));
   } catch (error) {
     console.error("Error fetching fields:", error);
     res.status(500).json({ error: "Failed to fetch fields" });
@@ -387,9 +395,9 @@ router.delete("/fields/:id", async (req: Request, res: Response) => {
 router.get("/cards/:cardId/field-values", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     const values = await kanbanStorage.getCardFieldValues(cardId, tenantId);
-    res.json(values);
+    res.json(normalizeRecords(values || []));
   } catch (error) {
     console.error("Error fetching field values:", error);
     res.status(500).json({ error: "Failed to fetch field values" });
@@ -400,13 +408,14 @@ router.post("/cards/:cardId/field-values", async (req: Request, res: Response) =
   try {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     const { fieldId, value, jsonValue } = req.body;
+    const normalizedFieldId = normalizeUUID(fieldId);
     
     const fieldValue = await kanbanStorage.setCardFieldValue({
       tenantId,
       cardId,
-      fieldId,
+      fieldId: normalizedFieldId,
       value,
       jsonValue,
     });
@@ -433,9 +442,9 @@ router.post("/cards/:cardId/field-values", async (req: Request, res: Response) =
 router.get("/cards/:cardId/comments", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     const comments = await kanbanStorage.getCommentsByCard(cardId, tenantId);
-    res.json(comments);
+    res.json(normalizeRecords(comments || []));
   } catch (error) {
     console.error("Error fetching comments:", error);
     res.status(500).json({ error: "Failed to fetch comments" });
@@ -446,7 +455,7 @@ router.post("/cards/:cardId/comments", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     const { content, parentId } = req.body;
     
     const comment = await kanbanStorage.createComment({
@@ -512,9 +521,9 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 router.get("/cards/:cardId/attachments", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     const attachments = await kanbanStorage.getAttachmentsByCard(cardId, tenantId);
-    res.json(attachments);
+    res.json(normalizeRecords(attachments || []));
   } catch (error) {
     console.error("Error fetching attachments:", error);
     res.status(500).json({ error: "Failed to fetch attachments" });
@@ -525,7 +534,7 @@ router.post("/cards/:cardId/attachments", async (req: Request, res: Response) =>
   try {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     
     const chunks: Buffer[] = [];
     let filename = "";
@@ -647,9 +656,9 @@ router.delete("/attachments/:id", async (req: Request, res: Response) => {
 router.get("/cards/:cardId/activity", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { cardId } = req.params;
+    const cardId = normalizeUUID(req.params.cardId);
     const activities = await kanbanStorage.getActivityByCard(cardId, tenantId);
-    res.json(activities);
+    res.json(normalizeRecords(activities || []));
   } catch (error) {
     console.error("Error fetching activity:", error);
     res.status(500).json({ error: "Failed to fetch activity" });
@@ -661,9 +670,9 @@ router.get("/cards/:cardId/activity", async (req: Request, res: Response) => {
 router.get("/boards/:boardId/automations", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { boardId } = req.params;
+    const boardId = normalizeUUID(req.params.boardId);
     const automations = await kanbanStorage.getAutomationsByBoard(boardId, tenantId);
-    res.json(automations);
+    res.json(normalizeRecords(automations || []));
   } catch (error) {
     console.error("Error fetching automations:", error);
     res.status(500).json({ error: "Failed to fetch automations" });
