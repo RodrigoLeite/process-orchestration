@@ -302,13 +302,13 @@ router.get('/auth/session', jwtMiddleware as any, async (req: any, res: Response
     res.json({
       authenticated: true,
       user: {
-        id: user?.id,
+        id: normalizeUUID(user?.id),
         email: user?.email,
         name: user?.name,
         image: user?.image,
       },
       tenant: {
-        id: tenant?.id,
+        id: normalizeUUID(tenant?.id),
         name: tenant?.name,
         isConfigured: tenant?.isConfigured === 'true',
       },
