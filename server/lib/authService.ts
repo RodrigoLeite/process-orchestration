@@ -105,16 +105,40 @@ export async function createOrUpdateUserFromGoogle(profile: GoogleProfile): Prom
  */
 export async function ensureTenantForUser(user: User): Promise<{ tenant: Tenant; tenantUser: TenantUser; isNew: boolean }> {
   try {
+    const { tenantUsers } = await import('@shared/schema');
+    
     // Check if user has any tenant
     const existingTenantUser = await storage.db
       .select()
-      .from((await import('@shared/schema')).tenantUsers)
-      .where(eq((await import('@shared/schema')).tenantUsers.userId, user.id))
+      .from(tenantUsers)
+      .where(eq(tenantUsers.userId, user.id))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
+    console.log('[AUTH SERVICE] existingTenantUser:', existingTenantUser);
+
     if (existingTenantUser) {
-      const tenant = await storage.getTenant(existingTenantUser.tenantId);
+      // Handle UUID that might be returned as buffer/array
+      let tenantId: string = existingTenantUser.tenantId as any;
+      if (typeof tenantId !== 'string') {
+        // Convert buffer/array to UUID string
+        if (Array.isArray(tenantId) || (tenantId as any) instanceof Uint8Array) {
+          const bytes: number[] = Array.from(tenantId as any);
+          const toHex = (b: number) => b.toString(16).padStart(2, '0');
+          tenantId = [
+            bytes.slice(0, 4).map(toHex).join(''),
+            bytes.slice(4, 6).map(toHex).join(''),
+            bytes.slice(6, 8).map(toHex).join(''),
+            bytes.slice(8, 10).map(toHex).join(''),
+            bytes.slice(10, 16).map(toHex).join('')
+          ].join('-');
+        } else {
+          tenantId = String(tenantId);
+        }
+      }
+      console.log('[AUTH SERVICE] tenantId after conversion:', tenantId);
+      
+      const tenant = await storage.getTenant(tenantId);
       if (tenant) {
         return { tenant, tenantUser: existingTenantUser, isNew: false };
       }
