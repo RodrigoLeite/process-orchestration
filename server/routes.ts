@@ -24,6 +24,15 @@ import jobRoutes from "./routes/jobRoutes";
 import kanbanRoutes from "./routes/kanbanRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import { inngestServe } from "./inngest/serve";
+import { normalizeUUID } from "./lib/uuidUtils";
+
+// Helper function to get normalized tenant ID from request
+function getTenantId(req: any): string | undefined {
+  const headerTenantId = req.headers?.['x-tenant-id'] as string | undefined;
+  const contextTenantId = req.tenantContext?.id;
+  const rawTenantId = headerTenantId || contextTenantId;
+  return rawTenantId ? normalizeUUID(rawTenantId) : undefined;
+}
 
 // Calculate delay risk based on SLA
 function calculateDelayRisk(demand: any): string {
@@ -241,9 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/demands", async (req: any, res) => {
     try {
-      // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
@@ -264,8 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/demands/:id", async (req: any, res) => {
     try {
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       const demand = await storage.getDemand(req.params.id);
       if (!demand) {
@@ -304,8 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { rawText } = req.body;
       // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       if (!rawText) {
         return res.status(400).json({ error: "rawText is required" });
@@ -499,8 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/workflows", async (req: any, res) => {
     try {
       // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
@@ -528,8 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get a single workflow by ID
   app.get("/api/workflows/:id", async (req: any, res) => {
     try {
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       const workflow = await storage.getWorkflowFromDb(req.params.id, tenantId);
       if (!workflow) {
@@ -641,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Detect bottlenecks using AI analysis
   app.get("/api/bottlenecks", async (req: any, res) => {
     try {
-      const tenantId = req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const language = (req.query.language as string) || "pt-BR";
       
       if (!tenantId) {
@@ -1116,7 +1119,7 @@ Maximum 5 bottlenecks. If there are fewer, return only the critical ones.`;
   // Get overloaded areas
   app.get("/api/areas/overload", async (req: any, res) => {
     try {
-      const tenantId = req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const language = (req.query.language as string) || "pt-BR";
       
       if (!tenantId) {
@@ -1327,8 +1330,7 @@ Retorne APENAS JSON (sem markdown):
   app.post("/api/orchestrate", async (req: any, res) => {
     try {
       const { demandId } = req.body;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       if (!demandId) {
         return res.status(400).json({ error: "demandId is required" });
@@ -1947,8 +1949,7 @@ Texto original: ${demand.rawText}`;
   app.post("/api/agents/save", async (req: any, res) => {
     try {
       const { agentId, graph } = req.body;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       if (!agentId || !graph) {
         return res.status(400).json({
@@ -1977,8 +1978,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/load", async (req: any, res) => {
     try {
       const { agentId } = req.query;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       if (!agentId || typeof agentId !== "string") {
         return res.status(400).json({
@@ -2007,8 +2007,7 @@ Texto original: ${demand.rawText}`;
   app.post("/api/agents/execute", async (req: any, res) => {
     try {
       const { agentId, graph, initialInput } = req.body;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       if (!agentId || !graph) {
         return res.status(400).json({
@@ -2055,8 +2054,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/agents/:id/logs", async (req: any, res) => {
     try {
       const { id } = req.params;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       
@@ -2133,8 +2131,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/demands/:id/card", async (req, res) => {
     try {
       const { id } = req.params;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       if (!tenantId) {
         return res.status(400).json({ error: "Tenant ID required" });
@@ -2168,7 +2165,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/bottleneck-reports", async (req: any, res) => {
     try {
       const language = (req.query.language as string) || "pt-BR";
-      const tenantId = req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const reports = await storage.getBottleneckReports(100, tenantId);
       res.json(reports);
     } catch (error) {
@@ -2181,7 +2178,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/insights-reports", async (req: any, res) => {
     try {
       const language = (req.query.language as string) || "pt-BR";
-      const tenantId = req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const reports = await storage.getInsightsReports(100, tenantId);
       res.json(reports);
     } catch (error) {
@@ -2233,8 +2230,7 @@ Texto original: ${demand.rawText}`;
   // System events endpoint (admin only)
   app.get("/api/system-events", requireAdmin, logAdminAccess, async (req: any, res) => {
     try {
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const agent = req.query.agent as string | undefined;
       
       let events;
@@ -2257,7 +2253,7 @@ Texto original: ${demand.rawText}`;
   // Predictions endpoint
   app.get("/api/predictions", async (req: any, res) => {
     try {
-      const tenantId = req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const days = Math.min(parseInt(req.query.days as string) || 7, 30);
       const language = (req.query.language as string) || "pt-BR";
       
@@ -3101,8 +3097,7 @@ Texto original: ${demand.rawText}`;
   app.post("/api/ai/orchestrate", async (req: any, res) => {
     try {
       const { demandId, manual, sync } = req.body;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       const userId = req.user?.id || "system";
 
       if (!demandId) {
@@ -3366,8 +3361,7 @@ Texto original: ${demand.rawText}`;
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
       
       // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       // Get all agents (filtered by tenant if available)
       const agents = await storage.getAgents(tenantId);
@@ -3441,8 +3435,7 @@ Texto original: ${demand.rawText}`;
       const { executionId } = req.params;
 
       // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       // Get all agents (filtered by tenant) and search for the execution log
       const agents = await storage.getAgents(tenantId);
@@ -3665,8 +3658,7 @@ Texto original: ${demand.rawText}`;
       const { nodeId } = req.params;
       const lang = (req.query.lang as string) || 'pt-BR';
       const labels = getGraphLabels(lang);
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       // Map nodeId to agentId
       const nodeToAgentMap: Record<string, string> = {
@@ -3792,8 +3784,7 @@ Texto original: ${demand.rawText}`;
   app.post("/api/ai/graph/run", async (req: any, res) => {
     try {
       const { input } = req.body;
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
 
       if (!input || typeof input !== "string" || !input.trim()) {
         return res.status(400).json({
@@ -3901,8 +3892,7 @@ Texto original: ${demand.rawText}`;
   app.get("/api/monitoring/status", async (req, res) => {
     try {
       // Use header x-tenant-id if provided (workspace switching), fallback to tenantContext
-      const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const tenantId = headerTenantId || req.tenantContext?.id;
+      const tenantId = getTenantId(req);
       
       const demands = await storage.getDemands(tenantId);
       
