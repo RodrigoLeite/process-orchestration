@@ -286,14 +286,18 @@ router.get('/auth/session', jwtMiddleware as any, async (req: any, res: Response
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
+    // Normalize tenantId in case it comes in byte format from JWT
+    const { normalizeUUID } = await import('../lib/uuidUtils');
+    const normalizedTenantId = normalizeUUID(req.user.tenantId);
+    
     const tenant = await storage.db
       .select()
       .from(tenants)
-      .where(eq(tenants.id, req.user.tenantId))
+      .where(eq(tenants.id, normalizedTenantId))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
-    const permissions = await getUserPermissions(req.user.id, req.user.tenantId);
+    const permissions = await getUserPermissions(req.user.id, normalizedTenantId);
 
     res.json({
       authenticated: true,
