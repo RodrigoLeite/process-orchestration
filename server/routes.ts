@@ -24,7 +24,7 @@ import jobRoutes from "./routes/jobRoutes";
 import kanbanRoutes from "./routes/kanbanRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import { inngestServe } from "./inngest/serve";
-import { normalizeUUID } from "./lib/uuidUtils";
+import { normalizeUUID, normalizeRecord, normalizeRecords } from "./lib/uuidUtils";
 
 // Helper function to get normalized tenant ID from request
 function getTenantId(req: any): string | undefined {
@@ -256,8 +256,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       const demands = await storage.getDemands(tenantId);
-      // Calculate delay risk for each demand
-      const demandsWithRisk = demands.map((d: any) => ({
+      // Calculate delay risk for each demand and normalize UUIDs
+      const demandsWithRisk = normalizeRecords(demands).map((d: any) => ({
         ...d,
         delayRisk: d.delayRisk || calculateDelayRisk(d),
         delay_risk: d.delayRisk || calculateDelayRisk(d)

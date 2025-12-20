@@ -7,6 +7,7 @@ import {
   type InsertTeam,
   type Team,
 } from '@shared/schema';
+import { normalizeUUID, normalizeRecord, normalizeRecords } from '../lib/uuidUtils';
 
 export interface TeamWithMembers extends Team {
   memberCount: number;
@@ -15,15 +16,17 @@ export interface TeamWithMembers extends Team {
 
 export const teamsService = {
   async listTeams(tenantId: string): Promise<TeamWithMembers[]> {
+    const normalizedTenantId = normalizeUUID(tenantId);
     const teamRows = await storage.db
       .select()
       .from(teams)
-      .where(eq(teams.tenantId, tenantId))
+      .where(eq(teams.tenantId, normalizedTenantId))
       .orderBy(desc(teams.createdAt));
 
     const result: TeamWithMembers[] = [];
 
     for (const team of teamRows) {
+      const normalizedTeam = normalizeRecord(team);
       const members = await storage.db
         .select({
           id: users.id,
@@ -33,12 +36,13 @@ export const teamsService = {
         })
         .from(userTeams)
         .innerJoin(users, eq(users.id, userTeams.userId))
-        .where(eq(userTeams.teamId, team.id));
+        .where(eq(userTeams.teamId, normalizedTeam.id));
 
+      const normalizedMembers = normalizeRecords(members);
       result.push({
-        ...team,
-        memberCount: members.length,
-        members,
+        ...normalizedTeam,
+        memberCount: normalizedMembers.length,
+        members: normalizedMembers,
       });
     }
 
@@ -46,10 +50,12 @@ export const teamsService = {
   },
 
   async getTeam(tenantId: string, teamId: string): Promise<TeamWithMembers | null> {
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedTeamId = normalizeUUID(teamId);
     const team = await storage.db
       .select()
       .from(teams)
-      .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)))
+      .where(and(eq(teams.id, normalizedTeamId), eq(teams.tenantId, normalizedTenantId)))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
@@ -57,6 +63,7 @@ export const teamsService = {
       return null;
     }
 
+    const normalizedTeam = normalizeRecord(team);
     const members = await storage.db
       .select({
         id: users.id,
@@ -66,12 +73,13 @@ export const teamsService = {
       })
       .from(userTeams)
       .innerJoin(users, eq(users.id, userTeams.userId))
-      .where(eq(userTeams.teamId, team.id));
+      .where(eq(userTeams.teamId, normalizedTeam.id));
 
+    const normalizedMembers = normalizeRecords(members);
     return {
-      ...team,
-      memberCount: members.length,
-      members,
+      ...normalizedTeam,
+      memberCount: normalizedMembers.length,
+      members: normalizedMembers,
     };
   },
 

@@ -12,7 +12,7 @@ import {
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
-import { normalizeUUID } from "../lib/uuidUtils";
+import { normalizeUUID, normalizeRecord, normalizeRecords } from "../lib/uuidUtils";
 
 const router = Router();
 
@@ -38,7 +38,7 @@ router.get("/boards", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Tenant not found" });
     }
     const boards = await kanbanStorage.getBoardsByTenant(tenantId);
-    res.json(boards);
+    res.json(normalizeRecords(boards));
   } catch (error) {
     console.error("Error fetching boards:", error);
     res.status(500).json({ error: "Failed to fetch boards" });
@@ -48,12 +48,19 @@ router.get("/boards", async (req: Request, res: Response) => {
 router.get("/boards/:id", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const { id } = req.params;
-    const data = await kanbanStorage.getFullBoard(id, tenantId);
+    const boardId = normalizeUUID(req.params.id);
+    const data = await kanbanStorage.getFullBoard(boardId, tenantId);
     if (!data) {
       return res.status(404).json({ error: "Board not found" });
     }
-    res.json(data);
+    const normalizedData = {
+      ...normalizeRecord(data),
+      phases: data.phases?.map((phase: any) => ({
+        ...normalizeRecord(phase),
+        cards: phase.cards?.map((card: any) => normalizeRecord(card)) || []
+      })) || []
+    };
+    res.json(normalizedData);
   } catch (error) {
     console.error("Error fetching board:", error);
     res.status(500).json({ error: "Failed to fetch board" });
