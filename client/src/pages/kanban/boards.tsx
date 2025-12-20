@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useBoards, useCreateBoard, useDeleteBoard, type Board } from "@/hooks/useKanban";
+import { formatDate } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -316,7 +317,7 @@ export default function BoardsPage() {
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Criado em {new Date(board.createdAt).toLocaleDateString("pt-BR")}
+                  Criado em {formatDate(board.createdAt)}
                 </div>
               </CardContent>
             </Card>

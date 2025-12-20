@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, Bell, CheckCircle2, Clock } from "lucide-react";
 import Badge from "@/components/Badge";
+import { formatDateTime } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface CriticalAlert {
@@ -73,7 +74,7 @@ export default function AlertsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case "active":
         return "red";
@@ -81,6 +82,8 @@ export default function AlertsPage() {
         return "yellow";
       case "resolved":
         return "green";
+      default:
+        return "gray";
     }
   };
 
@@ -246,7 +249,7 @@ export default function AlertsPage() {
                       {alert.area} - {alert.etapa}
                     </CardTitle>
                     <CardDescription className="text-xs mt-1">
-                      Severity Score: {alert.severity_score}/100 • {new Date(alert.timestamp).toLocaleString()}
+                      Severity Score: {alert.severity_score}/100 • {formatDateTime(alert.timestamp)}
                     </CardDescription>
                   </div>
                   {getStatusIcon(alert.status)}
