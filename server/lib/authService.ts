@@ -63,12 +63,18 @@ export async function createOrUpdateUserFromGoogle(profile: GoogleProfile): Prom
     }
 
     // Create new user
+    console.log('[AUTH SERVICE] Creating new user with:', { email: profile.email, name: profile.name, googleId: profile.id });
     const newUser = await storage.createUser({
       email: profile.email,
       name: profile.name,
       googleId: profile.id,
       image: profile.picture,
     });
+    console.log('[AUTH SERVICE] Created user:', newUser);
+    
+    if (!newUser || !newUser.id) {
+      throw new Error('Failed to create user - no user returned from storage.createUser');
+    }
 
     return newUser;
   } catch (error) {
