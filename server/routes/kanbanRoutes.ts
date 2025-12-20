@@ -54,11 +54,10 @@ router.get("/boards/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Board not found" });
     }
     const normalizedData = {
-      ...normalizeRecord(data),
-      phases: data.phases?.map((phase: any) => ({
-        ...normalizeRecord(phase),
-        cards: phase.cards?.map((card: any) => normalizeRecord(card)) || []
-      })) || []
+      board: normalizeRecord(data.board),
+      phases: normalizeRecords(data.phases || []),
+      cards: normalizeRecords(data.cards || []),
+      fields: normalizeRecords(data.fields || [])
     };
     res.json(normalizedData);
   } catch (error) {
