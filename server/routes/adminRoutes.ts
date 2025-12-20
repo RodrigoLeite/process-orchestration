@@ -281,8 +281,7 @@ router.delete(
 
 router.get('/teams', async (req: Request, res: Response) => {
   try {
-    const authReq = req as AuthRequest;
-    const tenantId = authReq.tenant!.tenantId;
+    const tenantId = getTenantId(req);
     const teamsList = await teamsService.listTeams(tenantId);
     
     res.json({ teams: teamsList });
@@ -294,8 +293,7 @@ router.get('/teams', async (req: Request, res: Response) => {
 
 router.get('/teams/:teamId', async (req: Request, res: Response) => {
   try {
-    const authReq = req as AuthRequest;
-    const tenantId = authReq.tenant!.tenantId;
+    const tenantId = getTenantId(req);
     const { teamId } = req.params;
     
     const team = await teamsService.getTeam(tenantId, teamId);
@@ -433,8 +431,7 @@ router.post('/permissions/seed', async (req: Request, res: Response) => {
 
 router.get('/roles', async (req: Request, res: Response) => {
   try {
-    const authReq = req as AuthRequest;
-    const tenantId = authReq.tenant!.tenantId;
+    const tenantId = getTenantId(req);
     const rolesList = await rolesService.listRoles(tenantId);
     
     res.json({ roles: rolesList });
@@ -446,8 +443,7 @@ router.get('/roles', async (req: Request, res: Response) => {
 
 router.get('/roles/:roleId', async (req: Request, res: Response) => {
   try {
-    const authReq = req as AuthRequest;
-    const tenantId = authReq.tenant!.tenantId;
+    const tenantId = getTenantId(req);
     const { roleId } = req.params;
     
     const role = await rolesService.getRole(tenantId, roleId);

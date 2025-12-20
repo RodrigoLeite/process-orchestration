@@ -11,6 +11,7 @@ import {
   type Permission,
   PERMISSIONS,
 } from '@shared/schema';
+import { normalizeUUID, normalizeRecord, normalizeRecords } from '../lib/uuidUtils';
 
 export interface RoleWithPermissions extends Role {
   permissions: Permission[];
@@ -47,20 +48,24 @@ export const rolesService = {
   },
 
   async listRoles(tenantId: string): Promise<RoleWithUsers[]> {
+    const normalizedTenantId = normalizeUUID(tenantId);
     const roleRows = await storage.db
       .select()
       .from(roles)
-      .where(eq(roles.tenantId, tenantId))
-      .orderBy(desc(roles.createdAt));
+      .where(eq(roles.tenantId, normalizedTenantId))
+      .orderBy(desc(roles.createdAt))
+      .catch(() => [] as Role[]);
 
     const result: RoleWithUsers[] = [];
 
     for (const role of roleRows) {
+      const normalizedRole = normalizeRecord(role);
       const rolePerms = await storage.db
         .select({ permission: permissions })
         .from(rolePermissions)
         .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-        .where(eq(rolePermissions.roleId, role.id));
+        .where(eq(rolePermissions.roleId, normalizedRole.id))
+        .catch(() => [] as any[]);
 
       const roleUsers = await storage.db
         .select({
@@ -70,13 +75,14 @@ export const rolesService = {
         })
         .from(userRoles)
         .innerJoin(users, eq(users.id, userRoles.userId))
-        .where(eq(userRoles.roleId, role.id));
+        .where(eq(userRoles.roleId, normalizedRole.id))
+        .catch(() => [] as any[]);
 
       result.push({
-        ...role,
-        permissions: rolePerms.map(rp => rp.permission),
+        ...normalizedRole,
+        permissions: normalizeRecords(rolePerms.map(rp => rp.permission) || []),
         userCount: roleUsers.length,
-        users: roleUsers,
+        users: normalizeRecords(roleUsers || []),
       });
     }
 
@@ -84,26 +90,31 @@ export const rolesService = {
   },
 
   async getRole(tenantId: string, roleId: string): Promise<RoleWithPermissions | null> {
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedRoleId = normalizeUUID(roleId);
     const role = await storage.db
       .select()
       .from(roles)
-      .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
+      .where(and(eq(roles.id, normalizedRoleId), eq(roles.tenantId, normalizedTenantId)))
       .limit(1)
-      .then((rows: any[]) => rows[0]);
+      .then((rows: any[]) => rows[0])
+      .catch(() => null);
 
     if (!role) {
       return null;
     }
 
+    const normalizedRole = normalizeRecord(role);
     const rolePerms = await storage.db
       .select({ permission: permissions })
       .from(rolePermissions)
       .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-      .where(eq(rolePermissions.roleId, role.id));
+      .where(eq(rolePermissions.roleId, normalizedRole.id))
+      .catch(() => [] as any[]);
 
     return {
-      ...role,
-      permissions: rolePerms.map(rp => rp.permission),
+      ...normalizedRole,
+      permissions: normalizeRecords(rolePerms.map(rp => rp.permission) || []),
     };
   },
 

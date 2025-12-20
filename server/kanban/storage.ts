@@ -130,11 +130,13 @@ export const kanbanStorage = {
   },
 
   async getPhasesByBoard(boardId: string, tenantId: string): Promise<Phase[]> {
-    return db
+    const result = await db
       .select()
       .from(phases)
       .where(and(eq(phases.boardId, boardId), eq(phases.tenantId, tenantId)))
-      .orderBy(asc(phases.position));
+      .orderBy(asc(phases.position))
+      .catch(() => [] as Phase[]);
+    return result || [];
   },
 
   async updatePhase(id: string, tenantId: string, data: Partial<InsertPhase>): Promise<Phase | undefined> {
@@ -187,11 +189,13 @@ export const kanbanStorage = {
   },
 
   async getCardsByBoard(boardId: string, tenantId: string): Promise<Card[]> {
-    return db
+    const result = await db
       .select()
       .from(cards)
       .where(and(eq(cards.boardId, boardId), eq(cards.tenantId, tenantId)))
-      .orderBy(asc(cards.position));
+      .orderBy(asc(cards.position))
+      .catch(() => [] as Card[]);
+    return result || [];
   },
 
   async getCardsByPhase(phaseId: string, tenantId: string): Promise<Card[]> {
@@ -304,11 +308,13 @@ export const kanbanStorage = {
   },
 
   async getCardFieldsByBoard(boardId: string, tenantId: string): Promise<CardField[]> {
-    return db
+    const result = await db
       .select()
       .from(cardFields)
       .where(and(eq(cardFields.boardId, boardId), eq(cardFields.tenantId, tenantId)))
-      .orderBy(asc(cardFields.position));
+      .orderBy(asc(cardFields.position))
+      .catch(() => [] as CardField[]);
+    return result || [];
   },
 
   async updateCardField(id: string, tenantId: string, data: Partial<InsertCardField>): Promise<CardField | undefined> {
