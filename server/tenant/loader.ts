@@ -17,19 +17,22 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
   try {
     let tenantUser;
     
+    // Normalize preferredTenantId in case it comes in byte format
+    const normalizedPreferredTenantId = preferredTenantId ? normalizeUUID(preferredTenantId) : undefined;
+    
     // If a preferred tenant is specified, try to load that one
-    if (preferredTenantId) {
+    if (normalizedPreferredTenantId) {
       const rawTenantUser = await storage.db
         .select()
         .from(tenantUsers)
-        .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, preferredTenantId)))
+        .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, normalizedPreferredTenantId)))
         .limit(1)
         .then((rows: any[]) => rows[0]);
       
       tenantUser = normalizeTenantUser(rawTenantUser);
       
       if (tenantUser) {
-        console.log(`[TENANT LOADER] Using preferred tenant ${preferredTenantId} for user ${userId}`);
+        console.log(`[TENANT LOADER] Using preferred tenant ${normalizedPreferredTenantId} for user ${userId}`);
       }
     }
     

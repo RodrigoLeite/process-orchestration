@@ -5,6 +5,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/jwtMiddleware';
 import { loadTenantForUser, verifyUserInTenant } from './loader';
+import { normalizeUUID } from '../lib/uuidUtils';
 
 /**
  * Tenant loading middleware
@@ -25,7 +26,9 @@ export function tenantMiddleware(
 
       // Load tenant for this user, preferring header x-tenant-id (for workspace switching), then JWT tenantId
       const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
-      const preferredTenantId = headerTenantId || req.user.tenantId;
+      const rawTenantId = headerTenantId || req.user.tenantId;
+      // Normalize tenantId in case it comes from JWT in byte format
+      const preferredTenantId = rawTenantId ? normalizeUUID(rawTenantId) : undefined;
       const tenantInfo = await loadTenantForUser(req.user.id, preferredTenantId);
 
       if (!tenantInfo) {
