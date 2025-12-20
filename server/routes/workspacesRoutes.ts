@@ -1,4 +1,5 @@
-import { Router, Response, Request } from 'express';
+import { Router, Response } from 'express';
+import { AuthRequest } from '../middleware/jwtMiddleware';
 import { storage } from '../storage';
 import { tenants, tenantUsers, users } from '@shared/schema';
 import { eq, and, inArray } from 'drizzle-orm';
@@ -6,37 +7,19 @@ import { normalizeUUID } from '../lib/uuidUtils';
 
 const router = Router();
 
-interface SessionUser {
-  id: string;
-  tenantId?: string;
-  [key: string]: any;
-}
-
-function getSessionUser(req: Request): SessionUser | null {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return null;
-  }
-  const user = req.user as any;
-  if (!user?.id) return null;
-  
-  const tenantId = (req.session as any)?.tenantId || user.tenantId;
-  return { ...user, tenantId };
-}
-
 /**
  * GET /api/workspaces
  * List all workspaces for the current user
  */
-router.get('/api/workspaces', async (req: Request, res: Response): Promise<void> => {
+router.get('/api/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const sessionUser = getSessionUser(req);
-    if (!sessionUser) {
+    if (!req.user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    const userId = normalizeUUID(sessionUser.id);
-    const currentTenantId = sessionUser.tenantId ? normalizeUUID(sessionUser.tenantId) : null;
+    const userId = normalizeUUID(req.user.id);
+    const currentTenantId = req.user.tenantId ? normalizeUUID(req.user.tenantId) : null;
     console.log('[WORKSPACES] Fetching for user:', userId, 'current tenant:', currentTenantId);
 
     // Get all tenant_users records for this user
@@ -124,16 +107,15 @@ router.get('/api/workspaces', async (req: Request, res: Response): Promise<void>
  * POST /api/workspaces/:workspaceId/switch
  * Switch to a different workspace
  */
-router.post('/api/workspaces/:workspaceId/switch', async (req: Request, res: Response): Promise<void> => {
+router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const sessionUser = getSessionUser(req);
-    if (!sessionUser) {
+    if (!req.user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
     const workspaceId = normalizeUUID(req.params.workspaceId);
-    const userId = normalizeUUID(sessionUser.id);
+    const userId = normalizeUUID(req.user.id);
 
     // Verify user has access to this workspace
     const tenantUser = await storage.db
@@ -153,18 +135,24 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: Request, res: Res
       return;
     }
 
-    // Update session with new tenant
-    (req.session as any).tenantId = workspaceId;
-    
-    // Save session to ensure change persists
-    req.session.save((err) => {
-      if (err) {
-        console.error('Error saving session:', err);
-        res.status(500).json({ error: 'Failed to switch workspace' });
-        return;
-      }
-      res.json({ success: true, message: 'Workspace switched successfully' });
+    // Generate new JWT with the new tenantId
+    const { signAccessToken } = await import('../lib/jwt');
+    const newAccessToken = await signAccessToken({
+      sub: req.user.id,
+      tenantId: workspaceId,
+      role: tenantUser.role,
+      email: req.user.email,
     });
+
+    // Set the new token in the cookie
+    res.cookie('access_token', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.json({ success: true, message: 'Workspace switched successfully' });
   } catch (error) {
     console.error('Error switching workspace:', error);
     res.status(500).json({ error: 'Failed to switch workspace' });
@@ -175,10 +163,9 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: Request, res: Res
  * POST /api/workspaces
  * Create a new workspace for the current user
  */
-router.post('/api/workspaces', async (req: Request, res: Response): Promise<void> => {
+router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const sessionUser = getSessionUser(req);
-    if (!sessionUser) {
+    if (!req.user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
@@ -214,7 +201,7 @@ router.post('/api/workspaces', async (req: Request, res: Response): Promise<void
     }
 
     // Add user as owner to the new tenant
-    const userId = normalizeUUID(sessionUser.id);
+    const userId = normalizeUUID(req.user.id);
     const newTenantUser = await storage.db
       .insert(tenantUsers)
       .values({
