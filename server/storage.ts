@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, type StageBottleneck, type InsertStageBottleneck, type StageInsight, type InsertStageInsight, type Tenant, type InsertTenant, type TenantUser, type InsertTenantUser, type AuditLog, type InsertAuditLog, type Permission, type InsertPermission, type Role, type InsertRole, type RolePermission, type InsertRolePermission, type Job, type InsertJob, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents, stageBottlenecks, stageInsights, tenants, tenantUsers, auditLogs, permissions, roles, rolePermissions, jobs } from "@shared/schema";
+import { normalizeUUID, normalizeRecord, normalizeRecords } from './lib/uuidUtils';
 
 export interface IStorage {
   // Users & Tenants
@@ -273,17 +274,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async countDemandsByStatus(status: string, tenantId?: string): Promise<Record<string, number>> {
-    let query;
-    if (tenantId) {
-      query = this.db.select().from(demands).where(and(
-        eq(demands.status, status),
-        eq(demands.tenantId, tenantId as any)
-      ));
-    } else {
-      query = this.db.select().from(demands).where(eq(demands.status, status));
+    const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
+    let allDemands: Demand[];
+    try {
+      if (normalizedTenantId) {
+        allDemands = await this.db.select().from(demands).where(and(
+          eq(demands.status, status),
+          eq(demands.tenantId, normalizedTenantId)
+        ));
+      } else {
+        allDemands = await this.db.select().from(demands).where(eq(demands.status, status));
+      }
+    } catch (error) {
+      console.error('Error in countDemandsByStatus:', error);
+      allDemands = [];
     }
-    
-    const allDemands = await query;
     
     const counts: Record<string, number> = {};
     for (const demand of allDemands) {
@@ -295,16 +300,21 @@ export class DatabaseStorage implements IStorage {
 
   async getDemandsFromLastDays(days: number, tenantId?: string): Promise<Demand[]> {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    if (tenantId) {
-      return await this.db.select().from(demands).where((col) => and(
-        sql`${col.createdAt} >= ${cutoffDate}`,
-        eq(col.tenantId, tenantId as any)
-      ));
+    const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
+    try {
+      if (normalizedTenantId) {
+        return await this.db.select().from(demands).where(and(
+          sql`${demands.createdAt} >= ${cutoffDate}`,
+          eq(demands.tenantId, normalizedTenantId)
+        ));
+      }
+      return await this.db.select().from(demands).where(
+        sql`${demands.createdAt} >= ${cutoffDate}`
+      );
+    } catch (error) {
+      console.error('Error in getDemandsFromLastDays:', error);
+      return [];
     }
-    return await this.db.select().from(demands).where((col) => {
-      const createdAt = col.createdAt;
-      return sql`${createdAt} >= ${cutoffDate}`;
-    });
   }
 
   async createLog(insertLog: InsertLog): Promise<Log> {
@@ -514,10 +524,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAgents(tenantId?: string): Promise<Agent[]> {
-    if (tenantId) {
-      return await this.db.select().from(agents).where(eq(agents.tenantId, tenantId as any));
+    const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
+    try {
+      if (normalizedTenantId) {
+        return await this.db.select().from(agents).where(eq(agents.tenantId, normalizedTenantId));
+      }
+      return await this.db.select().from(agents);
+    } catch (error) {
+      console.error('Error in getAgents:', error);
+      return [];
     }
-    return await this.db.select().from(agents);
   }
 
   async getAgent(id: string): Promise<Agent | undefined> {
@@ -551,13 +567,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBottleneckReports(limit?: number, tenantId?: string): Promise<BottleneckReport[]> {
-    let query: any;
-    if (tenantId) {
-      query = this.db.select().from(bottleneckReports).where(eq(bottleneckReports.tenantId, tenantId as any)).orderBy(desc(bottleneckReports.createdAt));
-    } else {
-      query = this.db.select().from(bottleneckReports).orderBy(desc(bottleneckReports.createdAt));
+    const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
+    try {
+      let query: any;
+      if (normalizedTenantId) {
+        query = this.db.select().from(bottleneckReports).where(eq(bottleneckReports.tenantId, normalizedTenantId)).orderBy(desc(bottleneckReports.createdAt));
+      } else {
+        query = this.db.select().from(bottleneckReports).orderBy(desc(bottleneckReports.createdAt));
+      }
+      return limit ? (await query.limit(limit)) : (await query);
+    } catch (error) {
+      console.error('Error in getBottleneckReports:', error);
+      return [];
     }
-    return limit ? (await query.limit(limit)) : (await query);
   }
 
   async createInsightsReport(report: InsertInsightsReport): Promise<InsightsReport> {
@@ -566,13 +588,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInsightsReports(limit?: number, tenantId?: string): Promise<InsightsReport[]> {
-    let query: any;
-    if (tenantId) {
-      query = this.db.select().from(insightsReports).where(eq(insightsReports.tenantId, tenantId as any)).orderBy(desc(insightsReports.createdAt));
-    } else {
-      query = this.db.select().from(insightsReports).orderBy(desc(insightsReports.createdAt));
+    const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
+    try {
+      let query: any;
+      if (normalizedTenantId) {
+        query = this.db.select().from(insightsReports).where(eq(insightsReports.tenantId, normalizedTenantId)).orderBy(desc(insightsReports.createdAt));
+      } else {
+        query = this.db.select().from(insightsReports).orderBy(desc(insightsReports.createdAt));
+      }
+      return limit ? (await query.limit(limit)) : (await query);
+    } catch (error) {
+      console.error('Error in getInsightsReports:', error);
+      return [];
     }
-    return limit ? (await query.limit(limit)) : (await query);
   }
 
   async createSystemEvent(event: InsertSystemEvent): Promise<SystemEvent> {

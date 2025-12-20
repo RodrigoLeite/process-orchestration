@@ -19,6 +19,7 @@ import {
   PERMISSIONS,
 } from '@shared/schema';
 import { randomBytes } from 'crypto';
+import { normalizeUUID } from '../lib/uuidUtils';
 
 function generateToken(): string {
   return randomBytes(32).toString('hex');
@@ -48,6 +49,7 @@ export interface InvitationWithDetails extends Invitation {
 
 export const userManagementService = {
   async listTenantUsers(tenantId: string): Promise<TenantUserWithDetails[]> {
+    const normalizedTenantId = normalizeUUID(tenantId);
     const tenantUserRows = await storage.db
       .select({
         tenantUserId: tenantUsers.id,
@@ -60,12 +62,14 @@ export const userManagementService = {
       })
       .from(tenantUsers)
       .leftJoin(users, eq(users.id, tenantUsers.userId))
-      .where(eq(tenantUsers.tenantId, tenantId))
-      .orderBy(desc(tenantUsers.createdAt));
+      .where(eq(tenantUsers.tenantId, normalizedTenantId))
+      .orderBy(desc(tenantUsers.createdAt))
+      .catch(() => [] as any[]);
 
     const result: TenantUserWithDetails[] = [];
 
     for (const row of tenantUserRows) {
+      const normalizedUserId = normalizeUUID(row.userId);
       const userTeamRows = await storage.db
         .select({
           teamId: teams.id,
@@ -75,19 +79,20 @@ export const userManagementService = {
         .from(userTeams)
         .innerJoin(teams, eq(teams.id, userTeams.teamId))
         .where(and(
-          eq(userTeams.userId, row.userId),
-          eq(userTeams.tenantId, tenantId)
-        ));
+          eq(userTeams.userId, normalizedUserId),
+          eq(userTeams.tenantId, normalizedTenantId)
+        ))
+        .catch(() => [] as any[]);
 
       result.push({
-        id: row.tenantUserId,
+        id: normalizeUUID(row.tenantUserId),
         email: row.userEmail || '',
         name: row.userName,
         image: row.userImage,
         role: row.role,
         status: 'active',
         teams: userTeamRows.map(t => ({
-          id: t.teamId,
+          id: normalizeUUID(t.teamId),
           name: t.teamName,
           color: t.teamColor || '#6366f1',
         })),

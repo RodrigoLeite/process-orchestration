@@ -64,3 +64,40 @@ export function normalizeTenantUser(tenantUser: any): any {
     tenantId: normalizeUUID(tenantUser.tenantId),
   };
 }
+
+/**
+ * List of common UUID field names in the database
+ */
+const UUID_FIELDS = [
+  'id', 'tenantId', 'tenant_id', 'userId', 'user_id', 
+  'boardId', 'board_id', 'phaseId', 'phase_id', 'cardId', 'card_id',
+  'teamId', 'team_id', 'roleId', 'role_id', 'demandId', 'demand_id',
+  'workflowId', 'workflow_id', 'createdBy', 'created_by', 'updatedBy', 'updated_by',
+  'assignedTo', 'ownerId', 'owner_id', 'parentId', 'parent_id'
+];
+
+/**
+ * Normalize all UUID fields in an object
+ */
+export function normalizeRecord<T extends Record<string, any>>(record: T): T {
+  if (!record || typeof record !== 'object') return record;
+  
+  const normalized: any = { ...record };
+  
+  for (const key of Object.keys(normalized)) {
+    const value = normalized[key];
+    if (value && typeof value === 'string' && value.includes(',') && UUID_FIELDS.includes(key)) {
+      normalized[key] = normalizeUUID(value);
+    }
+  }
+  
+  return normalized as T;
+}
+
+/**
+ * Normalize all UUID fields in an array of objects
+ */
+export function normalizeRecords<T extends Record<string, any>>(records: T[]): T[] {
+  if (!records || !Array.isArray(records)) return records;
+  return records.map(record => normalizeRecord(record));
+}
