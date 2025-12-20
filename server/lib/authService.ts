@@ -34,15 +34,19 @@ export async function createOrUpdateUserFromGoogle(profile: GoogleProfile): Prom
     if (user) {
       // Update existing user
       console.log('[AUTH SERVICE] Updating existing user:', user.id);
-      user = await storage.db
+      const updatedRows = await storage.db
         .update(users)
         .set({
           name: profile.name,
           image: profile.picture,
         })
         .where(eq(users.id, user.id))
-        .returning()
-        .then((rows: any[]) => rows[0]);
+        .returning();
+      console.log('[AUTH SERVICE] Update result rows:', updatedRows);
+      
+      if (updatedRows && updatedRows.length > 0) {
+        user = updatedRows[0];
+      }
       console.log('[AUTH SERVICE] Updated user:', user);
       return user;
     }
