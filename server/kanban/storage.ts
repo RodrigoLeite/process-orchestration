@@ -43,8 +43,22 @@ const db = storage.db;
 export const kanbanStorage = {
   // ========== BOARDS ==========
   async createBoard(data: InsertBoard): Promise<Board> {
-    const [board] = await db.insert(boards).values(data).returning();
-    return board;
+    await db.insert(boards).values(data);
+    
+    // Query back the created board by ID
+    if (data.id) {
+      const result = await db.select().from(boards).where(eq(boards.id, data.id)).limit(1).catch(() => []);
+      if (Array.isArray(result) && result[0]) {
+        return result[0];
+      }
+    }
+    
+    // Fallback: query the most recent board for this tenant
+    const result = await db.select().from(boards).where(eq(boards.tenantId, data.tenantId)).orderBy(desc(boards.createdAt)).limit(1).catch(() => []);
+    if (!Array.isArray(result) || !result[0]) {
+      throw new Error('Failed to create board');
+    }
+    return result[0];
   },
 
   async getBoardById(id: string, tenantId: string): Promise<Board | undefined> {
