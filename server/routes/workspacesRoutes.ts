@@ -191,21 +191,43 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
+    console.log('[WORKSPACES] Creating new workspace:', { name, area });
+
     // Create new tenant with unique slug (add timestamp to avoid conflicts)
     const baseSlug = name.toLowerCase().replace(/\s+/g, '-');
     const uniqueSuffix = Math.random().toString(36).substring(2, 8);
     const slug = `${baseSlug}-${uniqueSuffix}`;
     
-    const newTenant = await storage.createTenant({
-      name,
-      slug,
-      isConfigured: 'true',
-      metadata: { area: area || 'outro' },
-    });
+    console.log('[WORKSPACES] Generated slug:', slug);
+
+    const { tenants: tenantsTable } = await import("@shared/schema");
+    
+    // Direct database insert with detailed logging
+    console.log('[WORKSPACES] Inserting tenant with values:', { name, slug, isConfigured: 'true', area: area || 'outro' });
+    
+    const insertResult = await storage.db
+      .insert(tenantsTable)
+      .values({
+        name,
+        slug,
+        isConfigured: 'true',
+        metadata: { area: area || 'outro' },
+      })
+      .returning();
+
+    console.log('[WORKSPACES] Insert result:', insertResult);
+
+    if (!insertResult || insertResult.length === 0) {
+      console.error('[WORKSPACES] Failed to insert tenant - no result returned');
+      res.status(500).json({ error: 'Failed to create workspace - database error' });
+      return;
+    }
+
+    const newTenant = insertResult[0];
 
     if (!newTenant || !newTenant.id) {
-      console.error('[WORKSPACES] Failed to create tenant:', newTenant);
-      res.status(500).json({ error: 'Failed to create workspace - invalid response' });
+      console.error('[WORKSPACES] Invalid tenant object:', newTenant);
+      res.status(500).json({ error: 'Failed to create workspace - invalid tenant' });
       return;
     }
 
@@ -221,16 +243,26 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
 
     // Add user as owner to the new tenant
     const userId = normalizeUUID(req.user.id);
-    const newTenantUser = await storage.db
+    console.log('[WORKSPACES] Adding user to tenant:', { userId, tenantId: newTenant.id });
+
+    const userInsertResult = await storage.db
       .insert(tenantUsers)
       .values({
         tenantId: newTenant.id,
         userId: userId,
         role: 'owner',
       })
-      .returning()
-      .then((rows: any[]) => rows[0]);
+      .returning();
 
+    console.log('[WORKSPACES] User insert result:', userInsertResult);
+
+    if (!userInsertResult || userInsertResult.length === 0) {
+      console.error('[WORKSPACES] Failed to add user to tenant');
+      res.status(500).json({ error: 'Failed to add user to workspace' });
+      return;
+    }
+
+    const newTenantUser = userInsertResult[0];
     console.log('[WORKSPACES] Added user as owner:', newTenantUser.id);
 
     res.json({
