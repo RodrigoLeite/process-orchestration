@@ -706,8 +706,8 @@ export class DatabaseStorage implements IStorage {
 
   async getStageBottlenecksByDemand(demandId: string): Promise<StageBottleneck[]> {
     try {
-      const result = await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.demandId, demandId));
-      return result || [];
+      const result = await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.demandId, demandId)).catch(() => []);
+      return (Array.isArray(result) ? result : []) || [];
     } catch (error) {
       console.error('Error in getStageBottlenecksByDemand:', error);
       return [];
@@ -716,8 +716,8 @@ export class DatabaseStorage implements IStorage {
 
   async getStageBottlenecksByStage(stageId: string): Promise<StageBottleneck[]> {
     try {
-      const result = await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.stageId, stageId));
-      return result || [];
+      const result = await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.stageId, stageId)).catch(() => []);
+      return (Array.isArray(result) ? result : []) || [];
     } catch (error) {
       console.error('Error in getStageBottlenecksByStage:', error);
       return [];
@@ -731,8 +731,8 @@ export class DatabaseStorage implements IStorage {
 
   async getStageInsightsByDemand(demandId: string): Promise<StageInsight[]> {
     try {
-      const result = await this.db.select().from(stageInsights).where(eq(stageInsights.demandId, demandId));
-      return result || [];
+      const result = await this.db.select().from(stageInsights).where(eq(stageInsights.demandId, demandId)).catch(() => []);
+      return (Array.isArray(result) ? result : []) || [];
     } catch (error) {
       console.error('Error in getStageInsightsByDemand:', error);
       return [];
@@ -741,8 +741,8 @@ export class DatabaseStorage implements IStorage {
 
   async getStageInsightsByStage(stageId: string): Promise<StageInsight[]> {
     try {
-      const result = await this.db.select().from(stageInsights).where(eq(stageInsights.stageId, stageId));
-      return result || [];
+      const result = await this.db.select().from(stageInsights).where(eq(stageInsights.stageId, stageId)).catch(() => []);
+      return (Array.isArray(result) ? result : []) || [];
     } catch (error) {
       console.error('Error in getStageInsightsByStage:', error);
       return [];
