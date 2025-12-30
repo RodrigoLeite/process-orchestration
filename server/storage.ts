@@ -374,22 +374,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkflowFromDb(id: string, tenantId?: string): Promise<Workflow | undefined> {
-    let query: any;
-    if (tenantId) {
-      query = this.db
-        .select()
-        .from(workflows)
-        .where(and(eq(workflows.id, id), eq(workflows.tenantId, tenantId as any)))
-        .limit(1);
-    } else {
-      query = this.db
-        .select()
-        .from(workflows)
-        .where(eq(workflows.id, id))
-        .limit(1);
+    try {
+      let query: any;
+      if (tenantId) {
+        query = this.db
+          .select()
+          .from(workflows)
+          .where(and(eq(workflows.id, id), eq(workflows.tenantId, tenantId as any)))
+          .limit(1);
+      } else {
+        query = this.db
+          .select()
+          .from(workflows)
+          .where(eq(workflows.id, id))
+          .limit(1);
+      }
+      const result = await query;
+      return Array.isArray(result) && result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in getWorkflowFromDb:', error);
+      return undefined;
     }
-    const result = await query;
-    return result[0];
   }
 
   async getAllWorkflowsFromDb(tenantId?: string): Promise<Workflow[]> {
@@ -407,22 +412,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkflowByHash(hash: string, tenantId?: string): Promise<Workflow | undefined> {
-    let query: any;
-    if (tenantId) {
-      query = this.db
-        .select()
-        .from(workflows)
-        .where(and(eq(workflows.workflowHash, hash), eq(workflows.tenantId, tenantId as any)))
-        .limit(1);
-    } else {
-      query = this.db
-        .select()
-        .from(workflows)
-        .where(eq(workflows.workflowHash, hash))
-        .limit(1);
+    try {
+      let query: any;
+      if (tenantId) {
+        query = this.db
+          .select()
+          .from(workflows)
+          .where(and(eq(workflows.workflowHash, hash), eq(workflows.tenantId, tenantId as any)))
+          .limit(1);
+      } else {
+        query = this.db
+          .select()
+          .from(workflows)
+          .where(eq(workflows.workflowHash, hash))
+          .limit(1);
+      }
+      const result = await query;
+      return Array.isArray(result) && result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in getWorkflowByHash:', error);
+      return undefined;
     }
-    const result = await query;
-    return result[0];
   }
 
   async getWorkgraphNodes(): Promise<WorkgraphNode[]> {
