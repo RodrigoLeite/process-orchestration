@@ -192,21 +192,22 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
     }
 
     // Create new tenant with unique slug (add timestamp to avoid conflicts)
-    const { tenants: tenantsTable } = await import("@shared/schema");
     const baseSlug = name.toLowerCase().replace(/\s+/g, '-');
     const uniqueSuffix = Math.random().toString(36).substring(2, 8);
     const slug = `${baseSlug}-${uniqueSuffix}`;
     
-    const newTenant = await storage.db
-      .insert(tenantsTable)
-      .values({
-        name,
-        slug,
-        isConfigured: 'true',
-        metadata: { area: area || 'outro' },
-      })
-      .returning()
-      .then((rows: any[]) => rows[0]);
+    const newTenant = await storage.createTenant({
+      name,
+      slug,
+      isConfigured: 'true',
+      metadata: { area: area || 'outro' },
+    });
+
+    if (!newTenant || !newTenant.id) {
+      console.error('[WORKSPACES] Failed to create tenant:', newTenant);
+      res.status(500).json({ error: 'Failed to create workspace - invalid response' });
+      return;
+    }
 
     console.log('[WORKSPACES] Created new tenant:', newTenant.id);
 
