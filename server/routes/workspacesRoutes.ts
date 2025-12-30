@@ -231,7 +231,7 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
     res.json({
       success: true,
       workspace: {
-        id: newTenant.id,
+        id: normalizeUUID(newTenant.id),
         name: newTenant.name,
         role: 'owner',
       },
