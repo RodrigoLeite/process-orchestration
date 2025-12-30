@@ -98,6 +98,6 @@ export function normalizeRecord<T extends Record<string, any>>(record: T): T {
  * Normalize all UUID fields in an array of objects
  */
 export function normalizeRecords<T extends Record<string, any>>(records: T[]): T[] {
-  if (!records || !Array.isArray(records)) return records;
+  if (!records || !Array.isArray(records)) return [] as T[];
   return records.map(record => normalizeRecord(record));
 }
