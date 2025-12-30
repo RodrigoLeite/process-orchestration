@@ -212,19 +212,21 @@ export class DatabaseStorage implements IStorage {
 
   async getDemands(tenantId?: string): Promise<Demand[]> {
     if (tenantId) {
-      return await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+      const result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+      return normalizeRecords(result);
     }
-    return await this.db.select().from(demands).orderBy(desc(demands.createdAt));
+    const result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
+    return normalizeRecords(result);
   }
 
   async getDemand(id: string): Promise<Demand | undefined> {
     const result = await this.db.select().from(demands).where(eq(demands.id, id)).limit(1);
-    return result[0];
+    return result[0] ? normalizeRecord(result[0]) : undefined;
   }
 
   async createDemand(insertDemand: InsertDemand): Promise<Demand> {
     // Insert the demand
-    const insertResult = await this.db.insert(demands).values(insertDemand);
+    await this.db.insert(demands).values(insertDemand);
     
     // Since .returning() may not work reliably, we need to find the created demand
     // Use the ID from insertDemand if available, or query for the most recent
@@ -253,19 +255,20 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Failed to create demand: created demand not found');
     }
     
-    return demand;
+    // Normalize UUID fields before returning
+    return normalizeRecord(demand) as Demand;
   }
 
   async updateDemandStatus(id: string, status: string): Promise<Demand | undefined> {
-    const result = await this.db
+    await this.db
       .update(demands)
       .set({ 
         status: status,
         updatedAt: new Date() 
       })
-      .where(eq(demands.id, id))
-      .returning();
-    return result[0];
+      .where(eq(demands.id, id));
+    const result = await this.db.select().from(demands).where(eq(demands.id, id)).limit(1);
+    return result[0] ? normalizeRecord(result[0]) : undefined;
   }
 
   async updateDemandWithSLA(id: string, updates: { 
@@ -284,22 +287,24 @@ export class DatabaseStorage implements IStorage {
     workflowId?: string;
     stageId?: string;
   }): Promise<Demand | undefined> {
-    const result = await this.db
+    await this.db
       .update(demands)
       .set({ 
         ...updates,
         updatedAt: new Date() 
       })
-      .where(eq(demands.id, id))
-      .returning();
-    return result[0];
+      .where(eq(demands.id, id));
+    const result = await this.db.select().from(demands).where(eq(demands.id, id)).limit(1);
+    return result[0] ? normalizeRecord(result[0]) : undefined;
   }
 
   async getDemandsWithStatus(status: string, tenantId?: string): Promise<Demand[]> {
     if (tenantId) {
-      return await this.db.select().from(demands).where(and(eq(demands.status, status), eq(demands.tenantId, tenantId as any)));
+      const result = await this.db.select().from(demands).where(and(eq(demands.status, status), eq(demands.tenantId, tenantId as any)));
+      return normalizeRecords(result);
     }
-    return await this.db.select().from(demands).where(eq(demands.status, status));
+    const result = await this.db.select().from(demands).where(eq(demands.status, status));
+    return normalizeRecords(result);
   }
 
   async countDemandsByStatus(status: string, tenantId?: string): Promise<Record<string, number>> {
@@ -332,14 +337,16 @@ export class DatabaseStorage implements IStorage {
     const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
     try {
       if (normalizedTenantId) {
-        return await this.db.select().from(demands).where(and(
+        const result = await this.db.select().from(demands).where(and(
           sql`${demands.createdAt} >= ${cutoffDate}`,
           eq(demands.tenantId, normalizedTenantId)
         ));
+        return normalizeRecords(result);
       }
-      return await this.db.select().from(demands).where(
+      const result = await this.db.select().from(demands).where(
         sql`${demands.createdAt} >= ${cutoffDate}`
       );
+      return normalizeRecords(result);
     } catch (error) {
       console.error('Error in getDemandsFromLastDays:', error);
       return [];
@@ -544,12 +551,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDemandsByWorkflow(workflowId: string): Promise<Demand[]> {
-    return await this.db.select().from(demands).where(eq(demands.workflowId, workflowId));
+    const result = await this.db.select().from(demands).where(eq(demands.workflowId, workflowId));
+    return normalizeRecords(result);
   }
 
   async updateDemandStage(id: string, stageId: string): Promise<Demand | undefined> {
-    const result = await this.db.update(demands).set({ stageId }).where(eq(demands.id, id)).returning();
-    return result[0];
+    await this.db.update(demands).set({ stageId }).where(eq(demands.id, id));
+    const result = await this.db.select().from(demands).where(eq(demands.id, id)).limit(1);
+    return result[0] ? normalizeRecord(result[0]) : undefined;
   }
 
   async getAgents(tenantId?: string): Promise<Agent[]> {
