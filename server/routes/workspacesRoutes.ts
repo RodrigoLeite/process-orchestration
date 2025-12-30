@@ -191,13 +191,17 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    // Create new tenant
+    // Create new tenant with unique slug (add timestamp to avoid conflicts)
     const { tenants: tenantsTable } = await import("@shared/schema");
+    const baseSlug = name.toLowerCase().replace(/\s+/g, '-');
+    const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+    const slug = `${baseSlug}-${uniqueSuffix}`;
+    
     const newTenant = await storage.db
       .insert(tenantsTable)
       .values({
         name,
-        slug: name.toLowerCase().replace(/\s+/g, '-'),
+        slug,
         isConfigured: 'true',
         metadata: { area: area || 'outro' },
       })
