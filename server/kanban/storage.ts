@@ -217,8 +217,9 @@ export const kanbanStorage = {
       const result = await db
         .select()
         .from(cards)
-        .where(and(eq(cards.demandId, demandId), eq(cards.tenantId, tenantId)));
-      return result?.[0];
+        .where(and(eq(cards.demandId, demandId), eq(cards.tenantId, tenantId)))
+        .catch(() => []);
+      return (Array.isArray(result) && result.length > 0) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getCardByDemandId:', error);
       return undefined;
