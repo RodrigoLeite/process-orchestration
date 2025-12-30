@@ -499,7 +499,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDemandHistory(demandId: string): Promise<DemandHistory[]> {
-    return await this.db.select().from(demandHistory).where(eq(demandHistory.demandId, demandId)).orderBy(desc(demandHistory.createdAt));
+    try {
+      if (!demandId) return [];
+      return await this.db.select().from(demandHistory).where(eq(demandHistory.demandId, demandId)).orderBy(desc(demandHistory.createdAt)).catch(() => []);
+    } catch (error) {
+      console.error('Error in getDemandHistory:', error);
+      return [];
+    }
   }
 
   async registerWebhook(insertWebhook: InsertWebhook): Promise<Webhook> {
@@ -508,7 +514,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWebhooksByArea(area: string): Promise<Webhook[]> {
-    return await this.db.select().from(webhooks).where(eq(webhooks.area, area));
+    try {
+      if (!area) return [];
+      return await this.db.select().from(webhooks).where(eq(webhooks.area, area)).catch(() => []);
+    } catch (error) {
+      console.error('Error in getWebhooksByArea:', error);
+      return [];
+    }
   }
 
   async getWebhooksForEvent(area: string, eventType: string): Promise<Webhook[]> {
@@ -535,7 +547,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWebhookEventsByStatus(status: string): Promise<WebhookEvent[]> {
-    return await this.db.select().from(webhookEvents).where(eq(webhookEvents.status, status));
+    try {
+      if (!status) return [];
+      return await this.db.select().from(webhookEvents).where(eq(webhookEvents.status, status)).catch(() => []);
+    } catch (error) {
+      console.error('Error in getWebhookEventsByStatus:', error);
+      return [];
+    }
   }
 
   async updateWebhookEvent(id: string, updates: Partial<WebhookEvent>): Promise<WebhookEvent | undefined> {
@@ -558,7 +576,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllWorkflows(): Promise<AreaWorkflow[]> {
-    return await this.db.select().from(areaWorkflows);
+    try {
+      return await this.db.select().from(areaWorkflows).catch(() => []);
+    } catch (error) {
+      console.error('Error in getAllWorkflows:', error);
+      return [];
+    }
   }
 
   async createAreaWorkflow(workflow: InsertAreaWorkflow): Promise<AreaWorkflow> {
@@ -572,7 +595,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkflowStages(workflowId: string): Promise<WorkflowStage[]> {
-    return await this.db.select().from(workflowStages).where(eq(workflowStages.workflowId, workflowId));
+    try {
+      if (!workflowId) return [];
+      return await this.db.select().from(workflowStages).where(eq(workflowStages.workflowId, workflowId)).catch(() => []);
+    } catch (error) {
+      console.error('Error in getWorkflowStages:', error);
+      return [];
+    }
   }
 
   async getWorkflowStageById(stageId: string): Promise<WorkflowStage | undefined> {
@@ -581,8 +610,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDemandsByWorkflow(workflowId: string): Promise<Demand[]> {
-    const result = await this.db.select().from(demands).where(eq(demands.workflowId, workflowId));
-    return normalizeRecords(result);
+    try {
+      if (!workflowId) return [];
+      const result = await this.db.select().from(demands).where(eq(demands.workflowId, workflowId)).catch(() => []);
+      return normalizeRecords(result);
+    } catch (error) {
+      console.error('Error in getDemandsByWorkflow:', error);
+      return [];
+    }
   }
 
   async updateDemandStage(id: string, stageId: string): Promise<Demand | undefined> {
@@ -625,13 +660,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAgentLogs(agentId: string, tenantId?: string): Promise<AgentLog[]> {
-    let query: any;
-    if (tenantId) {
-      query = this.db.select().from(agentLogs).where(and(eq(agentLogs.agentId, agentId), eq(agentLogs.tenantId, tenantId as any)));
-    } else {
-      query = this.db.select().from(agentLogs).where(eq(agentLogs.agentId, agentId));
+    try {
+      if (!agentId) return [];
+      let query: any;
+      if (tenantId) {
+        query = this.db.select().from(agentLogs).where(and(eq(agentLogs.agentId, agentId), eq(agentLogs.tenantId, tenantId as any)));
+      } else {
+        query = this.db.select().from(agentLogs).where(eq(agentLogs.agentId, agentId));
+      }
+      return await query.catch(() => []);
+    } catch (error) {
+      console.error('Error in getAgentLogs:', error);
+      return [];
     }
-    return await query;
   }
 
   async createBottleneckReport(report: InsertBottleneckReport): Promise<BottleneckReport> {
