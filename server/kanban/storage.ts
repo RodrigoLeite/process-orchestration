@@ -43,18 +43,27 @@ const db = storage.db;
 export const kanbanStorage = {
   // ========== BOARDS ==========
   async createBoard(data: InsertBoard): Promise<Board> {
-    await db.insert(boards).values(data);
+    // Normalize ALL UUID fields in the input data before insert
+    const normalizedData = {
+      ...data,
+      id: data.id ? normalizeUUID(data.id) : undefined,
+      tenantId: normalizeUUID(data.tenantId),
+      areaId: data.areaId ? normalizeUUID(data.areaId) : data.areaId,
+      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : null,
+    };
+    
+    await db.insert(boards).values(normalizedData);
     
     // Query back the created board by ID
-    if (data.id) {
-      const result = await db.select().from(boards).where(eq(boards.id, data.id)).limit(1).catch(() => []);
+    if (normalizedData.id) {
+      const result = await db.select().from(boards).where(eq(boards.id, normalizedData.id)).limit(1).catch(() => []);
       if (Array.isArray(result) && result[0]) {
         return normalizeRecord(result[0]) as Board;
       }
     }
     
     // Fallback: query the most recent board for this tenant
-    const result = await db.select().from(boards).where(eq(boards.tenantId, data.tenantId)).orderBy(desc(boards.createdAt)).limit(1).catch(() => []);
+    const result = await db.select().from(boards).where(eq(boards.tenantId, normalizedData.tenantId)).orderBy(desc(boards.createdAt)).limit(1).catch(() => []);
     if (!Array.isArray(result) || !result[0]) {
       throw new Error('Failed to create board');
     }
@@ -72,6 +81,7 @@ export const kanbanStorage = {
   },
 
   async getBoardsByTenant(tenantId: string): Promise<(Board & { cardsCount: number })[]> {
+    const normalizedTenantId = normalizeUUID(tenantId);
     const result = await db
       .select({
         id: boards.id,
@@ -92,12 +102,12 @@ export const kanbanStorage = {
       .from(boards)
       .leftJoin(cards, eq(cards.boardId, boards.id))
       .where(and(
-        eq(boards.tenantId, tenantId), 
+        eq(boards.tenantId, normalizedTenantId), 
         or(isNull(boards.isArchived), eq(boards.isArchived, "false"))
       ))
       .groupBy(boards.id)
       .orderBy(desc(boards.createdAt));
-    return result;
+    return normalizeRecords(result) as (Board & { cardsCount: number })[];
   },
 
   async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {
@@ -116,18 +126,30 @@ export const kanbanStorage = {
   },
 
   async updateBoard(id: string, tenantId: string, data: Partial<InsertBoard>): Promise<Board | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    // Normalize UUID fields in update payload
+    const normalizedData = {
+      ...data,
+      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
+      areaId: data.areaId ? normalizeUUID(data.areaId) : data.areaId,
+      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : data.createdBy,
+      updatedAt: new Date()
+    };
     const [board] = await db
       .update(boards)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(boards.id, id), eq(boards.tenantId, tenantId)))
+      .set(normalizedData)
+      .where(and(eq(boards.id, normalizedId), eq(boards.tenantId, normalizedTenantId)))
       .returning();
-    return board;
+    return board ? normalizeRecord(board) as Board : undefined;
   },
 
   async deleteBoard(id: string, tenantId: string): Promise<boolean> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     await db
       .delete(boards)
-      .where(and(eq(boards.id, id), eq(boards.tenantId, tenantId)));
+      .where(and(eq(boards.id, normalizedId), eq(boards.tenantId, normalizedTenantId)));
     return true;
   },
 
@@ -172,44 +194,60 @@ export const kanbanStorage = {
   },
 
   async updatePhase(id: string, tenantId: string, data: Partial<InsertPhase>): Promise<Phase | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    // Normalize UUID fields in update payload
+    const normalizedData = {
+      ...data,
+      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
+      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
+      updatedAt: new Date()
+    };
     const [phase] = await db
       .update(phases)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(phases.id, id), eq(phases.tenantId, tenantId)))
+      .set(normalizedData)
+      .where(and(eq(phases.id, normalizedId), eq(phases.tenantId, normalizedTenantId)))
       .returning();
-    return phase;
+    return phase ? normalizeRecord(phase) as Phase : undefined;
   },
 
   async deletePhase(id: string, tenantId: string): Promise<boolean> {
-    await db.delete(phases).where(and(eq(phases.id, id), eq(phases.tenantId, tenantId)));
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    await db.delete(phases).where(and(eq(phases.id, normalizedId), eq(phases.tenantId, normalizedTenantId)));
     return true;
   },
 
   async reorderPhases(boardId: string, tenantId: string, phaseIds: string[]): Promise<void> {
-    for (let i = 0; i < phaseIds.length; i++) {
+    const normalizedBoardId = normalizeUUID(boardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedPhaseIds = phaseIds.map(id => normalizeUUID(id));
+    for (let i = 0; i < normalizedPhaseIds.length; i++) {
       await db
         .update(phases)
         .set({ position: i })
-        .where(and(eq(phases.id, phaseIds[i]), eq(phases.tenantId, tenantId)));
+        .where(and(eq(phases.id, normalizedPhaseIds[i]), eq(phases.tenantId, normalizedTenantId)));
     }
   },
 
   // ========== CARDS ==========
   async createCard(data: InsertCard): Promise<Card> {
-    const normalizedPhaseId = normalizeUUID(data.phaseId);
-    const normalizedBoardId = normalizeUUID(data.boardId);
-    const normalizedTenantId = normalizeUUID(data.tenantId);
+    // Normalize ALL UUID fields in the input data before insert
     const normalizedData = { 
       ...data, 
-      phaseId: normalizedPhaseId, 
-      boardId: normalizedBoardId, 
-      tenantId: normalizedTenantId 
+      phaseId: normalizeUUID(data.phaseId), 
+      boardId: normalizeUUID(data.boardId), 
+      tenantId: normalizeUUID(data.tenantId),
+      demandId: data.demandId ? normalizeUUID(data.demandId) : null,
+      workflowId: data.workflowId ? normalizeUUID(data.workflowId) : null,
+      assigneeId: data.assigneeId ? normalizeUUID(data.assigneeId) : null,
+      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : null,
     };
     
     const maxPosition = await db
       .select({ max: sql<number>`COALESCE(MAX(position), -1)` })
       .from(cards)
-      .where(and(eq(cards.phaseId, normalizedPhaseId), eq(cards.tenantId, normalizedTenantId)));
+      .where(and(eq(cards.phaseId, normalizedData.phaseId), eq(cards.tenantId, normalizedData.tenantId)));
     
     const [card] = await db
       .insert(cards)
@@ -272,16 +310,32 @@ export const kanbanStorage = {
   },
 
   async updateCard(id: string, tenantId: string, data: Partial<InsertCard>): Promise<Card | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    // Normalize UUID fields in update payload
+    const normalizedData = {
+      ...data,
+      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
+      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
+      phaseId: data.phaseId ? normalizeUUID(data.phaseId) : undefined,
+      demandId: data.demandId ? normalizeUUID(data.demandId) : data.demandId,
+      workflowId: data.workflowId ? normalizeUUID(data.workflowId) : data.workflowId,
+      assigneeId: data.assigneeId ? normalizeUUID(data.assigneeId) : data.assigneeId,
+      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : data.createdBy,
+      updatedAt: new Date()
+    };
     const [card] = await db
       .update(cards)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)))
+      .set(normalizedData)
+      .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)))
       .returning();
-    return card;
+    return card ? normalizeRecord(card) as Card : undefined;
   },
 
   async deleteCard(id: string, tenantId: string): Promise<boolean> {
-    await db.delete(cards).where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)));
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    await db.delete(cards).where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)));
     return true;
   },
 
@@ -291,19 +345,23 @@ export const kanbanStorage = {
     targetPhaseId: string,
     targetPosition: number
   ): Promise<Card | undefined> {
-    const card = await this.getCardById(id, tenantId);
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedTargetPhaseId = normalizeUUID(targetPhaseId);
+    
+    const card = await this.getCardById(normalizedId, normalizedTenantId);
     if (!card) return undefined;
 
-    const oldPhaseId = card.phaseId;
+    const oldPhaseId = normalizeUUID(card.phaseId);
     
-    if (oldPhaseId === targetPhaseId) {
+    if (oldPhaseId === normalizedTargetPhaseId) {
       await db
         .update(cards)
         .set({ position: sql`position - 1` })
         .where(
           and(
-            eq(cards.phaseId, targetPhaseId),
-            eq(cards.tenantId, tenantId),
+            eq(cards.phaseId, normalizedTargetPhaseId),
+            eq(cards.tenantId, normalizedTenantId),
             sql`position > ${card.position}`
           )
         );
@@ -314,7 +372,7 @@ export const kanbanStorage = {
         .where(
           and(
             eq(cards.phaseId, oldPhaseId),
-            eq(cards.tenantId, tenantId),
+            eq(cards.tenantId, normalizedTenantId),
             sql`position > ${card.position}`
           )
         );
@@ -325,79 +383,101 @@ export const kanbanStorage = {
       .set({ position: sql`position + 1` })
       .where(
         and(
-          eq(cards.phaseId, targetPhaseId),
-          eq(cards.tenantId, tenantId),
+          eq(cards.phaseId, normalizedTargetPhaseId),
+          eq(cards.tenantId, normalizedTenantId),
           sql`position >= ${targetPosition}`
         )
       );
 
     const updateData: Record<string, any> = { 
-      phaseId: targetPhaseId, 
+      phaseId: normalizedTargetPhaseId, 
       position: targetPosition, 
       updatedAt: new Date() 
     };
     
-    if (oldPhaseId !== targetPhaseId) {
+    if (oldPhaseId !== normalizedTargetPhaseId) {
       updateData.phaseEnteredAt = new Date();
     }
 
     const [updated] = await db
       .update(cards)
       .set(updateData)
-      .where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)))
+      .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)))
       .returning();
 
-    return updated;
+    return updated ? normalizeRecord(updated) as Card : undefined;
   },
 
   // ========== CARD FIELDS ==========
   async createCardField(data: InsertCardField): Promise<CardField> {
+    const normalizedBoardId = normalizeUUID(data.boardId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { ...data, boardId: normalizedBoardId, tenantId: normalizedTenantId };
+    
     const maxPosition = await db
       .select({ max: sql<number>`COALESCE(MAX(position), -1)` })
       .from(cardFields)
-      .where(and(eq(cardFields.boardId, data.boardId), eq(cardFields.tenantId, data.tenantId)));
+      .where(and(eq(cardFields.boardId, normalizedBoardId), eq(cardFields.tenantId, normalizedTenantId)));
     
     const [field] = await db
       .insert(cardFields)
-      .values({ ...data, position: (maxPosition[0]?.max ?? -1) + 1 })
+      .values({ ...normalizedData, position: (maxPosition[0]?.max ?? -1) + 1 })
       .returning();
-    return field;
+    return normalizeRecord(field) as CardField;
   },
 
   async getCardFieldsByBoard(boardId: string, tenantId: string): Promise<CardField[]> {
+    const normalizedBoardId = normalizeUUID(boardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const result = await db
       .select()
       .from(cardFields)
-      .where(and(eq(cardFields.boardId, boardId), eq(cardFields.tenantId, tenantId)))
+      .where(and(eq(cardFields.boardId, normalizedBoardId), eq(cardFields.tenantId, normalizedTenantId)))
       .orderBy(asc(cardFields.position))
       .catch(() => [] as CardField[]);
-    return result || [];
+    return normalizeRecords(result || []) as CardField[];
   },
 
   async updateCardField(id: string, tenantId: string, data: Partial<InsertCardField>): Promise<CardField | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    // Normalize UUID fields in update payload
+    const normalizedData = {
+      ...data,
+      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
+      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
+      updatedAt: new Date()
+    };
     const [field] = await db
       .update(cardFields)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(cardFields.id, id), eq(cardFields.tenantId, tenantId)))
+      .set(normalizedData)
+      .where(and(eq(cardFields.id, normalizedId), eq(cardFields.tenantId, normalizedTenantId)))
       .returning();
-    return field;
+    return field ? normalizeRecord(field) as CardField : undefined;
   },
 
   async deleteCardField(id: string, tenantId: string): Promise<boolean> {
-    await db.delete(cardFields).where(and(eq(cardFields.id, id), eq(cardFields.tenantId, tenantId)));
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    await db.delete(cardFields).where(and(eq(cardFields.id, normalizedId), eq(cardFields.tenantId, normalizedTenantId)));
     return true;
   },
 
   // ========== CARD FIELD VALUES ==========
   async setCardFieldValue(data: InsertCardFieldValue): Promise<CardFieldValue> {
+    const normalizedCardId = normalizeUUID(data.cardId);
+    const normalizedFieldId = normalizeUUID(data.fieldId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { ...data, cardId: normalizedCardId, fieldId: normalizedFieldId, tenantId: normalizedTenantId };
+    
     const existing = await db
       .select()
       .from(cardFieldValues)
       .where(
         and(
-          eq(cardFieldValues.cardId, data.cardId),
-          eq(cardFieldValues.fieldId, data.fieldId),
-          eq(cardFieldValues.tenantId, data.tenantId)
+          eq(cardFieldValues.cardId, normalizedCardId),
+          eq(cardFieldValues.fieldId, normalizedFieldId),
+          eq(cardFieldValues.tenantId, normalizedTenantId)
         )
       );
 
@@ -405,192 +485,256 @@ export const kanbanStorage = {
       const [updated] = await db
         .update(cardFieldValues)
         .set({ value: data.value, jsonValue: data.jsonValue, updatedAt: new Date() })
-        .where(eq(cardFieldValues.id, existing[0].id))
+        .where(eq(cardFieldValues.id, normalizeUUID(existing[0].id)))
         .returning();
-      return updated;
+      return normalizeRecord(updated) as CardFieldValue;
     }
 
-    const [created] = await db.insert(cardFieldValues).values(data).returning();
-    return created;
+    const [created] = await db.insert(cardFieldValues).values(normalizedData).returning();
+    return normalizeRecord(created) as CardFieldValue;
   },
 
   async getCardFieldValues(cardId: string, tenantId: string): Promise<CardFieldValue[]> {
+    const normalizedCardId = normalizeUUID(cardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const result = await db
       .select()
       .from(cardFieldValues)
-      .where(and(eq(cardFieldValues.cardId, cardId), eq(cardFieldValues.tenantId, tenantId)))
+      .where(and(eq(cardFieldValues.cardId, normalizedCardId), eq(cardFieldValues.tenantId, normalizedTenantId)))
       .catch(() => [] as CardFieldValue[]);
-    return result || [];
+    return normalizeRecords(result || []) as CardFieldValue[];
   },
 
   // ========== CARD COMMENTS ==========
   async createComment(data: InsertCardComment): Promise<CardComment> {
-    const [comment] = await db.insert(cardComments).values(data).returning();
-    return comment;
+    const normalizedCardId = normalizeUUID(data.cardId);
+    const normalizedUserId = normalizeUUID(data.userId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { ...data, cardId: normalizedCardId, userId: normalizedUserId, tenantId: normalizedTenantId };
+    
+    const [comment] = await db.insert(cardComments).values(normalizedData).returning();
+    return normalizeRecord(comment) as CardComment;
   },
 
   async getCommentsByCard(cardId: string, tenantId: string): Promise<(CardComment & { user?: { name: string | null; image: string | null } })[]> {
+    const normalizedCardId = normalizeUUID(cardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    
     const comments = await db
       .select()
       .from(cardComments)
-      .where(and(eq(cardComments.cardId, cardId), eq(cardComments.tenantId, tenantId)))
+      .where(and(eq(cardComments.cardId, normalizedCardId), eq(cardComments.tenantId, normalizedTenantId)))
       .orderBy(desc(cardComments.createdAt))
       .catch(() => [] as CardComment[]);
 
     if (!comments || comments.length === 0) return [];
 
-    const userIds = Array.from(new Set(comments.map((c: CardComment) => c.userId)));
+    const userIds = Array.from(new Set(comments.map((c: CardComment) => normalizeUUID(c.userId))));
     const usersData = userIds.length > 0
       ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds)).catch(() => [])
       : [];
 
-    const userMap = new Map((usersData || []).map((u: { id: string; name: string | null; image: string | null }) => [u.id, u]));
+    const userMap = new Map((usersData || []).map((u: { id: string; name: string | null; image: string | null }) => [normalizeUUID(u.id), u]));
 
-    return comments.map((c: CardComment) => ({
+    return normalizeRecords(comments).map((c: CardComment) => ({
       ...c,
-      user: userMap.get(c.userId) || undefined
+      user: userMap.get(normalizeUUID(c.userId)) || undefined
     }));
   },
 
   async updateComment(id: string, tenantId: string, content: string): Promise<CardComment | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const [comment] = await db
       .update(cardComments)
       .set({ content, isEdited: "true", updatedAt: new Date() })
-      .where(and(eq(cardComments.id, id), eq(cardComments.tenantId, tenantId)))
+      .where(and(eq(cardComments.id, normalizedId), eq(cardComments.tenantId, normalizedTenantId)))
       .returning();
-    return comment;
+    return comment ? normalizeRecord(comment) as CardComment : undefined;
   },
 
   async deleteComment(id: string, tenantId: string): Promise<boolean> {
-    await db.delete(cardComments).where(and(eq(cardComments.id, id), eq(cardComments.tenantId, tenantId)));
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    await db.delete(cardComments).where(and(eq(cardComments.id, normalizedId), eq(cardComments.tenantId, normalizedTenantId)));
     return true;
   },
 
   // ========== CARD ATTACHMENTS ==========
   async createAttachment(data: InsertCardAttachment): Promise<CardAttachment> {
-    const [attachment] = await db.insert(cardAttachments).values(data).returning();
-    return attachment;
+    const normalizedCardId = normalizeUUID(data.cardId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedUploadedBy = data.uploadedBy ? normalizeUUID(data.uploadedBy) : null;
+    const normalizedData = { ...data, cardId: normalizedCardId, tenantId: normalizedTenantId, uploadedBy: normalizedUploadedBy };
+    
+    const [attachment] = await db.insert(cardAttachments).values(normalizedData).returning();
+    return normalizeRecord(attachment) as CardAttachment;
   },
 
   async getAttachmentsByCard(cardId: string, tenantId: string): Promise<CardAttachment[]> {
+    const normalizedCardId = normalizeUUID(cardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const result = await db
       .select()
       .from(cardAttachments)
-      .where(and(eq(cardAttachments.cardId, cardId), eq(cardAttachments.tenantId, tenantId)))
+      .where(and(eq(cardAttachments.cardId, normalizedCardId), eq(cardAttachments.tenantId, normalizedTenantId)))
       .orderBy(desc(cardAttachments.createdAt))
       .catch(() => [] as CardAttachment[]);
-    return result || [];
+    return normalizeRecords(result || []) as CardAttachment[];
   },
 
   async deleteAttachment(id: string, tenantId: string): Promise<CardAttachment | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const [attachment] = await db
       .delete(cardAttachments)
-      .where(and(eq(cardAttachments.id, id), eq(cardAttachments.tenantId, tenantId)))
+      .where(and(eq(cardAttachments.id, normalizedId), eq(cardAttachments.tenantId, normalizedTenantId)))
       .returning();
-    return attachment;
+    return attachment ? normalizeRecord(attachment) as CardAttachment : undefined;
   },
 
   // ========== ACTIVITY LOG ==========
   async logActivity(data: InsertCardActivityLog): Promise<CardActivityLog> {
-    const [log] = await db.insert(cardActivityLogs).values(data).returning();
-    return log;
+    const normalizedCardId = normalizeUUID(data.cardId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedUserId = data.userId ? normalizeUUID(data.userId) : null;
+    const normalizedData = { ...data, cardId: normalizedCardId, tenantId: normalizedTenantId, userId: normalizedUserId };
+    
+    const [log] = await db.insert(cardActivityLogs).values(normalizedData).returning();
+    return normalizeRecord(log) as CardActivityLog;
   },
 
   async getActivityByCard(cardId: string, tenantId: string): Promise<(CardActivityLog & { user?: { name: string | null; image: string | null } })[]> {
+    const normalizedCardId = normalizeUUID(cardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    
     const logs = await db
       .select()
       .from(cardActivityLogs)
-      .where(and(eq(cardActivityLogs.cardId, cardId), eq(cardActivityLogs.tenantId, tenantId)))
+      .where(and(eq(cardActivityLogs.cardId, normalizedCardId), eq(cardActivityLogs.tenantId, normalizedTenantId)))
       .orderBy(desc(cardActivityLogs.createdAt))
       .catch(() => [] as CardActivityLog[]);
 
     if (!logs || logs.length === 0) return [];
 
-    const userIds = Array.from(new Set(logs.filter((l: CardActivityLog) => l.userId).map((l: CardActivityLog) => l.userId!)));
+    const userIds = Array.from(new Set(logs.filter((l: CardActivityLog) => l.userId).map((l: CardActivityLog) => normalizeUUID(l.userId!))));
     const usersData = userIds.length > 0
       ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds)).catch(() => [])
       : [];
 
-    const userMap = new Map((usersData || []).map((u: { id: string; name: string | null; image: string | null }) => [u.id, u]));
+    const userMap = new Map((usersData || []).map((u: { id: string; name: string | null; image: string | null }) => [normalizeUUID(u.id), u]));
 
-    return logs.map((l: CardActivityLog) => ({
+    return normalizeRecords(logs).map((l: CardActivityLog) => ({
       ...l,
-      user: l.userId ? userMap.get(l.userId) : undefined
+      user: l.userId ? userMap.get(normalizeUUID(l.userId)) : undefined
     }));
   },
 
   // ========== AUTOMATIONS ==========
   async createAutomation(data: InsertAutomation): Promise<Automation> {
-    const [automation] = await db.insert(automations).values(data).returning();
-    return automation;
+    const normalizedBoardId = normalizeUUID(data.boardId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedCreatedBy = data.createdBy ? normalizeUUID(data.createdBy) : null;
+    const normalizedData = { ...data, boardId: normalizedBoardId, tenantId: normalizedTenantId, createdBy: normalizedCreatedBy };
+    
+    const [automation] = await db.insert(automations).values(normalizedData).returning();
+    return normalizeRecord(automation) as Automation;
   },
 
   async getAutomationsByBoard(boardId: string, tenantId: string): Promise<Automation[]> {
-    return db
+    const normalizedBoardId = normalizeUUID(boardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const result = await db
       .select()
       .from(automations)
-      .where(and(eq(automations.boardId, boardId), eq(automations.tenantId, tenantId)))
+      .where(and(eq(automations.boardId, normalizedBoardId), eq(automations.tenantId, normalizedTenantId)))
       .orderBy(desc(automations.createdAt));
+    return normalizeRecords(result) as Automation[];
   },
 
   async getAutomationById(id: string, tenantId: string): Promise<Automation | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const [automation] = await db
       .select()
       .from(automations)
-      .where(and(eq(automations.id, id), eq(automations.tenantId, tenantId)));
-    return automation;
+      .where(and(eq(automations.id, normalizedId), eq(automations.tenantId, normalizedTenantId)));
+    return automation ? normalizeRecord(automation) as Automation : undefined;
   },
 
   async updateAutomation(id: string, tenantId: string, data: Partial<InsertAutomation>): Promise<Automation | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    // Normalize UUID fields in update payload
+    const normalizedData = {
+      ...data,
+      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
+      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
+      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : data.createdBy,
+      updatedAt: new Date()
+    };
     const [automation] = await db
       .update(automations)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(automations.id, id), eq(automations.tenantId, tenantId)))
+      .set(normalizedData)
+      .where(and(eq(automations.id, normalizedId), eq(automations.tenantId, normalizedTenantId)))
       .returning();
-    return automation;
+    return automation ? normalizeRecord(automation) as Automation : undefined;
   },
 
   async deleteAutomation(id: string, tenantId: string): Promise<boolean> {
-    await db.delete(automationTriggers).where(and(eq(automationTriggers.automationId, id), eq(automationTriggers.tenantId, tenantId)));
-    await db.delete(automationActions).where(and(eq(automationActions.automationId, id), eq(automationActions.tenantId, tenantId)));
-    await db.delete(automations).where(and(eq(automations.id, id), eq(automations.tenantId, tenantId)));
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    await db.delete(automationTriggers).where(and(eq(automationTriggers.automationId, normalizedId), eq(automationTriggers.tenantId, normalizedTenantId)));
+    await db.delete(automationActions).where(and(eq(automationActions.automationId, normalizedId), eq(automationActions.tenantId, normalizedTenantId)));
+    await db.delete(automations).where(and(eq(automations.id, normalizedId), eq(automations.tenantId, normalizedTenantId)));
     return true;
   },
 
   // ========== AUTOMATION TRIGGERS ==========
   async createAutomationTrigger(data: InsertAutomationTrigger): Promise<AutomationTrigger> {
-    const [trigger] = await db.insert(automationTriggers).values(data).returning();
-    return trigger;
+    const normalizedAutomationId = normalizeUUID(data.automationId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { ...data, automationId: normalizedAutomationId, tenantId: normalizedTenantId };
+    
+    const [trigger] = await db.insert(automationTriggers).values(normalizedData).returning();
+    return normalizeRecord(trigger) as AutomationTrigger;
   },
 
   async getTriggersByAutomation(automationId: string, tenantId: string): Promise<AutomationTrigger[]> {
-    return db
+    const normalizedAutomationId = normalizeUUID(automationId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const result = await db
       .select()
       .from(automationTriggers)
-      .where(and(eq(automationTriggers.automationId, automationId), eq(automationTriggers.tenantId, tenantId)));
+      .where(and(eq(automationTriggers.automationId, normalizedAutomationId), eq(automationTriggers.tenantId, normalizedTenantId)));
+    return normalizeRecords(result) as AutomationTrigger[];
   },
 
   async getActiveAutomationsByTriggerType(boardId: string, tenantId: string, triggerType: string): Promise<(Automation & { triggers: AutomationTrigger[]; actions: AutomationAction[] })[]> {
+    const normalizedBoardId = normalizeUUID(boardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    
     const activeAutomations = await db
       .select()
       .from(automations)
       .where(
         and(
-          eq(automations.boardId, boardId),
-          eq(automations.tenantId, tenantId),
+          eq(automations.boardId, normalizedBoardId),
+          eq(automations.tenantId, normalizedTenantId),
           eq(automations.isActive, "true")
         )
       );
 
     const result: (Automation & { triggers: AutomationTrigger[]; actions: AutomationAction[] })[] = [];
 
-    for (const automation of activeAutomations) {
+    for (const automation of normalizeRecords(activeAutomations)) {
+      const normalizedAutomationId = normalizeUUID(automation.id);
       const triggers = await db
         .select()
         .from(automationTriggers)
         .where(
           and(
-            eq(automationTriggers.automationId, automation.id),
+            eq(automationTriggers.automationId, normalizedAutomationId),
             eq(automationTriggers.triggerType, triggerType)
           )
         );
@@ -599,10 +743,10 @@ export const kanbanStorage = {
         const actions = await db
           .select()
           .from(automationActions)
-          .where(eq(automationActions.automationId, automation.id))
+          .where(eq(automationActions.automationId, normalizedAutomationId))
           .orderBy(asc(automationActions.position));
 
-        result.push({ ...automation, triggers, actions });
+        result.push({ ...automation, triggers: normalizeRecords(triggers), actions: normalizeRecords(actions) });
       }
     }
 
@@ -611,24 +755,31 @@ export const kanbanStorage = {
 
   // ========== AUTOMATION ACTIONS ==========
   async createAutomationAction(data: InsertAutomationAction): Promise<AutomationAction> {
+    const normalizedAutomationId = normalizeUUID(data.automationId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { ...data, automationId: normalizedAutomationId, tenantId: normalizedTenantId };
+    
     const maxPosition = await db
       .select({ max: sql<number>`COALESCE(MAX(position), -1)` })
       .from(automationActions)
-      .where(eq(automationActions.automationId, data.automationId));
+      .where(eq(automationActions.automationId, normalizedAutomationId));
     
     const [action] = await db
       .insert(automationActions)
-      .values({ ...data, position: (maxPosition[0]?.max ?? -1) + 1 })
+      .values({ ...normalizedData, position: (maxPosition[0]?.max ?? -1) + 1 })
       .returning();
-    return action;
+    return normalizeRecord(action) as AutomationAction;
   },
 
   async getActionsByAutomation(automationId: string, tenantId: string): Promise<AutomationAction[]> {
-    return db
+    const normalizedAutomationId = normalizeUUID(automationId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const result = await db
       .select()
       .from(automationActions)
-      .where(and(eq(automationActions.automationId, automationId), eq(automationActions.tenantId, tenantId)))
+      .where(and(eq(automationActions.automationId, normalizedAutomationId), eq(automationActions.tenantId, normalizedTenantId)))
       .orderBy(asc(automationActions.position));
+    return normalizeRecords(result) as AutomationAction[];
   },
 
   // ========== FULL BOARD DATA ==========
