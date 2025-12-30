@@ -29,9 +29,9 @@ declare module 'http' {
   }
 }
 
-// Global logging middleware - FIRST
+// Global logging middleware - FIRST (disabled to reduce noise)
 app.use((req, res, next) => {
-  console.log('[GLOBAL]', req.method, req.path, req.url);
+  // console.log('[GLOBAL]', req.method, req.path, req.url);
   next();
 });
 

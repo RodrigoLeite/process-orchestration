@@ -31,9 +31,9 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
       
       tenantUser = normalizeTenantUser(rawTenantUser);
       
-      if (tenantUser) {
-        console.log(`[TENANT LOADER] Using preferred tenant ${normalizedPreferredTenantId} for user ${userId}`);
-      }
+      // if (tenantUser) {
+      //   console.log(`[TENANT LOADER] Using preferred tenant ${normalizedPreferredTenantId} for user ${userId}`);
+      // }
     }
     
     // If no preferred tenant or user doesn't have access to it, get first tenant (primary tenant)
@@ -48,9 +48,9 @@ export async function loadTenantForUser(userId: string, preferredTenantId?: stri
       
       tenantUser = normalizeTenantUser(rawTenantUser);
       
-      if (tenantUser) {
-        console.log(`[TENANT LOADER] Using primary tenant ${tenantUser.tenantId} for user ${userId}`);
-      }
+      // if (tenantUser) {
+      //   console.log(`[TENANT LOADER] Using primary tenant ${tenantUser.tenantId} for user ${userId}`);
+      // }
     }
 
     if (!tenantUser) {
