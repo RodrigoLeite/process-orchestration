@@ -46,10 +46,10 @@ export const kanbanStorage = {
     // Normalize ALL UUID fields in the input data before insert
     const normalizedData = {
       ...data,
-      id: data.id ? normalizeUUID(data.id) : undefined,
-      tenantId: normalizeUUID(data.tenantId),
-      areaId: data.areaId ? normalizeUUID(data.areaId) : data.areaId,
-      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : null,
+      id: normalizeUUID(data.id),
+      tenantId: normalizeUUID(data.tenantId) || data.tenantId,
+      areaId: normalizeUUID(data.areaId),
+      createdBy: normalizeUUID(data.createdBy),
     };
     
     await db.insert(boards).values(normalizedData);
@@ -71,8 +71,8 @@ export const kanbanStorage = {
   },
 
   async getBoardById(id: string, tenantId: string): Promise<Board | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const [board] = await db
       .select()
       .from(boards)
@@ -81,7 +81,7 @@ export const kanbanStorage = {
   },
 
   async getBoardsByTenant(tenantId: string): Promise<(Board & { cardsCount: number })[]> {
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const result = await db
       .select({
         id: boards.id,
@@ -112,7 +112,7 @@ export const kanbanStorage = {
 
   async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {
     try {
-      const normalizedTenantId = normalizeUUID(tenantId);
+      const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
       const result = await db
         .select()
         .from(boards)
@@ -126,14 +126,14 @@ export const kanbanStorage = {
   },
 
   async updateBoard(id: string, tenantId: string, data: Partial<InsertBoard>): Promise<Board | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     // Normalize UUID fields in update payload
     const normalizedData = {
       ...data,
-      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
-      areaId: data.areaId ? normalizeUUID(data.areaId) : data.areaId,
-      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : data.createdBy,
+      tenantId: normalizeUUID(data.tenantId),
+      areaId: normalizeUUID(data.areaId),
+      createdBy: normalizeUUID(data.createdBy),
       updatedAt: new Date()
     };
     const [board] = await db
@@ -145,8 +145,8 @@ export const kanbanStorage = {
   },
 
   async deleteBoard(id: string, tenantId: string): Promise<boolean> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     await db
       .delete(boards)
       .where(and(eq(boards.id, normalizedId), eq(boards.tenantId, normalizedTenantId)));
@@ -155,8 +155,8 @@ export const kanbanStorage = {
 
   // ========== PHASES ==========
   async createPhase(data: InsertPhase): Promise<Phase> {
-    const normalizedBoardId = normalizeUUID(data.boardId);
-    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedBoardId = normalizeUUID(data.boardId) || data.boardId;
+    const normalizedTenantId = normalizeUUID(data.tenantId) || data.tenantId;
     const normalizedData = { ...data, boardId: normalizedBoardId, tenantId: normalizedTenantId };
     
     const maxPosition = await db
@@ -172,8 +172,8 @@ export const kanbanStorage = {
   },
 
   async getPhaseById(id: string, tenantId: string): Promise<Phase | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const [phase] = await db
       .select()
       .from(phases)
@@ -182,8 +182,8 @@ export const kanbanStorage = {
   },
 
   async getPhasesByBoard(boardId: string, tenantId: string): Promise<Phase[]> {
-    const normalizedBoardId = normalizeUUID(boardId);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedBoardId = normalizeUUID(boardId) || boardId;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const result = await db
       .select()
       .from(phases)
@@ -194,13 +194,13 @@ export const kanbanStorage = {
   },
 
   async updatePhase(id: string, tenantId: string, data: Partial<InsertPhase>): Promise<Phase | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     // Normalize UUID fields in update payload
     const normalizedData = {
       ...data,
-      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
-      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
+      tenantId: normalizeUUID(data.tenantId),
+      boardId: normalizeUUID(data.boardId),
       updatedAt: new Date()
     };
     const [phase] = await db
@@ -212,16 +212,16 @@ export const kanbanStorage = {
   },
 
   async deletePhase(id: string, tenantId: string): Promise<boolean> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     await db.delete(phases).where(and(eq(phases.id, normalizedId), eq(phases.tenantId, normalizedTenantId)));
     return true;
   },
 
   async reorderPhases(boardId: string, tenantId: string, phaseIds: string[]): Promise<void> {
-    const normalizedBoardId = normalizeUUID(boardId);
-    const normalizedTenantId = normalizeUUID(tenantId);
-    const normalizedPhaseIds = phaseIds.map(id => normalizeUUID(id));
+    const normalizedBoardId = normalizeUUID(boardId) || boardId;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
+    const normalizedPhaseIds = phaseIds.map(id => normalizeUUID(id) || id);
     for (let i = 0; i < normalizedPhaseIds.length; i++) {
       await db
         .update(phases)
@@ -235,13 +235,13 @@ export const kanbanStorage = {
     // Normalize ALL UUID fields in the input data before insert
     const normalizedData = { 
       ...data, 
-      phaseId: normalizeUUID(data.phaseId), 
-      boardId: normalizeUUID(data.boardId), 
-      tenantId: normalizeUUID(data.tenantId),
-      demandId: data.demandId ? normalizeUUID(data.demandId) : null,
-      workflowId: data.workflowId ? normalizeUUID(data.workflowId) : null,
-      assigneeId: data.assigneeId ? normalizeUUID(data.assigneeId) : null,
-      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : null,
+      phaseId: normalizeUUID(data.phaseId) || data.phaseId,
+      boardId: normalizeUUID(data.boardId) || data.boardId,
+      tenantId: normalizeUUID(data.tenantId) || data.tenantId,
+      demandId: normalizeUUID(data.demandId),
+      workflowId: normalizeUUID(data.workflowId),
+      assigneeId: normalizeUUID(data.assigneeId),
+      createdBy: normalizeUUID(data.createdBy),
     };
     
     const maxPosition = await db
@@ -261,8 +261,8 @@ export const kanbanStorage = {
   },
 
   async getCardById(id: string, tenantId: string): Promise<Card | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const [card] = await db
       .select()
       .from(cards)
@@ -271,8 +271,8 @@ export const kanbanStorage = {
   },
 
   async getCardsByBoard(boardId: string, tenantId: string): Promise<Card[]> {
-    const normalizedBoardId = normalizeUUID(boardId);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedBoardId = normalizeUUID(boardId) || boardId;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const result = await db
       .select()
       .from(cards)
@@ -283,8 +283,8 @@ export const kanbanStorage = {
   },
 
   async getCardsByPhase(phaseId: string, tenantId: string): Promise<Card[]> {
-    const normalizedPhaseId = normalizeUUID(phaseId);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedPhaseId = normalizeUUID(phaseId) || phaseId;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const result = await db
       .select()
       .from(cards)
@@ -295,8 +295,8 @@ export const kanbanStorage = {
 
   async getCardByDemandId(demandId: string, tenantId: string): Promise<Card | undefined> {
     try {
-      const normalizedDemandId = normalizeUUID(demandId);
-      const normalizedTenantId = normalizeUUID(tenantId);
+      const normalizedDemandId = normalizeUUID(demandId) || demandId;
+      const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
       const result = await db
         .select()
         .from(cards)
@@ -310,18 +310,18 @@ export const kanbanStorage = {
   },
 
   async updateCard(id: string, tenantId: string, data: Partial<InsertCard>): Promise<Card | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     // Normalize UUID fields in update payload
     const normalizedData = {
       ...data,
-      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
-      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
-      phaseId: data.phaseId ? normalizeUUID(data.phaseId) : undefined,
-      demandId: data.demandId ? normalizeUUID(data.demandId) : data.demandId,
-      workflowId: data.workflowId ? normalizeUUID(data.workflowId) : data.workflowId,
-      assigneeId: data.assigneeId ? normalizeUUID(data.assigneeId) : data.assigneeId,
-      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : data.createdBy,
+      tenantId: normalizeUUID(data.tenantId),
+      boardId: normalizeUUID(data.boardId),
+      phaseId: normalizeUUID(data.phaseId),
+      demandId: normalizeUUID(data.demandId),
+      workflowId: normalizeUUID(data.workflowId),
+      assigneeId: normalizeUUID(data.assigneeId),
+      createdBy: normalizeUUID(data.createdBy),
       updatedAt: new Date()
     };
     const [card] = await db
@@ -333,8 +333,8 @@ export const kanbanStorage = {
   },
 
   async deleteCard(id: string, tenantId: string): Promise<boolean> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     await db.delete(cards).where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)));
     return true;
   },
@@ -345,9 +345,9 @@ export const kanbanStorage = {
     targetPhaseId: string,
     targetPosition: number
   ): Promise<Card | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
-    const normalizedTargetPhaseId = normalizeUUID(targetPhaseId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
+    const normalizedTargetPhaseId = normalizeUUID(targetPhaseId) || targetPhaseId;
     
     const card = await this.getCardById(normalizedId, normalizedTenantId);
     if (!card) return undefined;
@@ -439,13 +439,13 @@ export const kanbanStorage = {
   },
 
   async updateCardField(id: string, tenantId: string, data: Partial<InsertCardField>): Promise<CardField | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     // Normalize UUID fields in update payload
     const normalizedData = {
       ...data,
-      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
-      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
+      tenantId: normalizeUUID(data.tenantId),
+      boardId: normalizeUUID(data.boardId),
       updatedAt: new Date()
     };
     const [field] = await db
@@ -663,14 +663,14 @@ export const kanbanStorage = {
   },
 
   async updateAutomation(id: string, tenantId: string, data: Partial<InsertAutomation>): Promise<Automation | undefined> {
-    const normalizedId = normalizeUUID(id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedId = normalizeUUID(id) || id;
+    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     // Normalize UUID fields in update payload
     const normalizedData = {
       ...data,
-      tenantId: data.tenantId ? normalizeUUID(data.tenantId) : undefined,
-      boardId: data.boardId ? normalizeUUID(data.boardId) : undefined,
-      createdBy: data.createdBy ? normalizeUUID(data.createdBy) : data.createdBy,
+      tenantId: normalizeUUID(data.tenantId),
+      boardId: normalizeUUID(data.boardId),
+      createdBy: normalizeUUID(data.createdBy),
       updatedAt: new Date()
     };
     const [automation] = await db

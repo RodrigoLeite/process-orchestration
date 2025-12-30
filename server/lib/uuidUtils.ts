@@ -10,8 +10,9 @@
  * - Comma-separated byte strings like "153,73,164,252,..."
  * - Buffer/Uint8Array
  */
-export function normalizeUUID(value: any): string {
-  if (!value) return value;
+export function normalizeUUID(value: any): string | undefined {
+  // Return undefined for empty strings, null, or undefined
+  if (!value || value === '' || value === null || value === undefined) return undefined;
   
   // Already a properly formatted UUID string
   if (typeof value === 'string') {
@@ -26,7 +27,8 @@ export function normalizeUUID(value: any): string {
       return bytesToUUID(bytes);
     }
     
-    return value;
+    // If it's a non-empty string that's not a UUID, return undefined
+    return undefined;
   }
   
   // Buffer or Uint8Array
@@ -35,7 +37,8 @@ export function normalizeUUID(value: any): string {
     return bytesToUUID(bytes);
   }
   
-  return String(value);
+  // For any other type, return undefined
+  return undefined;
 }
 
 /**
