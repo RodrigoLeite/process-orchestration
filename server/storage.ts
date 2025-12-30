@@ -211,12 +211,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDemands(tenantId?: string): Promise<Demand[]> {
-    if (tenantId) {
-      const result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
-      return normalizeRecords(result);
+    try {
+      if (tenantId) {
+        const result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+        return normalizeRecords(result || []);
+      }
+      const result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
+      return normalizeRecords(result || []);
+    } catch (error) {
+      console.error('Error in getDemands:', error);
+      return [];
     }
-    const result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
-    return normalizeRecords(result);
   }
 
   async getDemand(id: string): Promise<Demand | undefined> {
@@ -700,11 +705,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStageBottlenecksByDemand(demandId: string): Promise<StageBottleneck[]> {
-    return await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.demandId, demandId));
+    try {
+      const result = await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.demandId, demandId));
+      return result || [];
+    } catch (error) {
+      console.error('Error in getStageBottlenecksByDemand:', error);
+      return [];
+    }
   }
 
   async getStageBottlenecksByStage(stageId: string): Promise<StageBottleneck[]> {
-    return await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.stageId, stageId));
+    try {
+      const result = await this.db.select().from(stageBottlenecks).where(eq(stageBottlenecks.stageId, stageId));
+      return result || [];
+    } catch (error) {
+      console.error('Error in getStageBottlenecksByStage:', error);
+      return [];
+    }
   }
 
   async createStageInsight(insight: InsertStageInsight): Promise<StageInsight> {
@@ -713,11 +730,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStageInsightsByDemand(demandId: string): Promise<StageInsight[]> {
-    return await this.db.select().from(stageInsights).where(eq(stageInsights.demandId, demandId));
+    try {
+      const result = await this.db.select().from(stageInsights).where(eq(stageInsights.demandId, demandId));
+      return result || [];
+    } catch (error) {
+      console.error('Error in getStageInsightsByDemand:', error);
+      return [];
+    }
   }
 
   async getStageInsightsByStage(stageId: string): Promise<StageInsight[]> {
-    return await this.db.select().from(stageInsights).where(eq(stageInsights.stageId, stageId));
+    try {
+      const result = await this.db.select().from(stageInsights).where(eq(stageInsights.stageId, stageId));
+      return result || [];
+    } catch (error) {
+      console.error('Error in getStageInsightsByStage:', error);
+      return [];
+    }
   }
 
   async getTenant(id: string): Promise<Tenant | undefined> {
