@@ -48,6 +48,10 @@ export async function getOrCreateBoard(
     color: "#3b82f6"
   });
 
+  if (!newBoard || !newBoard.id) {
+    throw new Error('Failed to create new board');
+  }
+
   await createBoardPhasesFromSteps(newBoard.id, tenantId, steps);
 
   return newBoard;
