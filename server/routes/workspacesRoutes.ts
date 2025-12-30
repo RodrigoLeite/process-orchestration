@@ -244,24 +244,26 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    console.log('[WORKSPACES] Created new tenant:', newTenant.id);
+    // Normalize the tenant ID before using it in other operations
+    const normalizedTenantId = normalizeUUID(newTenant.id);
+    console.log('[WORKSPACES] Created new tenant:', normalizedTenantId);
 
     // Create default agents for the new tenant
     try {
       const { createDefaultAgentsForTenant } = await import('../lib/agentsStorage');
-      await createDefaultAgentsForTenant(newTenant.id);
+      await createDefaultAgentsForTenant(normalizedTenantId);
     } catch (agentError) {
       console.error('[WORKSPACES] Error creating default agents:', agentError);
     }
 
     // Add user as owner to the new tenant
     const userId = normalizeUUID(req.user.id);
-    console.log('[WORKSPACES] Adding user to tenant:', { userId, tenantId: newTenant.id });
+    console.log('[WORKSPACES] Adding user to tenant:', { userId, tenantId: normalizedTenantId });
 
     const userInsertResult = await storage.db
       .insert(tenantUsers)
       .values({
-        tenantId: newTenant.id,
+        tenantId: normalizedTenantId,
         userId: userId,
         role: 'owner',
       })
@@ -281,7 +283,7 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
     res.json({
       success: true,
       workspace: {
-        id: normalizeUUID(newTenant.id),
+        id: normalizedTenantId,
         name: newTenant.name,
         role: 'owner',
       },
