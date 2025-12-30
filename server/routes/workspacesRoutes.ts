@@ -200,7 +200,7 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
     
     console.log('[WORKSPACES] Generated slug:', slug);
 
-    // Direct database insert with detailed logging
+    // Direct database insert with query-back approach (more reliable than .returning())
     const tenantValues = {
       name,
       slug,
@@ -212,38 +212,35 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
 
     let newTenant: any;
     try {
-      newTenant = await storage.createTenant(tenantValues as any);
-      console.log('[WORKSPACES] Created tenant via storage:', newTenant);
+      const { tenants: tenantsTable } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      // Insert the tenant (don't rely on .returning())
+      await storage.db
+        .insert(tenantsTable)
+        .values(tenantValues as any);
+      
+      console.log('[WORKSPACES] Insert statement executed, fetching tenant by slug...');
+      
+      // Query the tenant back by slug (guaranteed to work)
+      const fetchedTenants = await storage.db
+        .select()
+        .from(tenantsTable)
+        .where(eq(tenantsTable.slug, slug))
+        .limit(1);
+      
+      newTenant = fetchedTenants[0];
+      console.log('[WORKSPACES] Fetched tenant:', newTenant);
+      
     } catch (dbError: any) {
-      console.error('[WORKSPACES] Database insert error via storage:', dbError.message || dbError);
-      try {
-        // Fallback: try direct insert with proper error handling
-        const { tenants: tenantsTable } = await import("@shared/schema");
-        const directResult = await storage.db
-          .insert(tenantsTable)
-          .values(tenantValues as any);
-        console.log('[WORKSPACES] Direct insert executed, now fetching...');
-        
-        // Query the tenant back
-        const { eq } = await import("drizzle-orm");
-        const fetchedTenants = await storage.db
-          .select()
-          .from(tenantsTable)
-          .where(eq(tenantsTable.slug, slug))
-          .limit(1);
-        
-        newTenant = fetchedTenants[0];
-        console.log('[WORKSPACES] Fetched tenant after direct insert:', newTenant);
-      } catch (fallbackError: any) {
-        console.error('[WORKSPACES] Fallback error:', fallbackError.message || fallbackError);
-        res.status(500).json({ error: 'Failed to create workspace: ' + (fallbackError.message || 'unknown error') });
-        return;
-      }
+      console.error('[WORKSPACES] Database error:', dbError.message || dbError);
+      res.status(500).json({ error: 'Failed to create workspace: ' + (dbError.message || 'unknown error') });
+      return;
     }
 
     if (!newTenant || !newTenant.id) {
-      console.error('[WORKSPACES] Failed to create tenant - no valid response:', newTenant);
-      res.status(500).json({ error: 'Failed to create workspace - invalid response' });
+      console.error('[WORKSPACES] Failed to fetch tenant after insert:', newTenant);
+      res.status(500).json({ error: 'Failed to create workspace - tenant not found after insert' });
       return;
     }
 
