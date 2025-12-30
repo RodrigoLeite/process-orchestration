@@ -7,7 +7,7 @@ import { userManagementService } from '../admin/userManagementService';
 import { teamsService } from '../admin/teamsService';
 import { rolesService } from '../admin/rolesService';
 import { PERMISSIONS } from '@shared/schema';
-import { normalizeUUID } from '../lib/uuidUtils';
+import { normalizeUUID, normalizeRecord } from '../lib/uuidUtils';
 
 const router = Router();
 
@@ -469,7 +469,7 @@ router.post(
       
       const role = await rolesService.createRole(tenantId, data);
       
-      res.status(201).json({ role });
+      res.status(201).json({ role: normalizeRecord(role) });
     } catch (error: any) {
       console.error('Error creating role:', error);
       if (error instanceof z.ZodError) {

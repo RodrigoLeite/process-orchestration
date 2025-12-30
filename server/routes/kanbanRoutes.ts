@@ -81,7 +81,7 @@ router.post("/boards", async (req: Request, res: Response) => {
       metadata: { boardName: board.name },
     });
     
-    res.status(201).json(board);
+    res.status(201).json(normalizeRecord(board));
   } catch (error) {
     console.error("Error creating board:", error);
     res.status(500).json({ error: "Failed to create board" });
@@ -96,7 +96,7 @@ router.put("/boards/:id", async (req: Request, res: Response) => {
     if (!board) {
       return res.status(404).json({ error: "Board not found" });
     }
-    res.json(board);
+    res.json(normalizeRecord(board));
   } catch (error) {
     console.error("Error updating board:", error);
     res.status(500).json({ error: "Failed to update board" });
@@ -135,7 +135,7 @@ router.post("/boards/:boardId/phases", async (req: Request, res: Response) => {
     const { boardId } = req.params;
     const data = insertPhaseSchema.parse({ ...req.body, tenantId, boardId });
     const phase = await kanbanStorage.createPhase(data);
-    res.status(201).json(phase);
+    res.status(201).json(normalizeRecord(phase));
   } catch (error) {
     console.error("Error creating phase:", error);
     res.status(500).json({ error: "Failed to create phase" });
@@ -150,7 +150,7 @@ router.put("/phases/:id", async (req: Request, res: Response) => {
     if (!phase) {
       return res.status(404).json({ error: "Phase not found" });
     }
-    res.json(phase);
+    res.json(normalizeRecord(phase));
   } catch (error) {
     console.error("Error updating phase:", error);
     res.status(500).json({ error: "Failed to update phase" });
@@ -240,7 +240,7 @@ router.post("/boards/:boardId/cards", async (req: Request, res: Response) => {
       metadata: { title: card.title },
     });
     
-    res.status(201).json(card);
+    res.status(201).json(normalizeRecord(card));
   } catch (error) {
     console.error("Error creating card:", error);
     res.status(500).json({ error: "Failed to create card" });
@@ -279,7 +279,7 @@ router.put("/cards/:id", async (req: Request, res: Response) => {
       });
     }
     
-    res.json(card);
+    res.json(normalizeRecord(card));
   } catch (error) {
     console.error("Error updating card:", error);
     res.status(500).json({ error: "Failed to update card" });
@@ -329,7 +329,7 @@ router.post("/cards/:id/move", async (req: Request, res: Response) => {
       });
     }
     
-    res.json(card);
+    res.json(normalizeRecord(card));
   } catch (error) {
     console.error("Error moving card:", error);
     res.status(500).json({ error: "Failed to move card" });
