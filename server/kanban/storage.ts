@@ -1,6 +1,6 @@
 import { storage } from "../storage";
 import { eq, and, asc, desc, sql, inArray, or, isNull } from "drizzle-orm";
-import { normalizeUUID } from "../lib/uuidUtils";
+import { normalizeUUID, normalizeRecord, normalizeRecords } from "../lib/uuidUtils";
 import {
   boards,
   phases,
@@ -49,7 +49,7 @@ export const kanbanStorage = {
     if (data.id) {
       const result = await db.select().from(boards).where(eq(boards.id, data.id)).limit(1).catch(() => []);
       if (Array.isArray(result) && result[0]) {
-        return result[0];
+        return normalizeRecord(result[0]) as Board;
       }
     }
     
@@ -58,15 +58,17 @@ export const kanbanStorage = {
     if (!Array.isArray(result) || !result[0]) {
       throw new Error('Failed to create board');
     }
-    return result[0];
+    return normalizeRecord(result[0]) as Board;
   },
 
   async getBoardById(id: string, tenantId: string): Promise<Board | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const [board] = await db
       .select()
       .from(boards)
-      .where(and(eq(boards.id, id), eq(boards.tenantId, tenantId)));
-    return board;
+      .where(and(eq(boards.id, normalizedId), eq(boards.tenantId, normalizedTenantId)));
+    return board ? normalizeRecord(board) as Board : undefined;
   },
 
   async getBoardsByTenant(tenantId: string): Promise<(Board & { cardsCount: number })[]> {
@@ -100,12 +102,13 @@ export const kanbanStorage = {
 
   async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {
     try {
+      const normalizedTenantId = normalizeUUID(tenantId);
       const result = await db
         .select()
         .from(boards)
-        .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, tenantId)))
+        .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, normalizedTenantId)))
         .catch(() => []);
-      return (Array.isArray(result) && result.length > 0) ? result[0] : undefined;
+      return (Array.isArray(result) && result.length > 0) ? normalizeRecord(result[0]) as Board : undefined;
     } catch (error) {
       console.error('Error in getBoardByHash:', error);
       return undefined;
@@ -130,34 +133,42 @@ export const kanbanStorage = {
 
   // ========== PHASES ==========
   async createPhase(data: InsertPhase): Promise<Phase> {
+    const normalizedBoardId = normalizeUUID(data.boardId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { ...data, boardId: normalizedBoardId, tenantId: normalizedTenantId };
+    
     const maxPosition = await db
       .select({ max: sql<number>`COALESCE(MAX(position), -1)` })
       .from(phases)
-      .where(and(eq(phases.boardId, data.boardId), eq(phases.tenantId, data.tenantId)));
+      .where(and(eq(phases.boardId, normalizedBoardId), eq(phases.tenantId, normalizedTenantId)));
     
     const [phase] = await db
       .insert(phases)
-      .values({ ...data, position: (maxPosition[0]?.max ?? -1) + 1 })
+      .values({ ...normalizedData, position: (maxPosition[0]?.max ?? -1) + 1 })
       .returning();
-    return phase;
+    return normalizeRecord(phase) as Phase;
   },
 
   async getPhaseById(id: string, tenantId: string): Promise<Phase | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const [phase] = await db
       .select()
       .from(phases)
-      .where(and(eq(phases.id, id), eq(phases.tenantId, tenantId)));
-    return phase;
+      .where(and(eq(phases.id, normalizedId), eq(phases.tenantId, normalizedTenantId)));
+    return phase ? normalizeRecord(phase) as Phase : undefined;
   },
 
   async getPhasesByBoard(boardId: string, tenantId: string): Promise<Phase[]> {
+    const normalizedBoardId = normalizeUUID(boardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const result = await db
       .select()
       .from(phases)
-      .where(and(eq(phases.boardId, boardId), eq(phases.tenantId, tenantId)))
+      .where(and(eq(phases.boardId, normalizedBoardId), eq(phases.tenantId, normalizedTenantId)))
       .orderBy(asc(phases.position))
       .catch(() => [] as Phase[]);
-    return result || [];
+    return normalizeRecords(result || []) as Phase[];
   },
 
   async updatePhase(id: string, tenantId: string, data: Partial<InsertPhase>): Promise<Phase | undefined> {
@@ -185,56 +196,75 @@ export const kanbanStorage = {
 
   // ========== CARDS ==========
   async createCard(data: InsertCard): Promise<Card> {
+    const normalizedPhaseId = normalizeUUID(data.phaseId);
+    const normalizedBoardId = normalizeUUID(data.boardId);
+    const normalizedTenantId = normalizeUUID(data.tenantId);
+    const normalizedData = { 
+      ...data, 
+      phaseId: normalizedPhaseId, 
+      boardId: normalizedBoardId, 
+      tenantId: normalizedTenantId 
+    };
+    
     const maxPosition = await db
       .select({ max: sql<number>`COALESCE(MAX(position), -1)` })
       .from(cards)
-      .where(and(eq(cards.phaseId, data.phaseId), eq(cards.tenantId, data.tenantId)));
+      .where(and(eq(cards.phaseId, normalizedPhaseId), eq(cards.tenantId, normalizedTenantId)));
     
     const [card] = await db
       .insert(cards)
       .values({ 
-        ...data, 
+        ...normalizedData, 
         position: (maxPosition[0]?.max ?? -1) + 1,
         phaseEnteredAt: new Date()
       })
       .returning();
-    return card;
+    return normalizeRecord(card) as Card;
   },
 
   async getCardById(id: string, tenantId: string): Promise<Card | undefined> {
+    const normalizedId = normalizeUUID(id);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const [card] = await db
       .select()
       .from(cards)
-      .where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)));
-    return card;
+      .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)));
+    return card ? normalizeRecord(card) as Card : undefined;
   },
 
   async getCardsByBoard(boardId: string, tenantId: string): Promise<Card[]> {
+    const normalizedBoardId = normalizeUUID(boardId);
+    const normalizedTenantId = normalizeUUID(tenantId);
     const result = await db
       .select()
       .from(cards)
-      .where(and(eq(cards.boardId, boardId), eq(cards.tenantId, tenantId)))
+      .where(and(eq(cards.boardId, normalizedBoardId), eq(cards.tenantId, normalizedTenantId)))
       .orderBy(asc(cards.position))
       .catch(() => [] as Card[]);
-    return result || [];
+    return normalizeRecords(result || []) as Card[];
   },
 
   async getCardsByPhase(phaseId: string, tenantId: string): Promise<Card[]> {
-    return db
+    const normalizedPhaseId = normalizeUUID(phaseId);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const result = await db
       .select()
       .from(cards)
-      .where(and(eq(cards.phaseId, phaseId), eq(cards.tenantId, tenantId)))
+      .where(and(eq(cards.phaseId, normalizedPhaseId), eq(cards.tenantId, normalizedTenantId)))
       .orderBy(asc(cards.position));
+    return normalizeRecords(result) as Card[];
   },
 
   async getCardByDemandId(demandId: string, tenantId: string): Promise<Card | undefined> {
     try {
+      const normalizedDemandId = normalizeUUID(demandId);
+      const normalizedTenantId = normalizeUUID(tenantId);
       const result = await db
         .select()
         .from(cards)
-        .where(and(eq(cards.demandId, demandId), eq(cards.tenantId, tenantId)))
+        .where(and(eq(cards.demandId, normalizedDemandId), eq(cards.tenantId, normalizedTenantId)))
         .catch(() => []);
-      return (Array.isArray(result) && result.length > 0) ? result[0] : undefined;
+      return (Array.isArray(result) && result.length > 0) ? normalizeRecord(result[0]) as Card : undefined;
     } catch (error) {
       console.error('Error in getCardByDemandId:', error);
       return undefined;
