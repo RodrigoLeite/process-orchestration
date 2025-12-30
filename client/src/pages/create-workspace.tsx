@@ -77,14 +77,27 @@ export default function CreateWorkspacePage() {
       const data = await response.json();
       toast.success('Workspace criado com sucesso!');
       
-      // Invalidate queries
-      await queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
-      await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
+      // Switch to the new workspace and redirect
+      const workspaceId = data.workspace.id;
       
-      // Redirect to the new workspace
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
+      const switchResponse = await fetch(`/api/workspaces/${workspaceId}/switch`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      if (switchResponse.ok) {
+        // Invalidate queries
+        await queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
+        await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
+        
+        // Redirect to the new workspace dashboard
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
+      } else {
+        // If switch fails, just redirect to workspaces
+        navigate('/workspaces');
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
