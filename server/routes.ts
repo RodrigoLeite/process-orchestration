@@ -278,15 +278,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demand not found" });
       }
       
+      // Normalize UUID for tenant comparison
+      const normalizedDemand = normalizeRecord(demand);
+      const normalizedTenantId = normalizeUUID(tenantId);
+      const normalizedDemandTenantId = normalizeUUID(normalizedDemand.tenantId);
+      
       // Verify tenant access
-      if (tenantId && demand.tenantId && demand.tenantId !== tenantId) {
+      if (normalizedTenantId && normalizedDemandTenantId && normalizedDemandTenantId !== normalizedTenantId) {
         return res.status(403).json({ error: "Access denied: Demand belongs to a different tenant" });
       }
       
       // Include workflow steps if demand has a workflow
       let workflowSteps = null;
-      if (demand.workflowId) {
-        const workflow = await storage.getWorkflowFromDb(demand.workflowId, tenantId);
+      if (normalizedDemand.workflowId) {
+        const workflow = await storage.getWorkflowFromDb(normalizedDemand.workflowId, tenantId);
         if (workflow) {
           workflowSteps = workflow.steps;
         }
@@ -294,10 +299,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate delay risk
       const demandWithRisk = {
-        ...demand,
+        ...normalizedDemand,
         workflowSteps,
-        delayRisk: demand.delayRisk || calculateDelayRisk(demand),
-        delay_risk: demand.delayRisk || calculateDelayRisk(demand)
+        delayRisk: normalizedDemand.delayRisk || calculateDelayRisk(normalizedDemand),
+        delay_risk: normalizedDemand.delayRisk || calculateDelayRisk(normalizedDemand)
       };
       res.json(demandWithRisk);
     } catch (error) {
@@ -379,13 +384,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 7. Fetch updated demand with workflow info
       const updatedDemand = await storage.getDemand(demand.id);
+      const normalizedUpdatedDemand = updatedDemand ? normalizeRecord(updatedDemand) : null;
       
       res.status(201).json({ 
-        id: updatedDemand?.id || demand.id, 
-        parsed: updatedDemand?.parsed || demand.parsed, 
-        route_to: updatedDemand?.routeTo || demand.routeTo,
-        workflowId: updatedDemand?.workflowId || null,
-        status: updatedDemand?.status || "routed"
+        id: normalizedUpdatedDemand?.id || normalizeRecord(demand).id, 
+        parsed: normalizedUpdatedDemand?.parsed || demand.parsed, 
+        route_to: normalizedUpdatedDemand?.routeTo || demand.routeTo,
+        workflowId: normalizedUpdatedDemand?.workflowId || null,
+        status: normalizedUpdatedDemand?.status || "routed"
       });
     } catch (error) {
       console.error("Error creating demand:", error);
@@ -403,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!demand) {
         return res.status(404).json({ error: "Demand not found" });
       }
-      res.json(demand);
+      res.json(normalizeRecord(demand));
     } catch (error) {
       console.error("Error updating demand:", error);
       res.status(500).json({ error: "Failed to update demand" });
