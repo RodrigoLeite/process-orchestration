@@ -1,4 +1,5 @@
 import { storage } from "../../storage";
+import { normalizeUUID } from "../uuidUtils";
 
 /**
  * Save agent execution logs to the database
@@ -34,11 +35,15 @@ export async function saveAgentLog(
       console.log(`[AGENT_LOG] Agent created with ID: ${agentId}`);
     }
 
+    // Normalize agentId before using in database operation
+    const normalizedAgentId = normalizeUUID(agentId);
+    const normalizedTenantId = normalizeUUID(tenantId || "00000000-0000-0000-0000-000000000000");
+
     // Create the log entry
-    console.log(`[AGENT_LOG] Creating log entry for agentId: ${agentId}`);
+    console.log(`[AGENT_LOG] Creating log entry for agentId: ${normalizedAgentId}`);
     const logEntry = await storage.createAgentLog({
-      agentId,
-      tenantId: tenantId || "00000000-0000-0000-0000-000000000000",
+      agentId: normalizedAgentId,
+      tenantId: normalizedTenantId,
       inputJson: input,
       outputJson: output,
       status

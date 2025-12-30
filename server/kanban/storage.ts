@@ -85,11 +85,16 @@ export const kanbanStorage = {
   },
 
   async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {
-    const [board] = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, tenantId)));
-    return board;
+    try {
+      const result = await db
+        .select()
+        .from(boards)
+        .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, tenantId)));
+      return result?.[0];
+    } catch (error) {
+      console.error('Error in getBoardByHash:', error);
+      return undefined;
+    }
   },
 
   async updateBoard(id: string, tenantId: string, data: Partial<InsertBoard>): Promise<Board | undefined> {
@@ -208,11 +213,16 @@ export const kanbanStorage = {
   },
 
   async getCardByDemandId(demandId: string, tenantId: string): Promise<Card | undefined> {
-    const [card] = await db
-      .select()
-      .from(cards)
-      .where(and(eq(cards.demandId, demandId), eq(cards.tenantId, tenantId)));
-    return card;
+    try {
+      const result = await db
+        .select()
+        .from(cards)
+        .where(and(eq(cards.demandId, demandId), eq(cards.tenantId, tenantId)));
+      return result?.[0];
+    } catch (error) {
+      console.error('Error in getCardByDemandId:', error);
+      return undefined;
+    }
   },
 
   async updateCard(id: string, tenantId: string, data: Partial<InsertCard>): Promise<Card | undefined> {
