@@ -86,8 +86,13 @@ export function normalizeRecord<T extends Record<string, any>>(record: T): T {
   
   for (const key of Object.keys(normalized)) {
     const value = normalized[key];
-    if (value && typeof value === 'string' && value.includes(',') && UUID_FIELDS.includes(key)) {
-      normalized[key] = normalizeUUID(value);
+    if (UUID_FIELDS.includes(key)) {
+      // Check if it's a comma-separated string or an array of bytes
+      if ((typeof value === 'string' && value.includes(',')) || 
+          Array.isArray(value) || 
+          value instanceof Uint8Array) {
+        normalized[key] = normalizeUUID(value);
+      }
     }
   }
   
