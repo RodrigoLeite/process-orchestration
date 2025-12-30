@@ -38,12 +38,12 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use("*", async (req, res, next) => {
-    // CRITICAL: Log ALL requests before Vite takes over
+    // CRITICAL: Log ALL requests before Vite takes over (disabled to reduce noise)
     const path = req.originalUrl.split('?')[0]; // Get original path without query string
-    console.log('[BEFORE VITE]', req.method, path);
+    // console.log('[BEFORE VITE]', req.method, path);
     
     if (path.startsWith("/api")) {
-      console.log('[SKIP VITE] Passing API route to Express:', path);
+      // console.log('[SKIP VITE] Passing API route to Express:', path);
       return next();
     }
     
@@ -53,10 +53,10 @@ export async function setupVite(app: Express, server: Server) {
 
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
-    // Skip this middleware for API routes - let Express handle them
-    console.log('[VITE MIDDLEWARE] Path:', req.path, 'URL:', req.url);
+    // Skip this middleware for API routes - let Express handle them (disabled to reduce noise)
+    // console.log('[VITE MIDDLEWARE] Path:', req.path, 'URL:', req.url);
     if (req.path.startsWith("/api")) {
-      console.log('[VITE MIDDLEWARE] Skipping API route:', req.path);
+      // console.log('[VITE MIDDLEWARE] Skipping API route:', req.path);
       return next();
     }
 

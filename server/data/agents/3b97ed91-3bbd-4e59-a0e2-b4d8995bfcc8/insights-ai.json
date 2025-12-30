@@ -1,0 +1,66 @@
+{
+  "agentId": "insights-ai",
+  "tenantId": "3b97ed91-3bbd-4e59-a0e2-b4d8995bfcc8",
+  "graph": {
+    "nodes": [
+      {
+        "id": "input-1",
+        "type": "chatInput",
+        "position": {
+          "x": 100,
+          "y": 200
+        },
+        "data": {
+          "label": "Entrada",
+          "description": "Entrada de dados para o agente"
+        }
+      },
+      {
+        "id": "agent-1",
+        "type": "agent",
+        "position": {
+          "x": 350,
+          "y": 200
+        },
+        "data": {
+          "label": "Gerador de Insights",
+          "description": "Gera insights e recomendações baseados em dados",
+          "temperature": 0.7,
+          "modelName": "gpt-4-turbo",
+          "modelProvider": "OpenAI"
+        }
+      },
+      {
+        "id": "output-1",
+        "type": "output",
+        "position": {
+          "x": 600,
+          "y": 200
+        },
+        "data": {
+          "label": "Saída",
+          "description": "Resultado do agente"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1-2",
+        "source": "input-1",
+        "target": "agent-1"
+      },
+      {
+        "id": "e2-3",
+        "source": "agent-1",
+        "target": "output-1"
+      }
+    ],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  },
+  "createdAt": "2025-12-30T17:26:42.880Z",
+  "updatedAt": "2025-12-30T17:26:42.880Z"
+}
