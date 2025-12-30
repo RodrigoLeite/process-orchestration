@@ -1,5 +1,6 @@
 import { kanbanStorage } from "./storage";
 import { generateWorkflowHash, WorkflowStep } from "../lib/workflowHash";
+import { normalizeUUID } from "../lib/uuidUtils";
 import type { Board, Phase } from "@shared/schema";
 
 export function convertEtapasToSteps(etapas: any[]): WorkflowStep[] {
@@ -32,9 +33,11 @@ export async function getOrCreateBoard(
   const existingBoard = await kanbanStorage.getBoardByHash(hash, tenantId);
   
   if (existingBoard) {
-    const existingPhases = await kanbanStorage.getPhasesByBoard(existingBoard.id, tenantId);
+    const normalizedBoardId = normalizeUUID(existingBoard.id);
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const existingPhases = await kanbanStorage.getPhasesByBoard(normalizedBoardId, normalizedTenantId);
     if (existingPhases.length === 0) {
-      await createBoardPhasesFromSteps(existingBoard.id, tenantId, steps);
+      await createBoardPhasesFromSteps(normalizedBoardId, normalizedTenantId, steps);
     }
     return existingBoard;
   }
@@ -52,7 +55,11 @@ export async function getOrCreateBoard(
     throw new Error('Failed to create new board');
   }
 
-  await createBoardPhasesFromSteps(newBoard.id, tenantId, steps);
+  // Normalize IDs before using in database operations
+  const normalizedBoardId = normalizeUUID(newBoard.id);
+  const normalizedTenantId = normalizeUUID(tenantId);
+  
+  await createBoardPhasesFromSteps(normalizedBoardId, normalizedTenantId, steps);
 
   return newBoard;
 }
