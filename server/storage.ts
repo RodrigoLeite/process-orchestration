@@ -375,21 +375,25 @@ export class DatabaseStorage implements IStorage {
 
   async getWorkflowFromDb(id: string, tenantId?: string): Promise<Workflow | undefined> {
     try {
+      if (!id) return undefined;
+      
+      const normalizedId = normalizeUUID(id) || id;
       let query: any;
       if (tenantId) {
+        const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
         query = this.db
           .select()
           .from(workflows)
-          .where(and(eq(workflows.id, id), eq(workflows.tenantId, tenantId as any)))
+          .where(and(eq(workflows.id, normalizedId), eq(workflows.tenantId, normalizedTenantId as any)))
           .limit(1);
       } else {
         query = this.db
           .select()
           .from(workflows)
-          .where(eq(workflows.id, id))
+          .where(eq(workflows.id, normalizedId))
           .limit(1);
       }
-      const result = await query;
+      const result = await query.catch(() => []);
       return Array.isArray(result) && result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getWorkflowFromDb:', error);
@@ -398,27 +402,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllWorkflowsFromDb(tenantId?: string): Promise<Workflow[]> {
-    if (tenantId) {
+    try {
+      if (tenantId) {
+        const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
+        return await this.db
+          .select()
+          .from(workflows)
+          .where(eq(workflows.tenantId, normalizedTenantId as any))
+          .orderBy(desc(workflows.createdAt))
+          .catch(() => []);
+      }
       return await this.db
         .select()
         .from(workflows)
-        .where(eq(workflows.tenantId, tenantId as any))
-        .orderBy(desc(workflows.createdAt));
+        .orderBy(desc(workflows.createdAt))
+        .catch(() => []);
+    } catch (error) {
+      console.error('Error in getAllWorkflowsFromDb:', error);
+      return [];
     }
-    return await this.db
-      .select()
-      .from(workflows)
-      .orderBy(desc(workflows.createdAt));
   }
 
   async getWorkflowByHash(hash: string, tenantId?: string): Promise<Workflow | undefined> {
     try {
+      if (!hash) return undefined;
+      
       let query: any;
       if (tenantId) {
+        const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
         query = this.db
           .select()
           .from(workflows)
-          .where(and(eq(workflows.workflowHash, hash), eq(workflows.tenantId, tenantId as any)))
+          .where(and(eq(workflows.workflowHash, hash), eq(workflows.tenantId, normalizedTenantId as any)))
           .limit(1);
       } else {
         query = this.db
@@ -427,7 +442,7 @@ export class DatabaseStorage implements IStorage {
           .where(eq(workflows.workflowHash, hash))
           .limit(1);
       }
-      const result = await query;
+      const result = await query.catch(() => []);
       return Array.isArray(result) && result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getWorkflowByHash:', error);
