@@ -590,7 +590,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAgentLog(log: InsertAgentLog): Promise<AgentLog> {
-    const result = await this.db.insert(agentLogs).values(log).returning();
+    await this.db.insert(agentLogs).values(log);
+    // Query back the created log
+    const result = await this.db.select().from(agentLogs).where(eq(agentLogs.agentId, log.agentId)).orderBy(desc(agentLogs.createdAt)).limit(1).catch(() => []);
+    if (!Array.isArray(result) || result.length === 0) {
+      throw new Error('Failed to create agent log');
+    }
     return result[0];
   }
 

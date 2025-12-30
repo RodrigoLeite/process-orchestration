@@ -89,8 +89,9 @@ export const kanbanStorage = {
       const result = await db
         .select()
         .from(boards)
-        .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, tenantId)));
-      return result?.[0];
+        .where(and(eq(boards.workflowHash, hash), eq(boards.tenantId, tenantId)))
+        .catch(() => []);
+      return (Array.isArray(result) && result.length > 0) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getBoardByHash:', error);
       return undefined;

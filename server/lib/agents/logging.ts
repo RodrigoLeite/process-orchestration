@@ -48,7 +48,9 @@ export async function saveAgentLog(
       outputJson: output,
       status
     });
-    console.log(`[AGENT_LOG] Log entry created with ID: ${logEntry.id}`);
+    if (logEntry && logEntry.id) {
+      console.log(`[AGENT_LOG] Log entry created with ID: ${logEntry.id}`);
+    }
   } catch (error) {
     console.error(`[AGENT_LOG] Failed to save agent log for "${agentName}":`, error);
     // Don't throw - logging failures shouldn't break the main operation
