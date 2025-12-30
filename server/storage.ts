@@ -223,8 +223,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDemand(insertDemand: InsertDemand): Promise<Demand> {
-    const result = await this.db.insert(demands).values(insertDemand).returning();
-    return result[0];
+    // Insert the demand
+    const insertResult = await this.db.insert(demands).values(insertDemand);
+    
+    // Since .returning() may not work reliably, we need to find the created demand
+    // Use the ID from insertDemand if available, or query for the most recent
+    let demand: Demand | undefined;
+    
+    if (insertDemand.id) {
+      // If ID is provided, query by ID
+      const result = await this.db
+        .select()
+        .from(demands)
+        .where(eq(demands.id, insertDemand.id))
+        .limit(1);
+      demand = result[0];
+    } else {
+      // Otherwise query the most recent demand for this tenant
+      const result = await this.db
+        .select()
+        .from(demands)
+        .where(eq(demands.tenantId, insertDemand.tenantId))
+        .orderBy(desc(demands.createdAt))
+        .limit(1);
+      demand = result[0];
+    }
+    
+    if (!demand) {
+      throw new Error('Failed to create demand: created demand not found');
+    }
+    
+    return demand;
   }
 
   async updateDemandStatus(id: string, status: string): Promise<Demand | undefined> {
