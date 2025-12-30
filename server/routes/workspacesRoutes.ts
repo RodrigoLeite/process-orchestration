@@ -260,25 +260,45 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
     const userId = normalizeUUID(req.user.id);
     console.log('[WORKSPACES] Adding user to tenant:', { userId, tenantId: normalizedTenantId });
 
-    const userInsertResult = await storage.db
-      .insert(tenantUsers)
-      .values({
-        tenantId: normalizedTenantId,
-        userId: userId,
-        role: 'owner',
-      })
-      .returning();
+    try {
+      await storage.db
+        .insert(tenantUsers)
+        .values({
+          tenantId: normalizedTenantId,
+          userId: userId,
+          role: 'owner',
+        });
 
-    console.log('[WORKSPACES] User insert result:', userInsertResult);
+      console.log('[WORKSPACES] Tenant user insert completed, querying back...');
+      
+      // Query the tenant user back by tenant + user IDs
+      const { and } = await import("drizzle-orm");
+      const fetchedTenantUsers = await storage.db
+        .select()
+        .from(tenantUsers)
+        .where(
+          and(
+            eq(tenantUsers.tenantId, normalizedTenantId),
+            eq(tenantUsers.userId, userId)
+          )
+        )
+        .limit(1);
 
-    if (!userInsertResult || userInsertResult.length === 0) {
-      console.error('[WORKSPACES] Failed to add user to tenant');
-      res.status(500).json({ error: 'Failed to add user to workspace' });
+      console.log('[WORKSPACES] Fetched tenant user:', fetchedTenantUsers);
+
+      if (!fetchedTenantUsers || fetchedTenantUsers.length === 0) {
+        console.error('[WORKSPACES] Failed to fetch tenant user after insert');
+        res.status(500).json({ error: 'Failed to add user to workspace' });
+        return;
+      }
+
+      const newTenantUser = fetchedTenantUsers[0];
+      console.log('[WORKSPACES] Added user as owner:', newTenantUser.id);
+    } catch (userError: any) {
+      console.error('[WORKSPACES] Error adding user to tenant:', userError.message || userError);
+      res.status(500).json({ error: 'Failed to add user to workspace: ' + (userError.message || 'unknown error') });
       return;
     }
-
-    const newTenantUser = userInsertResult[0];
-    console.log('[WORKSPACES] Added user as owner:', newTenantUser.id);
 
     res.json({
       success: true,
