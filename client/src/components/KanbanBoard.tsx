@@ -46,8 +46,15 @@ export default function KanbanBoard() {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
       return res.json();
-    }
+    },
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
+
+  // Force refetch on mount
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleDemandAdvance = () => {
     refetch();
