@@ -65,14 +65,15 @@ export default function DemandDetail() {
 
   // Fetch board for this demand (Kanban 2.0)
   const { data: boardData } = useQuery<BoardData>({
-    queryKey: ["demand-board", demand?.workflowId],
+    queryKey: ["demand-board", demand?.workflowId, demand?.boardId],
     queryFn: async () => {
-      if (!demand?.workflowId) return null;
-      const res = await fetch(`/api/kanban/boards/${demand.workflowId}`);
+      const targetBoardId = demand?.boardId || demand?.workflowId;
+      if (!targetBoardId) return null;
+      const res = await fetch(`/api/kanban/boards/${targetBoardId}`);
       if (!res.ok) return null;
       return res.json();
     },
-    enabled: !!demand?.workflowId
+    enabled: !!(demand?.workflowId || demand?.boardId)
   });
 
   // Extract board and phases from response
