@@ -4,6 +4,7 @@ import { demandClassifierAgent } from "../agents/demand-classifier-agent";
 import { demandOrchestratorAgent } from "../agents/demand-orchestrator-agent";
 import { workflowBuilderAgent } from "../agents/workflow-builder-agent";
 import { storage } from "../../storage";
+import { normalizeUUID, normalizeRecord } from "../../lib/uuidUtils";
 
 const db = storage.db;
 
