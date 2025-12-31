@@ -194,8 +194,7 @@ export async function processDemandThroughPipeline(
               prioridade: classificationResult.classification.prioridade,
               descricao_estruturada: classificationResult.classification.descricao_normalizada
             },
-            updatedAt: new Date(),
-            boardId: normalizedBoardId // Explicitly set boardId as well
+            updatedAt: new Date()
           })
           .where(eq(demands.id, demandId));
 
@@ -207,7 +206,7 @@ export async function processDemandThroughPipeline(
         try {
           const phases = await kanbanStorage.getPhasesByBoard(normalizedBoardId, effectiveTenantId);
           console.log(`[Pipeline] Board ${normalizedBoardId} has ${phases.length} phases`);
-          const initialPhase = phases.find(p => p.isInitial === "true" || p.isInitial === true) || phases[0];
+          const initialPhase = phases.find(p => p.isInitial === "true") || phases[0];
           
           if (initialPhase) {
             // Create a card for this demand in the board
