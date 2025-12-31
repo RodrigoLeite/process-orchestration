@@ -441,21 +441,34 @@ export const kanbanStorage = {
       updateData.phaseEnteredAt = new Date();
     }
 
-    console.log(`[STORAGE moveCard] Attempting Drizzle update for CardId: ${normalizedId}`);
+    console.log(`[STORAGE moveCard] Attempting raw SQL update for CardId: ${normalizedId}`);
 
-    const [updatedCard] = await db
-      .update(cards)
-      .set(updateData)
-      .where(eq(cards.id, normalizedId))
-      .returning();
+    // Use raw SQL to ensure UUID comparison works correctly
+    const phaseEnteredClause = oldPhaseId !== normalizedTargetPhaseId 
+      ? sql`, phase_entered_at = NOW()` 
+      : sql``;
+    
+    const result = await db.execute(sql`
+      UPDATE cards 
+      SET phase_id = ${normalizedTargetPhaseId},
+          position = ${targetPosition},
+          updated_at = NOW()
+          ${phaseEnteredClause}
+      WHERE id = ${normalizedId}
+      RETURNING *
+    `);
 
-    if (!updatedCard) {
-      console.log(`[STORAGE moveCard] Drizzle update returned no results for ${normalizedId}`);
-      return undefined;
+    console.log(`[STORAGE moveCard] Raw SQL update result rows: ${result?.rows?.length}`);
+
+    if (!result?.rows?.length) {
+      console.log(`[STORAGE moveCard] Raw SQL update returned no results for ${normalizedId}`);
+      // Fetch the card directly to return it anyway since DB state might have changed
+      const fetchedCard = await this.getCardByIdOnly(normalizedId);
+      return fetchedCard ? normalizeRecord(fetchedCard) as Card : undefined;
     }
 
-    console.log(`[STORAGE moveCard] Successfully updated card via Drizzle: ${updatedCard.id}`);
-    return normalizeRecord(updatedCard) as Card;
+    console.log(`[STORAGE moveCard] Successfully updated card via raw SQL`);
+    return normalizeRecord(result.rows[0] as any) as Card;
   },
 
   // ========== CARD FIELDS ==========
