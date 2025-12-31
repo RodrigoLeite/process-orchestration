@@ -109,8 +109,12 @@ export default function DemandsManager() {
               <tbody>
                 {demands.map((demand, idx) => {
                   const parsed = demand.parsed as any;
+                  // Custom logic to show "Done" if the demand is completed based on its processing state
                   const isCompleted = (demand as any).processingState === "IN_EXECUTION" && demand.status === "completed";
-                  const displayStatus = isCompleted ? "done" : demand.status;
+                  const displayStatus = (demand.status === 'new' && (demand as any).processingState === 'IN_EXECUTION') ? 'in_progress' : (isCompleted ? "done" : demand.status);
+                  
+                  // Also handle the badge label for the combined in_progress state
+                  const statusLabelOverride = (displayStatus === 'in_progress') ? "Em Processamento" : getStatusLabel(displayStatus);
 
                   return (
                     <tr key={demand.id} className={idx % 2 === 0 ? "bg-card" : "bg-muted/30"}>
@@ -161,7 +165,7 @@ export default function DemandsManager() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge color={getStatusColor(displayStatus)}>
-                          {isCompleted ? "✓ " : ""}{getStatusLabel(displayStatus)}
+                          {isCompleted ? "✓ " : ""}{statusLabelOverride}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
