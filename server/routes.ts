@@ -288,11 +288,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied: Demand belongs to a different tenant" });
       }
       
-      // Update user's last workspace if authenticated
-      if (req.user && normalizedTenantId) {
-        await storage.updateUser(req.user.id, { lastWorkspaceId: normalizedTenantId });
-      }
-
       // Include workflow steps if demand has a workflow
       let workflowSteps = null;
       if (normalizedDemand.workflowId) {
