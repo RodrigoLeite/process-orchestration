@@ -21,6 +21,7 @@ const getPriorityColor = (prioridade: string): string => {
 
 const getStatusColor = (status: string): string => {
   const colorMap: Record<string, string> = {
+    new: "gray",
     pending: "gray",
     routed: "blue",
     in_progress: "yellow",
@@ -31,9 +32,10 @@ const getStatusColor = (status: string): string => {
 
 const getStatusLabel = (status: string): string => {
   const labelMap: Record<string, string> = {
+    new: "Recebido",
     pending: "Pendente",
     routed: "Roteado",
-    in_progress: "Em Andamento",
+    in_progress: "Em Processamento",
     done: "Concluído"
   };
   return labelMap[status] || status;
