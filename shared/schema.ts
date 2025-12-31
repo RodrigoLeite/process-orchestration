@@ -256,11 +256,55 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
   ],
 };
 
+// ========== DEMAND PROCESSING STATES (4-Layer Architecture) ==========
+export const DEMAND_PROCESSING_STATES = {
+  RAW_DEMAND: "RAW_DEMAND",           // Layer 1: Just created, no AI processing
+  CLASSIFIED_DEMAND: "CLASSIFIED_DEMAND", // Layer 2: Classified by AI
+  ROUTED_DEMAND: "ROUTED_DEMAND",     // Layer 3: Routed to workflow
+  IN_EXECUTION: "IN_EXECUTION",       // Layer 4: Being executed in Kanban
+} as const;
+
+export type DemandProcessingState = typeof DEMAND_PROCESSING_STATES[keyof typeof DEMAND_PROCESSING_STATES];
+
+// Classification output from Agente Classificador (Layer 2)
+export interface DemandClassification {
+  area: string;
+  tipo_demanda: string;
+  prioridade: string;
+  titulo_normalizado: string;
+  descricao_normalizada: string;
+  entidades: string[];
+  sinais_criticos: string[];
+  confianca_classificacao: number;
+  classifiedAt?: string;
+}
+
+// Routing decision from Agente Orquestrador (Layer 3)
+export interface DemandRoutingDecision {
+  acao: "reutilizar_workflow" | "criar_novo_workflow";
+  workflow_id: string | null;
+  motivo_decisao: string;
+  nivel_confianca: number;
+  necessita_workflow_builder: boolean;
+  routedAt?: string;
+}
+
 // ========== DEMANDS ==========
 export const demands = pgTable("demands", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id"),
   rawText: text("raw_text"),
+  
+  // Layer 1-4 Processing State
+  processingState: text("processing_state").notNull().default("RAW_DEMAND"),
+  
+  // Layer 2: Classification by AI Classifier Agent
+  classification: jsonb("classification").$type<DemandClassification>(),
+  
+  // Layer 3: Routing Decision by Orchestrator Agent
+  routingDecision: jsonb("routing_decision").$type<DemandRoutingDecision>(),
+  
+  // Legacy fields (kept for backward compatibility)
   parsed: jsonb("parsed").$type<{
     area?: string;
     tipo?: string;

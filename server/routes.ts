@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDemandSchema } from "@shared/schema";
+import { insertDemandSchema, DEMAND_PROCESSING_STATES } from "@shared/schema";
 import { parseDemand } from "./parse-demand";
 import { createRequestLogger, logInfo, logError } from "./lib/logger";
 import { executeBottleneckAgent, executeInsightsAgent } from "./lib/scheduler";
@@ -25,6 +25,7 @@ import kanbanRoutes from "./routes/kanbanRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import { inngestServe } from "./inngest/serve";
 import { normalizeUUID, normalizeRecord, normalizeRecords } from "./lib/uuidUtils";
+import { processDemandThroughPipeline } from "./ai/pipeline/demand-processing-pipeline";
 
 // Helper function to get normalized tenant ID from request
 function getTenantId(req: any): string | undefined {
@@ -396,6 +397,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating demand:", error);
       res.status(500).json({ error: "Failed to create demand" });
+    }
+  });
+
+  // ========== 4-LAYER ARCHITECTURE ROUTES ==========
+  
+  // Layer 1: Simplified demand entry (no AI, just raw text)
+  app.post("/api/demands/v2", async (req: any, res) => {
+    try {
+      const { rawText, title } = req.body;
+      const tenantId = getTenantId(req);
+
+      if (!rawText) {
+        return res.status(400).json({ error: "rawText is required" });
+      }
+
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID is required" });
+      }
+
+      // Layer 1: Just create the demand with raw text (NO AI processing here)
+      const demand = await storage.createDemand({
+        tenantId,
+        rawText: title ? `${title}\n\n${rawText}` : rawText,
+        processingState: DEMAND_PROCESSING_STATES.RAW_DEMAND,
+        status: "new"
+      });
+
+      console.log(`[Layer 1] Created raw demand: ${demand.id}`);
+
+      res.status(201).json({ 
+        id: normalizeRecord(demand).id,
+        processingState: DEMAND_PROCESSING_STATES.RAW_DEMAND,
+        message: "Demand created. Call /api/demands/:id/process to run through AI pipeline."
+      });
+    } catch (error) {
+      console.error("Error creating demand:", error);
+      res.status(500).json({ error: "Failed to create demand" });
+    }
+  });
+
+  // Process demand through 4-layer AI pipeline
+  app.post("/api/demands/:id/process", async (req: any, res) => {
+    try {
+      const demandId = req.params.id;
+      const tenantId = getTenantId(req);
+
+      console.log(`[Pipeline] Starting 4-layer processing for demand: ${demandId}`);
+      
+      const result = await processDemandThroughPipeline(demandId, tenantId);
+
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          error: result.error,
+          stagesCompleted: result.stagesCompleted
+        });
+      }
+
+      // Fetch updated demand
+      const updatedDemand = await storage.getDemand(demandId);
+      
+      res.json({
+        success: true,
+        demandId: result.demandId,
+        processingState: result.currentState,
+        classification: result.classification,
+        routingDecision: result.routingDecision,
+        workflowId: result.workflowId,
+        stagesCompleted: result.stagesCompleted,
+        demand: updatedDemand ? normalizeRecord(updatedDemand) : null
+      });
+    } catch (error) {
+      console.error("Error processing demand through pipeline:", error);
+      res.status(500).json({ error: "Failed to process demand" });
+    }
+  });
+
+  // Create demand AND process through pipeline in one call
+  app.post("/api/demands/v2/full", async (req: any, res) => {
+    try {
+      const { rawText, title } = req.body;
+      const tenantId = getTenantId(req);
+
+      if (!rawText) {
+        return res.status(400).json({ error: "rawText is required" });
+      }
+
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID is required" });
+      }
+
+      // Layer 1: Create raw demand
+      const demand = await storage.createDemand({
+        tenantId,
+        rawText: title ? `${title}\n\n${rawText}` : rawText,
+        processingState: DEMAND_PROCESSING_STATES.RAW_DEMAND,
+        status: "new"
+      });
+
+      console.log(`[Layer 1-4] Created demand ${demand.id}, processing through full pipeline`);
+
+      // Process through all 4 layers
+      const result = await processDemandThroughPipeline(demand.id, tenantId);
+
+      // Fetch final state
+      const updatedDemand = await storage.getDemand(demand.id);
+
+      res.status(201).json({
+        success: result.success,
+        demandId: demand.id,
+        processingState: result.currentState,
+        classification: result.classification,
+        routingDecision: result.routingDecision,
+        workflowId: result.workflowId,
+        stagesCompleted: result.stagesCompleted,
+        demand: updatedDemand ? normalizeRecord(updatedDemand) : null,
+        error: result.error
+      });
+    } catch (error) {
+      console.error("Error in full demand pipeline:", error);
+      res.status(500).json({ error: "Failed to process demand" });
     }
   });
 
