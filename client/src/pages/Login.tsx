@@ -3,14 +3,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 
 export default function LoginPage() {
-  const { isAuthenticated, login, isLoading } = useAuth();
+  const { isAuthenticated, login, isLoading, user } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      navigate('/app');
+      if (user?.lastWorkspaceId) {
+        // Se o usuário já tiver um workspace salvo, tenta carregar ele
+        // O tenantId será injetado pelo contexto ou passado via header
+        navigate('/app');
+      } else {
+        navigate('/app');
+      }
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, user]);
 
   if (isLoading) {
     return (
