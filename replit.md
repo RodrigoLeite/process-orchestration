@@ -1,6 +1,13 @@
 # Overview
 
-This project is an AI-driven process orchestration system designed to classify, route, and manage internal business demands across departments. It leverages GPT-4 for automated request analysis, custom workflow creation, bottleneck detection, and actionable insight generation. The system aims to streamline business processes, improve efficiency, and provide predictive insights for better decision-making by offering a unified workflow system for managing demands.
+This project is an AI-driven process orchestration system designed to classify, route, and manage internal business demands across departments. It leverages GPT-4 for automated request analysis, custom workflow creation, bottleneck detection, and actionable insight generation. The system aims to streamline business processes, improve efficiency, and provide predictive insights for better decision-making by offering a unified Kanban 2.0 board system for managing demands.
+
+# Recent Changes (December 2025)
+
+-   **Board-First Architecture**: Refactored the 4-layer AI pipeline to use Kanban 2.0 Boards exclusively instead of legacy Workflows. The pipeline now uses `getOrCreateBoard()` and `createCardFromDemand()` from kanbanService.
+-   **Orchestrator Agent Update**: The demand orchestrator agent now queries the `boards` table (Kanban 2.0) instead of the legacy `workflows` table for routing decisions.
+-   **Legacy Workflow Fallback**: Added backward compatibility - when fetching a board by ID, the system falls back to check the legacy `workflows` table and converts the data to board format.
+-   **Demand-to-Board Association**: Demands are now associated with Boards via the `workflowId` field (used for backward compatibility), with cards created in the board's initial phase.
 
 # User Preferences
 
