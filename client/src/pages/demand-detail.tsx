@@ -218,7 +218,7 @@ export default function DemandDetail() {
   const parsed = demand.parsed as any;
   const classification = (demand as any).classification;
   const routingDecision = (demand as any).routingDecision;
-  const processingState = (demand as any).processingState || "RAW_DEMAND";
+  // processingState is already defined above via simulation logic
   
   // Debug info for matching (boardId is stored in workflowId field)
   if (demand?.workflowId) {
