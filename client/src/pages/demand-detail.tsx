@@ -95,7 +95,7 @@ export default function DemandDetail() {
     if (targetIdx > currentIdx) {
       const timer = setTimeout(() => {
         setSimulatedState(states[currentIdx + 1]);
-      }, 1500); // 1.5s per step
+      }, 3000); // 3s per step for better visibility
       return () => clearTimeout(timer);
     } else if (!simulatedState) {
       setSimulatedState(demand.processingState || "RAW_DEMAND");
