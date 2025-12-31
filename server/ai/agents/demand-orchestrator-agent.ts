@@ -61,17 +61,24 @@ function initializeLLM(): ChatOpenAI {
 
 async function getExistingWorkflows(tenantId?: string): Promise<WorkflowSummary[]> {
   try {
-    const workflowList = await db
+    const query = db
       .select({
         id: workflows.id,
         name: workflows.name,
         steps: workflows.steps
       })
-      .from(workflows)
-      .where(tenantId ? eq(workflows.tenantId, tenantId) : sql`1=1`)
-      .limit(50) || [];
-
+      .from(workflows);
+    
+    if (tenantId) {
+      query.where(eq(workflows.tenantId, tenantId));
+    }
+    
+    const workflowList = await query.limit(50);
     const summaries: WorkflowSummary[] = [];
+    
+    if (!workflowList || !Array.isArray(workflowList)) {
+      return [];
+    }
     
     for (const wf of workflowList) {
       const demandCountResult = await db
