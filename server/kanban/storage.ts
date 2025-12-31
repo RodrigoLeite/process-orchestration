@@ -445,24 +445,13 @@ export const kanbanStorage = {
 
     const [updatedCard] = await db
       .update(cards)
-      .where(eq(cards.id, normalizedId))
       .set(updateData)
+      .where(eq(cards.id, normalizedId))
       .returning();
 
     if (!updatedCard) {
-      console.log(`[STORAGE moveCard] Drizzle update failed, trying direct ID match without where(and(...))`);
-      // Final attempt with simplest query possible
-      const [finalCard] = await db
-        .update(cards)
-        .set(updateData)
-        .where(sql`${cards.id} = ${normalizedId}::uuid`)
-        .returning();
-        
-      if (!finalCard) {
-        console.log(`[STORAGE moveCard] All update attempts failed for ${normalizedId}`);
-        return undefined;
-      }
-      return normalizeRecord(finalCard) as Card;
+      console.log(`[STORAGE moveCard] Drizzle update returned no results for ${normalizedId}`);
+      return undefined;
     }
 
     console.log(`[STORAGE moveCard] Successfully updated card via Drizzle: ${updatedCard.id}`);
