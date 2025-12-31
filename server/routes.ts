@@ -293,11 +293,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUser(req.user.id, { lastWorkspaceId: normalizedTenantId });
       }
 
-      // Update user's last workspace if authenticated
-      if (req.user && normalizedTenantId) {
-        await storage.updateUser(req.user.id, { lastWorkspaceId: normalizedTenantId });
-      }
-
       // Include workflow steps if demand has a workflow
       let workflowSteps = null;
       if (normalizedDemand.workflowId) {
@@ -458,10 +453,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(completedDemand);
       }
 
-      res.json(updatedDemand);
+      res.json(normalizedUpdatedDemand);
     } catch (error) {
       console.error("Error updating demand stage:", error);
       res.status(500).json({ error: "Failed to update demand stage" });
+    }
+  });
+
+  app.post("/api/user/last-workspace", async (req: any, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const { workspaceId } = req.body;
+      if (!workspaceId) return res.status(400).json({ error: "workspaceId is required" });
+      
+      await storage.updateUser(req.user.id, { lastWorkspaceId: workspaceId });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating last workspace:", error);
+      res.status(500).json({ error: "Failed to update last workspace" });
     }
   });
 
