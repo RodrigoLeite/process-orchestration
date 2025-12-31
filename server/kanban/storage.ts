@@ -432,26 +432,25 @@ export const kanbanStorage = {
       updateData.phaseEnteredAt = new Date();
     }
 
-    const [updated] = await db
-      .update(cards)
-      .set(updateData)
-      .where(eq(cards.id, normalizedId))
-      .returning();
+    // Use raw SQL for the update to ensure UUID comparison works correctly
+    const updateResult = await db.execute(sql`
+      UPDATE cards 
+      SET phase_id = ${normalizedTargetPhaseId}::uuid, 
+          position = ${targetPosition}, 
+          updated_at = NOW()
+          ${oldPhaseId !== normalizedTargetPhaseId ? sql`, phase_entered_at = NOW()` : sql``}
+      WHERE id = ${normalizedId}::uuid
+      RETURNING *
+    `);
 
-    if (!updated) {
+    console.log(`[STORAGE moveCard] Update result rows: ${updateResult.rows?.length}`);
+
+    if (!updateResult.rows || updateResult.rows.length === 0) {
       console.log(`[STORAGE moveCard] Update failed - no row affected for ${normalizedId}`);
-      // Fallback: update without tenant if the first one failed (already verified access in route)
-      const [retryUpdated] = await db
-        .update(cards)
-        .set(updateData)
-        .where(eq(cards.id, normalizedId))
-        .returning();
-      
-      if (!retryUpdated) return undefined;
-      return normalizeRecord(retryUpdated) as Card;
+      return undefined;
     }
 
-    return normalizeRecord(updated) as Card;
+    return normalizeRecord(updateResult.rows[0] as any) as Card;
   },
 
   // ========== CARD FIELDS ==========
