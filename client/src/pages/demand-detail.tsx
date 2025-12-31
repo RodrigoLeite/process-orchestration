@@ -69,7 +69,12 @@ export default function DemandDetail() {
     queryFn: async () => {
       const targetBoardId = demand?.boardId || demand?.workflowId;
       if (!targetBoardId) return null;
-      const res = await fetch(`/api/kanban/boards/${targetBoardId}`);
+      
+      const tenantId = localStorage.getItem("tenantId");
+      const headers: Record<string, string> = {};
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+
+      const res = await fetch(`/api/kanban/boards/${targetBoardId}`, { headers });
       if (!res.ok) return null;
       return res.json();
     },
