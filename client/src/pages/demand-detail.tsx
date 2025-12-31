@@ -52,7 +52,7 @@ export default function DemandDetail() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
 
-  // Fetch demand
+  // Fetch demand with polling for real-time updates
   const { data: demand, isLoading, error } = useQuery<Demand>({
     queryKey: ["demand-detail", params?.id],
     queryFn: async () => {
@@ -60,7 +60,12 @@ export default function DemandDetail() {
       if (!res.ok) throw new Error("Failed to fetch demand");
       return res.json();
     },
-    enabled: !!params?.id
+    enabled: !!params?.id,
+    refetchInterval: (data) => {
+      // Poll every 2 seconds if not in final execution phase
+      const processingState = (data as any)?.processingState;
+      return (processingState && processingState !== "IN_EXECUTION") ? 2000 : false;
+    }
   });
 
   // Fetch board for this demand (Kanban 2.0)
