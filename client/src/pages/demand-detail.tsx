@@ -292,17 +292,17 @@ export default function DemandDetail() {
               return (
                 <div key={state} className="flex items-center gap-2">
                   <div 
-                    className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold
-                      ${isCompleted ? "bg-green-500 text-white" : 
-                        isCurrent ? "bg-primary text-primary-foreground animate-pulse" : 
+                    className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-500
+                      ${isCompleted ? "bg-green-500 text-white scale-110 shadow-lg shadow-green-500/20" : 
+                        isCurrent ? "bg-primary text-primary-foreground animate-pulse scale-105 shadow-lg shadow-primary/20 ring-4 ring-primary/20" : 
                         "bg-muted text-muted-foreground"}`}
                   >
                     {isCompleted ? "✓" : info.step}
                   </div>
-                  <span className={`text-sm ${(isCurrent || (state === "IN_EXECUTION" && isFinalPhase)) ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                  <span className={`text-sm transition-colors duration-500 ${(isCurrent || (state === "IN_EXECUTION" && isFinalPhase)) ? "font-semibold text-primary" : "text-muted-foreground"}`}>
                     {info.label}
                   </span>
-                  {idx < 3 && <span className="text-muted-foreground mx-2">→</span>}
+                  {idx < 3 && <span className={`text-muted-foreground mx-2 transition-opacity duration-500 ${isCompleted ? "opacity-100" : "opacity-40"}`}>→</span>}
                 </div>
               );
             })}
