@@ -306,7 +306,7 @@ export default function CardModal({ cardId, open, onClose }: CardModalProps) {
                     )}
                     <span>•</span>
                     <span>
-                      Criado em {format(new Date(cardData.card.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                      Criado em {cardData.card.createdAt ? format(new Date(cardData.card.createdAt), "dd/MM/yyyy", { locale: ptBR }) : "—"}
                     </span>
                   </div>
                 </div>
