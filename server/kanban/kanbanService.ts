@@ -34,8 +34,8 @@ export async function getOrCreateBoard(
   
   if (existingBoard) {
     const normalizedBoard = normalizeRecord(existingBoard) as Board;
-    const normalizedBoardId = normalizeUUID(existingBoard.id);
-    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedBoardId = normalizeUUID(existingBoard.id) as string;
+    const normalizedTenantId = normalizeUUID(tenantId) as string;
     const existingPhases = await kanbanStorage.getPhasesByBoard(normalizedBoardId, normalizedTenantId);
     if (existingPhases.length === 0) {
       await createBoardPhasesFromSteps(normalizedBoardId, normalizedTenantId, steps);
@@ -58,8 +58,8 @@ export async function getOrCreateBoard(
 
   // Normalize IDs before using in database operations
   const normalizedBoard = normalizeRecord(newBoard) as Board;
-  const normalizedBoardId = normalizeUUID(newBoard.id);
-  const normalizedTenantId = normalizeUUID(tenantId);
+  const normalizedBoardId = normalizeUUID(newBoard.id) as string;
+  const normalizedTenantId = normalizeUUID(tenantId) as string;
   
   await createBoardPhasesFromSteps(normalizedBoardId, normalizedTenantId, steps);
 
@@ -194,6 +194,6 @@ export async function createCardFromDemand(
     metadata: {
       legacyDemandId: demand.id,
       createdFromDemand: true
-    }
+    } as any
   });
 }
