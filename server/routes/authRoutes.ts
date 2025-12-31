@@ -91,13 +91,26 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     // Create or update user
     console.log('[OAUTH CALLBACK] Creating/updating user');
     const user = await createOrUpdateUserFromGoogle(profile);
-    console.log('[OAUTH CALLBACK] User created/updated:', user.id);
+    // Crucial: Normalize user right away to avoid byte array issues from DB return
+    const normalizedUser = {
+      ...user,
+      id: normalizeUUID(user.id),
+      lastWorkspaceId: user.lastWorkspaceId ? normalizeUUID(user.lastWorkspaceId) : null
+    };
+    console.log('[OAUTH CALLBACK] User created/updated:', normalizedUser.id, 'lastWorkspaceId:', normalizedUser.lastWorkspaceId);
 
     // Ensure user has a tenant - use lastWorkspaceId if available
     console.log('[OAUTH CALLBACK] Ensuring user has tenant');
     const { normalizeUUID } = await import('../lib/uuidUtils');
     
-    let effectiveTenantId = user.lastWorkspaceId ? normalizeUUID(user.lastWorkspaceId) : null;
+    // Normalize user object fields after DB fetch to avoid byte arrays
+    const normalizedUser = {
+      ...user,
+      id: normalizeUUID(user.id),
+      lastWorkspaceId: user.lastWorkspaceId ? normalizeUUID(user.lastWorkspaceId) : null
+    };
+
+    let effectiveTenantId = normalizedUser.lastWorkspaceId;
     let tenant: any;
     let isNew = false;
     
@@ -108,7 +121,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
       const existingTenantUser = await storage.db
         .select()
         .from(tenantUsers)
-        .where(and(eq(tenantUsers.userId, user.id), eq(tenantUsers.tenantId, effectiveTenantId)))
+        .where(and(eq(tenantUsers.userId, normalizedUser.id as any), eq(tenantUsers.tenantId, effectiveTenantId as any)))
         .limit(1)
         .then((rows: any[]) => rows[0]);
       
@@ -116,17 +129,21 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
         tenant = await storage.db
           .select()
           .from(tenants)
-          .where(eq(tenants.id, effectiveTenantId))
+          .where(eq(tenants.id, effectiveTenantId as any))
           .limit(1)
           .then((rows: any[]) => rows[0]);
-        console.log('[OAUTH CALLBACK] Using last workspace:', tenant?.id);
+        
+        if (tenant) {
+          tenant = { ...tenant, id: normalizeUUID(tenant.id) };
+          console.log('[OAUTH CALLBACK] Using last workspace:', tenant.id);
+        }
       }
     }
     
     // If no last workspace or access lost, use default behavior
     if (!tenant) {
-      const result = await ensureTenantForUser(user);
-      tenant = result.tenant;
+      const result = await ensureTenantForUser(normalizedUser as any);
+      tenant = { ...result.tenant, id: normalizeUUID(result.tenant.id) };
       isNew = result.isNew;
     }
     
@@ -136,7 +153,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     const tenantUser = await storage.db
       .select()
       .from(tenantUsers)
-      .where(and(eq(tenantUsers.userId, user.id), eq(tenantUsers.tenantId, tenant.id)))
+      .where(and(eq(tenantUsers.userId, normalizedUser.id as any), eq(tenantUsers.tenantId, tenant.id as any)))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
@@ -144,7 +161,7 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
 
     // Issue tokens
     console.log('[OAUTH CALLBACK] Issuing tokens');
-    const tokenResponse = await issueTokensForUser(user, tenant, role);
+    const tokenResponse = await issueTokensForUser(normalizedUser as any, tenant, role);
 
     // Set secure httpOnly cookies
     console.log('[OAUTH CALLBACK] Setting cookies');
