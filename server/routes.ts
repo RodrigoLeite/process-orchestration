@@ -302,6 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const demandWithRisk = {
         ...normalizedDemand,
         workflowSteps,
+        boardId: normalizedDemand.workflowId || normalizedDemand.boardId,
         delayRisk: normalizedDemand.delayRisk || calculateDelayRisk(normalizedDemand),
         delay_risk: normalizedDemand.delayRisk || calculateDelayRisk(normalizedDemand)
       };
