@@ -149,6 +149,10 @@ router.post('/api/workspaces/:workspaceId/switch', async (req: AuthRequest, res:
       return;
     }
 
+    // Save this workspace as the user's last workspace (for persistence after logout/login)
+    await storage.updateUser(userId, { lastWorkspaceId: workspaceId });
+    console.log('[WORKSPACE SWITCH] Saved lastWorkspaceId:', workspaceId, 'for user:', userId);
+
     // Generate new JWT with the new tenantId
     const { signAccessToken } = await import('../lib/jwt');
     const newAccessToken = await signAccessToken({

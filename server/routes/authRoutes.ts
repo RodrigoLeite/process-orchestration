@@ -93,16 +93,50 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
     const user = await createOrUpdateUserFromGoogle(profile);
     console.log('[OAUTH CALLBACK] User created/updated:', user.id);
 
-    // Ensure user has a tenant
+    // Ensure user has a tenant - use lastWorkspaceId if available
     console.log('[OAUTH CALLBACK] Ensuring user has tenant');
-    const { tenant, isNew } = await ensureTenantForUser(user);
+    const { normalizeUUID } = await import('../lib/uuidUtils');
+    
+    let effectiveTenantId = user.lastWorkspaceId ? normalizeUUID(user.lastWorkspaceId) : null;
+    let tenant: any;
+    let isNew = false;
+    
+    // If user has a last workspace, try to use it
+    if (effectiveTenantId) {
+      console.log('[OAUTH CALLBACK] User has lastWorkspaceId:', effectiveTenantId);
+      // Check if user still has access to that workspace
+      const existingTenantUser = await storage.db
+        .select()
+        .from(tenantUsers)
+        .where(and(eq(tenantUsers.userId, user.id), eq(tenantUsers.tenantId, effectiveTenantId)))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+      
+      if (existingTenantUser) {
+        tenant = await storage.db
+          .select()
+          .from(tenants)
+          .where(eq(tenants.id, effectiveTenantId))
+          .limit(1)
+          .then((rows: any[]) => rows[0]);
+        console.log('[OAUTH CALLBACK] Using last workspace:', tenant?.id);
+      }
+    }
+    
+    // If no last workspace or access lost, use default behavior
+    if (!tenant) {
+      const result = await ensureTenantForUser(user);
+      tenant = result.tenant;
+      isNew = result.isNew;
+    }
+    
     console.log('[OAUTH CALLBACK] Tenant:', tenant.id, 'isNew:', isNew, 'isConfigured:', tenant.isConfigured);
 
-    // Get tenant user role
+    // Get tenant user role for this specific tenant
     const tenantUser = await storage.db
       .select()
       .from(tenantUsers)
-      .where(eq(tenantUsers.userId, user.id))
+      .where(and(eq(tenantUsers.userId, user.id), eq(tenantUsers.tenantId, tenant.id)))
       .limit(1)
       .then((rows: any[]) => rows[0]);
 
@@ -306,6 +340,7 @@ router.get('/auth/session', jwtMiddleware as any, async (req: any, res: Response
         email: user?.email,
         name: user?.name,
         image: user?.image,
+        lastWorkspaceId: user?.lastWorkspaceId ? normalizeUUID(user.lastWorkspaceId) : undefined,
       },
       tenant: {
         id: normalizeUUID(tenant?.id),

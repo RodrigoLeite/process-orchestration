@@ -118,7 +118,15 @@ export default function WorkspacesPage() {
                         });
                         console.log('[WORKSPACE SWITCH] Response status:', res.status);
                         if (res.ok) {
-                          console.log('[WORKSPACE SWITCH] Success, invalidating session and redirecting');
+                          console.log('[WORKSPACE SWITCH] Success, saving last workspace and redirecting');
+                          
+                          // Save last workspace via API
+                          await fetch('/api/user/last-workspace', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ workspaceId: workspace.id })
+                          }).catch(e => console.error('Failed to save last workspace', e));
                           
                           // Invalidate auth session to reload the new workspace
                           await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
