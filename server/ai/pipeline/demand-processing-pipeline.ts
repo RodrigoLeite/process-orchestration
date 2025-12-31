@@ -61,7 +61,7 @@ export async function processDemandThroughPipeline(
     const classificationResult = await demandClassifierAgent({
       rawText,
       metadata: {
-        submittedAt: demand.createdAt?.toISOString()
+        submittedAt: demand.createdAt ? new Date(demand.createdAt).toISOString() : new Date().toISOString()
       }
     });
 
