@@ -101,15 +101,8 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
 
     // Ensure user has a tenant - use lastWorkspaceId if available
     console.log('[OAUTH CALLBACK] Ensuring user has tenant');
-    const { normalizeUUID } = await import('../lib/uuidUtils');
+    // normalizeUUID is already imported above
     
-    // Normalize user object fields after DB fetch to avoid byte arrays
-    const normalizedUser = {
-      ...user,
-      id: normalizeUUID(user.id),
-      lastWorkspaceId: user.lastWorkspaceId ? normalizeUUID(user.lastWorkspaceId) : null
-    };
-
     let effectiveTenantId = normalizedUser.lastWorkspaceId;
     let tenant: any;
     let isNew = false;
