@@ -273,6 +273,18 @@ export const kanbanStorage = {
     return card ? normalizeRecord(card) as Card : undefined;
   },
 
+  async getCardByIdOnly(id: string): Promise<Card | undefined> {
+    const normalizedId = normalizeUUID(id) || id;
+    
+    console.log(`[STORAGE getCardByIdOnly] NormalizedId: ${normalizedId}`);
+    
+    const [card] = await db
+      .select()
+      .from(cards)
+      .where(eq(cards.id, normalizedId));
+    return card ? normalizeRecord(card) as Card : undefined;
+  },
+
   async getCardsByBoard(boardId: string, tenantId: string): Promise<Card[]> {
     const normalizedBoardId = normalizeUUID(boardId) || boardId;
     const normalizedTenantId = normalizeUUID(tenantId) || tenantId;

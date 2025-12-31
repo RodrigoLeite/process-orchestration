@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { kanbanStorage } from "../kanban/storage";
+import { storage } from "../storage";
 import {
   insertBoardSchema,
   insertPhaseSchema,
@@ -249,16 +250,28 @@ router.post("/boards/:boardId/cards", async (req: Request, res: Response) => {
 
 router.patch("/cards/:id", async (req: Request, res: Response) => {
   try {
-    const tenantId = getTenantId(req);
+    const requestTenantId = getTenantId(req);
     const userId = getUserId(req);
     const cardId = normalizeUUID(req.params.id);
     
-    console.log(`[KANBAN PATCH] CardId: ${cardId}, TenantId: ${tenantId}, Body:`, req.body);
+    console.log(`[KANBAN PATCH] CardId: ${cardId}, RequestTenantId: ${requestTenantId}, Body:`, req.body);
     
-    const oldCard = await kanbanStorage.getCardById(cardId, tenantId);
+    // First fetch the card without tenant filtering to get its actual tenant
+    const oldCard = await kanbanStorage.getCardByIdOnly(cardId);
     if (!oldCard) {
-      console.log(`[KANBAN PATCH] Card not found: ${cardId} for tenant: ${tenantId}`);
+      console.log(`[KANBAN PATCH] Card not found: ${cardId}`);
       return res.status(404).json({ error: "Card not found" });
+    }
+    
+    // Use the card's actual tenant ID for all operations
+    const cardTenantId = normalizeUUID(oldCard.tenantId);
+    console.log(`[KANBAN PATCH] Card's actual tenant: ${cardTenantId}`);
+    
+    // Verify the user has access to this tenant
+    const tenantAccess = await storage.getTenantUser(cardTenantId, userId);
+    if (!tenantAccess) {
+      console.log(`[KANBAN PATCH] User ${userId} doesn't have access to tenant ${cardTenantId}`);
+      return res.status(403).json({ error: "Access denied to this card's workspace" });
     }
 
     // Special handling for move operation if phaseId or position is provided
@@ -266,19 +279,19 @@ router.patch("/cards/:id", async (req: Request, res: Response) => {
       const newPhaseId = req.body.phaseId ? normalizeUUID(req.body.phaseId) : oldCard.phaseId;
       const newPosition = req.body.position !== undefined ? req.body.position : oldCard.position;
       
-      const card = await kanbanStorage.moveCard(cardId, tenantId, newPhaseId, newPosition);
+      const card = await kanbanStorage.moveCard(cardId, cardTenantId, newPhaseId, newPosition);
       if (!card) {
         return res.status(404).json({ error: "Failed to move card - not found" });
       }
       
       if (oldCard.phaseId !== newPhaseId) {
         const [oldPhase, newPhase] = await Promise.all([
-          kanbanStorage.getPhaseById(oldCard.phaseId, tenantId),
-          kanbanStorage.getPhaseById(newPhaseId, tenantId),
+          kanbanStorage.getPhaseById(oldCard.phaseId, cardTenantId),
+          kanbanStorage.getPhaseById(newPhaseId, cardTenantId),
         ]);
         
         await kanbanStorage.logActivity({
-          tenantId,
+          tenantId: cardTenantId,
           cardId: card.id,
           userId,
           action: "card_moved",
@@ -290,7 +303,7 @@ router.patch("/cards/:id", async (req: Request, res: Response) => {
     }
 
     // Standard update
-    const card = await kanbanStorage.updateCard(cardId, tenantId, req.body);
+    const card = await kanbanStorage.updateCard(cardId, cardTenantId, req.body);
     
     const changes: Record<string, { old: any; new: any }> = {};
     for (const key of Object.keys(req.body)) {
@@ -301,7 +314,7 @@ router.patch("/cards/:id", async (req: Request, res: Response) => {
     
     if (Object.keys(changes).length > 0) {
       await kanbanStorage.logActivity({
-        tenantId,
+        tenantId: cardTenantId,
         cardId: card.id,
         userId,
         action: "card_updated",
