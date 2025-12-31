@@ -460,15 +460,35 @@ export const kanbanStorage = {
 
     console.log(`[STORAGE moveCard] Raw SQL update result rows: ${result?.rows?.length}`);
 
-    if (!result?.rows?.length) {
-      console.log(`[STORAGE moveCard] Raw SQL update returned no results for ${normalizedId}`);
-      // Fetch the card directly to return it anyway since DB state might have changed
-      const fetchedCard = await this.getCardByIdOnly(normalizedId);
-      return fetchedCard ? normalizeRecord(fetchedCard) as Card : undefined;
+    if (result?.rows?.length) {
+      const updatedCard = result.rows[0] as any;
+      
+      // Sync demand status if card is moved to a final phase
+      if (updatedCard.demand_id) {
+        const phaseResult = await db.select().from(phases).where(eq(phases.id, normalizedTargetPhaseId)).limit(1).catch(() => []);
+        const phase = phaseResult[0];
+        
+        if (phase?.isFinal === "true") {
+          await db.update(demands)
+            .set({ status: 'completed', updatedAt: new Date() })
+            .where(eq(demands.id, normalizeUUID(updatedCard.demand_id)));
+          console.log(`[STORAGE moveCard] Syncing demand ${updatedCard.demand_id} to completed`);
+        } else {
+          // If moved out of final phase, back to in_progress
+          await db.update(demands)
+            .set({ status: 'in_progress', updatedAt: new Date() })
+            .where(eq(demands.id, normalizeUUID(updatedCard.demand_id)));
+        }
+      }
+
+      console.log(`[STORAGE moveCard] Successfully updated card via raw SQL`);
+      return normalizeRecord(updatedCard) as Card;
     }
 
-    console.log(`[STORAGE moveCard] Successfully updated card via raw SQL`);
-    return normalizeRecord(result.rows[0] as any) as Card;
+    console.log(`[STORAGE moveCard] Raw SQL update returned no results for ${normalizedId}`);
+    // Fetch the card directly to return it anyway since DB state might have changed
+    const fetchedCard = await this.getCardByIdOnly(normalizedId);
+    return fetchedCard ? normalizeRecord(fetchedCard) as Card : undefined;
   },
 
   // ========== CARD FIELDS ==========
