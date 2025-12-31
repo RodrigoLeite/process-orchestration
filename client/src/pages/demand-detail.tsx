@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +52,8 @@ export default function DemandDetail() {
   const [match, params] = useRoute("/app/demands/:id");
   const [, navigate] = useLocation();
   const { t } = useTranslation();
+  
+  const [simulatedState, setSimulatedState] = useState<string | null>(null);
 
   // Fetch demand with polling for real-time updates
   const { data: demand, isLoading, error } = useQuery<Demand>({
@@ -58,22 +61,48 @@ export default function DemandDetail() {
     queryFn: async () => {
       const res = await fetch(`/api/demands/${params?.id}`);
       if (!res.ok) throw new Error("Failed to fetch demand");
-      return res.json();
+      const data = await res.json();
+      
+      // If the backend says it's already done, jump there
+      if (data.processingState === "IN_EXECUTION") {
+        setSimulatedState("IN_EXECUTION");
+      }
+      
+      return data;
     },
     enabled: !!params?.id,
     refetchInterval: (data) => {
-      // Poll every 2 seconds if not completed
-      if (!data) return 2000;
+      if (!data) return 1000;
       const status = (data as any)?.status;
       const processingState = (data as any)?.processingState;
       
-      // If fully processed through AI layers AND status is not 'new/pending/triaging'
+      // Keep polling until it's actually in execution and has a status beyond initial
       if (processingState === "IN_EXECUTION" && !["new", "pending", "triaging", "routed"].includes(status)) {
         return false;
       }
-      return 2000;
+      return 1000; // Fast polling for "live" feel
     }
   });
+
+  // Simulation logic for smooth transitions
+  useEffect(() => {
+    if (!demand) return;
+
+    const states = ["RAW_DEMAND", "CLASSIFIED_DEMAND", "ROUTED_DEMAND", "IN_EXECUTION"];
+    const targetIdx = states.indexOf(demand.processingState || "RAW_DEMAND");
+    const currentIdx = states.indexOf(simulatedState || states[0]);
+
+    if (targetIdx > currentIdx) {
+      const timer = setTimeout(() => {
+        setSimulatedState(states[currentIdx + 1]);
+      }, 1500); // 1.5s per step
+      return () => clearTimeout(timer);
+    } else if (!simulatedState) {
+      setSimulatedState(demand.processingState || "RAW_DEMAND");
+    }
+  }, [demand, simulatedState]);
+
+  const processingState = simulatedState || (demand as any)?.processingState || "RAW_DEMAND";
 
   // Fetch board for this demand (Kanban 2.0)
   // Note: boardId is stored in the workflowId field for backward compatibility
