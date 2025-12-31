@@ -69,7 +69,7 @@ async function getExistingWorkflows(tenantId?: string): Promise<WorkflowSummary[
       })
       .from(workflows)
       .where(tenantId ? eq(workflows.tenantId, tenantId) : sql`1=1`)
-      .limit(50);
+      .limit(50) || [];
 
     const summaries: WorkflowSummary[] = [];
     
