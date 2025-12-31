@@ -51,7 +51,9 @@ export default function Dashboard() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (tenantId) headers["x-tenant-id"] = tenantId;
       
-      const res = await fetch("/api/demands", {
+      // Use new 4-layer pipeline API (v2/full)
+      // Layer 1: Raw entry -> Layer 2: Classification -> Layer 3: Routing -> Layer 4: Execution
+      const res = await fetch("/api/demands/v2/full", {
         method: "POST",
         headers,
         body: JSON.stringify({ rawText: demandText })
@@ -66,7 +68,7 @@ export default function Dashboard() {
       
       // Invalidate queries and redirect immediately
       await queryClient.invalidateQueries({ queryKey: ["all-demands", tenant?.id] });
-      navigate(`/app/demands/${data.id}`);
+      navigate(`/app/demands/${data.demandId || data.id}`);
     } catch (error) {
       setCreateStatus({ type: "error", message: t("home.errorCreateDemand") });
     } finally {
