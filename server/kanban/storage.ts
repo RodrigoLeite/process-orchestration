@@ -373,11 +373,20 @@ export const kanbanStorage = {
     const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
     const normalizedTargetPhaseId = normalizeUUID(targetPhaseId) || targetPhaseId;
     
-    const card = await this.getCardById(normalizedId, normalizedTenantId);
-    if (!card) return undefined;
-
-    const oldPhaseId = normalizeUUID(card.phaseId);
+    console.log(`[STORAGE moveCard] CardId: ${normalizedId}, TenantId: ${normalizedTenantId}, TargetPhase: ${normalizedTargetPhaseId}`);
     
+    // Use getCardByIdOnly to bypass any tenant mismatch in moveCard start
+    const card = await this.getCardByIdOnly(normalizedId);
+    if (!card) {
+      console.log(`[STORAGE moveCard] Card not found by ID only: ${normalizedId}`);
+      return undefined;
+    }
+
+    const actualTenantId = normalizeUUID(card.tenantId) || card.tenantId;
+    const oldPhaseId = normalizeUUID(card.phaseId) || card.phaseId;
+    
+    console.log(`[STORAGE moveCard] Actual card tenant: ${actualTenantId}, Old phase: ${oldPhaseId}`);
+
     if (oldPhaseId === normalizedTargetPhaseId) {
       await db
         .update(cards)
@@ -385,7 +394,7 @@ export const kanbanStorage = {
         .where(
           and(
             eq(cards.phaseId, normalizedTargetPhaseId),
-            eq(cards.tenantId, normalizedTenantId),
+            eq(cards.tenantId, actualTenantId),
             sql`position > ${card.position}`
           )
         );
@@ -396,7 +405,7 @@ export const kanbanStorage = {
         .where(
           and(
             eq(cards.phaseId, oldPhaseId),
-            eq(cards.tenantId, normalizedTenantId),
+            eq(cards.tenantId, actualTenantId),
             sql`position > ${card.position}`
           )
         );
@@ -408,7 +417,7 @@ export const kanbanStorage = {
       .where(
         and(
           eq(cards.phaseId, normalizedTargetPhaseId),
-          eq(cards.tenantId, normalizedTenantId),
+          eq(cards.tenantId, actualTenantId),
           sql`position >= ${targetPosition}`
         )
       );
@@ -426,10 +435,15 @@ export const kanbanStorage = {
     const [updated] = await db
       .update(cards)
       .set(updateData)
-      .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)))
+      .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, actualTenantId)))
       .returning();
 
-    return updated ? normalizeRecord(updated) as Card : undefined;
+    if (!updated) {
+      console.log(`[STORAGE moveCard] Update failed - no row affected for ${normalizedId}`);
+      return undefined;
+    }
+
+    return normalizeRecord(updated) as Card;
   },
 
   // ========== CARD FIELDS ==========
