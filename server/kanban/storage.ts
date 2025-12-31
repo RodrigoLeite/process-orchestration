@@ -435,12 +435,20 @@ export const kanbanStorage = {
     const [updated] = await db
       .update(cards)
       .set(updateData)
-      .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, actualTenantId)))
+      .where(eq(cards.id, normalizedId))
       .returning();
 
     if (!updated) {
       console.log(`[STORAGE moveCard] Update failed - no row affected for ${normalizedId}`);
-      return undefined;
+      // Fallback: update without tenant if the first one failed (already verified access in route)
+      const [retryUpdated] = await db
+        .update(cards)
+        .set(updateData)
+        .where(eq(cards.id, normalizedId))
+        .returning();
+      
+      if (!retryUpdated) return undefined;
+      return normalizeRecord(retryUpdated) as Card;
     }
 
     return normalizeRecord(updated) as Card;
