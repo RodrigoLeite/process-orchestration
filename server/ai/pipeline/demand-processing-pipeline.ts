@@ -5,6 +5,8 @@ import { demandOrchestratorAgent } from "../agents/demand-orchestrator-agent";
 import { workflowBuilderAgent } from "../agents/workflow-builder-agent";
 import { storage } from "../../storage";
 import { normalizeUUID, normalizeRecord } from "../../lib/uuidUtils";
+import { getOrCreateBoard, createCardFromDemand } from "../../kanban/kanbanService";
+import { kanbanStorage } from "../../kanban/storage";
 
 const db = storage.db;
 
@@ -23,7 +25,8 @@ export interface PipelineResult {
   currentState: string;
   classification?: any;
   routingDecision?: any;
-  workflowId?: string;
+  boardId?: string;
+  workflowId?: string; // Legacy alias for boardId
   error?: string;
   stagesCompleted: string[];
 }
@@ -121,13 +124,24 @@ export async function processDemandThroughPipeline(
     console.log(`[Pipeline] Processing demand ${demandId} through Layer 4 (Execution)`);
 
     const routing = orchestrationResult.routingDecision;
-    let workflowId: string | null = null;
+    let boardId: string | null = null;
+
+    // Ensure we have a valid tenantId for board operations
+    const effectiveTenantId = tenantId || demand.tenantId;
+    if (!effectiveTenantId) {
+      return {
+        ...result,
+        error: "No tenant ID available for board creation",
+        stagesCompleted
+      };
+    }
 
     if (routing.acao === "reutilizar_workflow" && routing.workflow_id) {
-      workflowId = routing.workflow_id;
-      console.log(`[Pipeline] Reusing existing workflow: ${workflowId}`);
+      // The routing decision refers to an existing board
+      boardId = routing.workflow_id;
+      console.log(`[Pipeline] Reusing existing board: ${boardId}`);
     } else if (routing.necessita_workflow_builder) {
-      console.log(`[Pipeline] Creating new workflow via Workflow Builder`);
+      console.log(`[Pipeline] Creating new board via Workflow Builder`);
       
       const urgenciaMap: Record<string, "baixa" | "média" | "alta" | "crítica"> = {
         "baixa": "baixa",
@@ -148,39 +162,56 @@ export async function processDemandThroughPipeline(
       });
 
       if (workflowResult.success && workflowResult.workflow) {
-        const crypto = await import("crypto");
-        const workflowHash = crypto.createHash("sha256")
-          .update(JSON.stringify(workflowResult.workflow.etapas))
-          .digest("hex");
+        // Use Kanban 2.0 Board system instead of legacy workflows
+        const board = await getOrCreateBoard(
+          workflowResult.workflow.etapas,
+          workflowResult.workflow.titulo,
+          classificationResult.classification.area,
+          effectiveTenantId
+        );
         
-        const newWorkflow = await storage.createWorkflow({
-          workflowHash,
-          name: workflowResult.workflow.titulo,
-          steps: workflowResult.workflow.etapas.map((e, i) => ({
-            name: e.nome,
-            description: e.descricao,
-            order: i,
-            type: e.tipo,
-            priority: e.prioridade,
-            assignee: e.responsavel,
-            duration: `${e.duracao_estimada_horas}h`
-          })),
-          tenantId: tenantId || null
-        });
-        
-        const normalizedWf = newWorkflow ? normalizeRecord(newWorkflow) : null;
-        workflowId = normalizedWf?.id || null;
-        console.log(`[Pipeline] Created new workflow: ${workflowId}`);
+        boardId = board?.id || null;
+        console.log(`[Pipeline] Created/reused board: ${boardId}`);
       }
     }
 
-    if (workflowId) {
-      const normalizedWfId = normalizeUUID(workflowId);
-      if (normalizedWfId) {
+    // Associate demand with board and create a card
+    if (boardId) {
+      const normalizedBoardId = normalizeUUID(boardId);
+      if (normalizedBoardId) {
+        // Get the first phase of the board to place the card
+        const phases = await kanbanStorage.getPhasesByBoard(normalizedBoardId, effectiveTenantId);
+        const initialPhase = phases.find(p => p.isInitial === "true") || phases[0];
+        
+        if (initialPhase) {
+          // Create a card for this demand in the board
+          try {
+            await createCardFromDemand(
+              normalizedBoardId,
+              initialPhase.id,
+              effectiveTenantId,
+              {
+                id: demandId,
+                rawText: demand.rawText,
+                parsed: {
+                  descricao_estruturada: classificationResult.classification.descricao_normalizada,
+                  prioridade: classificationResult.classification.prioridade,
+                  area: classificationResult.classification.area
+                },
+                workflowId: normalizedBoardId
+              }
+            );
+            console.log(`[Pipeline] Created card for demand in board ${normalizedBoardId}, phase ${initialPhase.name}`);
+          } catch (cardError) {
+            console.error(`[Pipeline] Error creating card:`, cardError);
+          }
+        }
+        
+        // Update demand with board reference (using workflowId field for compatibility)
         await db
           .update(demands)
           .set({
-            workflowId: normalizedWfId,
+            workflowId: normalizedBoardId, // boardId stored in workflowId for compatibility
             processingState: DEMAND_PROCESSING_STATES.IN_EXECUTION,
             areaAtual: classificationResult.classification.area,
             parsed: {
@@ -193,7 +224,8 @@ export async function processDemandThroughPipeline(
           })
           .where(eq(demands.id, demandId));
 
-        result.workflowId = normalizedWfId;
+        result.boardId = normalizedBoardId;
+        result.workflowId = normalizedBoardId; // Legacy alias
       }
     }
 

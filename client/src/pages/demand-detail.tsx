@@ -302,7 +302,7 @@ export default function DemandDetail() {
             <div className="mt-4 pt-4 border-t space-y-2">
               <p className="text-xs font-medium text-muted-foreground">Decisão de Roteamento:</p>
               <p className="text-sm">
-                {routingDecision.acao === "reutilizar_workflow" ? "♻️ Reutilizando workflow existente" : "🆕 Novo workflow criado"}
+                {routingDecision.acao === "reutilizar_workflow" ? "♻️ Reutilizando board existente" : "🆕 Novo board criado"}
               </p>
               <p className="text-xs text-muted-foreground">{routingDecision.motivo_decisao}</p>
             </div>
