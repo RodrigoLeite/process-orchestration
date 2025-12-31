@@ -199,7 +199,7 @@ export async function createCardFromDemand(
 
   // Update demand status if it's in the final phase
   try {
-    const { storage } = await import("../../storage");
+    const { storage } = await import("../storage");
     const phases = await kanbanStorage.getPhasesByBoard(boardId, tenantId);
     const isFinal = phases.find(p => p.id === phaseId)?.isFinal === "true";
     if (isFinal) {
