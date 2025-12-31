@@ -31,8 +31,8 @@ export function normalizeUUID(value: any): string | undefined {
     return undefined;
   }
   
-  // Buffer or Uint8Array
-  if (Array.isArray(value) || value instanceof Uint8Array) {
+  // Buffer, Uint8Array, or Array of bytes
+  if (Buffer.isBuffer(value) || Array.isArray(value) || value instanceof Uint8Array) {
     const bytes: number[] = Array.from(value as any);
     return bytesToUUID(bytes);
   }
@@ -89,11 +89,12 @@ export function normalizeRecord<T extends Record<string, any>>(record: T): T {
   
   for (const key of Object.keys(normalized)) {
     const value = normalized[key];
-    if (UUID_FIELDS.includes(key)) {
-      // Check if it's a comma-separated string or an array of bytes
+    if (UUID_FIELDS.includes(key) && value !== null && value !== undefined) {
+      // Check if it's a comma-separated string, array of bytes, Uint8Array, or Buffer
       if ((typeof value === 'string' && value.includes(',')) || 
           Array.isArray(value) || 
-          value instanceof Uint8Array) {
+          value instanceof Uint8Array ||
+          Buffer.isBuffer(value)) {
         normalized[key] = normalizeUUID(value);
       }
     }
