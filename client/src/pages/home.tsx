@@ -68,6 +68,7 @@ export default function Dashboard() {
       
       // Invalidate queries and redirect immediately
       await queryClient.invalidateQueries({ queryKey: ["all-demands", tenant?.id] });
+      // Redirect to demand detail page immediately after creation
       navigate(`/app/demands/${data.demandId || data.id}`);
     } catch (error) {
       setCreateStatus({ type: "error", message: t("home.errorCreateDemand") });
