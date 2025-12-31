@@ -253,8 +253,11 @@ router.patch("/cards/:id", async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const cardId = normalizeUUID(req.params.id);
     
+    console.log(`[KANBAN PATCH] CardId: ${cardId}, TenantId: ${tenantId}, Body:`, req.body);
+    
     const oldCard = await kanbanStorage.getCardById(cardId, tenantId);
     if (!oldCard) {
+      console.log(`[KANBAN PATCH] Card not found: ${cardId} for tenant: ${tenantId}`);
       return res.status(404).json({ error: "Card not found" });
     }
 
