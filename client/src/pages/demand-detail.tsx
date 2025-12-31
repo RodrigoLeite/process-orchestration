@@ -64,10 +64,11 @@ export default function DemandDetail() {
   });
 
   // Fetch board for this demand (Kanban 2.0)
+  // Note: boardId is stored in the workflowId field for backward compatibility
   const { data: boardData, isLoading: isBoardLoading } = useQuery<BoardData>({
-    queryKey: ["demand-board", demand?.workflowId, demand?.boardId],
+    queryKey: ["demand-board", demand?.workflowId],
     queryFn: async () => {
-      const targetBoardId = demand?.boardId || demand?.workflowId;
+      const targetBoardId = demand?.workflowId;
       console.log("[DemandDetail] Fetching board with ID:", targetBoardId);
       if (!targetBoardId) return null;
       
@@ -84,7 +85,7 @@ export default function DemandDetail() {
       console.log("[DemandDetail] Board data received:", data);
       return data;
     },
-    enabled: !!(demand?.workflowId || demand?.boardId)
+    enabled: !!demand?.workflowId
   });
 
   // Extract board and phases from response
@@ -178,9 +179,9 @@ export default function DemandDetail() {
   const routingDecision = (demand as any).routingDecision;
   const processingState = (demand as any).processingState || "RAW_DEMAND";
   
-  // Debug info for matching
-  if (demand?.workflowId || demand?.boardId) {
-    console.log("[DemandDetail] workflowId:", demand.workflowId, "boardId:", demand.boardId);
+  // Debug info for matching (boardId is stored in workflowId field)
+  if (demand?.workflowId) {
+    console.log("[DemandDetail] workflowId (boardId):", demand.workflowId);
   }
   
   const title = classification?.titulo_normalizado || parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem título";
