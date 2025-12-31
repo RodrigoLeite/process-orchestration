@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   name: string;
   image?: string;
+  lastWorkspaceId?: string;
 }
 
 export interface AuthTenant {
