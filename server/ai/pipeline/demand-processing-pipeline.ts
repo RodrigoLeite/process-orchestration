@@ -168,8 +168,8 @@ export async function processDemandThroughPipeline(
           tenantId: tenantId || null
         });
         
-        const normalizedWf = normalizeRecord(newWorkflow);
-        workflowId = normalizedWf.id;
+        const normalizedWf = newWorkflow ? normalizeRecord(newWorkflow) : null;
+        workflowId = normalizedWf?.id || null;
         console.log(`[Pipeline] Created new workflow: ${workflowId}`);
       }
     }
