@@ -12,6 +12,7 @@ import { formatDateTime } from "@/lib/dateUtils";
 import type { Demand } from "@/lib/types";
 
 const statusColors = {
+  new: "bg-slate-500/20 text-slate-700 dark:text-slate-400 border-slate-500/30",
   pending: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
   routed: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30",
   in_progress: "bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30",
@@ -19,9 +20,10 @@ const statusColors = {
 };
 
 const statusLabels = {
+  new: "Recebido",
   pending: "Pendente",
   routed: "Roteado",
-  in_progress: "Em Andamento",
+  in_progress: "Em Processamento",
   done: "Concluído"
 };
 
