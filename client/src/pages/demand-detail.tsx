@@ -436,7 +436,7 @@ export default function DemandDetail() {
       <Card className="border-border bg-muted">
         <CardContent className="pt-6">
           <p className="text-xs text-muted-foreground">
-            {t("demandDetail.createdAt")}: {formatDateTime(demand.createdAt)}
+            {t("demandDetail.createdAt")}: {demand.createdAt ? formatDateTime(demand.createdAt) : "—"}
           </p>
         </CardContent>
       </Card>
