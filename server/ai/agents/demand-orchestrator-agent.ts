@@ -122,7 +122,7 @@ async function getExistingBoards(tenantId?: string): Promise<BoardSummary[]> {
         id: boardId,
         nome: board.name || "Sem nome",
         descricao: board.description || stepsDescription,
-        area: board.areaId || "Não Definida",
+        area: board.areaId && board.areaId.trim() !== "" ? board.areaId : "Não Definida",
         demandCount: Number(demandCountResult[0]?.count || 0)
       });
     }
@@ -166,7 +166,7 @@ REGRAS:
 3. Justifique sua decisão de forma clara
 4. Se reutilizar, indique o workflow_id exato (que é o ID do board)
 5. Se criar novo, workflow_id deve ser null
-6. NUNCA mencione uma área "Geral". Use apenas as áreas reais disponíveis ou "Não Definida" se o board não tiver área.
+6. NUNCA mencione uma área "Geral". Use apenas as áreas reais disponíveis. Se um board estiver como "Não Definida", avalie se o nome e descrição dele pertencem logicamente a uma das 6 áreas e sugira a reutilização se for compatível, justificando que a área do board parece ser a correta apesar da etiqueta.
 
 Responda APENAS com JSON válido, sem markdown.`;
 
