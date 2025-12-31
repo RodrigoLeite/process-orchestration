@@ -119,6 +119,14 @@ export default function WorkspacesPage() {
                         console.log('[WORKSPACE SWITCH] Response status:', res.status);
                         if (res.ok) {
                           console.log('[WORKSPACE SWITCH] Success, invalidating session and redirecting');
+                          
+                          // Save last workspace on selection
+                          try {
+                            await storage.updateUser(user.id, { lastWorkspaceId: workspace.id });
+                          } catch (e) {
+                            console.error('Failed to save last workspace', e);
+                          }
+
                           // Invalidate auth session to reload the new workspace
                           await queryClient.invalidateQueries({ queryKey: ['auth-session'] });
                           // Redirect to the workspace
