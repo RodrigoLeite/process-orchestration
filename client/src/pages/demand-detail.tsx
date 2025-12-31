@@ -212,17 +212,18 @@ export default function DemandDetail() {
     return "→ Em processamento";
   };
   
-  const getProcessingStateDisplay = (state: string) => {
+  const getProcessingStateDisplay = (state: string, isFinalPhase: boolean = false) => {
     const stateMap: Record<string, { label: string; color: string; step: number }> = {
       RAW_DEMAND: { label: "Entrada", color: "gray", step: 1 },
       CLASSIFIED_DEMAND: { label: "Classificada", color: "blue", step: 2 },
       ROUTED_DEMAND: { label: "Roteada", color: "yellow", step: 3 },
-      IN_EXECUTION: { label: "Em Execução", color: "green", step: 4 }
+      IN_EXECUTION: { label: isFinalPhase ? "Concluída" : "Em Execução", color: isFinalPhase ? "green" : "blue", step: 4 }
     };
     return stateMap[state] || { label: state, color: "gray", step: 0 };
   };
   
-  const processingStateInfo = getProcessingStateDisplay(processingState);
+  const isFinalPhase = !!(currentPhase && phases.length > 0 && phases.findIndex(p => p.id === currentPhase.id) === phases.length - 1);
+  const processingStateInfo = getProcessingStateDisplay(processingState, isFinalPhase);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -252,8 +253,8 @@ export default function DemandDetail() {
 
       {/* Status & Priority Badges */}
       <div className="flex flex-wrap gap-2">
-        <Badge color={getStatusColor(demand.status)} data-testid="badge-status">
-          {getStatusDisplay(demand.status)}
+        <Badge color={isFinalPhase ? "green" : getStatusColor(demand.status)} data-testid="badge-status">
+          {isFinalPhase ? "✓ Concluído" : getStatusDisplay(demand.status)}
         </Badge>
         <Badge color={getPriorityColor(priority)} data-testid="badge-priority">
           {priority.toUpperCase()}
@@ -272,9 +273,9 @@ export default function DemandDetail() {
         <CardContent>
           <div className="flex items-center gap-2" data-testid="pipeline-status">
             {["RAW_DEMAND", "CLASSIFIED_DEMAND", "ROUTED_DEMAND", "IN_EXECUTION"].map((state, idx) => {
-              const info = getProcessingStateDisplay(state);
-              const isCompleted = processingStateInfo.step > info.step;
-              const isCurrent = processingState === state;
+              const info = getProcessingStateDisplay(state, isFinalPhase);
+              const isCompleted = processingStateInfo.step > info.step || (state === "IN_EXECUTION" && isFinalPhase);
+              const isCurrent = processingState === state && !isFinalPhase;
               
               return (
                 <div key={state} className="flex items-center gap-2">
@@ -286,7 +287,7 @@ export default function DemandDetail() {
                   >
                     {isCompleted ? "✓" : info.step}
                   </div>
-                  <span className={`text-sm ${isCurrent ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                  <span className={`text-sm ${(isCurrent || (state === "IN_EXECUTION" && isFinalPhase)) ? "font-semibold text-primary" : "text-muted-foreground"}`}>
                     {info.label}
                   </span>
                   {idx < 3 && <span className="text-muted-foreground mx-2">→</span>}
