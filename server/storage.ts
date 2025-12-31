@@ -17,6 +17,7 @@ export interface IStorage {
   getTenantUsers(tenantId: string): Promise<TenantUser[]>;
   getTenantUsersByUserId(userId: string): Promise<TenantUser[]>;
   updateTenantUser(id: string, updates: Partial<TenantUser>): Promise<TenantUser | undefined>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
   // RBAC
   getPermission(id: string): Promise<Permission | undefined>;
@@ -152,6 +153,11 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    await this.db.update(users).set(updates).where(eq(users.id, id));
+    return await this.getUser(id);
   }
 
   async getPermission(id: string): Promise<Permission | undefined> {

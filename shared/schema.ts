@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   googleId: text("google_id").unique(),
   username: text("username").unique(),
   password: text("password"),
+  lastWorkspaceId: uuid("last_workspace_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
