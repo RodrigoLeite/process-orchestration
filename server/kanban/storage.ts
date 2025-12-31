@@ -71,13 +71,21 @@ export const kanbanStorage = {
   },
 
   async getBoardById(id: string, tenantId: string): Promise<Board | undefined> {
-    const normalizedId = normalizeUUID(id) || id;
-    const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
-    const [board] = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, normalizedId), eq(boards.tenantId, normalizedTenantId)));
-    return board ? normalizeRecord(board) as Board : undefined;
+    try {
+      const normalizedId = normalizeUUID(id) || id;
+      const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
+      const result = await db
+        .select()
+        .from(boards)
+        .where(and(eq(boards.id, normalizedId), eq(boards.tenantId, normalizedTenantId)))
+        .catch(() => []);
+      
+      const board = Array.isArray(result) ? result[0] : result;
+      return board ? normalizeRecord(board) as Board : undefined;
+    } catch (error) {
+      console.error('Error in getBoardById:', error);
+      return undefined;
+    }
   },
 
   async getBoardsByTenant(tenantId: string): Promise<(Board & { cardsCount: number })[]> {
@@ -106,8 +114,9 @@ export const kanbanStorage = {
         or(isNull(boards.isArchived), eq(boards.isArchived, "false"))
       ))
       .groupBy(boards.id)
-      .orderBy(desc(boards.createdAt));
-    return normalizeRecords(result) as (Board & { cardsCount: number })[];
+      .orderBy(desc(boards.createdAt))
+      .catch(() => []);
+    return normalizeRecords(result || []) as (Board & { cardsCount: number })[];
   },
 
   async getBoardByHash(hash: string, tenantId: string): Promise<Board | undefined> {
@@ -823,8 +832,9 @@ export const kanbanStorage = {
       .select()
       .from(automationActions)
       .where(and(eq(automationActions.automationId, normalizedAutomationId), eq(automationActions.tenantId, normalizedTenantId)))
-      .orderBy(asc(automationActions.position));
-    return normalizeRecords(result) as AutomationAction[];
+      .orderBy(asc(automationActions.position))
+      .catch(() => []);
+    return normalizeRecords(result || []) as AutomationAction[];
   },
 
   // ========== FULL BOARD DATA ==========
