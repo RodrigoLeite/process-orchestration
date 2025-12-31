@@ -70,7 +70,17 @@ export default function KanbanCard({ demand, onAdvance }: KanbanCardProps) {
         body: JSON.stringify({ demandId: demand.id })
       });
 
-      if (!res.ok) throw new Error("Failed to advance demand");
+      if (res.status === 404) {
+        // Fallback to kanban card patch if specific advance endpoint is missing
+        const moveRes = await fetch(`/api/kanban/cards/${demand.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ advance: true })
+        });
+        if (!moveRes.ok) throw new Error("Failed to advance demand");
+      } else if (!res.ok) {
+        throw new Error("Failed to advance demand");
+      }
       
       toast.success("✅ Demanda avançada!", { duration: 2000 });
       onAdvance?.();

@@ -275,10 +275,20 @@ router.patch("/cards/:id", async (req: Request, res: Response) => {
     }
 
     // Special handling for move operation if phaseId or position is provided
-    if (req.body.phaseId !== undefined || req.body.position !== undefined) {
-      const newPhaseId = req.body.phaseId ? normalizeUUID(req.body.phaseId) : oldCard.phaseId;
+    if (req.body.phaseId !== undefined || req.body.position !== undefined || req.body.advance) {
+      let newPhaseId = req.body.phaseId ? normalizeUUID(req.body.phaseId) : oldCard.phaseId;
       const newPosition = req.body.position !== undefined ? req.body.position : oldCard.position;
       
+      // If advance is requested, find the next phase
+      if (req.body.advance) {
+        const phases = await kanbanStorage.getPhasesByBoard(oldCard.boardId, cardTenantId);
+        const sortedPhases = phases.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        const currentIndex = sortedPhases.findIndex(p => p.id === oldCard.phaseId);
+        if (currentIndex !== -1 && currentIndex < sortedPhases.length - 1) {
+          newPhaseId = sortedPhases[currentIndex + 1].id;
+        }
+      }
+
       const card = await kanbanStorage.moveCard(cardId, cardTenantId, newPhaseId, newPosition);
       if (!card) {
         return res.status(404).json({ error: "Failed to move card - not found" });
