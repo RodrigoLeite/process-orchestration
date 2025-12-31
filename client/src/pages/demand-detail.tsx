@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,57 +51,17 @@ export default function DemandDetail() {
   const [match, params] = useRoute("/app/demands/:id");
   const [, navigate] = useLocation();
   const { t } = useTranslation();
-  
-  const [simulatedState, setSimulatedState] = useState<string | null>(null);
 
-  // Fetch demand with polling for real-time updates
+  // Fetch demand
   const { data: demand, isLoading, error } = useQuery<Demand>({
     queryKey: ["demand-detail", params?.id],
     queryFn: async () => {
       const res = await fetch(`/api/demands/${params?.id}`);
       if (!res.ok) throw new Error("Failed to fetch demand");
-      const data = await res.json();
-      
-      // If the backend says it's already done, jump there
-      if (data.processingState === "IN_EXECUTION") {
-        setSimulatedState("IN_EXECUTION");
-      }
-      
-      return data;
+      return res.json();
     },
-    enabled: !!params?.id,
-    refetchInterval: (data) => {
-      if (!data) return 1000;
-      const status = (data as any)?.status;
-      const processingState = (data as any)?.processingState;
-      
-      // Keep polling until it's actually in execution and has a status beyond initial
-      if (processingState === "IN_EXECUTION" && !["new", "pending", "triaging", "routed"].includes(status)) {
-        return false;
-      }
-      return 1000; // Fast polling for "live" feel
-    }
+    enabled: !!params?.id
   });
-
-  // Simulation logic for smooth transitions
-  useEffect(() => {
-    if (!demand) return;
-
-    const states = ["RAW_DEMAND", "CLASSIFIED_DEMAND", "ROUTED_DEMAND", "IN_EXECUTION"];
-    const targetIdx = states.indexOf(demand.processingState || "RAW_DEMAND");
-    const currentIdx = states.indexOf(simulatedState || states[0]);
-
-    if (targetIdx > currentIdx) {
-      const timer = setTimeout(() => {
-        setSimulatedState(states[currentIdx + 1]);
-      }, 3000); // 3s per step for better visibility
-      return () => clearTimeout(timer);
-    } else if (!simulatedState) {
-      setSimulatedState(demand.processingState || "RAW_DEMAND");
-    }
-  }, [demand, simulatedState]);
-
-  const processingState = simulatedState || (demand as any)?.processingState || "RAW_DEMAND";
 
   // Fetch board for this demand (Kanban 2.0)
   // Note: boardId is stored in the workflowId field for backward compatibility
@@ -218,7 +177,7 @@ export default function DemandDetail() {
   const parsed = demand.parsed as any;
   const classification = (demand as any).classification;
   const routingDecision = (demand as any).routingDecision;
-  // processingState is already defined above via simulation logic
+  const processingState = (demand as any).processingState || "RAW_DEMAND";
   
   // Debug info for matching (boardId is stored in workflowId field)
   if (demand?.workflowId) {
@@ -321,17 +280,17 @@ export default function DemandDetail() {
               return (
                 <div key={state} className="flex items-center gap-2">
                   <div 
-                    className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-500
-                      ${isCompleted ? "bg-green-500 text-white scale-110 shadow-lg shadow-green-500/20" : 
-                        isCurrent ? "bg-primary text-primary-foreground animate-pulse scale-105 shadow-lg shadow-primary/20 ring-4 ring-primary/20" : 
+                    className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold
+                      ${isCompleted ? "bg-green-500 text-white" : 
+                        isCurrent ? "bg-primary text-primary-foreground animate-pulse" : 
                         "bg-muted text-muted-foreground"}`}
                   >
                     {isCompleted ? "✓" : info.step}
                   </div>
-                  <span className={`text-sm transition-colors duration-500 ${(isCurrent || (state === "IN_EXECUTION" && isFinalPhase)) ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                  <span className={`text-sm ${(isCurrent || (state === "IN_EXECUTION" && isFinalPhase)) ? "font-semibold text-primary" : "text-muted-foreground"}`}>
                     {info.label}
                   </span>
-                  {idx < 3 && <span className={`text-muted-foreground mx-2 transition-opacity duration-500 ${isCompleted ? "opacity-100" : "opacity-40"}`}>→</span>}
+                  {idx < 3 && <span className="text-muted-foreground mx-2">→</span>}
                 </div>
               );
             })}
