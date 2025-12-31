@@ -317,8 +317,8 @@ export function useMoveCard() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, boardId, phaseId, position }: { id: string; boardId: string; phaseId: string; position: number }) =>
-      fetchWithAuth(`/api/kanban/cards/${id}/move`, {
-        method: "POST",
+      fetchWithAuth(`/api/kanban/cards/${id}`, {
+        method: "PATCH",
         body: JSON.stringify({ phaseId, position }),
       }),
     onSuccess: (_, variables) => {
