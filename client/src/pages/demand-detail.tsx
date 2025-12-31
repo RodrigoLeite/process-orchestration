@@ -156,10 +156,15 @@ export default function DemandDetail() {
   }
 
   const parsed = demand.parsed as any;
-  const title = parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem título";
-  const area = parsed?.area || "—";
-  const priority = parsed?.prioridade || "média";
-  const type = parsed?.tipo || "—";
+  const classification = (demand as any).classification;
+  const routingDecision = (demand as any).routingDecision;
+  const processingState = (demand as any).processingState || "RAW_DEMAND";
+  
+  const title = classification?.titulo_normalizado || parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem título";
+  const area = classification?.area || parsed?.area || "—";
+  const priority = classification?.prioridade || parsed?.prioridade || "média";
+  const type = classification?.tipo_demanda || parsed?.tipo || "—";
+  
   // Find current phase from demandCard or demand.stageId
   const currentPhase = demandCard?.phaseId 
     ? phases.find(p => p.id === demandCard.phaseId)
@@ -182,6 +187,18 @@ export default function DemandDetail() {
     if (s === "blocked") return "✕ Bloqueado";
     return "→ Em processamento";
   };
+  
+  const getProcessingStateDisplay = (state: string) => {
+    const stateMap: Record<string, { label: string; color: string; step: number }> = {
+      RAW_DEMAND: { label: "Entrada", color: "gray", step: 1 },
+      CLASSIFIED_DEMAND: { label: "Classificada", color: "blue", step: 2 },
+      ROUTED_DEMAND: { label: "Roteada", color: "yellow", step: 3 },
+      IN_EXECUTION: { label: "Em Execução", color: "green", step: 4 }
+    };
+    return stateMap[state] || { label: state, color: "gray", step: 0 };
+  };
+  
+  const processingStateInfo = getProcessingStateDisplay(processingState);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -221,6 +238,71 @@ export default function DemandDetail() {
           {type}
         </Badge>
       </div>
+
+      {/* 4-Layer Processing Pipeline */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Pipeline de Processamento</CardTitle>
+          <CardDescription>Status da demanda nas 4 camadas de processamento AI</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2" data-testid="pipeline-status">
+            {["RAW_DEMAND", "CLASSIFIED_DEMAND", "ROUTED_DEMAND", "IN_EXECUTION"].map((state, idx) => {
+              const info = getProcessingStateDisplay(state);
+              const isCompleted = processingStateInfo.step > info.step;
+              const isCurrent = processingState === state;
+              
+              return (
+                <div key={state} className="flex items-center gap-2">
+                  <div 
+                    className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold
+                      ${isCompleted ? "bg-green-500 text-white" : 
+                        isCurrent ? "bg-primary text-primary-foreground animate-pulse" : 
+                        "bg-muted text-muted-foreground"}`}
+                  >
+                    {isCompleted ? "✓" : info.step}
+                  </div>
+                  <span className={`text-sm ${isCurrent ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                    {info.label}
+                  </span>
+                  {idx < 3 && <span className="text-muted-foreground mx-2">→</span>}
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Classification Details */}
+          {classification && (
+            <div className="mt-4 pt-4 border-t space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Classificação AI:</p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge color="blue">Área: {classification.area}</Badge>
+                <Badge color="yellow">Tipo: {classification.tipo_demanda}</Badge>
+                <Badge color={getPriorityColor(classification.prioridade)}>Prioridade: {classification.prioridade}</Badge>
+                {classification.confianca_classificacao && (
+                  <Badge color="gray">Confiança: {(classification.confianca_classificacao * 100).toFixed(0)}%</Badge>
+                )}
+              </div>
+              {classification.entidades?.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Entidades: {classification.entidades.join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+          
+          {/* Routing Decision */}
+          {routingDecision && (
+            <div className="mt-4 pt-4 border-t space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Decisão de Roteamento:</p>
+              <p className="text-sm">
+                {routingDecision.acao === "reutilizar_workflow" ? "♻️ Reutilizando workflow existente" : "🆕 Novo workflow criado"}
+              </p>
+              <p className="text-xs text-muted-foreground">{routingDecision.motivo_decisao}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
