@@ -247,18 +247,44 @@ router.post("/boards/:boardId/cards", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/cards/:id", async (req: Request, res: Response) => {
+router.patch("/cards/:id", async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const cardId = normalizeUUID(req.params.id);
     
     const oldCard = await kanbanStorage.getCardById(cardId, tenantId);
-    const card = await kanbanStorage.updateCard(cardId, tenantId, req.body);
-    
-    if (!card) {
+    if (!oldCard) {
       return res.status(404).json({ error: "Card not found" });
     }
+
+    // Special handling for move operation if phaseId or position is provided
+    if (req.body.phaseId !== undefined || req.body.position !== undefined) {
+      const newPhaseId = req.body.phaseId ? normalizeUUID(req.body.phaseId) : oldCard.phaseId;
+      const newPosition = req.body.position !== undefined ? req.body.position : oldCard.position;
+      
+      const card = await kanbanStorage.moveCard(cardId, tenantId, newPhaseId, newPosition);
+      
+      if (oldCard.phaseId !== newPhaseId) {
+        const [oldPhase, newPhase] = await Promise.all([
+          kanbanStorage.getPhaseById(oldCard.phaseId, tenantId),
+          kanbanStorage.getPhaseById(newPhaseId, tenantId),
+        ]);
+        
+        await kanbanStorage.logActivity({
+          tenantId,
+          cardId: card.id,
+          userId,
+          action: "card_moved",
+          oldValue: { phaseId: oldCard.phaseId, phaseName: oldPhase?.name },
+          newValue: { phaseId: newPhaseId, phaseName: newPhase?.name },
+        });
+      }
+      return res.json(normalizeRecord(card));
+    }
+
+    // Standard update
+    const card = await kanbanStorage.updateCard(cardId, tenantId, req.body);
     
     const changes: Record<string, { old: any; new: any }> = {};
     for (const key of Object.keys(req.body)) {
@@ -281,7 +307,7 @@ router.put("/cards/:id", async (req: Request, res: Response) => {
     
     res.json(normalizeRecord(card));
   } catch (error) {
-    console.error("Error updating card:", error);
+    console.error("Error updating/moving card:", error);
     res.status(500).json({ error: "Failed to update card" });
   }
 });
@@ -295,44 +321,6 @@ router.delete("/cards/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting card:", error);
     res.status(500).json({ error: "Failed to delete card" });
-  }
-});
-
-router.post("/cards/:id/move", async (req: Request, res: Response) => {
-  try {
-    const tenantId = getTenantId(req);
-    const userId = getUserId(req);
-    const cardId = normalizeUUID(req.params.id);
-    const { phaseId, position } = req.body;
-    const normalizedPhaseId = normalizeUUID(phaseId);
-    
-    const oldCard = await kanbanStorage.getCardById(cardId, tenantId);
-    const card = await kanbanStorage.moveCard(cardId, tenantId, normalizedPhaseId, position);
-    
-    if (!card) {
-      return res.status(404).json({ error: "Card not found" });
-    }
-    
-    if (oldCard && oldCard.phaseId !== phaseId) {
-      const [oldPhase, newPhase] = await Promise.all([
-        kanbanStorage.getPhaseById(oldCard.phaseId, tenantId),
-        kanbanStorage.getPhaseById(phaseId, tenantId),
-      ]);
-      
-      await kanbanStorage.logActivity({
-        tenantId,
-        cardId: card.id,
-        userId,
-        action: "card_moved",
-        oldValue: { phaseId: oldCard.phaseId, phaseName: oldPhase?.name },
-        newValue: { phaseId, phaseName: newPhase?.name },
-      });
-    }
-    
-    res.json(normalizeRecord(card));
-  } catch (error) {
-    console.error("Error moving card:", error);
-    res.status(500).json({ error: "Failed to move card" });
   }
 });
 
