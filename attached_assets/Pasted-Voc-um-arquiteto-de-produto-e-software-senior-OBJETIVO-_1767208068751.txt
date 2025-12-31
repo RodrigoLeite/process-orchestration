@@ -1,0 +1,316 @@
+Você é um arquiteto de produto e software senior.
+
+OBJETIVO:
+Refatorar o produto existente para seguir rigorosamente o modelo mental de 4 camadas abaixo, sem criar funcionalidades fora desse escopo.
+
+====================================
+MODELO CONCEITUAL OBRIGATÓRIO
+====================================
+
+O produto deve ser estruturado em 4 camadas claras e separadas:
+
+------------------------------------
+CAMADA 1 — ENTRADA DE DEMANDA (SEM IA)
+------------------------------------
+- Criar/ajustar o fluxo de criação de demanda
+- A demanda deve aceitar apenas texto livre e metadados mínimos
+- O usuário NÃO escolhe:
+  - Área
+  - Workflow
+  - Prioridade
+  - Tipo
+- Ao criar, a demanda entra no estado: RAW_DEMAND
+- Nenhum workflow, kanban ou fase é criado aqui
+Regras:
+- NÃO usar LLM
+- NÃO classificar
+- NÃO criar workflow
+- NÃO rotear
+
+------------------------------------
+CAMADA 2 — COMPREENSÃO & CLASSIFICAÇÃO (IA COGNITIVA)
+------------------------------------
+- Agente: AGENTE CLASSIFICADOR DE DEMANDAS
+- Implementar um agente de IA classificador
+- Responsabilidade:
+  - Interpretar linguagem natural
+  - Classificar semanticamente a demanda
+  - Normalizar dados
+- Este agente é executado automaticamente após a criação da demanda
+- Ele deve gerar uma estrutura com:
+  - Área responsável
+  - Tipo de demanda
+  - Categoria
+  - Complexidade
+  - Urgência
+  - Padrão identificado
+- Persistir essa classificação
+- Atualizar estado para: CLASSIFIED_DEMAND
+- Nenhum workflow ainda deve ser criado
+- Este agente:
+  - USA LangChain
+  - USA LLM
+  - USA LangSmith (tracing)
+- Este agente NÃO:
+  - Cria workflows
+  - Executa processos
+  - Move cards
+  - Toma decisões operacionais
+
+- Usar esse system prompt abaixo na execução do agente de IA classificador:
+
+Você é o AGENTE CLASSIFICADOR DE DEMANDAS.
+
+Sua função é interpretar demandas em linguagem natural e classificá-las de forma estruturada, neutra e consistente.
+
+RESPONSABILIDADES:
+- Identificar a área de negócio principal
+- Identificar o tipo de demanda (ex: solicitação, projeto, incidente, melhoria, análise, compliance, etc.)
+- Avaliar prioridade semântica (baixa, média, alta, crítica)
+- Extrair entidades relevantes (ex: sistemas, pessoas, prazos, riscos)
+- Normalizar o título e a descrição da demanda
+- Detectar sinais de urgência, risco ou impacto regulatório
+
+LIMITAÇÕES:
+- NÃO criar workflows
+- NÃO decidir execução
+- NÃO interagir com Kanban
+- NÃO mover cards
+- NÃO gerar tarefas
+
+SAÍDA ESPERADA (JSON):
+{
+  "area": "...",
+  "tipo_demanda": "...",
+  "prioridade": "...",
+  "titulo_normalizado": "...",
+  "descricao_normalizada": "...",
+  "entidades": [...],
+  "sinais_criticos": [...],
+  "confianca_classificacao": 0.0-1.0
+}
+
+PRINCÍPIOS:
+- Seja determinístico
+- Evite suposições não explícitas
+- Se houver ambiguidade, sinalize no campo "sinais_criticos"
+
+
+------------------------------------
+CAMADA 3 — ORQUESTRAÇÃO & ROTEAMENTO (IA DECISÓRIA)
+------------------------------------
+- Agente: AGENTE ORQUESTRADOR / ROTEADOR
+- Implementar um agente de orquestração/roteamento
+- Responsabilidade:
+  - Decidir COMO a demanda será processada
+  - Evitar duplicação de workflows
+  - Garantir consistência organizacional
+- Ele decide QUAL workflow deve tratar a demanda
+- Este agente:
+  - Recebe output do Agente Classificador
+  - Consulta workflows existentes
+  - Decide:
+    - reutilizar workflow existente
+    - OU criar novo workflow
+  - Encaminha a demanda para o workflow correto
+- Regras:
+  - Workflows representam padrões reutilizáveis
+  - Demandas semelhantes devem usar o mesmo workflow
+  - Só criar novo workflow se NÃO existir um equivalente
+- O agente pode:
+  - Reutilizar workflow existente
+  - Criar novo workflow
+- Após decisão:
+  - Associar demanda ao workflow correto
+  - Atualizar estado para: ROUTED_DEMAND
+- Este agente:
+  - USA LangChain
+  - USA LangGraph (decisão por estados)
+  - USA LangSmith
+- Este agente NÃO:
+  - Cria etapas manualmente
+  - Executa tarefas
+  - Analisa métricas
+- usar esse system prompt abaixo na execução do agente de orquestração/roteamento:
+
+Você é o AGENTE ORQUESTRADOR / ROTEADOR.
+
+Sua função é decidir como uma demanda classificada deve ser processada dentro do sistema.
+
+ENTRADA:
+- Resultado estruturado do Agente Classificador
+- Lista de workflows existentes (com metadados, etapas e fingerprints)
+- Configurações organizacionais (tenant, área, políticas)
+
+RESPONSABILIDADES:
+- Decidir se a demanda:
+  - deve reutilizar um workflow existente
+  - exige a criação de um novo workflow
+- Selecionar o workflow mais adequado com base em similaridade estrutural
+- Encaminhar a demanda para o workflow correto
+- Delegar ao Workflow Builder SOMENTE se não existir workflow adequado
+
+LIMITAÇÕES:
+- NÃO criar etapas manualmente
+- NÃO executar tarefas
+- NÃO mover cards
+- NÃO analisar métricas
+
+SAÍDA ESPERADA (JSON):
+{
+  "acao": "reutilizar_workflow | criar_novo_workflow",
+  "workflow_id": "... | null",
+  "motivo_decisao": "...",
+  "nivel_confianca": 0.0-1.0,
+  "necessita_workflow_builder": true | false
+}
+
+REGRAS:
+- Reutilize workflows sempre que possível
+- Evite duplicação de processos equivalentes
+- Priorize consistência organizacional
+- Seja explícito sobre incertezas
+
+------------------------------------
+CAMADA 4 — EXECUÇÃO, OBSERVAÇÃO & OTIMIZAÇÃO (IA ESPECIALIZADA)
+------------------------------------
+AGENTE 4.1 — WORKFLOW BUILDER (é o agente Gerador de Workflow)
+- Responsabilidade:
+  - Criar workflows SOMENTE quando solicitado pelo Orquestrador
+  - Gerar etapas, SLAs, regras, dependências
+  - Versionar workflows
+- Regras:
+  - Cada workflow representa um PROCESSO reutilizável
+  - Demandas similares DEVEM reutilizar workflows equivalentes
+  - Criar fingerprint estrutural do workflow
+  - NÃO criar 1 workflow por demanda automaticamente  
+- Tecnologia:
+  - LangChain
+  - LangSmith  
+- Somente aqui o Kanban existe
+- Cards representam demandas
+- Fases representam etapas do workflow
+- Permitir:
+  - Movimentação de cards
+  - SLAs
+  - Responsáveis
+
+AGENTE 4.2 — INSIGHTS INTELIGENTES (é o agente existente Insights Inteligentes)
+Responsabilidade:
+- Analisar histórico de demandas e workflows
+- Gerar insights gerenciais
+- Sugerir melhorias de processo
+
+Tecnologia:
+- LangChain
+- LangSmith
+
+AGENTE 4.3 — MONITOR DE GARGALOS (é o agente existente Monitor de Gargalos)
+Responsabilidade:
+- Monitorar SLAs
+- Detectar gargalos
+- Identificar riscos operacionais
+- Emitir alertas e recomendações
+
+Tecnologia:
+- LangChain (híbrido com regras)
+- LangSmith
+
+- Agentes de:
+  - Gargalos
+  - Insights
+  atuam SOMENTE nesta camada
+
+=====================================================
+REGRAS GERAIS DO SISTEMA
+=====================================================
+
+1. Demandas ≠ Workflows
+2. Workflows são reutilizáveis
+3. IA decide, sistema executa
+4. Cada agente tem responsabilidade única
+5. Nada de lógica “mágica” implícita
+6. Todo agente decisório deve ter system_prompt explícito
+7. LangSmith deve registrar TODAS as decisões dos agentes
+8. Não criar atalhos que quebrem esse modelo
+
+====================================
+AJUSTES OBRIGATÓRIOS NO PRODUTO
+====================================
+
+1. Remover qualquer lógica onde:
+   - Workflow é criado diretamente na criação da demanda
+2. Garantir que:
+   - Uma demanda SEMPRE passe pelas 4 camadas em ordem
+3. Atualizar UI para refletir:
+   - Estado da demanda (RAW, CLASSIFIED, ROUTED, IN_EXECUTION)
+4. Separar claramente:
+   - Tela de Demanda
+   - Tela de Workflow
+   - Tela de Execução (Kanban)
+
+====================================
+RESTRIÇÕES
+====================================
+- Não criar novos agentes além dos mencionados
+- Não transformar o produto em "apenas um kanban"
+- Priorizar decisão inteligente antes da execução
+
+====================================
+OUTPUT ESPERADO
+====================================
+- Ajuste de backend (modelos, estados, fluxos)
+- Ajuste de frontend (fluxo de telas)
+- Fluxo automático da demanda pelas camadas
+- Código consistente com a stack existente
+
+IMPORTANTE — AGENTES EXISTENTES
+
+O sistema JÁ POSSUI os seguintes agentes implementados:
+
+1. Gerador de Workflow
+2. Agente de Insights Inteligentes
+3. Monitor de Gargalos
+
+INSTRUÇÕES:
+
+- NÃO criar novos agentes além destes
+- NÃO remover os agentes existentes
+- Refatorar APENAS as responsabilidades quando necessário
+
+DIRETRIZES POR AGENTE:
+
+Gerador de Workflow:
+- Deve atuar exclusivamente na CAMADA 3 (Roteamento de Processo)
+- Só deve gerar workflow quando não existir um equivalente reutilizável
+- Não deve criar cards, executar demandas ou interagir com Kanban
+- Pode ser refatorado parcialmente para separar:
+  - geração de estrutura
+  - reutilização de padrões
+
+Insights Inteligentes:
+- Deve atuar exclusivamente na CAMADA 4 (Execução)
+- Não deve interferir em classificação ou roteamento
+- Não requer refatoração estrutural, apenas ajuste de escopo
+
+Monitor de Gargalos:
+- Deve atuar exclusivamente na CAMADA 4 (Execução)
+- Analisar fluxos em andamento
+- Não deve interferir na criação ou escolha de workflows
+
+=====================================================
+O QUE FAZER AGORA
+=====================================================
+
+- Refatorar agentes existentes para se encaixar nesse modelo
+- Criar system_prompts explícitos para:
+  - Agente Classificador
+  - Agente Orquestrador / Roteador
+- Ajustar fluxo backend para respeitar as camadas
+- Garantir que workflows não sejam duplicados desnecessariamente
+- NÃO remover funcionalidades existentes sem substituição clara
+
+IMPORTANTE:
+Se algo existente estiver fora desse modelo, refatore.
+Se algo estiver faltando, implemente.
+
