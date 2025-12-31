@@ -5,6 +5,7 @@ import type { DemandClassification, DemandRoutingDecision } from "@shared/schema
 import { demands, workflows } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { storage } from "../../storage";
+import { normalizeUUID, normalizeRecord } from "../../lib/uuidUtils";
 
 const db = storage.db;
 
