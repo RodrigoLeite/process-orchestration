@@ -167,29 +167,33 @@ export async function processDemandThroughPipeline(
           tenantId: tenantId || null
         });
         
-        workflowId = newWorkflow.id;
+        const normalizedWf = normalizeRecord(newWorkflow);
+        workflowId = normalizedWf.id;
         console.log(`[Pipeline] Created new workflow: ${workflowId}`);
       }
     }
 
     if (workflowId) {
-      await db
-        .update(demands)
-        .set({
-          workflowId,
-          processingState: DEMAND_PROCESSING_STATES.IN_EXECUTION,
-          areaAtual: classificationResult.classification.area,
-          parsed: {
-            area: classificationResult.classification.area,
-            tipo: classificationResult.classification.tipo_demanda,
-            prioridade: classificationResult.classification.prioridade,
-            descricao_estruturada: classificationResult.classification.descricao_normalizada
-          },
-          updatedAt: new Date()
-        })
-        .where(eq(demands.id, demandId));
+      const normalizedWfId = normalizeUUID(workflowId);
+      if (normalizedWfId) {
+        await db
+          .update(demands)
+          .set({
+            workflowId: normalizedWfId,
+            processingState: DEMAND_PROCESSING_STATES.IN_EXECUTION,
+            areaAtual: classificationResult.classification.area,
+            parsed: {
+              area: classificationResult.classification.area,
+              tipo: classificationResult.classification.tipo_demanda,
+              prioridade: classificationResult.classification.prioridade,
+              descricao_estruturada: classificationResult.classification.descricao_normalizada
+            },
+            updatedAt: new Date()
+          })
+          .where(eq(demands.id, demandId));
 
-      result.workflowId = workflowId;
+        result.workflowId = normalizedWfId;
+      }
     }
 
     await db
