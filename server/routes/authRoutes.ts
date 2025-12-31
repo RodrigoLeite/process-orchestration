@@ -10,6 +10,8 @@ import { storage } from '../storage';
 import { users, tenants, tenantUsers } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
+import { normalizeUUID } from '../lib/uuidUtils';
+
 const router = Router();
 
 /**
@@ -101,7 +103,6 @@ router.get('/auth/google/callback', async (req: Request, res: Response) => {
 
     // Ensure user has a tenant - use lastWorkspaceId if available
     console.log('[OAUTH CALLBACK] Ensuring user has tenant');
-    // normalizeUUID is already imported above
     
     let effectiveTenantId = normalizedUser.lastWorkspaceId;
     let tenant: any;
