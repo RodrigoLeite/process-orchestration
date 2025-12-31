@@ -264,6 +264,9 @@ router.patch("/cards/:id", async (req: Request, res: Response) => {
       const newPosition = req.body.position !== undefined ? req.body.position : oldCard.position;
       
       const card = await kanbanStorage.moveCard(cardId, tenantId, newPhaseId, newPosition);
+      if (!card) {
+        return res.status(404).json({ error: "Failed to move card - not found" });
+      }
       
       if (oldCard.phaseId !== newPhaseId) {
         const [oldPhase, newPhase] = await Promise.all([
