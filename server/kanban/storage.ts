@@ -263,6 +263,9 @@ export const kanbanStorage = {
   async getCardById(id: string, tenantId: string): Promise<Card | undefined> {
     const normalizedId = normalizeUUID(id) || id;
     const normalizedTenantId = normalizeUUID(tenantId) || tenantId;
+    
+    console.log(`[STORAGE getCardById] NormalizedId: ${normalizedId}, NormalizedTenantId: ${normalizedTenantId}`);
+    
     const [card] = await db
       .select()
       .from(cards)
