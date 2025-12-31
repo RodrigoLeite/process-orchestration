@@ -194,7 +194,13 @@ export default function Demands() {
           <div className="grid gap-4">
             {demands.map((demand, index) => {
               const parsed = demand.parsed as any;
-              const statusColor = statusColors[demand.status as keyof typeof statusColors];
+              
+              // Custom logic to show "Done" if the demand is completed based on its processing state
+              const isCompleted = demand.processingState === "IN_EXECUTION" && demand.status === "completed";
+              const currentStatus = isCompleted ? "done" : demand.status;
+              
+              const statusColor = statusColors[currentStatus as keyof typeof statusColors] || statusColors.pending;
+              const statusLabel = statusLabels[currentStatus as keyof typeof statusLabels] || "Pendente";
               
               return (
                 <Card 
@@ -207,7 +213,7 @@ export default function Demands() {
                       {/* Badges Row */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge className={`${statusColor} border font-semibold`}>
-                          {statusLabels[demand.status as keyof typeof statusLabels]}
+                          {isCompleted ? "✓ " : ""}{statusLabel}
                         </Badge>
                         {(demand.assignedTo || demand.assigned_to) && (
                           <Badge variant="outline" className="font-semibold">
