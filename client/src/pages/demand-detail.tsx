@@ -358,7 +358,7 @@ export default function DemandDetail() {
           <CardContent>
             <div 
               className={`text-2xl font-bold ${
-                demand.status === "completed"
+                isFinalPhase || demand.status === "completed"
                   ? "text-green-600 dark:text-green-400"
                   : demand.status === "blocked"
                   ? "text-red-600 dark:text-red-400"
@@ -366,7 +366,7 @@ export default function DemandDetail() {
               }`}
               data-testid="text-status"
             >
-              {getStatusDisplay(demand.status)}
+              {isFinalPhase ? "✓ Concluído" : getStatusDisplay(demand.status)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t("demandDetail.currentState")}
