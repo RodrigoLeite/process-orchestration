@@ -266,10 +266,14 @@ export const kanbanStorage = {
     
     console.log(`[STORAGE getCardById] NormalizedId: ${normalizedId}, NormalizedTenantId: ${normalizedTenantId}`);
     
-    const [card] = await db
+    const result = await db
       .select()
       .from(cards)
       .where(and(eq(cards.id, normalizedId), eq(cards.tenantId, normalizedTenantId)));
+    
+    console.log(`[STORAGE getCardById] Query result count: ${result?.length}, first: ${result?.[0]?.id}`);
+    
+    const [card] = result;
     return card ? normalizeRecord(card) as Card : undefined;
   },
 
