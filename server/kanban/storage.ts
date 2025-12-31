@@ -452,11 +452,27 @@ export const kanbanStorage = {
       RETURNING *
     `);
 
-    console.log(`[STORAGE moveCard] Update result rows: ${updateResult.rows?.length}`);
+    console.log(`[STORAGE moveCard] Update result rows: ${updateResult?.rows?.length}`);
 
-    if (!updateResult.rows || updateResult.rows.length === 0) {
+    if (!updateResult || !updateResult.rows || updateResult.rows.length === 0) {
       console.log(`[STORAGE moveCard] Update failed - no row affected for ${normalizedId}`);
-      return undefined;
+      
+      // Fallback update using Drizzle if raw SQL failed
+      const [fallbackCard] = await db
+        .update(cards)
+        .set({
+          phaseId: normalizedTargetPhaseId,
+          position: targetPosition,
+          updatedAt: new Date(),
+          ...(oldPhaseId !== normalizedTargetPhaseId ? { phaseEnteredAt: new Date() } : {})
+        })
+        .where(eq(cards.id, normalizedId))
+        .returning();
+
+      if (!fallbackCard) {
+        return undefined;
+      }
+      return normalizeRecord(fallbackCard) as Card;
     }
 
     return normalizeRecord(updateResult.rows[0] as any) as Card;
