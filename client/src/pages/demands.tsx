@@ -196,7 +196,7 @@ export default function Demands() {
               const parsed = demand.parsed as any;
               
               // Custom logic to show "Done" if the demand is completed based on its processing state
-              const isCompleted = demand.processingState === "IN_EXECUTION" && demand.status === "completed";
+              const isCompleted = (demand as any).processingState === "IN_EXECUTION" && demand.status === "completed";
               const currentStatus = isCompleted ? "done" : demand.status;
               
               const statusColor = statusColors[currentStatus as keyof typeof statusColors] || statusColors.pending;
