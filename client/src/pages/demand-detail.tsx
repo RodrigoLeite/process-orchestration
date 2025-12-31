@@ -62,9 +62,16 @@ export default function DemandDetail() {
     },
     enabled: !!params?.id,
     refetchInterval: (data) => {
-      // Poll every 2 seconds if not in final execution phase
+      // Poll every 2 seconds if not completed
+      if (!data) return 2000;
+      const status = (data as any)?.status;
       const processingState = (data as any)?.processingState;
-      return (processingState && processingState !== "IN_EXECUTION") ? 2000 : false;
+      
+      // If fully processed through AI layers AND status is not 'new/pending/triaging'
+      if (processingState === "IN_EXECUTION" && !["new", "pending", "triaging", "routed"].includes(status)) {
+        return false;
+      }
+      return 2000;
     }
   });
 
