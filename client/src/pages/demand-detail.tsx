@@ -64,10 +64,11 @@ export default function DemandDetail() {
   });
 
   // Fetch board for this demand (Kanban 2.0)
-  const { data: boardData } = useQuery<BoardData>({
+  const { data: boardData, isLoading: isBoardLoading } = useQuery<BoardData>({
     queryKey: ["demand-board", demand?.workflowId, demand?.boardId],
     queryFn: async () => {
       const targetBoardId = demand?.boardId || demand?.workflowId;
+      console.log("[DemandDetail] Fetching board with ID:", targetBoardId);
       if (!targetBoardId) return null;
       
       const tenantId = localStorage.getItem("tenantId");
@@ -75,8 +76,13 @@ export default function DemandDetail() {
       if (tenantId) headers["x-tenant-id"] = tenantId;
 
       const res = await fetch(`/api/kanban/boards/${targetBoardId}`, { headers });
-      if (!res.ok) return null;
-      return res.json();
+      if (!res.ok) {
+        console.error("[DemandDetail] Failed to fetch board:", res.status);
+        return null;
+      }
+      const data = await res.json();
+      console.log("[DemandDetail] Board data received:", data);
+      return data;
     },
     enabled: !!(demand?.workflowId || demand?.boardId)
   });
@@ -114,16 +120,22 @@ export default function DemandDetail() {
   });
 
   // Fetch kanban card for this demand
-  const { data: demandCard } = useQuery<DemandCard | null>({
+  const { data: demandCard, isLoading: isCardLoading } = useQuery<DemandCard | null>({
     queryKey: ["demand-card", params?.id],
     queryFn: async () => {
       if (!params?.id) return null;
       const tenantId = localStorage.getItem("tenantId");
       const headers: Record<string, string> = {};
       if (tenantId) headers["x-tenant-id"] = tenantId;
+      console.log("[DemandDetail] Fetching card for demand:", params.id);
       const res = await fetch(`/api/demands/${params.id}/card`, { headers });
-      if (!res.ok) return null;
-      return res.json();
+      if (!res.ok) {
+        console.warn("[DemandDetail] Card not found or failed to fetch:", res.status);
+        return null;
+      }
+      const data = await res.json();
+      console.log("[DemandDetail] Card data received:", data);
+      return data;
     },
     enabled: !!params?.id
   });
@@ -165,6 +177,11 @@ export default function DemandDetail() {
   const classification = (demand as any).classification;
   const routingDecision = (demand as any).routingDecision;
   const processingState = (demand as any).processingState || "RAW_DEMAND";
+  
+  // Debug info for matching
+  if (demand?.workflowId || demand?.boardId) {
+    console.log("[DemandDetail] workflowId:", demand.workflowId, "boardId:", demand.boardId);
+  }
   
   const title = classification?.titulo_normalizado || parsed?.descricao_estruturada || demand.rawText || demand.raw_text || "Sem título";
   const area = classification?.area || parsed?.area || "—";

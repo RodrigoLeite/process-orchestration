@@ -179,13 +179,38 @@ export async function processDemandThroughPipeline(
     if (boardId) {
       const normalizedBoardId = normalizeUUID(boardId);
       if (normalizedBoardId) {
+        console.log(`[Pipeline] Updating demand ${demandId} with boardId ${normalizedBoardId}`);
+        // Update demand with board reference IMMEDIATELY (using workflowId field for compatibility)
+        // We do this BEFORE card creation to ensure the reference exists even if card creation fails
+        await db
+          .update(demands)
+          .set({
+            workflowId: normalizedBoardId, // boardId stored in workflowId for compatibility
+            processingState: DEMAND_PROCESSING_STATES.IN_EXECUTION,
+            areaAtual: classificationResult.classification.area,
+            parsed: {
+              area: classificationResult.classification.area,
+              tipo: classificationResult.classification.tipo_demanda,
+              prioridade: classificationResult.classification.prioridade,
+              descricao_estruturada: classificationResult.classification.descricao_normalizada
+            },
+            updatedAt: new Date(),
+            boardId: normalizedBoardId // Explicitly set boardId as well
+          })
+          .where(eq(demands.id, demandId));
+
+        result.boardId = normalizedBoardId;
+        result.workflowId = normalizedBoardId; // Legacy alias
+
+        // Now try to create the card
         // Get the first phase of the board to place the card
-        const phases = await kanbanStorage.getPhasesByBoard(normalizedBoardId, effectiveTenantId);
-        const initialPhase = phases.find(p => p.isInitial === "true") || phases[0];
-        
-        if (initialPhase) {
-          // Create a card for this demand in the board
-          try {
+        try {
+          const phases = await kanbanStorage.getPhasesByBoard(normalizedBoardId, effectiveTenantId);
+          console.log(`[Pipeline] Board ${normalizedBoardId} has ${phases.length} phases`);
+          const initialPhase = phases.find(p => p.isInitial === "true" || p.isInitial === true) || phases[0];
+          
+          if (initialPhase) {
+            // Create a card for this demand in the board
             await createCardFromDemand(
               normalizedBoardId,
               initialPhase.id,
@@ -201,31 +226,19 @@ export async function processDemandThroughPipeline(
                 workflowId: normalizedBoardId
               }
             );
+            
+            // Also update the demand with the stageId/phaseId
+            await db.update(demands).set({
+              stageId: initialPhase.id
+            }).where(eq(demands.id, demandId));
+            
             console.log(`[Pipeline] Created card for demand in board ${normalizedBoardId}, phase ${initialPhase.name}`);
-          } catch (cardError) {
-            console.error(`[Pipeline] Error creating card:`, cardError);
+          } else {
+            console.warn(`[Pipeline] No initial phase found for board ${normalizedBoardId}`);
           }
+        } catch (cardError) {
+          console.error(`[Pipeline] Error creating card:`, cardError);
         }
-        
-        // Update demand with board reference (using workflowId field for compatibility)
-        await db
-          .update(demands)
-          .set({
-            workflowId: normalizedBoardId, // boardId stored in workflowId for compatibility
-            processingState: DEMAND_PROCESSING_STATES.IN_EXECUTION,
-            areaAtual: classificationResult.classification.area,
-            parsed: {
-              area: classificationResult.classification.area,
-              tipo: classificationResult.classification.tipo_demanda,
-              prioridade: classificationResult.classification.prioridade,
-              descricao_estruturada: classificationResult.classification.descricao_normalizada
-            },
-            updatedAt: new Date()
-          })
-          .where(eq(demands.id, demandId));
-
-        result.boardId = normalizedBoardId;
-        result.workflowId = normalizedBoardId; // Legacy alias
       }
     }
 
