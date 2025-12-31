@@ -2,8 +2,8 @@ import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
 import { withTracing, logAgentExecution } from "../../lib/ai/lc/telemetry";
 import type { DemandClassification, DemandRoutingDecision } from "@shared/schema";
-import { demands, workflows } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { demands, boards } from "@shared/schema";
+import { eq, sql, and, or, isNull } from "drizzle-orm";
 import { storage } from "../../storage";
 import { normalizeUUID, normalizeRecord } from "../../lib/uuidUtils";
 
@@ -31,7 +31,7 @@ export interface OrchestratorInput {
   tenantId?: string;
 }
 
-export interface WorkflowSummary {
+export interface BoardSummary {
   id: string;
   nome: string;
   descricao: string;
@@ -60,48 +60,76 @@ function initializeLLM(): ChatOpenAI {
   });
 }
 
-async function getExistingWorkflows(tenantId?: string): Promise<WorkflowSummary[]> {
+async function getExistingBoards(tenantId?: string): Promise<BoardSummary[]> {
   try {
-    const query = db
-      .select({
-        id: workflows.id,
-        name: workflows.name,
-        steps: workflows.steps
-      })
-      .from(workflows);
+    // Build base query for boards (Kanban 2.0)
+    const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
     
-    if (tenantId) {
-      query.where(eq(workflows.tenantId, tenantId));
+    let boardList: any[];
+    if (normalizedTenantId) {
+      boardList = await db
+        .select({
+          id: boards.id,
+          name: boards.name,
+          description: boards.description,
+          areaId: boards.areaId,
+          steps: boards.steps
+        })
+        .from(boards)
+        .where(and(
+          eq(boards.tenantId, normalizedTenantId),
+          or(isNull(boards.isArchived), eq(boards.isArchived, "false"))
+        ))
+        .limit(50)
+        .catch(() => []);
+    } else {
+      boardList = await db
+        .select({
+          id: boards.id,
+          name: boards.name,
+          description: boards.description,
+          areaId: boards.areaId,
+          steps: boards.steps
+        })
+        .from(boards)
+        .where(or(isNull(boards.isArchived), eq(boards.isArchived, "false")))
+        .limit(50)
+        .catch(() => []);
     }
     
-    const workflowList = await query.limit(50);
-    const summaries: WorkflowSummary[] = [];
+    const summaries: BoardSummary[] = [];
     
-    if (!workflowList || !Array.isArray(workflowList)) {
+    if (!boardList || !Array.isArray(boardList)) {
       return [];
     }
     
-    for (const wf of workflowList) {
-      const workflowId = normalizeUUID(wf.id);
-      if (!workflowId) continue;
+    for (const board of boardList) {
+      const boardId = normalizeUUID(board.id);
+      if (!boardId) continue;
 
+      // Count demands associated with this board (stored in workflowId field)
       const demandCountResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(demands)
-        .where(eq(demands.workflowId, workflowId));
+        .where(eq(demands.workflowId, boardId))
+        .catch(() => [{ count: 0 }]);
+      
+      const stepsDescription = Array.isArray(board.steps) 
+        ? board.steps.slice(0, 3).map((s: any) => s.name || s.nome).join(", ")
+        : "Sem etapas definidas";
       
       summaries.push({
-        id: workflowId,
-        nome: wf.name || "Sem nome",
-        descricao: JSON.stringify(wf.steps?.slice(0, 3) || []),
-        area: "Geral",
+        id: boardId,
+        nome: board.name || "Sem nome",
+        descricao: board.description || stepsDescription,
+        area: board.areaId || "Geral",
         demandCount: Number(demandCountResult[0]?.count || 0)
       });
     }
     
     return summaries;
   } catch (error) {
-    console.error("Error fetching workflows:", error);
+    console.error("Error fetching boards:", error);
     return [];
   }
 }
@@ -109,26 +137,26 @@ async function getExistingWorkflows(tenantId?: string): Promise<WorkflowSummary[
 const SYSTEM_PROMPT = `Você é um agente orquestrador de demandas empresariais.
 
 Sua função é decidir COMO uma demanda classificada será processada:
-1. REUTILIZAR um workflow existente (quando há workflow similar disponível)
-2. CRIAR um novo workflow (quando não há workflow adequado)
+1. REUTILIZAR um board/workflow existente (quando há board similar disponível)
+2. CRIAR um novo board/workflow (quando não há board adequado)
 
-CRITÉRIOS PARA REUTILIZAR WORKFLOW:
-- Área da demanda coincide com área do workflow
-- Tipo de demanda é compatível com o workflow
-- Workflow já processou demandas similares com sucesso
-- Prioridade: dar preferência a workflows mais utilizados
+CRITÉRIOS PARA REUTILIZAR BOARD:
+- Área da demanda coincide com área do board
+- Tipo de demanda é compatível com as etapas do board
+- Board já processou demandas similares com sucesso
+- Prioridade: dar preferência a boards mais utilizados
 
-CRITÉRIOS PARA CRIAR NOVO WORKFLOW:
-- Nenhum workflow existente atende à demanda
+CRITÉRIOS PARA CRIAR NOVO BOARD:
+- Nenhum board existente atende à demanda
 - Demanda tem características únicas
-- Área não possui workflows definidos
+- Área não possui boards definidos
 - Complexidade requer etapas específicas
 
 REGRAS:
 1. SEMPRE prefira reutilizar quando possível (economia de recursos)
-2. Só crie novo workflow se realmente necessário
+2. Só crie novo board se realmente necessário
 3. Justifique sua decisão de forma clara
-4. Se reutilizar, indique o workflow_id exato
+4. Se reutilizar, indique o workflow_id exato (que é o ID do board)
 5. Se criar novo, workflow_id deve ser null
 
 Responda APENAS com JSON válido, sem markdown.`;
@@ -143,16 +171,16 @@ export async function demandOrchestratorAgent(
       const llm = initializeLLM();
       const { demandId, classification, tenantId } = input;
       
-      const existingWorkflows = await getExistingWorkflows(tenantId);
+      const existingBoards = await getExistingBoards(tenantId);
       
-      const workflowsContext = existingWorkflows.length > 0
-        ? `WORKFLOWS DISPONÍVEIS:
-${existingWorkflows.map(w => `- ID: ${w.id}
-  Nome: ${w.nome}
-  Área: ${w.area}
-  Descrição: ${w.descricao}
-  Demandas processadas: ${w.demandCount}`).join("\n\n")}`
-        : "NENHUM WORKFLOW DISPONÍVEL - será necessário criar um novo.";
+      const boardsContext = existingBoards.length > 0
+        ? `BOARDS DISPONÍVEIS:
+${existingBoards.map(b => `- ID: ${b.id}
+  Nome: ${b.nome}
+  Área: ${b.area}
+  Descrição: ${b.descricao}
+  Demandas processadas: ${b.demandCount}`).join("\n\n")}`
+        : "NENHUM BOARD DISPONÍVEL - será necessário criar um novo.";
 
       const userPrompt = `Analise a demanda classificada e decida o roteamento:
 
@@ -166,12 +194,12 @@ DEMANDA CLASSIFICADA:
 - Sinais Críticos: ${classification.sinais_criticos.join(", ") || "Nenhum"}
 - Confiança Classificação: ${(classification.confianca_classificacao * 100).toFixed(0)}%
 
-${workflowsContext}
+${boardsContext}
 
 Decida o roteamento e retorne JSON:
 {
   "acao": "reutilizar_workflow" | "criar_novo_workflow",
-  "workflow_id": "uuid do workflow" | null,
+  "workflow_id": "uuid do board/workflow" | null,
   "motivo_decisao": "explicação da decisão",
   "nivel_confianca": 0.0-1.0,
   "necessita_workflow_builder": true | false
