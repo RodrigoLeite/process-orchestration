@@ -441,41 +441,32 @@ export const kanbanStorage = {
       updateData.phaseEnteredAt = new Date();
     }
 
-    // Use raw SQL for the update to ensure UUID comparison works correctly
-    const updateResult = await db.execute(sql`
-      UPDATE cards 
-      SET phase_id = ${normalizedTargetPhaseId}::uuid, 
-          position = ${targetPosition}, 
-          updated_at = NOW()
-          ${oldPhaseId !== normalizedTargetPhaseId ? sql`, phase_entered_at = NOW()` : sql``}
-      WHERE id = ${normalizedId}::uuid
-      RETURNING *
-    `);
+    console.log(`[STORAGE moveCard] Attempting Drizzle update for CardId: ${normalizedId}`);
 
-    console.log(`[STORAGE moveCard] Update result rows: ${updateResult?.rows?.length}`);
+    const [updatedCard] = await db
+      .update(cards)
+      .where(eq(cards.id, normalizedId))
+      .set(updateData)
+      .returning();
 
-    if (!updateResult || !updateResult.rows || updateResult.rows.length === 0) {
-      console.log(`[STORAGE moveCard] Update failed - no row affected for ${normalizedId}`);
-      
-      // Fallback update using Drizzle if raw SQL failed
-      const [fallbackCard] = await db
+    if (!updatedCard) {
+      console.log(`[STORAGE moveCard] Drizzle update failed, trying direct ID match without where(and(...))`);
+      // Final attempt with simplest query possible
+      const [finalCard] = await db
         .update(cards)
-        .set({
-          phaseId: normalizedTargetPhaseId,
-          position: targetPosition,
-          updatedAt: new Date(),
-          ...(oldPhaseId !== normalizedTargetPhaseId ? { phaseEnteredAt: new Date() } : {})
-        })
-        .where(eq(cards.id, normalizedId))
+        .set(updateData)
+        .where(sql`${cards.id} = ${normalizedId}::uuid`)
         .returning();
-
-      if (!fallbackCard) {
+        
+      if (!finalCard) {
+        console.log(`[STORAGE moveCard] All update attempts failed for ${normalizedId}`);
         return undefined;
       }
-      return normalizeRecord(fallbackCard) as Card;
+      return normalizeRecord(finalCard) as Card;
     }
 
-    return normalizeRecord(updateResult.rows[0] as any) as Card;
+    console.log(`[STORAGE moveCard] Successfully updated card via Drizzle: ${updatedCard.id}`);
+    return normalizeRecord(updatedCard) as Card;
   },
 
   // ========== CARD FIELDS ==========
