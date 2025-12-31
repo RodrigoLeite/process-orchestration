@@ -122,7 +122,7 @@ async function getExistingBoards(tenantId?: string): Promise<BoardSummary[]> {
         id: boardId,
         nome: board.name || "Sem nome",
         descricao: board.description || stepsDescription,
-        area: board.areaId || "Geral",
+        area: board.areaId || "Não Definida",
         demandCount: Number(demandCountResult[0]?.count || 0)
       });
     }
@@ -139,6 +139,14 @@ const SYSTEM_PROMPT = `Você é um agente orquestrador de demandas empresariais.
 Sua função é decidir COMO uma demanda classificada será processada:
 1. REUTILIZAR um board/workflow existente (quando há board similar disponível)
 2. CRIAR um novo board/workflow (quando não há board adequado)
+
+ÁREAS DISPONÍVEIS NO SISTEMA:
+- TI
+- RH
+- Financeiro
+- Comercial
+- Operações
+- Jurídico
 
 CRITÉRIOS PARA REUTILIZAR BOARD:
 - Área da demanda coincide com área do board
@@ -158,6 +166,7 @@ REGRAS:
 3. Justifique sua decisão de forma clara
 4. Se reutilizar, indique o workflow_id exato (que é o ID do board)
 5. Se criar novo, workflow_id deve ser null
+6. NUNCA mencione uma área "Geral". Use apenas as áreas reais disponíveis ou "Não Definida" se o board não tiver área.
 
 Responda APENAS com JSON válido, sem markdown.`;
 
