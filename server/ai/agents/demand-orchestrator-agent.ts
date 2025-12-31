@@ -81,13 +81,16 @@ async function getExistingWorkflows(tenantId?: string): Promise<WorkflowSummary[
     }
     
     for (const wf of workflowList) {
+      const workflowId = normalizeUUID(wf.id);
+      if (!workflowId) continue;
+
       const demandCountResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(demands)
-        .where(eq(demands.workflowId, wf.id));
+        .where(eq(demands.workflowId, workflowId));
       
       summaries.push({
-        id: wf.id,
+        id: workflowId,
         nome: wf.name || "Sem nome",
         descricao: JSON.stringify(wf.steps?.slice(0, 3) || []),
         area: "Geral",
