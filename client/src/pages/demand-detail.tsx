@@ -56,7 +56,11 @@ export default function DemandDetail() {
   const { data: demand, isLoading, error } = useQuery<Demand>({
     queryKey: ["demand-detail", params?.id],
     queryFn: async () => {
-      const res = await fetch(`/api/demands/${params?.id}`);
+      const tenantId = localStorage.getItem("tenantId");
+      const headers: Record<string, string> = {};
+      if (tenantId) headers["x-tenant-id"] = tenantId;
+      
+      const res = await fetch(`/api/demands/${params?.id}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch demand");
       return res.json();
     },

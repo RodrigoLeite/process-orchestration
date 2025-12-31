@@ -2273,19 +2273,18 @@ Texto original: ${demand.rawText}`;
   });
 
   // Get kanban card by demand ID
-  app.get("/api/demands/:id/card", async (req, res) => {
+  app.get("/api/demands/:id/card", async (req: any, res) => {
     try {
       const { id } = req.params;
       const tenantId = getTenantId(req);
       
-      if (!tenantId) {
-        return res.status(400).json({ error: "Tenant ID required" });
-      }
+      console.log(`[API GET /api/demands/${id}/card] Request tenantId: ${tenantId}`);
       
       const { kanbanStorage } = await import("./kanban/storage");
-      const card = await kanbanStorage.getCardByDemandId(id, tenantId);
+      const card = await kanbanStorage.getCardByDemandId(id, tenantId || "");
       
       if (!card) {
+        console.warn(`[API GET /api/demands/${id}/card] Card not found for demandId: ${id}, tenantId: ${tenantId}`);
         return res.status(404).json({ error: "Card not found for this demand" });
       }
       
