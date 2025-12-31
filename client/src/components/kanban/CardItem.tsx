@@ -85,6 +85,11 @@ export default function KanbanCardItem({
       data-testid={`card-item-${card.id}`}
     >
       <CardContent className="p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+            ID: {card.id.slice(0, 8)}
+          </span>
+        </div>
         <div className="flex items-start justify-between gap-2">
           <h4 className="text-sm font-medium line-clamp-2">{card.title}</h4>
           {card.priority && (
