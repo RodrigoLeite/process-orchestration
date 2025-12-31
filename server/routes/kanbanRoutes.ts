@@ -51,16 +51,47 @@ router.get("/boards/:id", async (req: Request, res: Response) => {
     const tenantId = getTenantId(req);
     const boardId = normalizeUUID(req.params.id);
     const data = await kanbanStorage.getFullBoard(boardId, tenantId);
-    if (!data) {
-      return res.status(404).json({ error: "Board not found" });
+    
+    if (data) {
+      const normalizedData = {
+        board: normalizeRecord(data.board),
+        phases: normalizeRecords(data.phases || []),
+        cards: normalizeRecords(data.cards || []),
+        fields: normalizeRecords(data.fields || [])
+      };
+      return res.json(normalizedData);
     }
-    const normalizedData = {
-      board: normalizeRecord(data.board),
-      phases: normalizeRecords(data.phases || []),
-      cards: normalizeRecords(data.cards || []),
-      fields: normalizeRecords(data.fields || [])
-    };
-    res.json(normalizedData);
+    
+    // Fallback: Check if this ID refers to a legacy workflow (workflows table) and convert it
+    const legacyWorkflow = await storage.getWorkflowFromDb(boardId || "");
+    if (legacyWorkflow) {
+      const normalizedWorkflow = normalizeRecord(legacyWorkflow);
+      const steps = normalizedWorkflow.steps || [];
+      
+      // Convert legacy workflow to board-like structure
+      const convertedBoard = {
+        board: {
+          id: normalizedWorkflow.id,
+          name: normalizedWorkflow.name || "Legacy Workflow",
+          description: `Migrated from legacy workflow`,
+          tenantId: normalizedWorkflow.tenantId,
+          isLegacy: true
+        },
+        phases: steps.map((step: any, index: number) => ({
+          id: `legacy-phase-${index}`,
+          name: step.name || step.nome || `Step ${index + 1}`,
+          description: step.description || step.descricao || "",
+          position: step.order || index,
+          isInitial: index === 0 ? "true" : "false",
+          isFinal: index === steps.length - 1 ? "true" : "false"
+        })),
+        cards: [],
+        fields: []
+      };
+      return res.json(convertedBoard);
+    }
+    
+    return res.status(404).json({ error: "Board not found" });
   } catch (error) {
     console.error("Error fetching board:", error);
     res.status(500).json({ error: "Failed to fetch board" });
