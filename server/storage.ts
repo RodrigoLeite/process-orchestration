@@ -954,12 +954,24 @@ export class DatabaseStorage implements IStorage {
   // ========== AREAS (Governance Layer) ==========
 
   async getArea(id: string): Promise<Area | undefined> {
-    const result = await this.db.select().from(areas).where(eq(areas.id, id)).limit(1);
-    return result[0];
+    if (!id) return undefined;
+    try {
+      const result = await this.db.select().from(areas).where(eq(areas.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error in getArea:', error);
+      return undefined;
+    }
   }
 
   async getAreasByTenant(tenantId: string): Promise<Area[]> {
-    return await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+    if (!tenantId) return [];
+    try {
+      return await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+    } catch (error) {
+      console.error('Error in getAreasByTenant:', error);
+      return [];
+    }
   }
 
   async getDefaultArea(tenantId: string): Promise<Area | undefined> {
@@ -986,6 +998,7 @@ export class DatabaseStorage implements IStorage {
   // ========== AREA ADMINS (Governance Roles) ==========
 
   async getAreaAdmins(areaId: string): Promise<AreaAdmin[]> {
+    if (!areaId) return [];
     try {
       const result = await this.db.select().from(areaAdmins).where(eq(areaAdmins.areaId, areaId));
       return result || [];
@@ -996,6 +1009,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined> {
+    if (!areaId || !userId) return undefined;
     try {
       const result = await this.db.select().from(areaAdmins)
         .where(and(eq(areaAdmins.areaId, areaId), eq(areaAdmins.userId, userId)))
@@ -1034,6 +1048,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamsByTenant(tenantId: string): Promise<Team[]> {
+    if (!tenantId) return [];
     try {
       const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
       return result || [];
@@ -1044,6 +1059,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamsByArea(areaId: string): Promise<Team[]> {
+    if (!areaId) return [];
     try {
       const result = await this.db.select().from(teams).where(eq(teams.areaId, areaId)).orderBy(teams.name);
       return result || [];
