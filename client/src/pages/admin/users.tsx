@@ -329,9 +329,8 @@ export default function AdminUsersPage() {
                   <TableRow>
                     <TableHead>{t('admin.columnName')}</TableHead>
                     <TableHead>{t('admin.columnRole')}</TableHead>
-                    <TableHead>{t('admin.columnTeams')}</TableHead>
                     <TableHead>{t('common.createdAt')}</TableHead>
-                    {canManageUsers && <TableHead className="w-12"></TableHead>}
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -373,23 +372,6 @@ export default function AdminUsersPage() {
                             {user.role}
                           </Badge>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {user.teams?.length > 0 ? (
-                            user.teams.map((team) => (
-                              <Badge
-                                key={team.id}
-                                variant="outline"
-                                style={{ borderColor: team.color, color: team.color }}
-                              >
-                                {team.name}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-muted-foreground text-sm">{t('admin.noTeam')}</span>
-                          )}
-                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {formatDate(user.createdAt)}
