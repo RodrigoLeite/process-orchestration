@@ -870,8 +870,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTenantUser(tenantId: string, userId: string): Promise<TenantUser | undefined> {
-    const result = await this.db.select().from(tenantUsers).where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId))).limit(1);
-    return result[0];
+    try {
+      const result = await this.db.select().from(tenantUsers).where(
+        and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId))
+      ).limit(1).catch(() => []);
+      return (Array.isArray(result) && result.length > 0) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in getTenantUser:', error);
+      return undefined;
+    }
   }
 
   async createTenantUser(insertTenantUser: InsertTenantUser): Promise<TenantUser> {
@@ -1191,38 +1198,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async quickAddUser(tenantId: string, email: string, role: string): Promise<void> {
-    // 1. Check if user exists
-    const normalizedEmail = email.toLowerCase().trim();
-    let userResult = await this.db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
-    let userId: string;
-
-    if (!userResult || userResult.length === 0) {
-      // Create a skeleton user
-      const result = await this.db.insert(users).values({
-        username: normalizedEmail,
-        email: normalizedEmail,
-        name: email.split('@')[0],
-        password: 'pending_oauth'
-      }).returning();
+    try {
+      console.log(`[QUICK-ADD] Starting for email: ${email}, role: ${role}, tenantId: ${tenantId}`);
       
-      if (!result || result.length === 0) {
-        throw new Error("Failed to create user record");
-      }
-      userId = result[0].id;
-    } else {
-      userId = userResult[0].id;
-    }
+      // 1. Check if user exists
+      const normalizedEmail = email.toLowerCase().trim();
+      let userResult = await this.db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1).catch(() => []);
+      let userId: string;
 
-    // 2. Check if tenant_user exists
-    const tu = await this.getTenantUser(tenantId, userId);
-    if (tu) {
-      await this.db.update(tenantUsers).set({ role }).where(eq(tenantUsers.id, tu.id));
-    } else {
-      await this.db.insert(tenantUsers).values({
-        tenantId,
-        userId,
-        role
-      });
+      if (!Array.isArray(userResult) || userResult.length === 0) {
+        console.log(`[QUICK-ADD] Creating new skeleton user for: ${normalizedEmail}`);
+        // Create a skeleton user
+        const result = await this.db.insert(users).values({
+          username: normalizedEmail,
+          email: normalizedEmail,
+          name: email.split('@')[0],
+          password: 'pending_oauth'
+        }).returning().catch((e) => {
+          console.error('[QUICK-ADD] Error creating user record:', e);
+          return [];
+        });
+        
+        if (!Array.isArray(result) || result.length === 0) {
+          throw new Error("Failed to create user record");
+        }
+        userId = result[0].id;
+      } else {
+        userId = userResult[0].id;
+        console.log(`[QUICK-ADD] Found existing user ID: ${userId}`);
+      }
+
+      // 2. Check if tenant_user exists
+      const tu = await this.getTenantUser(tenantId, userId);
+      if (tu) {
+        console.log(`[QUICK-ADD] Updating existing tenant_user association: ${tu.id}`);
+        await this.db.update(tenantUsers).set({ role }).where(eq(tenantUsers.id, tu.id));
+      } else {
+        console.log(`[QUICK-ADD] Creating new tenant_user association for tenant: ${tenantId}`);
+        await this.db.insert(tenantUsers).values({
+          tenantId,
+          userId,
+          role
+        });
+      }
+      console.log(`[QUICK-ADD] Success for ${email}`);
+    } catch (error) {
+      console.error('[QUICK-ADD] Critical error:', error);
+      throw error;
     }
   }
 }
