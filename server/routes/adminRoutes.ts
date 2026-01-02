@@ -244,6 +244,31 @@ router.delete(
   }
 );
 
+router.put(
+  '/users/:userId',
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { userId } = req.params;
+      const { role, teamIds } = req.body;
+      
+      if (role) {
+        await userManagementService.updateUserRole(tenantId, userId, role);
+      }
+      
+      if (Array.isArray(teamIds)) {
+        await userManagementService.updateUserTeams(tenantId, userId, teamIds);
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
 router.post(
   '/users/:userId/teams/:teamId',
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),

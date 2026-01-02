@@ -98,6 +98,11 @@ export default function AdminUsersPage() {
   const [bulkRole, setBulkRole] = useState("member");
   const [bulkTeamId, setBulkTeamId] = useState<string | null>(null);
 
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
+  const [editRole, setEditRole] = useState("");
+  const [editTeamIds, setEditTeamIds] = useState<string[]>([]);
+  
   const inviteUser = useInviteUser();
   const bulkInvite = useBulkInvite();
   const cancelInvitation = useCancelInvitation();
@@ -174,6 +179,37 @@ export default function AdminUsersPage() {
     try {
       await resendInvitation.mutateAsync(invitation.id);
       toast.success(t('admin.inviteResent'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleOpenEdit = (user: TenantUser) => {
+    setEditingUser(user);
+    setEditRole(user.role);
+    setEditTeamIds(user.teams?.map(t => t.id) || []);
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+    
+    try {
+      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: editRole,
+          teamIds: editTeamIds
+        })
+      });
+      
+      if (!res.ok) throw new Error("Failed to update user");
+      
+      toast.success("Usuário atualizado com sucesso");
+      setEditModalOpen(false);
+      // Data will refresh via React Query if configured, or manually:
+      window.location.reload(); 
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -368,6 +404,11 @@ export default function AdminUsersPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleOpenEdit(user)}>
+                                  <Users className="h-4 w-4 mr-2" />
+                                  Editar Usuário
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive"
                                   onClick={() => handleRemoveUser(user)}
@@ -474,6 +515,66 @@ export default function AdminUsersPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Altere o cargo e os times de {editingUser?.name || editingUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.filter(r => r.value !== "owner").map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Times</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {teamsData?.teams?.map((team) => (
+                  <div key={team.id} className="flex items-center space-x-2 border p-2 rounded hover:bg-muted cursor-pointer" 
+                       onClick={() => {
+                         setEditTeamIds(prev => 
+                           prev.includes(team.id) 
+                             ? prev.filter(id => id !== team.id) 
+                             : [...prev, team.id]
+                         );
+                       }}>
+                    <div className={`w-3 h-3 rounded-full ${editTeamIds.includes(team.id) ? "opacity-100" : "opacity-20"}`} 
+                         style={{ backgroundColor: team.color }} />
+                    <span className={`text-sm ${editTeamIds.includes(team.id) ? "font-bold" : ""}`}>
+                      {team.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleUpdateUser}>
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={inviteModalOpen} onOpenChange={setInviteModalOpen}>
         <DialogContent>
