@@ -37,6 +37,14 @@ export default function AdminPanel() {
       color: 'bg-blue-500',
     },
     {
+      title: 'Áreas de Governança',
+      description: 'Gerencie áreas, processos e defina responsáveis por cada departamento',
+      icon: <Building2 className="w-8 h-8" />,
+      href: '/admin/areas',
+      permission: 'tenant.manage_areas',
+      color: 'bg-purple-500',
+    },
+    {
       title: t('admin.manageTeams'),
       description: t('admin.manageTeamsDesc'),
       icon: <UsersRound className="w-8 h-8" />,
