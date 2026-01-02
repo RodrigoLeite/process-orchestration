@@ -382,8 +382,16 @@ export const TEAM_VIEWER_PERMISSIONS: PermissionKey[] = [
   TEAM_PERMISSIONS.VIEW,
 ];
 
-// Legacy default role permissions (for backward compatibility)
+// Default role permissions for all 7 roles
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
+  tenant_owner: TENANT_OWNER_PERMISSIONS,
+  tenant_admin: TENANT_ADMIN_PERMISSIONS,
+  area_owner: AREA_OWNER_PERMISSIONS,
+  area_admin: AREA_ADMIN_PERMISSIONS,
+  team_lead: TEAM_LEAD_PERMISSIONS,
+  team_member: TEAM_MEMBER_PERMISSIONS,
+  team_viewer: TEAM_VIEWER_PERMISSIONS,
+  // Legacy mappings for backward compatibility
   owner: TENANT_OWNER_PERMISSIONS,
   admin: TENANT_ADMIN_PERMISSIONS,
   manager: AREA_ADMIN_PERMISSIONS,
