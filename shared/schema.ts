@@ -112,10 +112,64 @@ export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
 export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
 export type TenantUser = typeof tenantUsers.$inferSelect;
 
-// ========== TEAMS ==========
+// ========== AREAS (Governance) ==========
+// Areas own processes and workflows. Areas do NOT have direct members.
+// Areas manage Teams. Users belong only to Teams.
+export const areas = pgTable("areas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#6366f1"),
+  icon: text("icon").default("folder"),
+  isDefault: text("is_default").default("false"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertAreaSchema = createInsertSchema(areas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertArea = z.infer<typeof insertAreaSchema>;
+export type Area = typeof areas.$inferSelect;
+
+// Area admins: Users with governance roles (owner/admin) for an Area
+// These users can create workflows, define SLAs, manage teams within the area
+export const areaAdmins = pgTable("area_admins", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull(),
+  areaId: uuid("area_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").notNull().default("admin"), // 'owner' | 'admin'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAreaAdminSchema = createInsertSchema(areaAdmins).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAreaAdmin = z.infer<typeof insertAreaAdminSchema>;
+export type AreaAdmin = typeof areaAdmins.$inferSelect;
+
+// Area admin roles
+export const AREA_ROLES = {
+  OWNER: "owner",
+  ADMIN: "admin",
+} as const;
+
+export type AreaRole = typeof AREA_ROLES[keyof typeof AREA_ROLES];
+
+// ========== TEAMS (Execution) ==========
+// Teams execute demands. Users belong ONLY to Teams.
+// Teams belong to ONE Area.
 export const teams = pgTable("teams", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull(),
+  areaId: uuid("area_id"), // Optional for backward compatibility, will be required after migration
   name: text("name").notNull(),
   description: text("description"),
   color: text("color").default("#6366f1"),
@@ -132,11 +186,21 @@ export const insertTeamSchema = createInsertSchema(teams).omit({
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Team = typeof teams.$inferSelect;
 
+// Team roles for execution permissions
+export const TEAM_ROLES = {
+  LEAD: "lead",
+  MEMBER: "member",
+  VIEWER: "viewer",
+} as const;
+
+export type TeamRole = typeof TEAM_ROLES[keyof typeof TEAM_ROLES];
+
 export const userTeams = pgTable("user_teams", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull(),
   userId: varchar("user_id").notNull(),
   teamId: uuid("team_id").notNull(),
+  role: text("role").notNull().default("member"), // 'lead' | 'member' | 'viewer'
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -189,71 +253,142 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
 
-// ========== PERMISSION CONSTANTS ==========
-export const PERMISSIONS = {
-  TENANT_MANAGE_USERS: "tenant.manage_users",
-  TENANT_MANAGE_ROLES: "tenant.manage_roles",
-  TENANT_VIEW_AUDIT_LOGS: "tenant.view_audit_logs",
-  TENANT_MANAGE_TEAMS: "tenant.manage_teams",
-  WORKFLOW_VIEW: "workflow.view",
-  WORKFLOW_CREATE: "workflow.create",
-  WORKFLOW_EDIT: "workflow.edit",
-  WORKFLOW_DELETE: "workflow.delete",
-  WORKFLOW_RUN_AGENTS: "workflow.run_agents",
-  CARD_VIEW: "card.view",
-  CARD_CREATE: "card.create",
-  CARD_MOVE: "card.move",
-  CARD_EDIT: "card.edit",
-  CARD_COMMENT: "card.comment",
-  CARD_DELETE: "card.delete",
+// ========== PERMISSION CONSTANTS (3-Level Hierarchy) ==========
+
+// Tenant-level permissions (Tenant Owner/Admin only)
+export const TENANT_PERMISSIONS = {
+  MANAGE_USERS: "tenant.manage_users",
+  MANAGE_ROLES: "tenant.manage_roles",
+  VIEW_AUDIT_LOGS: "tenant.view_audit_logs",
+  MANAGE_BILLING: "tenant.manage_billing",
+  CREATE_AREAS: "tenant.create_areas",
+  MANAGE_SETTINGS: "tenant.manage_settings",
 } as const;
 
-export type PermissionKey = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+// Area-level permissions (Area Owner/Admin - Governance)
+export const AREA_PERMISSIONS = {
+  VIEW: "area.view",
+  MANAGE: "area.manage",
+  CREATE_WORKFLOWS: "area.create_workflows",
+  EDIT_WORKFLOWS: "area.edit_workflows",
+  DELETE_WORKFLOWS: "area.delete_workflows",
+  DEFINE_SLAS: "area.define_slas",
+  MANAGE_AUTOMATIONS: "area.manage_automations",
+  MANAGE_TEAMS: "area.manage_teams",
+  VIEW_METRICS: "area.view_metrics",
+  RUN_AGENTS: "area.run_agents",
+} as const;
 
-// ========== DEFAULT ROLE PERMISSIONS ==========
+// Team-level permissions (Team Lead/Member/Viewer - Execution)
+export const TEAM_PERMISSIONS = {
+  VIEW: "team.view",
+  EXECUTE_DEMANDS: "team.execute_demands",
+  MOVE_CARDS: "team.move_cards",
+  CREATE_CARDS: "team.create_cards",
+  EDIT_CARDS: "team.edit_cards",
+  COMMENT: "team.comment",
+  DELETE_CARDS: "team.delete_cards",
+  ASSIGN_DEMANDS: "team.assign_demands",
+  VIEW_METRICS: "team.view_metrics",
+} as const;
+
+// Legacy permission keys (for backward compatibility)
+export const PERMISSIONS = {
+  TENANT_MANAGE_USERS: TENANT_PERMISSIONS.MANAGE_USERS,
+  TENANT_MANAGE_ROLES: TENANT_PERMISSIONS.MANAGE_ROLES,
+  TENANT_VIEW_AUDIT_LOGS: TENANT_PERMISSIONS.VIEW_AUDIT_LOGS,
+  TENANT_MANAGE_TEAMS: AREA_PERMISSIONS.MANAGE_TEAMS,
+  WORKFLOW_VIEW: AREA_PERMISSIONS.VIEW,
+  WORKFLOW_CREATE: AREA_PERMISSIONS.CREATE_WORKFLOWS,
+  WORKFLOW_EDIT: AREA_PERMISSIONS.EDIT_WORKFLOWS,
+  WORKFLOW_DELETE: AREA_PERMISSIONS.DELETE_WORKFLOWS,
+  WORKFLOW_RUN_AGENTS: AREA_PERMISSIONS.RUN_AGENTS,
+  CARD_VIEW: TEAM_PERMISSIONS.VIEW,
+  CARD_CREATE: TEAM_PERMISSIONS.CREATE_CARDS,
+  CARD_MOVE: TEAM_PERMISSIONS.MOVE_CARDS,
+  CARD_EDIT: TEAM_PERMISSIONS.EDIT_CARDS,
+  CARD_COMMENT: TEAM_PERMISSIONS.COMMENT,
+  CARD_DELETE: TEAM_PERMISSIONS.DELETE_CARDS,
+} as const;
+
+export type TenantPermissionKey = typeof TENANT_PERMISSIONS[keyof typeof TENANT_PERMISSIONS];
+export type AreaPermissionKey = typeof AREA_PERMISSIONS[keyof typeof AREA_PERMISSIONS];
+export type TeamPermissionKey = typeof TEAM_PERMISSIONS[keyof typeof TEAM_PERMISSIONS];
+export type PermissionKey = TenantPermissionKey | AreaPermissionKey | TeamPermissionKey;
+
+// Tenant roles
+export const TENANT_ROLES = {
+  OWNER: "tenant_owner",
+  ADMIN: "tenant_admin",
+} as const;
+
+export type TenantRole = typeof TENANT_ROLES[keyof typeof TENANT_ROLES];
+
+// ========== DEFAULT ROLE PERMISSIONS (3-Level Hierarchy) ==========
+
+// Tenant Owner: Full access to everything
+export const TENANT_OWNER_PERMISSIONS: PermissionKey[] = [
+  ...Object.values(TENANT_PERMISSIONS),
+  ...Object.values(AREA_PERMISSIONS),
+  ...Object.values(TEAM_PERMISSIONS),
+];
+
+// Tenant Admin: Manage users and settings, but not billing
+export const TENANT_ADMIN_PERMISSIONS: PermissionKey[] = [
+  TENANT_PERMISSIONS.MANAGE_USERS,
+  TENANT_PERMISSIONS.MANAGE_ROLES,
+  TENANT_PERMISSIONS.VIEW_AUDIT_LOGS,
+  TENANT_PERMISSIONS.CREATE_AREAS,
+  TENANT_PERMISSIONS.MANAGE_SETTINGS,
+  ...Object.values(AREA_PERMISSIONS),
+  ...Object.values(TEAM_PERMISSIONS),
+];
+
+// Area Owner: Full governance of the area
+export const AREA_OWNER_PERMISSIONS: PermissionKey[] = [
+  ...Object.values(AREA_PERMISSIONS),
+  ...Object.values(TEAM_PERMISSIONS),
+];
+
+// Area Admin: Governance without team management
+export const AREA_ADMIN_PERMISSIONS: PermissionKey[] = [
+  AREA_PERMISSIONS.VIEW,
+  AREA_PERMISSIONS.CREATE_WORKFLOWS,
+  AREA_PERMISSIONS.EDIT_WORKFLOWS,
+  AREA_PERMISSIONS.DEFINE_SLAS,
+  AREA_PERMISSIONS.MANAGE_AUTOMATIONS,
+  AREA_PERMISSIONS.VIEW_METRICS,
+  AREA_PERMISSIONS.RUN_AGENTS,
+  ...Object.values(TEAM_PERMISSIONS),
+];
+
+// Team Lead: Full execution + can assign demands
+export const TEAM_LEAD_PERMISSIONS: PermissionKey[] = [
+  ...Object.values(TEAM_PERMISSIONS),
+];
+
+// Team Member: Execute demands, move cards, comment
+export const TEAM_MEMBER_PERMISSIONS: PermissionKey[] = [
+  TEAM_PERMISSIONS.VIEW,
+  TEAM_PERMISSIONS.EXECUTE_DEMANDS,
+  TEAM_PERMISSIONS.MOVE_CARDS,
+  TEAM_PERMISSIONS.CREATE_CARDS,
+  TEAM_PERMISSIONS.EDIT_CARDS,
+  TEAM_PERMISSIONS.COMMENT,
+];
+
+// Team Viewer: Read-only access
+export const TEAM_VIEWER_PERMISSIONS: PermissionKey[] = [
+  TEAM_PERMISSIONS.VIEW,
+];
+
+// Legacy default role permissions (for backward compatibility)
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
-  owner: Object.values(PERMISSIONS),
-  admin: [
-    PERMISSIONS.TENANT_MANAGE_USERS,
-    PERMISSIONS.TENANT_MANAGE_ROLES,
-    PERMISSIONS.TENANT_VIEW_AUDIT_LOGS,
-    PERMISSIONS.TENANT_MANAGE_TEAMS,
-    PERMISSIONS.WORKFLOW_VIEW,
-    PERMISSIONS.WORKFLOW_CREATE,
-    PERMISSIONS.WORKFLOW_EDIT,
-    PERMISSIONS.WORKFLOW_DELETE,
-    PERMISSIONS.WORKFLOW_RUN_AGENTS,
-    PERMISSIONS.CARD_VIEW,
-    PERMISSIONS.CARD_CREATE,
-    PERMISSIONS.CARD_MOVE,
-    PERMISSIONS.CARD_EDIT,
-    PERMISSIONS.CARD_COMMENT,
-    PERMISSIONS.CARD_DELETE,
-  ],
-  manager: [
-    PERMISSIONS.WORKFLOW_VIEW,
-    PERMISSIONS.WORKFLOW_CREATE,
-    PERMISSIONS.WORKFLOW_EDIT,
-    PERMISSIONS.WORKFLOW_RUN_AGENTS,
-    PERMISSIONS.CARD_VIEW,
-    PERMISSIONS.CARD_CREATE,
-    PERMISSIONS.CARD_MOVE,
-    PERMISSIONS.CARD_EDIT,
-    PERMISSIONS.CARD_COMMENT,
-    PERMISSIONS.CARD_DELETE,
-  ],
-  member: [
-    PERMISSIONS.WORKFLOW_VIEW,
-    PERMISSIONS.CARD_VIEW,
-    PERMISSIONS.CARD_CREATE,
-    PERMISSIONS.CARD_MOVE,
-    PERMISSIONS.CARD_EDIT,
-    PERMISSIONS.CARD_COMMENT,
-  ],
-  viewer: [
-    PERMISSIONS.WORKFLOW_VIEW,
-    PERMISSIONS.CARD_VIEW,
-  ],
+  owner: TENANT_OWNER_PERMISSIONS,
+  admin: TENANT_ADMIN_PERMISSIONS,
+  manager: AREA_ADMIN_PERMISSIONS,
+  member: TEAM_MEMBER_PERMISSIONS,
+  viewer: TEAM_VIEWER_PERMISSIONS,
 };
 
 // ========== DEMAND PROCESSING STATES (4-Layer Architecture) ==========
