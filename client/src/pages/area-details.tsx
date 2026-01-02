@@ -106,6 +106,17 @@ export default function AreaDetailsPage() {
   });
 
 
+  // Fetch area details
+  const { data: area } = useQuery<any>({
+    queryKey: ["area", areaId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/areas/${areaId}`);
+      if (!res.ok) throw new Error("Failed to fetch area");
+      return res.json();
+    },
+    enabled: !!areaId
+  });
+
   if (!match) return null;
 
   if (demandsLoading) {
@@ -184,7 +195,7 @@ export default function AreaDetailsPage() {
         </Button>
         <div className="space-y-2">
           <h1 className="text-4xl font-bold capitalize" data-testid="title-area">
-            {t("areaDetails.area")}: {getAreaName(areaId || '', language)}
+            {t("areaDetails.area")}: {area?.name || areaId}
           </h1>
           <p className="text-muted-foreground" data-testid="subtitle-area">
             {t("areaDetails.management")}
