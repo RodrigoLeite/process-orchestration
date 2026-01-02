@@ -578,19 +578,21 @@ router.get('/areas', async (req: Request, res: Response) => {
     
     const areasWithTeams = await Promise.all(
       areasList.map(async (area) => {
+        const normalizedArea = normalizeRecord(area);
+        const areaId = normalizedArea.id;
         try {
-          const teamsList = await storage.getTeamsByArea(area.id) || [];
-          const admins = await storage.getAreaAdmins(area.id) || [];
+          const teamsList = areaId ? await storage.getTeamsByArea(areaId) || [] : [];
+          const admins = areaId ? await storage.getAreaAdmins(areaId) || [] : [];
           return {
-            ...area,
-            teams: teamsList,
-            admins,
+            ...normalizedArea,
+            teams: teamsList.map(t => normalizeRecord(t)),
+            admins: admins.map(a => normalizeRecord(a)),
             teamCount: teamsList.length,
           };
         } catch (err) {
-          console.error(`Error processing area ${area.id}:`, err);
+          console.error(`Error processing area ${areaId}:`, err);
           return {
-            ...area,
+            ...normalizedArea,
             teams: [],
             admins: [],
             teamCount: 0,
@@ -613,7 +615,13 @@ router.get('/areas/:areaId', async (req: Request, res: Response) => {
     
     const area = await storage.getArea(areaId);
     
-    if (!area || area.tenantId !== tenantId) {
+    if (!area) {
+      return res.status(404).json({ error: 'Area not found' });
+    }
+    
+    const normalizedArea = normalizeRecord(area);
+    
+    if (normalizedArea.tenantId !== tenantId) {
       return res.status(404).json({ error: 'Area not found' });
     }
     
@@ -622,9 +630,9 @@ router.get('/areas/:areaId', async (req: Request, res: Response) => {
     
     res.json({ 
       area: {
-        ...area,
-        teams: teamsList,
-        admins,
+        ...normalizedArea,
+        teams: teamsList.map(t => normalizeRecord(t)),
+        admins: admins.map(a => normalizeRecord(a)),
         teamCount: teamsList.length,
       }
     });

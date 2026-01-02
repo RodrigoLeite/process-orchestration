@@ -986,10 +986,8 @@ export class DatabaseStorage implements IStorage {
   // ========== AREA ADMINS (Governance Roles) ==========
 
   async getAreaAdmins(areaId: string): Promise<AreaAdmin[]> {
-    const normalizedAreaId = normalizeUUID(areaId);
-    if (!normalizedAreaId) return [];
     try {
-      const result = await this.db.select().from(areaAdmins).where(eq(areaAdmins.areaId, normalizedAreaId as any));
+      const result = await this.db.select().from(areaAdmins).where(eq(areaAdmins.areaId, areaId));
       return result || [];
     } catch (error) {
       console.error('Error in getAreaAdmins:', error);
@@ -998,12 +996,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined> {
-    const normalizedAreaId = normalizeUUID(areaId);
-    const normalizedUserId = normalizeUUID(userId);
-    if (!normalizedAreaId || !normalizedUserId) return undefined;
     try {
       const result = await this.db.select().from(areaAdmins)
-        .where(and(eq(areaAdmins.areaId, normalizedAreaId as any), eq(areaAdmins.userId, normalizedUserId as any)))
+        .where(and(eq(areaAdmins.areaId, areaId), eq(areaAdmins.userId, userId)))
         .limit(1);
       return result[0];
     } catch (error) {
@@ -1039,10 +1034,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamsByTenant(tenantId: string): Promise<Team[]> {
-    const normalizedTenantId = normalizeUUID(tenantId);
-    if (!normalizedTenantId) return [];
     try {
-      const result = await this.db.select().from(teams).where(eq(teams.tenantId, normalizedTenantId as any)).orderBy(teams.name);
+      const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
       return result || [];
     } catch (error) {
       console.error('Error in getTeamsByTenant:', error);
@@ -1051,10 +1044,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamsByArea(areaId: string): Promise<Team[]> {
-    const normalizedAreaId = normalizeUUID(areaId);
-    if (!normalizedAreaId) return [];
     try {
-      const result = await this.db.select().from(teams).where(eq(teams.areaId, normalizedAreaId as any)).orderBy(teams.name);
+      const result = await this.db.select().from(teams).where(eq(teams.areaId, areaId)).orderBy(teams.name);
       return result || [];
     } catch (error) {
       console.error('Error in getTeamsByArea:', error);
