@@ -94,7 +94,12 @@ export default function AreaDetailsPage() {
           const targetAreaId = areaId?.toLowerCase();
           const targetAreaName = area?.name?.toLowerCase();
           
-          return demandArea === targetAreaId || (targetAreaName && demandArea === targetAreaName);
+          // Helper to normalize names (remove accents and common variations)
+          const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          
+          return demandArea === targetAreaId || 
+                 (targetAreaName && demandArea === targetAreaName) || 
+                 (targetAreaName && normalize(demandArea) === normalize(targetAreaName));
         }
       );
     },
