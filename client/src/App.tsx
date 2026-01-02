@@ -45,6 +45,7 @@ import AdminUsersPage from "@/pages/admin/users";
 import AdminUsersImportPage from "@/pages/admin/users-import";
 import AdminTeamsPage from "@/pages/admin/teams";
 import AdminRolesPage from "@/pages/admin/roles";
+import AdminAreasPage from "@/pages/admin/areas";
 
 function ProtectedRoutes() {
   const { isAuthenticated, isLoading, tenant } = useAuth();
@@ -117,6 +118,7 @@ function AppRoutes() {
         <Route path="/kanban/board/:boardId" component={KanbanBoardView} />
         <Route path="/admin/users" component={AdminUsersPage} />
         <Route path="/admin/users/import" component={AdminUsersImportPage} />
+        <Route path="/admin/areas" component={AdminAreasPage} />
         <Route path="/admin/teams" component={AdminTeamsPage} />
         <Route path="/admin/roles" component={AdminRolesPage} />
         <Route component={NotFound} />

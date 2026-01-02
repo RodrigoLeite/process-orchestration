@@ -5,12 +5,17 @@ import {
   useCreateTeam,
   useUpdateTeam,
   useDeleteTeam,
+  useAdminAreas,
+  useMoveTeamToArea,
+  useUpdateTeamMemberRole,
+  useAdminUsers,
   type Team,
 } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +33,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import {
@@ -37,6 +49,11 @@ import {
   Pencil,
   Trash2,
   Users,
+  Building2,
+  UserCog,
+  Crown,
+  User,
+  Eye,
 } from "lucide-react";
 
 const COLOR_OPTIONS = [
@@ -50,25 +67,40 @@ const COLOR_OPTIONS = [
   "#14b8a6",
 ];
 
+const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  lead: { label: "Líder", icon: <Crown className="h-3 w-3" />, color: "bg-amber-500" },
+  member: { label: "Membro", icon: <User className="h-3 w-3" />, color: "bg-blue-500" },
+  viewer: { label: "Visualizador", icon: <Eye className="h-3 w-3" />, color: "bg-gray-500" },
+};
+
 export default function AdminTeamsPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
   const { data, isLoading, error } = useAdminTeams();
+  const { data: areasData } = useAdminAreas();
+  const { data: usersData } = useAdminUsers();
   
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editTeam, setEditTeam] = useState<Team | null>(null);
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formColor, setFormColor] = useState(COLOR_OPTIONS[0]);
+  const [formAreaId, setFormAreaId] = useState("");
+
+  const [membersModalOpen, setMembersModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
   const deleteTeam = useDeleteTeam();
+  const moveTeamToArea = useMoveTeamToArea();
+  const updateMemberRole = useUpdateTeamMemberRole();
 
   const openCreateModal = () => {
     setFormName("");
     setFormDescription("");
     setFormColor(COLOR_OPTIONS[0]);
+    setFormAreaId(areasData?.areas?.[0]?.id || "");
     setEditTeam(null);
     setCreateModalOpen(true);
   };
@@ -77,8 +109,14 @@ export default function AdminTeamsPage() {
     setFormName(team.name);
     setFormDescription(team.description || "");
     setFormColor(team.color || COLOR_OPTIONS[0]);
+    setFormAreaId(team.areaId || "");
     setEditTeam(team);
     setCreateModalOpen(true);
+  };
+
+  const openMembersModal = (team: Team) => {
+    setSelectedTeam(team);
+    setMembersModalOpen(true);
   };
 
   const handleSubmit = async () => {
@@ -95,13 +133,25 @@ export default function AdminTeamsPage() {
           description: formDescription || undefined,
           color: formColor,
         });
+        if (formAreaId && formAreaId !== editTeam.areaId) {
+          await moveTeamToArea.mutateAsync({
+            teamId: editTeam.id,
+            areaId: formAreaId,
+          });
+        }
         toast.success(t('admin.teamUpdated'));
       } else {
-        await createTeam.mutateAsync({
+        const result = await createTeam.mutateAsync({
           name: formName,
           description: formDescription || undefined,
           color: formColor,
         });
+        if (formAreaId && result?.team?.id) {
+          await moveTeamToArea.mutateAsync({
+            teamId: result.team.id,
+            areaId: formAreaId,
+          });
+        }
         toast.success(t('admin.teamCreated'));
       }
       setCreateModalOpen(false);
@@ -121,6 +171,33 @@ export default function AdminTeamsPage() {
     } catch (error: any) {
       toast.error(error.message);
     }
+  };
+
+  const handleRoleChange = async (memberId: string, userId: string, newRole: string) => {
+    if (!selectedTeam) return;
+
+    try {
+      await updateMemberRole.mutateAsync({
+        teamId: selectedTeam.id,
+        userId,
+        role: newRole as 'lead' | 'member' | 'viewer',
+      });
+      toast.success("Role atualizado");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const getAreaName = (areaId: string | null) => {
+    if (!areaId || !areasData?.areas) return null;
+    const area = areasData.areas.find(a => a.id === areaId);
+    return area?.name;
+  };
+
+  const getAreaColor = (areaId: string | null) => {
+    if (!areaId || !areasData?.areas) return "#6366f1";
+    const area = areasData.areas.find(a => a.id === areaId);
+    return area?.color || "#6366f1";
   };
 
   if (isLoading) {
@@ -213,6 +290,10 @@ export default function AdminTeamsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openMembersModal(team)}>
+                      <UserCog className="h-4 w-4 mr-2" />
+                      Gerenciar Membros
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => openEditModal(team)}>
                       <Pencil className="h-4 w-4 mr-2" />
                       {t('admin.editTeam')}
@@ -229,6 +310,19 @@ export default function AdminTeamsPage() {
               </CardHeader>
 
               <CardContent>
+                {getAreaName(team.areaId) && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs"
+                      style={{ borderColor: getAreaColor(team.areaId), color: getAreaColor(team.areaId) }}
+                    >
+                      {getAreaName(team.areaId)}
+                    </Badge>
+                  </div>
+                )}
+
                 {team.description && (
                   <p className="text-sm text-muted-foreground mb-4">{team.description}</p>
                 )}
@@ -237,13 +331,20 @@ export default function AdminTeamsPage() {
                   <Label className="text-xs text-muted-foreground">{t('admin.teamMembers')}</Label>
                   {team.members.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {team.members.slice(0, 5).map((member) => (
-                        <Avatar key={member.id} className="h-8 w-8" title={member.name || member.email || ""}>
-                          <AvatarImage src={member.image || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {member.name?.charAt(0) || member.email?.charAt(0) || "?"}
-                          </AvatarFallback>
-                        </Avatar>
+                      {team.members.slice(0, 5).map((member: any) => (
+                        <div key={member.id} className="relative">
+                          <Avatar className="h-8 w-8" title={`${member.name || member.email} - ${ROLE_LABELS[member.role || 'member']?.label}`}>
+                            <AvatarImage src={member.image || undefined} />
+                            <AvatarFallback className="text-xs">
+                              {member.name?.charAt(0) || member.email?.charAt(0) || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          {member.role === 'lead' && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+                              <Crown className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          )}
+                        </div>
                       ))}
                       {team.members.length > 5 && (
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs">
@@ -294,6 +395,30 @@ export default function AdminTeamsPage() {
               />
             </div>
 
+            {areasData?.areas && areasData.areas.length > 0 && (
+              <div className="space-y-2">
+                <Label>Área</Label>
+                <Select value={formAreaId} onValueChange={setFormAreaId}>
+                  <SelectTrigger data-testid="select-team-area">
+                    <SelectValue placeholder="Selecione uma área" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {areasData.areas.map((area) => (
+                      <SelectItem key={area.id} value={area.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: area.color || "#6366f1" }}
+                          />
+                          {area.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>{t('admin.teamColor')}</Label>
               <div className="flex gap-2">
@@ -325,6 +450,81 @@ export default function AdminTeamsPage() {
               {createTeam.isPending || updateTeam.isPending
                 ? t('common.loading')
                 : t('common.save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={membersModalOpen} onOpenChange={setMembersModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Membros do Time</DialogTitle>
+            <DialogDescription>
+              {selectedTeam?.name} - Gerencie os membros e seus papéis
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
+            {selectedTeam?.members?.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhum membro neste time</p>
+                <p className="text-sm">Adicione membros na página de usuários</p>
+              </div>
+            ) : (
+              selectedTeam?.members?.map((member: any) => (
+                <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={member.image || undefined} />
+                      <AvatarFallback>
+                        {member.name?.charAt(0) || member.email?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{member.name || member.email}</p>
+                      {member.name && member.email && (
+                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Select 
+                    value={member.role || 'member'} 
+                    onValueChange={(value) => handleRoleChange(member.id, member.userId, value)}
+                  >
+                    <SelectTrigger className="w-36" data-testid={`select-role-${member.id}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lead">
+                        <div className="flex items-center gap-2">
+                          <Crown className="h-4 w-4 text-amber-500" />
+                          Líder
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="member">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-blue-500" />
+                          Membro
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="viewer">
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4 text-gray-500" />
+                          Visualizador
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMembersModalOpen(false)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
