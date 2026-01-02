@@ -578,14 +578,24 @@ router.get('/areas', async (req: Request, res: Response) => {
     
     const areasWithTeams = await Promise.all(
       areasList.map(async (area) => {
-        const teamsList = await storage.getTeamsByArea(area.id);
-        const admins = await storage.getAreaAdmins(area.id);
-        return {
-          ...area,
-          teams: teamsList,
-          admins,
-          teamCount: teamsList.length,
-        };
+        try {
+          const teamsList = await storage.getTeamsByArea(area.id) || [];
+          const admins = await storage.getAreaAdmins(area.id) || [];
+          return {
+            ...area,
+            teams: teamsList,
+            admins,
+            teamCount: teamsList.length,
+          };
+        } catch (err) {
+          console.error(`Error processing area ${area.id}:`, err);
+          return {
+            ...area,
+            teams: [],
+            admins: [],
+            teamCount: 0,
+          };
+        }
       })
     );
     
@@ -607,8 +617,8 @@ router.get('/areas/:areaId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Area not found' });
     }
     
-    const teamsList = await storage.getTeamsByArea(areaId);
-    const admins = await storage.getAreaAdmins(areaId);
+    const teamsList = await storage.getTeamsByArea(areaId) || [];
+    const admins = await storage.getAreaAdmins(areaId) || [];
     
     res.json({ 
       area: {
