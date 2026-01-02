@@ -89,7 +89,13 @@ export default function AreaDetailsPage() {
       if (!res.ok) throw new Error("Failed to fetch demands");
       const allDemands = await res.json();
       return allDemands.filter(
-        (d: Demand) => (d.assigned_to || d.assignedTo) === areaId
+        (d: Demand) => {
+          const demandArea = (d.assigned_to || d.assignedTo || "").toLowerCase();
+          const targetAreaId = areaId?.toLowerCase();
+          const targetAreaName = area?.name?.toLowerCase();
+          
+          return demandArea === targetAreaId || (targetAreaName && demandArea === targetAreaName);
+        }
       );
     },
     enabled: !!areaId
