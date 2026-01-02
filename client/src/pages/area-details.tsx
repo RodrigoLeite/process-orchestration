@@ -107,7 +107,7 @@ export default function AreaDetailsPage() {
 
 
   // Fetch area details
-  const { data: area } = useQuery<any>({
+  const { data: areaData } = useQuery<any>({
     queryKey: ["area", areaId],
     queryFn: async () => {
       const res = await fetch(`/api/admin/areas/${areaId}`);
@@ -116,6 +116,8 @@ export default function AreaDetailsPage() {
     },
     enabled: !!areaId
   });
+
+  const area = areaData?.area;
 
   if (!match) return null;
 
