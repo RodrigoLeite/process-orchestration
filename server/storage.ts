@@ -163,13 +163,14 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   public db;
+  private neonClient: ReturnType<typeof neon>;
 
   constructor() {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL is required");
     }
-    const sql = neon(process.env.DATABASE_URL);
-    this.db = drizzle(sql);
+    this.neonClient = neon(process.env.DATABASE_URL);
+    this.db = drizzle(this.neonClient);
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -999,9 +1000,27 @@ export class DatabaseStorage implements IStorage {
 
   async getAreaAdmins(areaId: string): Promise<AreaAdmin[]> {
     if (!areaId) return [];
+    
+    // Validate UUID format - must be a proper UUID string
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(areaId)) {
+      console.error('getAreaAdmins: Invalid UUID format:', areaId);
+      return [];
+    }
+    
     try {
-      const result = await this.db.select().from(areaAdmins).where(eq(areaAdmins.areaId, areaId));
-      return result || [];
+      // Use raw SQL to avoid Drizzle/Neon driver issues with UUID parameters
+      const result = await this.db.execute(sql.raw(
+        `SELECT * FROM area_admins WHERE area_id = '${areaId}'::uuid`
+      ));
+      return ((result as any).rows || []).map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        userId: row.user_id,
+        role: row.role,
+        createdAt: row.created_at,
+      })) as AreaAdmin[];
     } catch (error) {
       console.error('Error in getAreaAdmins:', error);
       return [];
@@ -1060,9 +1079,29 @@ export class DatabaseStorage implements IStorage {
 
   async getTeamsByArea(areaId: string): Promise<Team[]> {
     if (!areaId) return [];
+    
+    // Validate UUID format - must be a proper UUID string
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(areaId)) {
+      console.error('getTeamsByArea: Invalid UUID format:', areaId);
+      return [];
+    }
+    
     try {
-      const result = await this.db.select().from(teams).where(eq(teams.areaId, areaId)).orderBy(teams.name);
-      return result || [];
+      // Use raw SQL to avoid Drizzle/Neon driver issues with UUID parameters
+      const result = await this.db.execute(sql.raw(
+        `SELECT * FROM teams WHERE area_id = '${areaId}'::uuid ORDER BY name`
+      ));
+      return ((result as any).rows || []).map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        name: row.name,
+        description: row.description,
+        color: row.color,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      })) as Team[];
     } catch (error) {
       console.error('Error in getTeamsByArea:', error);
       return [];
