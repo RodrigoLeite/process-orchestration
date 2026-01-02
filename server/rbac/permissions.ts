@@ -1,86 +1,212 @@
 export const DEFAULT_PERMISSIONS = {
+  // Tenant Management
+  'tenant.manage_users': 'Gerenciar usuários do tenant',
+  'tenant.manage_areas': 'Criar/Editar/Deletar áreas',
+  'tenant.manage_roles': 'Gerenciar roles globais',
+  'tenant.manage_teams': 'Criar/Editar/Deletar times',
+  'tenant.manage_billing': 'Gerenciar faturamento',
+  'tenant.manage_settings': 'Gerenciar configurações',
+
+  // Area Management
+  'areas.create': 'Criar áreas',
+  'areas.edit': 'Editar áreas',
+  'areas.delete': 'Deletar áreas',
+  'areas.view_metrics': 'Visualizar métricas da área',
+  'areas.define_slas': 'Definir SLAs',
+  'areas.define_automations': 'Definir automações',
+  'areas.associate_teams': 'Associar times à área',
+
+  // Teams Management
+  'teams.create': 'Criar times',
+  'teams.edit': 'Editar times',
+  'teams.delete': 'Deletar times',
+
+  // Boards Management
+  'boards.create': 'Criar boards',
+  'boards.edit': 'Editar boards',
+  'boards.delete': 'Deletar boards',
+  'boards.read': 'Visualizar boards',
+
   // Workflows
   'workflows.read': 'Visualizar workflows',
-  'workflows.write': 'Criar e editar workflows',
+  'workflows.create': 'Criar workflows',
+  'workflows.edit': 'Editar workflows',
   'workflows.delete': 'Deletar workflows',
 
-  // Demands
+  // Kanban Operations
+  'kanban.create': 'Criar kanban',
+  'kanban.edit': 'Editar kanban',
+  'kanban.delete': 'Deletar kanban',
+  'kanban.read': 'Visualizar kanban',
+
+  // Demands/Cards Operations
+  'demands.execute': 'Executar demandas',
+  'demands.move_cards': 'Mover cards no kanban',
+  'demands.comment': 'Comentar em cards',
+  'demands.update_status': 'Atualizar status de cards',
   'demands.read': 'Visualizar demandas',
-  'demands.write': 'Criar e editar demandas',
+  'demands.create': 'Criar demandas',
   'demands.delete': 'Deletar demandas',
 
   // Agents
   'agents.run': 'Executar agentes',
   'agents.manage': 'Gerenciar agentes',
 
-  // Billing
-  'billing.manage': 'Gerenciar faturamento',
-
-  // RBAC
-  'rbac.manage': 'Gerenciar roles e permissões',
-  'users.manage': 'Gerenciar usuários',
-
   // Insights
   'insights.read': 'Visualizar insights',
   'bottlenecks.read': 'Visualizar gargalos',
-
-  // Settings
-  'settings.manage': 'Gerenciar configurações',
 };
 
 export const DEFAULT_ROLES = {
-  owner: {
-    name: 'Owner',
+  tenant_owner: {
+    name: 'Tenant Owner',
+    description: 'Proprietário do tenant com todas as permissões',
+    level: 'tenant',
     permissions: Object.keys(DEFAULT_PERMISSIONS),
   },
-  admin: {
-    name: 'Admin',
+  tenant_admin: {
+    name: 'Tenant Admin',
+    description: 'Administrador do tenant',
+    level: 'tenant',
     permissions: [
+      'tenant.manage_users',
+      'tenant.manage_areas',
+      'tenant.manage_roles',
+      'tenant.manage_teams',
+      'areas.create',
+      'areas.edit',
+      'areas.delete',
+      'areas.associate_teams',
+      'teams.create',
+      'teams.edit',
+      'teams.delete',
+      'boards.create',
+      'boards.edit',
+      'boards.delete',
+      'boards.read',
       'workflows.read',
-      'workflows.write',
+      'workflows.create',
+      'workflows.edit',
       'workflows.delete',
+      'kanban.read',
       'demands.read',
-      'demands.write',
-      'demands.delete',
-      'agents.run',
-      'agents.manage',
-      'insights.read',
-      'bottlenecks.read',
-      'users.manage',
-      'rbac.manage',
-      'settings.manage',
-    ],
-  },
-  manager: {
-    name: 'Manager',
-    permissions: [
-      'workflows.read',
-      'workflows.write',
-      'demands.read',
-      'demands.write',
-      'agents.run',
       'insights.read',
       'bottlenecks.read',
     ],
   },
-  member: {
-    name: 'Member',
+  area_owner: {
+    name: 'Area Owner',
+    description: 'Proprietário da área com permissões de governança',
+    level: 'area',
     permissions: [
+      'boards.create',
+      'boards.edit',
+      'boards.delete',
+      'boards.read',
+      'areas.define_slas',
+      'areas.define_automations',
+      'areas.associate_teams',
+      'areas.view_metrics',
+      'teams.create',
+      'teams.edit',
+      'teams.delete',
       'workflows.read',
+      'workflows.create',
+      'workflows.edit',
+      'kanban.read',
+      'kanban.create',
+      'kanban.edit',
       'demands.read',
-      'demands.write',
-      'agents.run',
+      'demands.execute',
+      'demands.move_cards',
+      'demands.comment',
+      'demands.update_status',
       'insights.read',
       'bottlenecks.read',
     ],
   },
-  viewer: {
-    name: 'Viewer',
+  area_admin: {
+    name: 'Area Admin',
+    description: 'Administrador da área',
+    level: 'area',
     permissions: [
       'workflows.read',
+      'workflows.create',
+      'workflows.edit',
+      'areas.define_automations',
+      'areas.associate_teams',
+      'areas.view_metrics',
+      'boards.read',
+      'kanban.read',
       'demands.read',
+      'demands.execute',
+      'demands.move_cards',
+      'demands.comment',
+      'demands.update_status',
       'insights.read',
       'bottlenecks.read',
+    ],
+  },
+  team_lead: {
+    name: 'Team Lead',
+    description: 'Líder de time com permissões de execução em todas as áreas do time',
+    level: 'team',
+    permissions: [
+      'kanban.create',
+      'kanban.edit',
+      'kanban.delete',
+      'kanban.read',
+      'demands.execute',
+      'demands.move_cards',
+      'demands.comment',
+      'demands.update_status',
+      'demands.read',
+      'demands.create',
+      'boards.read',
+      'workflows.read',
+      'insights.read',
+      'bottlenecks.read',
+    ],
+  },
+  team_member: {
+    name: 'Team Member',
+    description: 'Membro do time com permissões de execução nos kanbans do time',
+    level: 'team',
+    permissions: [
+      'kanban.read',
+      'demands.execute',
+      'demands.move_cards',
+      'demands.comment',
+      'demands.update_status',
+      'demands.read',
+      'boards.read',
+      'workflows.read',
+      'insights.read',
+    ],
+  },
+  team_viewer: {
+    name: 'Team Viewer',
+    description: 'Visualizador com acesso somente leitura aos kanbans do time',
+    level: 'team',
+    permissions: [
+      'kanban.read',
+      'demands.read',
+      'boards.read',
+      'workflows.read',
+      'insights.read',
     ],
   },
 };
+
+export const ROLE_HIERARCHY = {
+  tenant_owner: 100,
+  tenant_admin: 90,
+  area_owner: 70,
+  area_admin: 60,
+  team_lead: 40,
+  team_member: 30,
+  team_viewer: 10,
+};
+
+export type RoleKey = keyof typeof DEFAULT_ROLES;
+export type PermissionKey = keyof typeof DEFAULT_PERMISSIONS;

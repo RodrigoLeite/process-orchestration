@@ -68,19 +68,25 @@ import {
 } from "lucide-react";
 
 const ROLE_OPTIONS = [
-  { value: "owner", label: "Owner" },
-  { value: "admin", label: "Admin" },
-  { value: "manager", label: "Manager" },
-  { value: "member", label: "Member" },
-  { value: "viewer", label: "Viewer" },
+  { value: "tenant_owner", label: "Tenant Owner", level: "tenant" },
+  { value: "tenant_admin", label: "Tenant Admin", level: "tenant" },
+  { value: "area_owner", label: "Area Owner", level: "area" },
+  { value: "area_admin", label: "Area Admin", level: "area" },
+  { value: "team_lead", label: "Team Lead", level: "team" },
+  { value: "team_member", label: "Team Member", level: "team" },
+  { value: "team_viewer", label: "Team Viewer", level: "team" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
+  tenant_owner: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  tenant_admin: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+  area_owner: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  area_admin: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300",
+  team_lead: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  team_member: "bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300",
+  team_viewer: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   owner: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   admin: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  manager: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  member: "bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300",
-  viewer: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
 };
 
 export default function AdminUsersPage() {
