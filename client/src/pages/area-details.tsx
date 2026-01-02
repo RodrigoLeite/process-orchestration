@@ -83,27 +83,27 @@ export default function AreaDetailsPage() {
 
   // Fetch demands for this area
   const { data: demands = [], isLoading: demandsLoading, refetch } = useQuery<Demand[]>({
-    queryKey: ["area-demands", areaId, tenant?.id],
+    queryKey: ["area-demands", areaId, tenant?.id, area?.name],
     queryFn: async () => {
       const res = await fetch("/api/demands");
       if (!res.ok) throw new Error("Failed to fetch demands");
       const allDemands = await res.json();
-      return allDemands.filter(
-        (d: Demand) => {
-          const demandArea = (d.assigned_to || d.assignedTo || "").toLowerCase();
-          const targetAreaId = areaId?.toLowerCase();
-          const targetAreaName = area?.name?.toLowerCase();
-          
-          // Helper to normalize names (remove accents and common variations)
-          const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-          
-          return demandArea === targetAreaId || 
-                 (targetAreaName && demandArea === targetAreaName) || 
-                 (targetAreaName && normalize(demandArea) === normalize(targetAreaName));
-        }
-      );
+      
+      const targetAreaId = areaId?.toLowerCase().trim();
+      const targetAreaName = area?.name?.toLowerCase().trim();
+      const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      const normalizedTargetName = targetAreaName ? normalize(targetAreaName) : "";
+      
+      return allDemands.filter((d: Demand) => {
+        const dArea = (d.assigned_to || d.assignedTo || "").toLowerCase().trim();
+        const normalizedDArea = normalize(dArea);
+        
+        return dArea === targetAreaId || 
+               (targetAreaName && dArea === targetAreaName) || 
+               (normalizedTargetName && normalizedDArea === normalizedTargetName);
+      });
     },
-    enabled: !!areaId
+    enabled: !!areaId && !!area
   });
 
   // Fetch bottlenecks
