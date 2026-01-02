@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { getAreaName, getAreaDescription } from "@/lib/i18n";
+import { useI18nStore } from "@/lib/store/i18nStore";
 import {
   ArrowLeft,
   Plus,
@@ -76,6 +78,7 @@ interface AreaAdmin {
 export default function AdminAreasPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
+  const { language } = useI18nStore();
   const { data, isLoading, error } = useAdminAreas();
   const { data: usersData } = useAdminUsers();
 
@@ -158,7 +161,7 @@ export default function AdminAreasPage() {
       toast.error(t('admin.defaultAreaDeleteError'));
       return;
     }
-    if (!confirm(t('admin.areaDeleteConfirm').replace('{name}', area.name))) {
+    if (!confirm(t('admin.areaDeleteConfirm').replace('{name}', getAreaName(area.name, language) || area.name))) {
       return;
     }
 
@@ -282,7 +285,7 @@ export default function AdminAreasPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{area.name}</CardTitle>
+                      <CardTitle className="text-lg">{getAreaName(area.name, language) || area.name}</CardTitle>
                       {area.isDefault === "true" && (
                         <Badge variant="secondary" className="text-xs">{t('admin.defaultArea')}</Badge>
                       )}
@@ -322,8 +325,8 @@ export default function AdminAreasPage() {
               </CardHeader>
 
               <CardContent>
-                {area.description && (
-                  <p className="text-sm text-muted-foreground mb-3">{area.description}</p>
+                {(area.description || getAreaDescription(area.name, language)) && (
+                  <p className="text-sm text-muted-foreground mb-3">{getAreaDescription(area.name, language) || area.description}</p>
                 )}
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
@@ -424,7 +427,7 @@ export default function AdminAreasPage() {
           <DialogHeader>
             <DialogTitle>{t('admin.areaAdminsTitle')}</DialogTitle>
             <DialogDescription>
-              {t('admin.areaAdminsSubtitle').replace('{name}', selectedArea?.name || '')}
+              {t('admin.areaAdminsSubtitle').replace('{name}', getAreaName(selectedArea?.name || '', language) || selectedArea?.name || '')}
             </DialogDescription>
           </DialogHeader>
 
