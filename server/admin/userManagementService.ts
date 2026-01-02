@@ -358,13 +358,29 @@ export const userManagementService = {
     }
   },
 
-  async removeUserFromTeam(tenantId: string, userId: string, teamId: string): Promise<void> {
+  async updateUserTeams(tenantId: string, userId: string, teamIds: string[]): Promise<void> {
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedUserId = normalizeUUID(userId);
+
+    // Remove from all teams in this tenant first
     await storage.db
       .delete(userTeams)
       .where(and(
-        eq(userTeams.userId, userId),
-        eq(userTeams.teamId, teamId),
-        eq(userTeams.tenantId, tenantId)
+        eq(userTeams.userId, normalizedUserId),
+        eq(userTeams.tenantId, normalizedTenantId)
       ));
+
+    // Add back to selected teams
+    if (teamIds.length > 0) {
+      const values = teamIds.map(teamId => ({
+        tenantId: normalizedTenantId,
+        userId: normalizedUserId,
+        teamId: normalizeUUID(teamId)
+      }));
+
+      await storage.db
+        .insert(userTeams)
+        .values(values);
+    }
   },
 };
