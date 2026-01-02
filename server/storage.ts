@@ -1192,20 +1192,25 @@ export class DatabaseStorage implements IStorage {
 
   async quickAddUser(tenantId: string, email: string, role: string): Promise<void> {
     // 1. Check if user exists
-    let user = await this.db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+    const normalizedEmail = email.toLowerCase().trim();
+    let userResult = await this.db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
     let userId: string;
 
-    if (!user[0]) {
+    if (!userResult || userResult.length === 0) {
       // Create a skeleton user
-      const [newUser] = await this.db.insert(users).values({
-        username: email.toLowerCase(),
-        email: email.toLowerCase(),
+      const result = await this.db.insert(users).values({
+        username: normalizedEmail,
+        email: normalizedEmail,
         name: email.split('@')[0],
         password: 'pending_oauth'
       }).returning();
-      userId = newUser.id;
+      
+      if (!result || result.length === 0) {
+        throw new Error("Failed to create user record");
+      }
+      userId = result[0].id;
     } else {
-      userId = user[0].id;
+      userId = userResult[0].id;
     }
 
     // 2. Check if tenant_user exists
