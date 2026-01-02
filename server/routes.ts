@@ -592,6 +592,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick add user (temporary test solution)
+  app.post("/api/admin/users/quick-add", async (req: any, res) => {
+    try {
+      const tenantId = getTenantId(req);
+      if (!tenantId) return res.status(400).json({ error: "Tenant ID required" });
+      
+      const { email, role } = req.body;
+      if (!email || !role) return res.status(400).json({ error: "Email and role are required" });
+
+      await (storage as any).quickAddUser(tenantId, email, role);
+      
+      await storage.createAuditLog({
+        tenantId,
+        userId: req.user?.id || "system",
+        action: "QUICK_ADD_USER",
+        entityType: "user",
+        entityId: email,
+        metadata: { email, role }
+      });
+
+      res.json({ success: true, message: "User added/updated successfully" });
+    } catch (error) {
+      console.error("Error in quick-add user:", error);
+      res.status(500).json({ error: "Failed to quick-add user" });
+    }
+  });
+
   app.post("/api/route-demand", async (req, res) => {
     try {
       const { id } = req.body;
