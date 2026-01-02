@@ -98,10 +98,10 @@ export default function AdminUsersPage() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [bulkInviteModalOpen, setBulkInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("member");
+  const [inviteRole, setInviteRole] = useState("team_member");
   const [inviteTeamId, setInviteTeamId] = useState<string | null>(null);
   const [bulkEmails, setBulkEmails] = useState("");
-  const [bulkRole, setBulkRole] = useState("member");
+  const [bulkRole, setBulkRole] = useState("team_member");
   const [bulkTeamId, setBulkTeamId] = useState<string | null>(null);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -131,7 +131,7 @@ export default function AdminUsersPage() {
       toast.success(t('admin.inviteSent'));
       setInviteModalOpen(false);
       setInviteEmail("");
-      setInviteRole("member");
+      setInviteRole("team_member");
       setInviteTeamId(null);
     } catch (error: any) {
       toast.error(error.message || t('admin.inviteError'));
@@ -165,7 +165,7 @@ export default function AdminUsersPage() {
       
       setBulkInviteModalOpen(false);
       setBulkEmails("");
-      setBulkRole("member");
+      setBulkRole("team_member");
       setBulkTeamId(null);
     } catch (error: any) {
       toast.error(error.message || t('admin.inviteError'));
