@@ -1307,6 +1307,26 @@ export const translations = {
       deleteRole: 'Delete Role',
       deleteRoleConfirm: 'Are you sure you want to delete this role?',
       editRole: 'Edit Role',
+
+      // Role Names and Descriptions
+      roleNames: {
+        tenant_owner: 'Tenant Owner',
+        tenant_admin: 'Tenant Admin',
+        area_owner: 'Area Owner',
+        area_admin: 'Area Admin',
+        team_lead: 'Team Lead',
+        team_member: 'Team Member',
+        team_viewer: 'Team Viewer',
+      },
+      roleDescriptions: {
+        tenant_owner: 'Full control over the workspace and all settings',
+        tenant_admin: 'Can manage users, areas, roles, teams and boards',
+        area_owner: 'Can create boards, define SLAs and area automations',
+        area_admin: 'Can create and edit workflows and area automations',
+        team_lead: 'Execution lead with permissions on all area kanbans',
+        team_member: 'Execution member on assigned kanbans',
+        team_viewer: 'Read-only access to assigned kanbans',
+      },
       // Permission categories
       permCategoryTenant: 'Administration',
       permCategoryWorkflow: 'Workflows',
