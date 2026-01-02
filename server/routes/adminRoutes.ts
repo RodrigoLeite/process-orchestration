@@ -6,8 +6,9 @@ import { permissionMiddleware, checkPermission, PermissionRequest } from '../mid
 import { userManagementService } from '../admin/userManagementService';
 import { teamsService } from '../admin/teamsService';
 import { rolesService } from '../admin/rolesService';
-import { PERMISSIONS } from '@shared/schema';
+import { PERMISSIONS, TENANT_PERMISSIONS, AREA_PERMISSIONS, AREA_ROLES, TEAM_ROLES } from '@shared/schema';
 import { normalizeUUID, normalizeRecord } from '../lib/uuidUtils';
+import { storage } from '../storage';
 
 const router = Router();
 
@@ -551,6 +552,378 @@ router.delete(
       res.json({ success: true });
     } catch (error: any) {
       console.error('Error removing role from user:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// ========== AREAS (Governance Layer) Routes ==========
+
+const areaSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  icon: z.string().optional(),
+});
+
+const areaAdminSchema = z.object({
+  userId: z.string(),
+  role: z.enum(['owner', 'admin']),
+});
+
+router.get('/areas', async (req: Request, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    const areasList = await storage.getAreasByTenant(tenantId);
+    
+    const areasWithTeams = await Promise.all(
+      areasList.map(async (area) => {
+        const teamsList = await storage.getTeamsByArea(area.id);
+        const admins = await storage.getAreaAdmins(area.id);
+        return {
+          ...area,
+          teams: teamsList,
+          admins,
+          teamCount: teamsList.length,
+        };
+      })
+    );
+    
+    res.json({ areas: areasWithTeams });
+  } catch (error: any) {
+    console.error('Error listing areas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/areas/:areaId', async (req: Request, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { areaId } = req.params;
+    
+    const area = await storage.getArea(areaId);
+    
+    if (!area || area.tenantId !== tenantId) {
+      return res.status(404).json({ error: 'Area not found' });
+    }
+    
+    const teamsList = await storage.getTeamsByArea(areaId);
+    const admins = await storage.getAreaAdmins(areaId);
+    
+    res.json({ 
+      area: {
+        ...area,
+        teams: teamsList,
+        admins,
+        teamCount: teamsList.length,
+      }
+    });
+  } catch (error: any) {
+    console.error('Error getting area:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post(
+  '/areas',
+  checkPermission(TENANT_PERMISSIONS.CREATE_AREAS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = getUserId(req);
+      const data = areaSchema.parse(req.body);
+      
+      const area = await storage.createArea({
+        tenantId,
+        name: data.name,
+        description: data.description,
+        color: data.color || '#6366f1',
+        icon: data.icon || 'folder',
+      });
+      
+      await storage.createAreaAdmin({
+        tenantId,
+        areaId: area.id,
+        userId,
+        role: AREA_ROLES.OWNER,
+      });
+      
+      res.status(201).json({ area });
+    } catch (error: any) {
+      console.error('Error creating area:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Validation error', details: error.errors });
+      }
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.patch(
+  '/areas/:areaId',
+  checkPermission(AREA_PERMISSIONS.MANAGE),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { areaId } = req.params;
+      const data = areaSchema.partial().parse(req.body);
+      
+      const existingArea = await storage.getArea(areaId);
+      if (!existingArea || existingArea.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Area not found' });
+      }
+      
+      const area = await storage.updateArea(areaId, data);
+      
+      res.json({ area });
+    } catch (error: any) {
+      console.error('Error updating area:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Validation error', details: error.errors });
+      }
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.delete(
+  '/areas/:areaId',
+  checkPermission(TENANT_PERMISSIONS.CREATE_AREAS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { areaId } = req.params;
+      
+      const existingArea = await storage.getArea(areaId);
+      if (!existingArea || existingArea.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Area not found' });
+      }
+      
+      if (existingArea.isDefault === 'true') {
+        return res.status(400).json({ error: 'Cannot delete default area' });
+      }
+      
+      await storage.deleteArea(areaId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting area:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.get('/areas/:areaId/admins', async (req: Request, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { areaId } = req.params;
+    
+    const area = await storage.getArea(areaId);
+    if (!area || area.tenantId !== tenantId) {
+      return res.status(404).json({ error: 'Area not found' });
+    }
+    
+    const admins = await storage.getAreaAdmins(areaId);
+    
+    const enrichedAdmins = await Promise.all(
+      admins.map(async (admin) => {
+        const user = await storage.getUser(admin.userId);
+        return {
+          ...admin,
+          user: user ? { id: user.id, name: user.name, email: user.email } : null,
+        };
+      })
+    );
+    
+    res.json({ admins: enrichedAdmins });
+  } catch (error: any) {
+    console.error('Error listing area admins:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post(
+  '/areas/:areaId/admins',
+  checkPermission(AREA_PERMISSIONS.MANAGE),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { areaId } = req.params;
+      const data = areaAdminSchema.parse(req.body);
+      
+      const area = await storage.getArea(areaId);
+      if (!area || area.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Area not found' });
+      }
+      
+      const existingAdmin = await storage.getAreaAdmin(areaId, data.userId);
+      if (existingAdmin) {
+        return res.status(400).json({ error: 'User is already an admin of this area' });
+      }
+      
+      const admin = await storage.createAreaAdmin({
+        tenantId,
+        areaId,
+        userId: data.userId,
+        role: data.role,
+      });
+      
+      res.status(201).json({ admin });
+    } catch (error: any) {
+      console.error('Error adding area admin:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Validation error', details: error.errors });
+      }
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.delete(
+  '/areas/:areaId/admins/:adminId',
+  checkPermission(AREA_PERMISSIONS.MANAGE),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { areaId, adminId } = req.params;
+      
+      const area = await storage.getArea(areaId);
+      if (!area || area.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Area not found' });
+      }
+      
+      await storage.deleteAreaAdmin(adminId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error removing area admin:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.get('/areas/:areaId/teams', async (req: Request, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { areaId } = req.params;
+    
+    const area = await storage.getArea(areaId);
+    if (!area || area.tenantId !== tenantId) {
+      return res.status(404).json({ error: 'Area not found' });
+    }
+    
+    const teamsList = await storage.getTeamsByArea(areaId);
+    
+    const teamsWithMembers = await Promise.all(
+      teamsList.map(async (team) => {
+        const members = await storage.getTeamMembers(team.id);
+        return {
+          ...team,
+          members,
+          memberCount: members.length,
+        };
+      })
+    );
+    
+    res.json({ teams: teamsWithMembers });
+  } catch (error: any) {
+    console.error('Error listing area teams:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post(
+  '/areas/:areaId/teams',
+  checkPermission(AREA_PERMISSIONS.MANAGE_TEAMS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { areaId } = req.params;
+      const data = teamSchema.parse(req.body);
+      
+      const area = await storage.getArea(areaId);
+      if (!area || area.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Area not found' });
+      }
+      
+      const team = await storage.createTeam({
+        tenantId,
+        areaId,
+        name: data.name,
+        description: data.description,
+        color: data.color || '#6366f1',
+      });
+      
+      res.status(201).json({ team });
+    } catch (error: any) {
+      console.error('Error creating team in area:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Validation error', details: error.errors });
+      }
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.patch(
+  '/teams/:teamId/area',
+  checkPermission(AREA_PERMISSIONS.MANAGE_TEAMS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { teamId } = req.params;
+      const { areaId } = req.body;
+      
+      const team = await storage.getTeam(teamId);
+      if (!team || team.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Team not found' });
+      }
+      
+      if (areaId) {
+        const area = await storage.getArea(areaId);
+        if (!area || area.tenantId !== tenantId) {
+          return res.status(404).json({ error: 'Target area not found' });
+        }
+      }
+      
+      const updatedTeam = await storage.updateTeam(teamId, { areaId });
+      
+      res.json({ team: updatedTeam });
+    } catch (error: any) {
+      console.error('Error moving team to area:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.patch(
+  '/teams/:teamId/members/:userId/role',
+  checkPermission(AREA_PERMISSIONS.MANAGE_TEAMS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { teamId, userId } = req.params;
+      const { role } = req.body;
+      
+      if (!Object.values(TEAM_ROLES).includes(role)) {
+        return res.status(400).json({ error: 'Invalid team role' });
+      }
+      
+      const team = await storage.getTeam(teamId);
+      if (!team || team.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Team not found' });
+      }
+      
+      const userTeam = await storage.getUserTeam(teamId, userId);
+      if (!userTeam) {
+        return res.status(404).json({ error: 'User is not a member of this team' });
+      }
+      
+      const updatedUserTeam = await storage.updateUserTeamRole(userTeam.id, role);
+      
+      res.json({ userTeam: updatedUserTeam });
+    } catch (error: any) {
+      console.error('Error updating team member role:', error);
       res.status(400).json({ error: error.message });
     }
   }

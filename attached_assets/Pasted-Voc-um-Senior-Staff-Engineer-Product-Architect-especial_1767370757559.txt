@@ -1,0 +1,236 @@
+Você é um Senior Staff Engineer + Product Architect especialista em SaaS B2B de BPM / Workflow Automation.
+
+OBJETIVO:
+Refatorar o modelo de hierarquia organizacional, roles e permissões do produto para alinhar com o modelo correto:
+- Área é dona do processo (governança)
+- Time é o executor
+- Usuários pertencem apenas a Times
+- Usuários NÃO pertencem diretamente a Áreas
+- Áreas gerenciam Times
+- Times executam demandas
+
+⚠️ IMPORTANTE:
+- NÃO criar novas telas desnecessárias
+- REAPROVEITAR as UIs já existentes:
+  • UI de Áreas
+  • UI de Times
+  • UI de Roles & Permissions
+- Refatorar backend, RBAC e lógica de agentes
+- Manter dados existentes funcionando (migração segura)
+
+STACK:
+Frontend:
+- React 18 + Vite + TypeScript
+- Radix UI + Tailwind CSS
+- Wouter
+- TanStack Query
+
+Backend:
+- Node.js + Express + TypeScript (ESM)
+- PostgreSQL
+- Drizzle ORM
+
+----------------------------------------------------------------
+MODELO CONCEITUAL FINAL (OBRIGATÓRIO)
+----------------------------------------------------------------
+
+1️⃣ TENANT
+- Representa a empresa / workspace
+
+Roles:
+- Tenant Owner
+- Tenant Admin
+
+Permissões:
+- Gerenciar usuários
+- Gerenciar billing
+- Criar Áreas
+- Criar Roles globais
+
+----------------------------------------------------------------
+
+2️⃣ ÁREA (Governança de Processo)
+- Área NÃO tem membros
+- Área NÃO executa demandas
+- Área define processos, SLAs e regras
+- Área gerencia Times
+
+Roles associadas à Área:
+- Area Owner
+- Area Admin
+
+Permissões da Área:
+- Criar / editar workflows
+- Definir SLAs
+- Definir automações
+- Associar Times à Área
+- Visualizar métricas da Área
+
+⚠️ NÃO EXISTE:
+- Area Member
+- Area Viewer
+
+----------------------------------------------------------------
+
+3️⃣ TIME (Execução)
+- Usuários pertencem APENAS a Times
+- Times pertencem a UMA Área
+- Times executam demandas e movem cards
+
+Roles de Time:
+- Team Lead
+- Team Member
+- Team Viewer
+
+Permissões:
+- Executar demandas
+- Mover cards no Kanban
+- Comentar
+- Atualizar status
+
+----------------------------------------------------------------
+
+4️⃣ USUÁRIO
+- Usuário pode:
+  • Participar de vários Times
+  • Ter roles diferentes por Time
+- Usuário NÃO pertence diretamente à Área
+
+----------------------------------------------------------------
+REFATORAÇÕES OBRIGATÓRIAS
+----------------------------------------------------------------
+
+A) BACKEND / DATA MODEL
+--------------------------------
+1. Ajustar schema do banco:
+- Remover qualquer associação direta user ↔ area
+- Garantir:
+  - area -> times
+  - time -> users
+
+2. Criar / ajustar tabelas:
+- areas
+- teams (com area_id obrigatório)
+- team_users (user_id, team_id, role)
+- area_roles (somente Owner/Admin)
+- tenant_roles
+
+3. Migrar dados existentes:
+- Se usuários estavam ligados a áreas:
+  - mover associação para times
+  - criar time default por área se necessário
+
+----------------------------------------------------------------
+
+B) RBAC (REFATORAÇÃO COMPLETA)
+--------------------------------
+1. Atualizar o sistema de permissões:
+- Separar claramente:
+  - Tenant-level permissions
+  - Area-level permissions (somente Owner/Admin)
+  - Team-level permissions (Lead/Member/Viewer)
+
+2. Atualizar middleware de autorização:
+- Permissões de execução SEMPRE verificam Team role
+- Permissões de governança verificam Area role
+- Permissões globais verificam Tenant role
+
+3. Atualizar UI de Roles & Permissions:
+- Reorganizar visualmente em 3 blocos:
+  - Tenant Roles
+  - Area Roles
+  - Team Roles
+- Remover opções inválidas (Area Member / Viewer)
+
+----------------------------------------------------------------
+
+C) UI DE ÁREAS (REAPROVEITAR)
+--------------------------------
+1. Manter a UI existente
+2. Ajustar comportamento:
+- Área NÃO mostra lista de usuários
+- Área mostra:
+  - Times associados
+  - Workflows
+  - SLAs
+  - Métricas
+
+3. Adicionar:
+- Gestão de Times da Área
+- Associação / remoção de Times
+
+----------------------------------------------------------------
+
+D) UI DE TIMES (REAPROVEITAR)
+--------------------------------
+1. Manter UI existente
+2. Garantir:
+- Usuários são gerenciados APENAS no Time
+- Roles atribuídas no contexto do Time
+
+3. Team Lead:
+- Recebe notificações de novas demandas
+- Pode atribuir demandas aos membros
+
+----------------------------------------------------------------
+
+E) AGENTES DE IA (AJUSTE DE LÓGICA)
+--------------------------------
+Atualizar os 3 agentes existentes para assumir este modelo:
+
+1. Gerador de Workflow:
+- Workflow pertence à Área
+- Workflow define:
+  - Etapas
+  - SLAs
+  - Time executor padrão ou regras
+
+2. Monitor de Gargalos:
+- Analisa gargalos por Time
+- NÃO por usuário individual
+- NÃO por Área diretamente
+
+3. Insights Inteligentes:
+- Insights por:
+  - Área (governança)
+  - Time (execução)
+
+⚠️ Nenhum agente deve assumir que usuários pertencem a áreas
+
+----------------------------------------------------------------
+
+F) ROTEAMENTO DE DEMANDAS
+--------------------------------
+1. Fluxo correto:
+- Demanda criada
+- Agente Classificador identifica Área
+- Agente Roteador:
+  - escolhe Workflow da Área
+  - atribui Time executor
+- Time recebe notificação
+
+2. Kanban:
+- Board pertence ao Workflow (Área)
+- Cards são atribuídos a Times
+- Execução acontece no contexto do Time
+
+----------------------------------------------------------------
+
+G) COMPATIBILIDADE
+--------------------------------
+- NÃO quebrar Kanban existente
+- NÃO quebrar demandas existentes
+- Ajustar queries e joins
+- Criar migrations seguras
+
+----------------------------------------------------------------
+
+DELIVERABLES
+--------------------------------
+- Backend refatorado
+- RBAC correto e limpo
+- UI reaproveitada e ajustada
+- Agentes alinhados ao modelo
+- Código consistente com BPM enterprise-grade
+
+Execute essa refatoração de forma incremental, segura e documentada no código.

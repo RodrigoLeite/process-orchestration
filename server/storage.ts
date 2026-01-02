@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, type StageBottleneck, type InsertStageBottleneck, type StageInsight, type InsertStageInsight, type Tenant, type InsertTenant, type TenantUser, type InsertTenantUser, type AuditLog, type InsertAuditLog, type Permission, type InsertPermission, type Role, type InsertRole, type RolePermission, type InsertRolePermission, type Job, type InsertJob, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents, stageBottlenecks, stageInsights, tenants, tenantUsers, auditLogs, permissions, roles, rolePermissions, jobs } from "@shared/schema";
+import { type User, type InsertUser, type Demand, type InsertDemand, type Log, type InsertLog, type AgentResponse, type InsertAgentResponse, type Workflow, type InsertWorkflow, type WorkgraphNode, type InsertWorkgraphNode, type WorkgraphEdge, type InsertWorkgraphEdge, type DemandHistory, type InsertDemandHistory, type Webhook, type InsertWebhook, type WebhookEvent, type InsertWebhookEvent, type AreaWorkflow, type InsertAreaWorkflow, type WorkflowStage, type InsertWorkflowStage, type Agent, type InsertAgent, type AgentLog, type InsertAgentLog, type BottleneckReport, type InsertBottleneckReport, type InsightsReport, type InsertInsightsReport, type SystemEvent, type InsertSystemEvent, type LangflowAgent, type InsertLangflowAgent, type StageBottleneck, type InsertStageBottleneck, type StageInsight, type InsertStageInsight, type Tenant, type InsertTenant, type TenantUser, type InsertTenantUser, type AuditLog, type InsertAuditLog, type Permission, type InsertPermission, type Role, type InsertRole, type RolePermission, type InsertRolePermission, type Job, type InsertJob, type Area, type InsertArea, type AreaAdmin, type InsertAreaAdmin, type Team, type InsertTeam, type UserTeam, type InsertUserTeam, users, demands, logs, agentResponses, workflows, workgraphNodes, workgraphEdges, demandHistory, webhooks, webhookEvents, areaWorkflows, workflowStages, agents, agentLogs, bottleneckReports, insightsReports, systemEvents, langflowAgents, stageBottlenecks, stageInsights, tenants, tenantUsers, auditLogs, permissions, roles, rolePermissions, jobs, areas, areaAdmins, teams, userTeams } from "@shared/schema";
 import { normalizeUUID, normalizeRecord, normalizeRecords } from './lib/uuidUtils';
 
 export interface IStorage {
@@ -127,6 +127,38 @@ export interface IStorage {
   getJob(id: string): Promise<Job | undefined>;
   getJobs(tenantId: string, limit?: number, status?: string): Promise<Job[]>;
   updateJob(id: string, updates: Partial<Job>): Promise<Job | undefined>;
+
+  // Areas (Governance Layer)
+  getArea(id: string): Promise<Area | undefined>;
+  getAreasByTenant(tenantId: string): Promise<Area[]>;
+  getDefaultArea(tenantId: string): Promise<Area | undefined>;
+  createArea(area: InsertArea): Promise<Area>;
+  updateArea(id: string, updates: Partial<Area>): Promise<Area | undefined>;
+  deleteArea(id: string): Promise<void>;
+
+  // Area Admins (Governance Roles)
+  getAreaAdmins(areaId: string): Promise<AreaAdmin[]>;
+  getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined>;
+  getUserAreaRoles(userId: string, tenantId: string): Promise<AreaAdmin[]>;
+  createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin>;
+  updateAreaAdmin(id: string, role: string): Promise<AreaAdmin | undefined>;
+  deleteAreaAdmin(id: string): Promise<void>;
+
+  // Teams (Execution Layer)
+  getTeam(id: string): Promise<Team | undefined>;
+  getTeamsByTenant(tenantId: string): Promise<Team[]>;
+  getTeamsByArea(areaId: string): Promise<Team[]>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
+  deleteTeam(id: string): Promise<void>;
+
+  // User Teams (Team Membership)
+  getUserTeams(userId: string, tenantId: string): Promise<UserTeam[]>;
+  getTeamMembers(teamId: string): Promise<UserTeam[]>;
+  getUserTeam(teamId: string, userId: string): Promise<UserTeam | undefined>;
+  createUserTeam(ut: InsertUserTeam): Promise<UserTeam>;
+  updateUserTeamRole(id: string, role: string): Promise<UserTeam | undefined>;
+  deleteUserTeam(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -917,6 +949,131 @@ export class DatabaseStorage implements IStorage {
   async updateJob(id: string, updates: Partial<Job>): Promise<Job | undefined> {
     const result = await this.db.update(jobs).set(updates).where(eq(jobs.id, id)).returning();
     return result[0];
+  }
+
+  // ========== AREAS (Governance Layer) ==========
+
+  async getArea(id: string): Promise<Area | undefined> {
+    const result = await this.db.select().from(areas).where(eq(areas.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAreasByTenant(tenantId: string): Promise<Area[]> {
+    return await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+  }
+
+  async getDefaultArea(tenantId: string): Promise<Area | undefined> {
+    const result = await this.db.select().from(areas)
+      .where(and(eq(areas.tenantId, tenantId), eq(areas.isDefault, "true")))
+      .limit(1);
+    return result[0];
+  }
+
+  async createArea(area: InsertArea): Promise<Area> {
+    const result = await this.db.insert(areas).values(area).returning();
+    return result[0];
+  }
+
+  async updateArea(id: string, updates: Partial<Area>): Promise<Area | undefined> {
+    const result = await this.db.update(areas).set({ ...updates, updatedAt: new Date() }).where(eq(areas.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteArea(id: string): Promise<void> {
+    await this.db.delete(areas).where(eq(areas.id, id));
+  }
+
+  // ========== AREA ADMINS (Governance Roles) ==========
+
+  async getAreaAdmins(areaId: string): Promise<AreaAdmin[]> {
+    return await this.db.select().from(areaAdmins).where(eq(areaAdmins.areaId, areaId));
+  }
+
+  async getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined> {
+    const result = await this.db.select().from(areaAdmins)
+      .where(and(eq(areaAdmins.areaId, areaId), eq(areaAdmins.userId, userId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async getUserAreaRoles(userId: string, tenantId: string): Promise<AreaAdmin[]> {
+    return await this.db.select().from(areaAdmins)
+      .where(and(eq(areaAdmins.userId, userId), eq(areaAdmins.tenantId, tenantId)));
+  }
+
+  async createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin> {
+    const result = await this.db.insert(areaAdmins).values(admin).returning();
+    return result[0];
+  }
+
+  async updateAreaAdmin(id: string, role: string): Promise<AreaAdmin | undefined> {
+    const result = await this.db.update(areaAdmins).set({ role }).where(eq(areaAdmins.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteAreaAdmin(id: string): Promise<void> {
+    await this.db.delete(areaAdmins).where(eq(areaAdmins.id, id));
+  }
+
+  // ========== TEAMS (Execution Layer) ==========
+
+  async getTeam(id: string): Promise<Team | undefined> {
+    const result = await this.db.select().from(teams).where(eq(teams.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getTeamsByTenant(tenantId: string): Promise<Team[]> {
+    return await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
+  }
+
+  async getTeamsByArea(areaId: string): Promise<Team[]> {
+    return await this.db.select().from(teams).where(eq(teams.areaId, areaId)).orderBy(teams.name);
+  }
+
+  async createTeam(team: InsertTeam): Promise<Team> {
+    const result = await this.db.insert(teams).values(team).returning();
+    return result[0];
+  }
+
+  async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
+    const result = await this.db.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTeam(id: string): Promise<void> {
+    await this.db.delete(teams).where(eq(teams.id, id));
+  }
+
+  // ========== USER TEAMS (Team Membership) ==========
+
+  async getUserTeams(userId: string, tenantId: string): Promise<UserTeam[]> {
+    return await this.db.select().from(userTeams)
+      .where(and(eq(userTeams.userId, userId), eq(userTeams.tenantId, tenantId)));
+  }
+
+  async getTeamMembers(teamId: string): Promise<UserTeam[]> {
+    return await this.db.select().from(userTeams).where(eq(userTeams.teamId, teamId));
+  }
+
+  async getUserTeam(teamId: string, userId: string): Promise<UserTeam | undefined> {
+    const result = await this.db.select().from(userTeams)
+      .where(and(eq(userTeams.teamId, teamId), eq(userTeams.userId, userId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createUserTeam(ut: InsertUserTeam): Promise<UserTeam> {
+    const result = await this.db.insert(userTeams).values(ut).returning();
+    return result[0];
+  }
+
+  async updateUserTeamRole(id: string, role: string): Promise<UserTeam | undefined> {
+    const result = await this.db.update(userTeams).set({ role }).where(eq(userTeams.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteUserTeam(id: string): Promise<void> {
+    await this.db.delete(userTeams).where(eq(userTeams.id, id));
   }
 }
 
