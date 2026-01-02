@@ -124,6 +124,39 @@ export default function AdminUsersPage() {
   const [editRole, setEditRole] = useState("");
   const [editTeamIds, setEditTeamIds] = useState<string[]>([]);
   
+  const [quickAddModalOpen, setQuickAddModalOpen] = useState(false);
+  const [quickAddEmail, setQuickAddEmail] = useState("");
+  const [quickAddRole, setQuickAddRole] = useState("team_member");
+  const [isQuickAdding, setIsQuickAdding] = useState(false);
+
+  const handleQuickAdd = async () => {
+    if (!quickAddEmail || !quickAddEmail.includes("@")) {
+      toast.error("Por favor, insira um e-mail válido");
+      return;
+    }
+
+    setIsQuickAdding(true);
+    try {
+      const res = await fetch("/api/admin/users/quick-add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: quickAddEmail, role: quickAddRole })
+      });
+
+      if (!res.ok) throw new Error("Falha ao adicionar usuário");
+
+      toast.success("Usuário adicionado com sucesso. Ele poderá acessar ao logar com este e-mail.");
+      setQuickAddModalOpen(false);
+      setQuickAddEmail("");
+      // Refresh user list
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsQuickAdding(false);
+    }
+  };
+
   const inviteUser = useInviteUser();
   const bulkInvite = useBulkInvite();
   const cancelInvitation = useCancelInvitation();
@@ -316,6 +349,14 @@ export default function AdminUsersPage() {
             >
               <Users className="h-4 w-4 mr-2" />
               {t('admin.bulkInvite')}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQuickAddModalOpen(true)}
+              data-testid="button-quick-add"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Adição Rápida (Teste)
             </Button>
             <Button
               onClick={() => setInviteModalOpen(true)}
@@ -514,6 +555,55 @@ export default function AdminUsersPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={quickAddModalOpen} onOpenChange={setQuickAddModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adição Rápida de Usuário (Teste)</DialogTitle>
+            <DialogDescription>
+              Adicione um usuário diretamente pelo e-mail. Ele terá acesso ao workspace assim que fizer login.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="quick-email">E-mail do Usuário</Label>
+              <Input
+                id="quick-email"
+                type="email"
+                placeholder="usuario@exemplo.com"
+                value={quickAddEmail}
+                onChange={(e) => setQuickAddEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quick-role">Cargo</Label>
+              <Select value={quickAddRole} onValueChange={setQuickAddRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickAddModalOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleQuickAdd} disabled={isQuickAdding}>
+              {isQuickAdding ? "Adicionando..." : "Adicionar Usuário"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
         <DialogContent>

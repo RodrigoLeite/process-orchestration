@@ -1182,6 +1182,41 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUserTeam(id: string): Promise<void> {
     await this.db.delete(userTeams).where(eq(userTeams.id, id));
+  async getTenantUserByEmail(tenantId: string, email: string): Promise<TenantUser | undefined> {
+    const user = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!user[0]) return undefined;
+    return await this.getTenantUser(tenantId, user[0].id);
+  }
+
+  async quickAddUser(tenantId: string, email: string, role: string): Promise<void> {
+    // 1. Check if user exists
+    let user = await this.db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+    let userId: string;
+
+    if (!user[0]) {
+      // Create a skeleton user
+      const [newUser] = await this.db.insert(users).values({
+        username: email.toLowerCase(),
+        email: email.toLowerCase(),
+        name: email.split('@')[0],
+        password: 'pending_oauth'
+      }).returning();
+      userId = newUser.id;
+    } else {
+      userId = user[0].id;
+    }
+
+    // 2. Check if tenant_user exists
+    const tu = await this.getTenantUser(tenantId, userId);
+    if (tu) {
+      await this.db.update(tenantUsers).set({ role }).where(eq(tenantUsers.id, tu.id));
+    } else {
+      await this.db.insert(tenantUsers).values({
+        tenantId,
+        userId,
+        role
+      });
+    }
   }
 }
 
