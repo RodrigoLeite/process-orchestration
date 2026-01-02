@@ -37,11 +37,18 @@ export default function AreasListPage() {
   const { t } = useTranslation();
   const { language } = useI18nStore();
   const { data: areas = [], isLoading } = useQuery<Area[]>({
-    queryKey: ["areas"],
+    queryKey: ["areas-governance"],
     queryFn: async () => {
-      const res = await fetch("/api/areas");
+      const res = await fetch("/api/admin/areas");
       if (!res.ok) throw new Error("Failed to fetch areas");
-      return res.json();
+      const data = await res.json();
+      return data.areas.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        iconName: a.icon || "Circle",
+        workflowId: a.id
+      }));
     }
   });
 
@@ -109,10 +116,10 @@ export default function AreasListPage() {
                   <div>
                     <CardTitle className="text-xl flex items-center gap-2">
                       <IconRenderer iconName={area.iconName} />
-                      {getAreaName(area.id, language)}
+                      {area.name}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {getAreaDescription(area.id, language)}
+                      {area.description}
                     </CardDescription>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />

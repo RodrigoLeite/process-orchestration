@@ -968,7 +968,37 @@ export class DatabaseStorage implements IStorage {
   async getAreasByTenant(tenantId: string): Promise<Area[]> {
     if (!tenantId) return [];
     try {
-      return await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+      const result = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+      
+      // If no areas exist yet (except maybe General), seed the default ones
+      if (result.length <= 1) {
+        const defaultAreas = [
+          { name: "Operações", description: "Operações corporativas e processos", icon: "Settings", color: "#6366f1" },
+          { name: "Financeiro", description: "Controle financeiro e orçamentário", icon: "DollarSign", color: "#10b981" },
+          { name: "Jurídico", description: "Gestão de questões legais e contratos", icon: "Scale", color: "#f59e0b" },
+          { name: "RH", description: "Recursos Humanos e gestão de pessoas", icon: "User", color: "#ec4899" },
+          { name: "TI", description: "Tecnologia da Informação e infraestrutura", icon: "Grid3x3", color: "#3b82f6" },
+          { name: "Vendas", description: "Gestão de vendas e relacionamento comercial", icon: "BarChart3", color: "#8b5cf6" },
+        ];
+
+        for (const areaDef of defaultAreas) {
+          const exists = result.find(a => a.name === areaDef.name);
+          if (!exists) {
+            await this.createArea({
+              tenantId,
+              name: areaDef.name,
+              description: areaDef.description,
+              icon: areaDef.icon,
+              color: areaDef.color,
+              isDefault: "true"
+            });
+          }
+        }
+        // Re-fetch after seeding
+        return await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error in getAreasByTenant:', error);
       return [];
