@@ -124,7 +124,7 @@ export default function AdminAreasPage() {
 
   const handleSubmit = async () => {
     if (!formName.trim()) {
-      toast.error("Nome da área é obrigatório");
+      toast.error(t('admin.areaNameRequired'));
       return;
     }
 
@@ -137,7 +137,7 @@ export default function AdminAreasPage() {
           color: formColor,
           icon: formIcon,
         });
-        toast.success("Área atualizada com sucesso");
+        toast.success(t('admin.areaUpdated'));
       } else {
         await createArea.mutateAsync({
           name: formName,
@@ -145,7 +145,7 @@ export default function AdminAreasPage() {
           color: formColor,
           icon: formIcon,
         });
-        toast.success("Área criada com sucesso");
+        toast.success(t('admin.areaCreated'));
       }
       setCreateModalOpen(false);
     } catch (error: any) {
@@ -155,16 +155,16 @@ export default function AdminAreasPage() {
 
   const handleDelete = async (area: Area) => {
     if (area.isDefault === "true") {
-      toast.error("Não é possível excluir a área padrão");
+      toast.error(t('admin.defaultAreaDeleteError'));
       return;
     }
-    if (!confirm(`Tem certeza que deseja excluir a área "${area.name}"?`)) {
+    if (!confirm(t('admin.areaDeleteConfirm').replace('{name}', area.name))) {
       return;
     }
 
     try {
       await deleteArea.mutateAsync(area.id);
-      toast.success("Área excluída com sucesso");
+      toast.success(t('admin.areaDeleted'));
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -172,7 +172,7 @@ export default function AdminAreasPage() {
 
   const handleAddAdmin = async () => {
     if (!selectedArea || !selectedUserId) {
-      toast.error("Selecione um usuário");
+      toast.error(t('admin.selectUser'));
       return;
     }
 
@@ -182,7 +182,7 @@ export default function AdminAreasPage() {
         userId: selectedUserId,
         role: selectedRole,
       });
-      toast.success("Administrador adicionado com sucesso");
+      toast.success(t('admin.adminAdded'));
       setSelectedUserId("");
     } catch (error: any) {
       toast.error(error.message);
@@ -197,7 +197,7 @@ export default function AdminAreasPage() {
         areaId: selectedArea.id,
         adminId,
       });
-      toast.success("Administrador removido");
+      toast.success(t('admin.adminRemoved'));
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -241,16 +241,16 @@ export default function AdminAreasPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Áreas de Governança</h1>
+            <h1 className="text-2xl font-bold">{t('admin.adminAreasTitle')}</h1>
             <p className="text-muted-foreground">
-              Gerencie áreas, processos e defina responsáveis
+              {t('admin.adminAreasSubtitle')}
             </p>
           </div>
         </div>
 
         <Button onClick={openCreateModal} data-testid="button-create-area">
           <Plus className="h-4 w-4 mr-2" />
-          Nova Área
+          {t('admin.newArea')}
         </Button>
       </div>
 
@@ -258,13 +258,13 @@ export default function AdminAreasPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhuma área cadastrada</h3>
+            <h3 className="text-lg font-medium mb-2">{t('admin.noAreas')}</h3>
             <p className="text-muted-foreground mb-4">
-              Crie áreas para organizar seus times e processos
+              {t('admin.noAreasSubtitle')}
             </p>
             <Button onClick={openCreateModal} data-testid="button-create-first-area">
               <Plus className="h-4 w-4 mr-2" />
-              Criar primeira área
+              {t('admin.createFirstArea')}
             </Button>
           </CardContent>
         </Card>
@@ -284,11 +284,11 @@ export default function AdminAreasPage() {
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-lg">{area.name}</CardTitle>
                       {area.isDefault === "true" && (
-                        <Badge variant="secondary" className="text-xs">Padrão</Badge>
+                        <Badge variant="secondary" className="text-xs">{t('admin.defaultArea')}</Badge>
                       )}
                     </div>
                     <CardDescription>
-                      {area.teams?.length || 0} times
+                      {t('admin.teamsCount').replace('{count}', (area.teams?.length || 0).toString())}
                     </CardDescription>
                   </div>
                 </div>
@@ -302,11 +302,11 @@ export default function AdminAreasPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => openAdminModal(area)}>
                       <Shield className="h-4 w-4 mr-2" />
-                      Gerenciar Administradores
+                      {t('admin.manageAdmins')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => openEditModal(area)}>
                       <Pencil className="h-4 w-4 mr-2" />
-                      Editar Área
+                      {t('admin.editArea')}
                     </DropdownMenuItem>
                     {area.isDefault !== "true" && (
                       <DropdownMenuItem
@@ -314,7 +314,7 @@ export default function AdminAreasPage() {
                         onClick={() => handleDelete(area)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir Área
+                        {t('admin.deleteArea')}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -328,7 +328,7 @@ export default function AdminAreasPage() {
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                   <Users className="h-4 w-4" />
-                  <span>{area.admins?.length || 0} administradores</span>
+                  <span>{t('admin.adminsCount').replace('{count}', (area.admins?.length || 0).toString())}</span>
                 </div>
 
                 {area.teams && area.teams.length > 0 && (
@@ -354,39 +354,39 @@ export default function AdminAreasPage() {
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editArea ? "Editar Área" : "Nova Área"}</DialogTitle>
+            <DialogTitle>{editArea ? t('admin.editArea') : t('admin.newArea')}</DialogTitle>
             <DialogDescription>
               {editArea
-                ? "Atualize as informações da área"
-                : "Crie uma nova área para organizar times e processos"}
+                ? t('admin.areaUpdated')
+                : t('admin.noAreasSubtitle')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="area-name">Nome</Label>
+              <Label htmlFor="area-name">{t('admin.areaName')}</Label>
               <Input
                 id="area-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ex: Tecnologia, Comercial, RH..."
+                placeholder={t('admin.areaNamePlaceholder')}
                 data-testid="input-area-name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="area-description">Descrição</Label>
+              <Label htmlFor="area-description">{t('admin.areaDescription')}</Label>
               <Textarea
                 id="area-description"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Descreva o propósito desta área..."
+                placeholder={t('admin.areaDescriptionPlaceholder')}
                 data-testid="input-area-description"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Cor</Label>
+              <Label>{t('admin.areaColor')}</Label>
               <div className="flex gap-2">
                 {COLOR_OPTIONS.map((color) => (
                   <button
@@ -406,14 +406,14 @@ export default function AdminAreasPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={createArea.isPending || updateArea.isPending}
               data-testid="button-save-area"
             >
-              {editArea ? "Salvar" : "Criar Área"}
+              {editArea ? t('common.save') : t('admin.newArea')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -422,9 +422,9 @@ export default function AdminAreasPage() {
       <Dialog open={adminModalOpen} onOpenChange={setAdminModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Administradores da Área</DialogTitle>
+            <DialogTitle>{t('admin.areaAdminsTitle')}</DialogTitle>
             <DialogDescription>
-              {selectedArea?.name} - Gerencie quem pode administrar esta área
+              {t('admin.areaAdminsSubtitle').replace('{name}', selectedArea?.name || '')}
             </DialogDescription>
           </DialogHeader>
 
@@ -432,7 +432,7 @@ export default function AdminAreasPage() {
             <div className="flex gap-2">
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger className="flex-1" data-testid="select-admin-user">
-                  <SelectValue placeholder="Selecione um usuário" />
+                  <SelectValue placeholder={t('admin.selectUser')} />
                 </SelectTrigger>
                 <SelectContent>
                   {usersData?.users?.map((user: any) => (
@@ -448,8 +448,8 @@ export default function AdminAreasPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="owner">Owner</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="owner">{t('admin.adminRoleOwner')}</SelectItem>
+                  <SelectItem value="admin">{t('admin.adminRoleAdmin')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -465,7 +465,7 @@ export default function AdminAreasPage() {
             <div className="border rounded-lg divide-y">
               {selectedArea?.admins?.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">
-                  Nenhum administrador definido
+                  {t('admin.noAdmins')}
                 </div>
               ) : (
                 selectedArea?.admins?.map((admin: any) => (
@@ -479,7 +479,7 @@ export default function AdminAreasPage() {
                           {admin.user?.name || admin.user?.email || admin.userId}
                         </p>
                         <Badge variant="outline" className="text-xs">
-                          {admin.role === "owner" ? "Dono" : "Admin"}
+                          {admin.role === "owner" ? t('admin.adminRoleOwner') : t('admin.adminRoleAdmin')}
                         </Badge>
                       </div>
                     </div>
@@ -499,7 +499,7 @@ export default function AdminAreasPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdminModalOpen(false)}>
-              Fechar
+              {t('common.cancel')}
             </Button>
           </DialogFooter>
         </DialogContent>
