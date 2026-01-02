@@ -529,7 +529,7 @@ export default function AdminUsersPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLE_OPTIONS.filter(r => r.value !== "owner").map((role) => (
+                  {ROLE_OPTIONS.map((role) => (
                     <SelectItem key={role.value} value={role.value}>
                       {role.label}
                     </SelectItem>
