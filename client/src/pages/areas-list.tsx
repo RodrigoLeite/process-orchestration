@@ -116,10 +116,10 @@ export default function AreasListPage() {
                   <div>
                     <CardTitle className="text-xl flex items-center gap-2">
                       <IconRenderer iconName={area.iconName} />
-                      {area.name}
+                      {getAreaName(area.name, language) || area.name}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {area.description}
+                      {getAreaDescription(area.name, language) || area.description}
                     </CardDescription>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
