@@ -394,33 +394,29 @@ export default function AdminUsersPage() {
                       <TableCell className="text-muted-foreground">
                         {formatDate(user.createdAt)}
                       </TableCell>
-                      {canManageUsers && (
-                        <TableCell>
-                          {user.role !== "owner" && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" data-testid={`menu-user-${user.id}`}>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleOpenEdit(user)}>
-                                  <Users className="h-4 w-4 mr-2" />
-                                  Editar Usuário
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => handleRemoveUser(user)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  {t('admin.removeUser')}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </TableCell>
-                      )}
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" data-testid={`menu-user-${user.id}`}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleOpenEdit(user)}>
+                              <Users className="h-4 w-4 mr-2" />
+                              Editar Usuário
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleRemoveUser(user)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t('admin.removeUser')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {(!data?.users || data.users.length === 0) && (
