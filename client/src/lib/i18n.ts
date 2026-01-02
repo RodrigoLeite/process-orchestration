@@ -1,13 +1,21 @@
 export type Language = 'pt-BR' | 'en-US';
 
+// Normalize string by removing accents and converting to lowercase
+function normalizeAreaKey(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 // Helper functions for area translations
 export function getAreaName(areaId: string, language: Language): string {
-  const areaKey = areaId.toLowerCase();
-  return (translations[language]?.areaNames as any)?.[areaKey] || areaId;
+  const areaKey = normalizeAreaKey(areaId);
+  return (translations[language]?.areaNames as any)?.[areaKey] || '';
 }
 
 export function getAreaDescription(areaId: string, language: Language): string {
-  const areaKey = areaId.toLowerCase();
+  const areaKey = normalizeAreaKey(areaId);
   return (translations[language]?.areaDescriptions as any)?.[areaKey] || '';
 }
 
