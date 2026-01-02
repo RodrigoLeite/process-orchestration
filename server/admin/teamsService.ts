@@ -9,9 +9,18 @@ import {
 } from '@shared/schema';
 import { normalizeUUID, normalizeRecord, normalizeRecords } from '../lib/uuidUtils';
 
+export interface TeamMember {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  role: 'lead' | 'member' | 'viewer';
+}
+
 export interface TeamWithMembers extends Team {
   memberCount: number;
-  members: { id: string; name: string | null; email: string | null; image: string | null }[];
+  members: TeamMember[];
 }
 
 export const teamsService = {
@@ -30,17 +39,22 @@ export const teamsService = {
       const normalizedTeam = normalizeRecord(team);
       const members = await storage.db
         .select({
-          id: users.id,
+          id: userTeams.id,
+          userId: users.id,
           name: users.name,
           email: users.email,
           image: users.image,
+          role: userTeams.role,
         })
         .from(userTeams)
         .innerJoin(users, eq(users.id, userTeams.userId))
         .where(eq(userTeams.teamId, normalizedTeam.id))
         .catch(() => [] as any[]);
 
-      const normalizedMembers = normalizeRecords(members || []);
+      const normalizedMembers = normalizeRecords(members || []).map((m: any) => ({
+        ...m,
+        role: m.role || 'member',
+      }));
       result.push({
         ...normalizedTeam,
         memberCount: normalizedMembers.length,
@@ -68,16 +82,21 @@ export const teamsService = {
     const normalizedTeam = normalizeRecord(team);
     const members = await storage.db
       .select({
-        id: users.id,
+        id: userTeams.id,
+        userId: users.id,
         name: users.name,
         email: users.email,
         image: users.image,
+        role: userTeams.role,
       })
       .from(userTeams)
       .innerJoin(users, eq(users.id, userTeams.userId))
       .where(eq(userTeams.teamId, normalizedTeam.id));
 
-    const normalizedMembers = normalizeRecords(members);
+    const normalizedMembers = normalizeRecords(members).map((m: any) => ({
+      ...m,
+      role: m.role || 'member',
+    }));
     return {
       ...normalizedTeam,
       memberCount: normalizedMembers.length,

@@ -2,7 +2,18 @@
 
 This project is an AI-driven process orchestration system designed to classify, route, and manage internal business demands across departments. It leverages GPT-4 for automated request analysis, custom workflow creation, bottleneck detection, and actionable insight generation. The system aims to streamline business processes, improve efficiency, and provide predictive insights for better decision-making by offering a unified Kanban 2.0 board system for managing demands.
 
-# Recent Changes (December 2025)
+# Recent Changes (January 2026)
+
+-   **3-Level Permission Hierarchy**: Refactored RBAC to use a 3-level hierarchy:
+    -   **Tenant Level**: Global administration (Tenant Owner/Admin) - manage users, roles, billing, create areas
+    -   **Area Level**: Governance (Area Owner/Admin) - create workflows, define SLAs, manage teams within the area
+    -   **Team Level**: Execution (Team Lead/Member/Viewer) - execute demands, move cards, comment
+-   **Areas as Governance Layer**: Areas now own processes and workflows. Areas do NOT have direct members - they manage Teams. Users belong ONLY to Teams.
+-   **Teams as Execution Layer**: Teams execute demands. Each team belongs to ONE Area. Team members have roles: lead, member, viewer.
+-   **New Database Tables**: Added `areas` table (governance entities) and `area_admins` table (area owner/admin roles). Added `areaId` column to `teams` table and `role` column to `user_teams` table.
+-   **API Routes**: New `/api/admin/areas/*` endpoints for CRUD operations on areas, area admins, and team management within areas.
+
+# Previous Changes (December 2025)
 
 -   **Board-First Architecture**: Refactored the 4-layer AI pipeline to use Kanban 2.0 Boards exclusively instead of legacy Workflows. The pipeline now uses `getOrCreateBoard()` and `createCardFromDemand()` from kanbanService.
 -   **Orchestrator Agent Update**: The demand orchestrator agent now queries the `boards` table (Kanban 2.0) instead of the legacy `workflows` table for routing decisions.
