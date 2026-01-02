@@ -468,6 +468,26 @@ export const translations = {
       deleteRole: 'Excluir Função',
       deleteRoleConfirm: 'Tem certeza que deseja excluir esta função?',
       editRole: 'Editar Função',
+
+      // Role Names and Descriptions
+      roleNames: {
+        tenant_owner: 'Proprietário do Tenant',
+        tenant_admin: 'Administrador do Tenant',
+        area_owner: 'Proprietário de Área',
+        area_admin: 'Administrador de Área',
+        team_lead: 'Líder de Time',
+        team_member: 'Membro de Time',
+        team_viewer: 'Visualizador de Time',
+      },
+      roleDescriptions: {
+        tenant_owner: 'Controle total sobre o workspace e todas as configurações',
+        tenant_admin: 'Pode gerenciar usuários, áreas, roles, times e boards',
+        area_owner: 'Pode criar boards, definir SLAs e automações da área',
+        area_admin: 'Pode criar e editar workflows e automações da área',
+        team_lead: 'Líder de execução com permissão em todos os kanbans da área',
+        team_member: 'Membro de execução nos kanbans atribuídos',
+        team_viewer: 'Acesso somente leitura aos kanbans atribuídos',
+      },
       // Categorias de permissões
       permCategoryTenant: 'Administração',
       permCategoryWorkflow: 'Workflows',
