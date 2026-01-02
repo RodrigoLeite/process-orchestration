@@ -235,18 +235,20 @@ export default function AdminRolesPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-7">
             {[
-              { id: "tenant_owner", name: "Tenant Owner", desc: "Controle total sobre o workspace e todas as configurações" },
-              { id: "tenant_admin", name: "Tenant Admin", desc: "Pode gerenciar usuários, áreas, roles, times e boards" },
-              { id: "area_owner", name: "Area Owner", desc: "Pode criar boards, definir SLAs e automações da área" },
-              { id: "area_admin", name: "Area Admin", desc: "Pode criar e editar workflows e automações da área" },
-              { id: "team_lead", name: "Team Lead", desc: "Líder de execução com permissão em todos os kanbans da área" },
-              { id: "team_member", name: "Team Member", desc: "Membro de execução nos kanbans atribuídos" },
-              { id: "team_viewer", name: "Team Viewer", desc: "Acesso somente leitura aos kanbans atribuídos" },
-            ].map((role) => (
-              <div key={role.id} className="p-4 border rounded-lg text-center flex flex-col items-center">
+              "tenant_owner",
+              "tenant_admin",
+              "area_owner",
+              "area_admin",
+              "team_lead",
+              "team_member",
+              "team_viewer",
+            ].map((roleKey) => (
+              <div key={roleKey} className="p-4 border rounded-lg text-center flex flex-col items-center">
                 <Shield className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <h4 className="font-medium text-sm">{role.name}</h4>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{role.desc}</p>
+                <h4 className="font-medium text-sm">{t(`admin.roleNames.${roleKey}`)}</h4>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                  {t(`admin.roleDescriptions.${roleKey}`)}
+                </p>
               </div>
             ))}
           </div>

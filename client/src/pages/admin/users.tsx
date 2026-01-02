@@ -90,18 +90,18 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  tenant_owner: "Tenant Owner",
-  tenant_admin: "Tenant Admin",
-  area_owner: "Area Owner",
-  area_admin: "Area Admin",
-  team_lead: "Team Lead",
-  team_member: "Team Member",
-  team_viewer: "Team Viewer",
-  owner: "Tenant Owner",
-  admin: "Tenant Admin",
-  manager: "Area Admin",
-  member: "Team Member",
-  viewer: "Team Viewer",
+  tenant_owner: "admin.roleNames.tenant_owner",
+  tenant_admin: "admin.roleNames.tenant_admin",
+  area_owner: "admin.roleNames.area_owner",
+  area_admin: "admin.roleNames.area_admin",
+  team_lead: "admin.roleNames.team_lead",
+  team_member: "admin.roleNames.team_member",
+  team_viewer: "admin.roleNames.team_viewer",
+  owner: "admin.roleNames.tenant_owner",
+  admin: "admin.roleNames.tenant_admin",
+  manager: "admin.roleNames.area_admin",
+  member: "admin.roleNames.team_member",
+  viewer: "admin.roleNames.team_viewer",
 };
 
 export default function AdminUsersPage() {
@@ -383,14 +383,14 @@ export default function AdminUsersPage() {
                             <SelectContent>
                               {ROLE_OPTIONS.filter(r => r.value !== "tenant_owner").map((role) => (
                                 <SelectItem key={role.value} value={role.value}>
-                                  {role.label}
+                                  {t(`admin.roleNames.${role.value}`)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         ) : (
                           <Badge className={ROLE_COLORS[user.role] || ROLE_COLORS.team_member}>
-                            {ROLE_LABELS[user.role] || user.role}
+                            {t(ROLE_LABELS[user.role] || user.role)}
                           </Badge>
                         )}
                       </TableCell>
