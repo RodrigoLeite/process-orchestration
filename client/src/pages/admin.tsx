@@ -41,7 +41,6 @@ export default function AdminPanel() {
       description: 'Gerencie áreas, processos e defina responsáveis por cada departamento',
       icon: <Building2 className="w-8 h-8" />,
       href: '/admin/areas',
-      permission: 'tenant.manage_areas',
       color: 'bg-purple-500',
     },
     {
