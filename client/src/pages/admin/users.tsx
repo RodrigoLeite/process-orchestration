@@ -86,7 +86,22 @@ const ROLE_COLORS: Record<string, string> = {
   team_member: "bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300",
   team_viewer: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   owner: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  admin: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  admin: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  tenant_owner: "Tenant Owner",
+  tenant_admin: "Tenant Admin",
+  area_owner: "Area Owner",
+  area_admin: "Area Admin",
+  team_lead: "Team Lead",
+  team_member: "Team Member",
+  team_viewer: "Team Viewer",
+  owner: "Tenant Owner",
+  admin: "Tenant Admin",
+  manager: "Area Admin",
+  member: "Team Member",
+  viewer: "Team Viewer",
 };
 
 export default function AdminUsersPage() {
@@ -357,16 +372,16 @@ export default function AdminUsersPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {canManageUsers && user.role !== "owner" ? (
+                        {canManageUsers && user.role !== "owner" && user.role !== "tenant_owner" ? (
                           <Select
                             value={user.role}
                             onValueChange={(value) => handleUpdateRole(user, value)}
                           >
-                            <SelectTrigger className="w-32" data-testid={`select-role-${user.id}`}>
+                            <SelectTrigger className="w-36" data-testid={`select-role-${user.id}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {ROLE_OPTIONS.filter(r => r.value !== "owner").map((role) => (
+                              {ROLE_OPTIONS.filter(r => r.value !== "tenant_owner").map((role) => (
                                 <SelectItem key={role.value} value={role.value}>
                                   {role.label}
                                 </SelectItem>
@@ -374,8 +389,8 @@ export default function AdminUsersPage() {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <Badge className={ROLE_COLORS[user.role] || ROLE_COLORS.member}>
-                            {user.role}
+                          <Badge className={ROLE_COLORS[user.role] || ROLE_COLORS.team_member}>
+                            {ROLE_LABELS[user.role] || user.role}
                           </Badge>
                         )}
                       </TableCell>
