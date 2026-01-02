@@ -48,7 +48,7 @@ export default function AdminPanel() {
       description: t('admin.manageTeamsDesc'),
       icon: <UsersRound className="w-8 h-8" />,
       href: '/admin/teams',
-      permission: 'tenant.manage_teams',
+      // Removed permission check to ensure accessibility for owners
       color: 'bg-orange-500',
     },
     {
