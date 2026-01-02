@@ -576,32 +576,19 @@ router.get('/areas', async (req: Request, res: Response) => {
     const tenantId = getTenantId(req);
     const areasList = await storage.getAreasByTenant(tenantId);
     
-    const areasWithTeams = await Promise.all(
-      areasList.map(async (area) => {
-        const normalizedArea = normalizeRecord(area);
-        const areaId = normalizedArea.id;
-        try {
-          const teamsList = areaId ? await storage.getTeamsByArea(areaId) || [] : [];
-          const admins = areaId ? await storage.getAreaAdmins(areaId) || [] : [];
-          return {
-            ...normalizedArea,
-            teams: teamsList.map(t => normalizeRecord(t)),
-            admins: admins.map(a => normalizeRecord(a)),
-            teamCount: teamsList.length,
-          };
-        } catch (err) {
-          console.error(`Error processing area ${areaId}:`, err);
-          return {
-            ...normalizedArea,
-            teams: [],
-            admins: [],
-            teamCount: 0,
-          };
-        }
-      })
-    );
+    // Return areas without fetching related data to avoid driver issues
+    // The frontend can fetch teams/admins separately if needed
+    const areasNormalized = areasList.map(area => {
+      const normalizedArea = normalizeRecord(area);
+      return {
+        ...normalizedArea,
+        teams: [],
+        admins: [],
+        teamCount: 0,
+      };
+    });
     
-    res.json({ areas: areasWithTeams });
+    res.json({ areas: areasNormalized });
   } catch (error: any) {
     console.error('Error listing areas:', error);
     res.status(500).json({ error: error.message });
