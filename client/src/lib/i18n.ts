@@ -370,6 +370,8 @@ export const translations = {
       // Cards de navegação
       manageUsers: 'Gerenciar Usuários',
       manageUsersDesc: 'Visualize, convide e gerencie os membros do seu workspace',
+      manageAreas: 'Áreas de Governança',
+      manageAreasDesc: 'Gerencie áreas, processos e defina responsáveis por cada departamento',
       inviteUsers: 'Convidar Usuários',
       inviteUsersDesc: 'Envie convites individuais ou em lote para novos membros',
       importCSV: 'Importar via CSV',
@@ -1241,6 +1243,8 @@ export const translations = {
       // Navigation cards
       manageUsers: 'Manage Users',
       manageUsersDesc: 'View, invite and manage your workspace members',
+      manageAreas: 'Governance Areas',
+      manageAreasDesc: 'Manage areas, processes and define responsible parties for each department',
       inviteUsers: 'Invite Users',
       inviteUsersDesc: 'Send individual or bulk invitations to new members',
       importCSV: 'Import via CSV',
