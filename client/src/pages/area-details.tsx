@@ -102,7 +102,6 @@ export default function AreaDetailsPage() {
       if (!res.ok) throw new Error("Failed to fetch demands");
       const allDemands = await res.json();
       
-      const targetAreaId = areaId?.toLowerCase().trim();
       const targetAreaName = area?.name?.toLowerCase().trim();
       
       // Helper to normalize names (remove accents)
@@ -113,13 +112,22 @@ export default function AreaDetailsPage() {
       
       const normalizedTargetName = targetAreaName ? normalize(targetAreaName) : "";
       
-      return allDemands.filter((d: Demand) => {
-        const dArea = (d.assigned_to || d.assignedTo || "").toLowerCase().trim();
-        const normalizedDArea = normalize(dArea);
+      return allDemands.filter((d: any) => {
+        // Get area from multiple possible locations in the demand object
+        const demandArea = (
+          d.parsed?.area || 
+          d.classification?.area || 
+          d.areaAtual || 
+          d.assigned_to || 
+          d.assignedTo || 
+          ""
+        ).toLowerCase().trim();
         
-        return dArea === targetAreaId || 
-               (targetAreaName && dArea === targetAreaName) || 
-               (normalizedTargetName && normalizedDArea === normalizedTargetName);
+        const normalizedDemandArea = normalize(demandArea);
+        
+        // Match if area names are equal (with or without accents)
+        return (targetAreaName && demandArea === targetAreaName) || 
+               (normalizedTargetName && normalizedDemandArea === normalizedTargetName);
       });
     },
     enabled: !!areaId && !!area
