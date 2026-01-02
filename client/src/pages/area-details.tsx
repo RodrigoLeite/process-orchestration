@@ -81,7 +81,20 @@ export default function AreaDetailsPage() {
     }
   };
 
-  // Fetch demands for this area
+  // Fetch area details FIRST (so we have the name for filtering)
+  const { data: areaData } = useQuery<any>({
+    queryKey: ["area", areaId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/areas/${areaId}`);
+      if (!res.ok) throw new Error("Failed to fetch area");
+      return res.json();
+    },
+    enabled: !!areaId
+  });
+
+  const area = areaData?.area;
+
+  // Fetch demands for this area (depends on area being loaded)
   const { data: demands = [], isLoading: demandsLoading, refetch } = useQuery<Demand[]>({
     queryKey: ["area-demands", areaId, tenant?.id, area?.name],
     queryFn: async () => {
@@ -91,7 +104,13 @@ export default function AreaDetailsPage() {
       
       const targetAreaId = areaId?.toLowerCase().trim();
       const targetAreaName = area?.name?.toLowerCase().trim();
-      const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      
+      // Helper to normalize names (remove accents)
+      const normalize = (s: string) => {
+        if (!s) return "";
+        return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      };
+      
       const normalizedTargetName = targetAreaName ? normalize(targetAreaName) : "";
       
       return allDemands.filter((d: Demand) => {
@@ -115,20 +134,6 @@ export default function AreaDetailsPage() {
       return res.json();
     }
   });
-
-
-  // Fetch area details
-  const { data: areaData } = useQuery<any>({
-    queryKey: ["area", areaId],
-    queryFn: async () => {
-      const res = await fetch(`/api/admin/areas/${areaId}`);
-      if (!res.ok) throw new Error("Failed to fetch area");
-      return res.json();
-    },
-    enabled: !!areaId
-  });
-
-  const area = areaData?.area;
 
   if (!match) return null;
 
