@@ -1027,7 +1027,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamsByArea(areaId: string): Promise<Team[]> {
-    return await this.db.select().from(teams).where(eq(teams.areaId, areaId)).orderBy(teams.name);
+    const normalizedAreaId = normalizeUUID(areaId);
+    return await this.db.select().from(teams).where(eq(teams.areaId, normalizedAreaId as any)).orderBy(teams.name);
   }
 
   async createTeam(team: InsertTeam): Promise<Team> {
