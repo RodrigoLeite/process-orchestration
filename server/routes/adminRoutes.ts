@@ -211,6 +211,7 @@ router.patch(
       const { userId } = req.params;
       const { role } = req.body;
       
+      // userId here is the ID from tenant_users table
       await userManagementService.updateUserRole(tenantId, userId, role);
       
       res.json({ success: true });

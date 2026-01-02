@@ -306,13 +306,16 @@ export const userManagementService = {
     return updated;
   },
 
-  async updateUserRole(tenantId: string, userId: string, newRole: string): Promise<void> {
+  async updateUserRole(tenantId: string, tenantUserId: string, newRole: string): Promise<void> {
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedTenantUserId = normalizeUUID(tenantUserId);
+
     await storage.db
       .update(tenantUsers)
       .set({ role: newRole })
       .where(and(
-        eq(tenantUsers.userId, userId),
-        eq(tenantUsers.tenantId, tenantId)
+        eq(tenantUsers.id, normalizedTenantUserId),
+        eq(tenantUsers.tenantId, normalizedTenantId)
       ));
   },
 
@@ -358,9 +361,22 @@ export const userManagementService = {
     }
   },
 
-  async updateUserTeams(tenantId: string, userId: string, teamIds: string[]): Promise<void> {
+  async updateUserTeams(tenantId: string, tenantUserId: string, teamIds: string[]): Promise<void> {
     const normalizedTenantId = normalizeUUID(tenantId);
-    const normalizedUserId = normalizeUUID(userId);
+    const normalizedTenantUserId = normalizeUUID(tenantUserId);
+
+    // Find the real user ID from tenantUsers table
+    const [tUser] = await storage.db
+      .select({ userId: tenantUsers.userId })
+      .from(tenantUsers)
+      .where(and(
+        eq(tenantUsers.id, normalizedTenantUserId),
+        eq(tenantUsers.tenantId, normalizedTenantId)
+      ))
+      .limit(1);
+
+    if (!tUser) throw new Error("Tenant user not found");
+    const normalizedUserId = normalizeUUID(tUser.userId);
 
     // Remove from all teams in this tenant first
     await storage.db
