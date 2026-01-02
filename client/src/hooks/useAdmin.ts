@@ -45,14 +45,46 @@ export interface Invitation {
   invitedByName?: string;
 }
 
+export interface TeamMember {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  role: 'lead' | 'member' | 'viewer';
+}
+
 export interface Team {
+  id: string;
+  tenantId: string;
+  areaId: string | null;
+  name: string;
+  description: string | null;
+  color: string;
+  memberCount: number;
+  members: TeamMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AreaAdmin {
+  id: string;
+  userId: string;
+  role: 'owner' | 'admin';
+  user?: { id: string; name: string | null; email: string | null };
+}
+
+export interface Area {
   id: string;
   tenantId: string;
   name: string;
   description: string | null;
   color: string;
-  memberCount: number;
-  members: { id: string; name: string | null; email: string | null; image: string | null }[];
+  icon: string;
+  isDefault: string;
+  teams: Team[];
+  admins: AreaAdmin[];
+  teamCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -365,6 +397,158 @@ export function useRemoveUserFromTeam() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
+    },
+  });
+}
+
+// ========== AREA HOOKS (Governance Layer) ==========
+
+export function useAdminAreas() {
+  return useQuery({
+    queryKey: ['admin', 'areas'],
+    queryFn: async () => {
+      const data = await fetchWithAuth('/api/admin/areas');
+      return data as { areas: Area[] };
+    },
+  });
+}
+
+export function useAdminArea(areaId: string) {
+  return useQuery({
+    queryKey: ['admin', 'areas', areaId],
+    queryFn: async () => {
+      const data = await fetchWithAuth(`/api/admin/areas/${areaId}`);
+      return data as { area: Area };
+    },
+    enabled: !!areaId,
+  });
+}
+
+export function useCreateArea() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: { name: string; description?: string; color?: string; icon?: string }) => {
+      return fetchWithAuth('/api/admin/areas', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+    },
+  });
+}
+
+export function useUpdateArea() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ areaId, ...data }: { areaId: string; name?: string; description?: string; color?: string; icon?: string }) => {
+      return fetchWithAuth(`/api/admin/areas/${areaId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+    },
+  });
+}
+
+export function useDeleteArea() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (areaId: string) => {
+      return fetchWithAuth(`/api/admin/areas/${areaId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+    },
+  });
+}
+
+export function useAddAreaAdmin() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ areaId, userId, role }: { areaId: string; userId: string; role: 'owner' | 'admin' }) => {
+      return fetchWithAuth(`/api/admin/areas/${areaId}/admins`, {
+        method: 'POST',
+        body: JSON.stringify({ userId, role }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+    },
+  });
+}
+
+export function useRemoveAreaAdmin() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ areaId, adminId }: { areaId: string; adminId: string }) => {
+      return fetchWithAuth(`/api/admin/areas/${areaId}/admins/${adminId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+    },
+  });
+}
+
+export function useCreateTeamInArea() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ areaId, ...data }: { areaId: string; name: string; description?: string; color?: string }) => {
+      return fetchWithAuth(`/api/admin/areas/${areaId}/teams`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
+    },
+  });
+}
+
+export function useMoveTeamToArea() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ teamId, areaId }: { teamId: string; areaId: string }) => {
+      return fetchWithAuth(`/api/admin/teams/${teamId}/area`, {
+        method: 'PATCH',
+        body: JSON.stringify({ areaId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
+    },
+  });
+}
+
+export function useUpdateTeamMemberRole() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ teamId, userId, role }: { teamId: string; userId: string; role: 'lead' | 'member' | 'viewer' }) => {
+      return fetchWithAuth(`/api/admin/teams/${teamId}/members/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'areas'] });
     },
   });
 }
