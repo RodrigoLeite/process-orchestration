@@ -1182,6 +1182,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUserTeam(id: string): Promise<void> {
     await this.db.delete(userTeams).where(eq(userTeams.id, id));
+  }
+
   async getTenantUserByEmail(tenantId: string, email: string): Promise<TenantUser | undefined> {
     const user = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
     if (!user[0]) return undefined;
