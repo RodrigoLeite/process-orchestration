@@ -224,9 +224,19 @@ export default function AdminAreasPage() {
     const currentAdmin = area.admins?.find(a => a.role === "admin");
     const currentOwner = area.admins?.find(a => a.role === "owner");
     
-    // Ensure we are using the user's ID for the selection
-    setSelectedAdminId(currentAdmin?.userId || "none");
-    setSelectedOwnerId(currentOwner?.userId || "none");
+    console.log('[DEBUG] Opening Admin Modal', {
+      areaId: area.id,
+      admins: area.admins,
+      currentAdminUserId: currentAdmin?.userId,
+      currentOwnerUserId: currentOwner?.userId
+    });
+    
+    // Use the user's ID for the selection
+    const adminId = currentAdmin?.user?.id || currentAdmin?.userId || "none";
+    const ownerId = currentOwner?.user?.id || currentOwner?.userId || "none";
+    
+    setSelectedAdminId(adminId);
+    setSelectedOwnerId(ownerId);
     setAdminModalOpen(true);
   };
 
