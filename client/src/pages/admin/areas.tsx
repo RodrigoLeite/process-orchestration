@@ -113,8 +113,25 @@ export default function AdminAreasPage() {
   const addAreaAdmin = useAddAreaAdmin();
   const removeAreaAdmin = useRemoveAreaAdmin();
 
-  // All users can be assigned as Area Owner or Area Admin
-  const allUsers = usersData?.users || [];
+  // Filter users based on their roles for governance assignment
+  const areaOwnerUsers = allUsers.filter((u: any) => 
+    u.role === "tenant_owner" || 
+    u.role === "tenant_admin" || 
+    u.role === "area_owner" ||
+    u.roles?.some((r: any) => 
+      ["tenant_owner", "tenant_admin", "area_owner", "Tenant Owner", "Tenant Admin", "Area Owner"].includes(typeof r === 'string' ? r : r.name)
+    )
+  );
+
+  const areaAdminUsers = allUsers.filter((u: any) => 
+    u.role === "tenant_owner" || 
+    u.role === "tenant_admin" || 
+    u.role === "area_owner" ||
+    u.role === "area_admin" ||
+    u.roles?.some((r: any) => 
+      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin"].includes(typeof r === 'string' ? r : r.name)
+    )
+  );
 
   const openCreateModal = () => {
     setFormName("");
@@ -503,7 +520,7 @@ export default function AdminAreasPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {allUsers.map((user: any) => (
+                  {areaAdminUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
                     </SelectItem>
@@ -521,7 +538,7 @@ export default function AdminAreasPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {allUsers.map((user: any) => (
+                  {areaOwnerUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
                     </SelectItem>
