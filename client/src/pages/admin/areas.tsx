@@ -116,6 +116,72 @@ export default function AdminAreasPage() {
     ) || u.role === "area_owner"
   ) || [];
 
+  const openCreateModal = () => {
+    setFormName("");
+    setFormDescription("");
+    setFormColor(COLOR_OPTIONS[0]);
+    setFormIcon(ICON_OPTIONS[0]);
+    setEditArea(null);
+    setCreateModalOpen(true);
+  };
+
+  const openEditModal = (area: Area) => {
+    setFormName(area.name);
+    setFormDescription(area.description || "");
+    setFormColor(area.color || COLOR_OPTIONS[0]);
+    setFormIcon(area.icon || ICON_OPTIONS[0]);
+    setEditArea(area);
+    setCreateModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formName.trim()) {
+      toast.error(t('admin.areaNameRequired'));
+      return;
+    }
+
+    try {
+      if (editArea) {
+        await updateArea.mutateAsync({
+          areaId: editArea.id,
+          name: formName,
+          description: formDescription || undefined,
+          color: formColor,
+          icon: formIcon,
+        });
+        toast.success(t('admin.areaUpdated'));
+      } else {
+        await createArea.mutateAsync({
+          name: formName,
+          description: formDescription || undefined,
+          color: formColor,
+          icon: formIcon,
+        });
+        toast.success(t('admin.areaCreated'));
+      }
+      setCreateModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDelete = async (area: Area) => {
+    if (area.isDefault === "true") {
+      toast.error(t('admin.defaultAreaDeleteError'));
+      return;
+    }
+    if (!confirm(t('admin.areaDeleteConfirm').replace('{name}', getAreaName(area.name, language) || area.name))) {
+      return;
+    }
+
+    try {
+      await deleteArea.mutateAsync(area.id);
+      toast.success(t('admin.areaDeleted'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const openAdminModal = (area: Area) => {
     setSelectedArea(area);
     const currentAdmin = area.admins?.find(a => a.role === "admin");
@@ -129,13 +195,9 @@ export default function AdminAreasPage() {
     if (!selectedArea) return;
 
     try {
-      // Logic to sync admins
       const currentAdmins = selectedArea.admins || [];
-      const adminToSet = selectedAdminId;
-      const ownerToSet = selectedOwnerId;
-
-      // Simple implementation: for each role, if it changed, update it
-      // In a real app we might want a dedicated bulk endpoint, but here we can call the existing ones
+      const adminToSet = selectedAdminId === "none" ? "" : selectedAdminId;
+      const ownerToSet = selectedOwnerId === "none" ? "" : selectedOwnerId;
       
       const currentAdmin = currentAdmins.find(a => a.role === "admin");
       const currentOwner = currentAdmins.find(a => a.role === "owner");
