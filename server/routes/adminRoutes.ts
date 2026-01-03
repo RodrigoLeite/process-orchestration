@@ -780,7 +780,7 @@ router.delete(
       const { areaId } = req.params;
       
       const existingArea = await storage.getArea(areaId);
-      if (!existingArea || existingArea.tenantId !== tenantId) {
+      if (!existingArea || normalizeRecord(existingArea).tenantId !== tenantId) {
         return res.status(404).json({ error: 'Area not found' });
       }
       

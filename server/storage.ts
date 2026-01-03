@@ -1063,7 +1063,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteArea(id: string): Promise<void> {
-    await this.db.delete(areas).where(eq(areas.id, id));
+    const normalizedId = normalizeUUID(id);
+    if (!normalizedId) return;
+
+    // Remove governance roles first
+    await this.db.delete(areaAdmins).where(eq(areaAdmins.areaId, normalizedId));
+    
+    // Set areaId to null in teams belonging to this area
+    await this.db.update(teams).set({ areaId: null }).where(eq(teams.areaId, normalizedId));
+    
+    // Delete the area
+    await this.db.delete(areas).where(eq(areas.id, normalizedId));
   }
 
   // ========== AREA ADMINS (Governance Roles) ==========
