@@ -1068,15 +1068,26 @@ export class DatabaseStorage implements IStorage {
     if (!areaId) return [];
     
     try {
-      const result = await this.db.select().from(areaAdmins)
-        .where(eq(areaAdmins.areaId, areaId));
+      // Use db.execute with sql template for better null handling with Neon HTTP driver
+      const result = await this.db.execute(
+        sql`SELECT * FROM area_admins WHERE area_id = ${areaId}`
+      );
       
-      // Defensively handle null/undefined response from Neon HTTP driver
-      if (!result || !Array.isArray(result)) {
+      if (!result || !result.rows || !Array.isArray(result.rows)) {
         return [];
       }
-      return result;
-    } catch (error) {
+
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        userId: row.user_id,
+        role: row.role,
+      } as AreaAdmin));
+    } catch (error: any) {
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return [];
+      }
       console.error('Error in getAreaAdmins:', error);
       return [];
     }

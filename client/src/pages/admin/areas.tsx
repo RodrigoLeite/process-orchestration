@@ -119,8 +119,9 @@ export default function AdminAreasPage() {
     u.role === "tenant_owner" || 
     u.role === "tenant_admin" || 
     u.role === "area_owner" ||
+    u.role === "owner" ||
     u.roles?.some((r: any) => 
-      ["tenant_owner", "tenant_admin", "area_owner", "Tenant Owner", "Tenant Admin", "Area Owner"].includes(typeof r === 'string' ? r : r.name)
+      ["tenant_owner", "tenant_admin", "area_owner", "owner", "Tenant Owner", "Tenant Admin", "Area Owner", "Owner"].includes(typeof r === 'string' ? r : (r.name || r.id))
     )
   );
 
@@ -129,8 +130,9 @@ export default function AdminAreasPage() {
     u.role === "tenant_admin" || 
     u.role === "area_owner" ||
     u.role === "area_admin" ||
+    u.role === "owner" ||
     u.roles?.some((r: any) => 
-      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin"].includes(typeof r === 'string' ? r : r.name)
+      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "owner", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin", "Owner"].includes(typeof r === 'string' ? r : (r.name || r.id))
     )
   );
 
