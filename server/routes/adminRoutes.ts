@@ -270,7 +270,7 @@ router.put(
   }
 );
 
-  router.post(
+router.post(
   '/users/:userId/teams/:teamId',
   checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
@@ -278,7 +278,6 @@ router.put(
       const tenantId = getTenantId(req);
       const { userId, teamId } = req.params;
       
-      console.log(`[DEBUG] Adding member: User ${userId} to Team ${teamId} in Tenant ${tenantId}`);
       await userManagementService.assignUserToTeam(tenantId, userId, teamId);
       
       res.json({ success: true });

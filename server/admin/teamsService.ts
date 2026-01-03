@@ -49,7 +49,10 @@ export const teamsService = {
         .from(userTeams)
         .innerJoin(users, eq(users.id, userTeams.userId))
         .where(eq(userTeams.teamId, normalizedTeam.id))
-        .catch(() => [] as any[]);
+        .catch((err) => {
+          console.error(`[DEBUG] Error fetching members for team ${normalizedTeam.id}:`, err);
+          return [] as any[];
+        });
 
       const normalizedMembers = normalizeRecords(members || []).map((m: any) => ({
         ...m,
