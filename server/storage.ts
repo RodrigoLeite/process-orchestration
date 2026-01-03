@@ -1042,21 +1042,28 @@ export class DatabaseStorage implements IStorage {
 
   async createArea(area: InsertArea): Promise<Area> {
     try {
-      // Revert to Drizzle's built-in insert with returning which is more reliable for metadata
-      const [newArea] = await this.db.insert(areas).values({
+      // Generate a UUID for the new area
+      const newId = crypto.randomUUID();
+      
+      // Insert without relying on RETURNING (Neon HTTP driver issue)
+      await this.db.insert(areas).values({
+        id: newId,
         tenantId: area.tenantId,
         name: area.name,
         description: area.description,
         color: area.color || '#6366f1',
         icon: area.icon || 'folder',
         isDefault: area.isDefault || 'false',
-      }).returning();
+      });
       
-      if (!newArea) {
-        throw new Error("Failed to create area: No rows returned");
+      // Fetch the created area by ID
+      const createdArea = await this.getArea(newId);
+      
+      if (!createdArea) {
+        throw new Error("Failed to create area: Could not retrieve after insert");
       }
       
-      return normalizeRecord(newArea) as Area;
+      return normalizeRecord(createdArea) as Area;
     } catch (error) {
       console.error('Error in createArea:', error);
       throw error;
