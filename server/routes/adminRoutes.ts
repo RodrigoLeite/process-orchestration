@@ -642,8 +642,8 @@ router.get('/areas', async (req: Request, res: Response) => {
     
     const areasWithData = areasList.map(area => {
       const normalizedArea = normalizeRecord(area);
-      const teamsList = teamsByArea.get(normalizedArea.id) || [];
-      const admins = adminsByArea.get(normalizedArea.id) || [];
+      const teamsList = (normalizedArea && normalizedArea.id) ? (teamsByArea.get(normalizedArea.id) || []) : [];
+      const admins = (normalizedArea && normalizedArea.id) ? (adminsByArea.get(normalizedArea.id) || []) : [];
       
       return {
         ...normalizedArea,

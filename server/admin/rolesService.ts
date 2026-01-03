@@ -74,7 +74,8 @@ export const rolesService = {
           .select({ permission: permissions })
           .from(rolePermissions)
           .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-          .where(eq(rolePermissions.roleId, normalizedRole.id));
+          .where(eq(rolePermissions.roleId, normalizedRole.id))
+          .catch(() => []);
         rolePerms = Array.isArray(permsResult) ? permsResult : [];
       } catch (err) {
         console.error('[rolesService] Error fetching role permissions:', err);
@@ -90,7 +91,8 @@ export const rolesService = {
           })
           .from(userRoles)
           .innerJoin(users, eq(users.id, userRoles.userId))
-          .where(eq(userRoles.roleId, normalizedRole.id));
+          .where(eq(userRoles.roleId, normalizedRole.id))
+          .catch(() => []);
         roleUsers = Array.isArray(usersResult) ? usersResult : [];
       } catch (err) {
         console.error('[rolesService] Error fetching role users:', err);
@@ -98,8 +100,8 @@ export const rolesService = {
 
       result.push({
         ...normalizedRole,
-        permissions: normalizeRecords(rolePerms.map(rp => rp.permission) || []),
-        userCount: roleUsers.length,
+        permissions: normalizeRecords((rolePerms || []).map(rp => rp.permission) || []),
+        userCount: (roleUsers || []).length,
         users: normalizeRecords(roleUsers || []),
       });
     }
