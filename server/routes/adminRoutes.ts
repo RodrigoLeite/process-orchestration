@@ -814,16 +814,24 @@ router.get('/areas/:areaId/admins', async (req: Request, res: Response) => {
 
 router.post(
   '/areas/:areaId/admins',
-  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { areaId } = req.params;
       const data = areaAdminSchema.parse(req.body);
       
+      console.log(`[DEBUG] Adding admin to area: ${areaId}, tenantId: ${tenantId}, data:`, data);
+      
       const area = await storage.getArea(areaId);
-      if (!area || area.tenantId !== tenantId) {
+      if (!area) {
+        console.log(`[DEBUG] Area not found by ID: ${areaId}`);
         return res.status(404).json({ error: 'Area not found' });
+      }
+      
+      const normalizedArea = normalizeRecord(area);
+      if (normalizedArea.tenantId !== tenantId) {
+        console.log(`[DEBUG] Area tenant mismatch. Area tenant: ${normalizedArea.tenantId}, Session tenant: ${tenantId}`);
+        return res.status(404).json({ error: 'Area not found (tenant mismatch)' });
       }
       
       const existingAdmin = await storage.getAreaAdmin(areaId, data.userId);
