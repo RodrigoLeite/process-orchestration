@@ -30,8 +30,7 @@ export const teamsService = {
       .select()
       .from(teams)
       .where(eq(teams.tenantId, normalizedTenantId))
-      .orderBy(desc(teams.createdAt))
-      .catch(() => [] as Team[]);
+      .orderBy(desc(teams.createdAt));
 
     const result: TeamWithMembers[] = [];
 
@@ -48,11 +47,7 @@ export const teamsService = {
         })
         .from(userTeams)
         .innerJoin(users, eq(users.id, userTeams.userId))
-        .where(eq(userTeams.teamId, normalizedTeam.id))
-        .catch((err) => {
-          console.error(`[DEBUG] Error fetching members for team ${normalizedTeam.id}:`, err);
-          return [] as any[];
-        });
+        .where(eq(userTeams.teamId, normalizedTeam.id));
 
       const normalizedMembers = normalizeRecords(members || []).map((m: any) => ({
         ...m,
