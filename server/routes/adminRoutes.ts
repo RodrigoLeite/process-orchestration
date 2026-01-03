@@ -602,18 +602,56 @@ router.get('/areas', async (req: Request, res: Response) => {
     const tenantId = getTenantId(req);
     const areasList = await storage.getAreasByTenant(tenantId);
     
-    const areasWithData = await Promise.all(areasList.map(async (area) => {
+    let allTeams: any[] = [];
+    let allAdmins: any[] = [];
+    
+    try {
+      allTeams = await storage.getTeamsByTenant(tenantId) || [];
+    } catch (err) {
+      console.error('Error getting all teams:', err);
+    }
+    
+    try {
+      allAdmins = await storage.getAreaAdminsByTenant(tenantId) || [];
+    } catch (err) {
+      console.error('Error getting all admins:', err);
+    }
+    
+    const teamsByArea = new Map<string, any[]>();
+    const adminsByArea = new Map<string, any[]>();
+    
+    for (const team of allTeams) {
+      const normalized = normalizeRecord(team);
+      if (normalized.areaId) {
+        if (!teamsByArea.has(normalized.areaId)) {
+          teamsByArea.set(normalized.areaId, []);
+        }
+        teamsByArea.get(normalized.areaId)!.push(normalized);
+      }
+    }
+    
+    for (const admin of allAdmins) {
+      const normalized = normalizeRecord(admin);
+      if (normalized.areaId) {
+        if (!adminsByArea.has(normalized.areaId)) {
+          adminsByArea.set(normalized.areaId, []);
+        }
+        adminsByArea.get(normalized.areaId)!.push(normalized);
+      }
+    }
+    
+    const areasWithData = areasList.map(area => {
       const normalizedArea = normalizeRecord(area);
-      const teamsList = await storage.getTeamsByArea(normalizedArea.id) || [];
-      const admins = await storage.getAreaAdmins(normalizedArea.id) || [];
+      const teamsList = teamsByArea.get(normalizedArea.id) || [];
+      const admins = adminsByArea.get(normalizedArea.id) || [];
       
       return {
         ...normalizedArea,
-        teams: teamsList.map(t => normalizeRecord(t)),
-        admins: admins.map(a => normalizeRecord(a)),
+        teams: teamsList,
+        admins: admins,
         teamCount: teamsList.length,
       };
-    }));
+    });
     
     res.json({ areas: areasWithData });
   } catch (error: any) {
