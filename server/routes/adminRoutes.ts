@@ -612,21 +612,29 @@ router.get('/areas', async (req: Request, res: Response) => {
     }
     
     try {
-      allAdmins = await storage.getAreaAdminsByTenant(tenantId) || [];
-      // Enrich admins with user details
-      const userIds = Array.from(new Set(allAdmins.map(a => a.userId)));
+      const admins = await storage.getAreaAdminsByTenant(tenantId);
+      allAdmins = admins || [];
+      
+      // Enrich admins with user details safely
       const enrichedAdmins = await Promise.all(
         allAdmins.map(async (admin) => {
-          const user = await storage.getUser(admin.userId);
-          return {
-            ...admin,
-            user: user ? { name: user.name, email: user.email } : null
-          };
+          try {
+            if (!admin.userId) return { ...admin, user: null };
+            const user = await storage.getUser(admin.userId);
+            return {
+              ...admin,
+              user: user ? { name: user.name, email: user.email } : null
+            };
+          } catch (err) {
+            console.error(`Error fetching user ${admin.userId}:`, err);
+            return { ...admin, user: null };
+          }
         })
       );
       allAdmins = enrichedAdmins;
     } catch (err) {
       console.error('Error getting all admins:', err);
+      allAdmins = [];
     }
     
     const teamsByArea = new Map<string, any[]>();
