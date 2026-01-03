@@ -1067,13 +1067,13 @@ export class DatabaseStorage implements IStorage {
     if (!normalizedId) return;
 
     // Remove governance roles first
-    await this.db.delete(areaAdmins).where(sql`${areaAdmins.areaId}::text = ${normalizedId}`);
+    await this.db.delete(areaAdmins).where(eq(areaAdmins.areaId, normalizedId));
     
     // Set areaId to null in teams belonging to this area
-    await this.db.update(teams).set({ areaId: null }).where(sql`${teams.areaId}::text = ${normalizedId}`);
+    await this.db.update(teams).set({ areaId: null }).where(eq(teams.areaId, normalizedId));
     
     // Delete the area
-    await this.db.delete(areas).where(sql`${areas.id}::text = ${normalizedId}`);
+    await this.db.delete(areas).where(eq(areas.id, normalizedId));
   }
 
   // ========== AREA ADMINS (Governance Roles) ==========
