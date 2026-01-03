@@ -612,22 +612,23 @@ router.get('/areas', async (req: Request, res: Response) => {
     }
     
     try {
-      const admins = await storage.getAreaAdminsByTenant(tenantId);
-      allAdmins = admins || [];
+      const adminsResult = await storage.getAreaAdminsByTenant(tenantId);
+      const rawAdmins = adminsResult || [];
       
       // Enrich admins with user details safely
       const enrichedAdmins = await Promise.all(
-        allAdmins.map(async (admin) => {
+        rawAdmins.map(async (admin) => {
           try {
-            if (!admin.userId) return { ...admin, user: null };
-            const user = await storage.getUser(admin.userId);
+            const normalizedAdmin = normalizeRecord(admin);
+            if (!normalizedAdmin.userId) return { ...normalizedAdmin, user: null };
+            const user = await storage.getUser(normalizedAdmin.userId);
             return {
-              ...admin,
+              ...normalizedAdmin,
               user: user ? { name: user.name, email: user.email } : null
             };
           } catch (err) {
-            console.error(`Error fetching user ${admin.userId}:`, err);
-            return { ...admin, user: null };
+            console.error(`Error fetching user for admin:`, err);
+            return { ...normalizeRecord(admin), user: null };
           }
         })
       );
@@ -651,19 +652,21 @@ router.get('/areas', async (req: Request, res: Response) => {
     }
     
     for (const admin of allAdmins) {
-      const normalized = normalizeRecord(admin);
-      if (normalized.areaId) {
-        if (!adminsByArea.has(normalized.areaId)) {
-          adminsByArea.set(normalized.areaId, []);
+      // Don't call normalizeRecord here because we already normalized it during enrichment
+      const areaId = admin.areaId;
+      if (areaId) {
+        if (!adminsByArea.has(areaId)) {
+          adminsByArea.set(areaId, []);
         }
-        adminsByArea.get(normalized.areaId)!.push(normalized);
+        adminsByArea.get(areaId)!.push(admin);
       }
     }
     
     const areasWithData = areasList.map(area => {
       const normalizedArea = normalizeRecord(area);
-      const teamsList = (normalizedArea && normalizedArea.id) ? (teamsByArea.get(normalizedArea.id) || []) : [];
-      const admins = (normalizedArea && normalizedArea.id) ? (adminsByArea.get(normalizedArea.id) || []) : [];
+      const areaId = normalizedArea.id;
+      const teamsList = teamsByArea.get(areaId) || [];
+      const admins = adminsByArea.get(areaId) || [];
       
       return {
         ...normalizedArea,
