@@ -222,14 +222,24 @@ export default function AdminAreasPage() {
       const currentAdmin = currentAdmins.find(a => a.role === "admin");
       const currentOwner = currentAdmins.find(a => a.role === "owner");
 
+      // Handle Admin role
       if (adminToSet !== (currentAdmin?.userId || "")) {
-        if (currentAdmin) await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentAdmin.id });
-        if (adminToSet) await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: adminToSet, role: "admin" });
+        if (adminToSet) {
+          // Backend will replace the existing admin with the same role automatically
+          await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: adminToSet, role: "admin" });
+        } else if (currentAdmin) {
+          await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentAdmin.id });
+        }
       }
 
+      // Handle Owner role
       if (ownerToSet !== (currentOwner?.userId || "")) {
-        if (currentOwner) await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentOwner.id });
-        if (ownerToSet) await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: ownerToSet, role: "owner" });
+        if (ownerToSet) {
+          // Backend will replace the existing owner with the same role automatically
+          await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: ownerToSet, role: "owner" });
+        } else if (currentOwner) {
+          await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentOwner.id });
+        }
       }
 
       toast.success(t('admin.governanceUpdated'));
