@@ -347,6 +347,8 @@ export const userManagementService = {
     const normalizedUserId = normalizeUUID(userId);
     const normalizedTeamId = normalizeUUID(teamId);
 
+    console.log(`[DEBUG] normalized - tenantId: ${normalizedTenantId}, userId: ${normalizedUserId}, teamId: ${normalizedTeamId}`);
+
     const existing = await storage.db
       .select()
       .from(userTeams)
@@ -357,16 +359,24 @@ export const userManagementService = {
       ))
       .limit(1)
       .then((rows: any[]) => (rows && rows.length > 0) ? rows[0] : null)
-      .catch(() => null);
+      .catch((err) => {
+        console.error("[DEBUG] Error checking existing userTeam:", err);
+        return null;
+      });
 
     if (!existing) {
+      console.log("[DEBUG] No existing userTeam, inserting...");
       await storage.db
         .insert(userTeams)
         .values({ 
           tenantId: normalizedTenantId, 
           userId: normalizedUserId, 
-          teamId: normalizedTeamId 
+          teamId: normalizedTeamId,
+          role: 'member' // Explicitly set role
         });
+      console.log("[DEBUG] Inserted successfully");
+    } else {
+      console.log("[DEBUG] User already in team");
     }
   },
 
