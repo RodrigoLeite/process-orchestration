@@ -1043,10 +1043,11 @@ export class DatabaseStorage implements IStorage {
   async createArea(area: InsertArea): Promise<Area> {
     try {
       // Use raw SQL for insertion to ensure it works with the Neon HTTP driver's UUID handling
+      // Use explicit column naming in SELECT to ensure predictable casing
       const result = await this.db.execute(
         sql`INSERT INTO areas (tenant_id, name, description, color, icon, is_default) 
             VALUES (${area.tenantId}, ${area.name}, ${area.description || null}, ${area.color || '#6366f1'}, ${area.icon || 'folder'}, ${area.isDefault || 'false'})
-            RETURNING id::text, tenant_id::text as tenantId, name, description, color, icon, is_default as isDefault, created_at as createdAt, updated_at as updatedAt`
+            RETURNING id::text as "id", tenant_id::text as "tenantId", name as "name", description as "description", color as "color", icon as "icon", is_default as "isDefault", created_at as "createdAt", updated_at as "updatedAt"`
       );
       
       if (!result || !result.rows || result.rows.length === 0) {
@@ -1054,10 +1055,19 @@ export class DatabaseStorage implements IStorage {
       }
       
       const row = result.rows[0] as any;
+      console.log("[DEBUG] Area creation row returned:", row);
+
+      // Defensively map fields with support for both snake_case, camelCase, and lowercase names
       return {
-        ...row,
-        createdAt: new Date(row.createdat || row.createdAt),
-        updatedAt: new Date(row.updatedat || row.updatedAt)
+        id: row.id,
+        tenantId: row.tenantId || row.tenant_id || row.tenantid,
+        name: row.name,
+        description: row.description,
+        color: row.color,
+        icon: row.icon,
+        isDefault: row.isDefault !== undefined ? row.isDefault : (row.is_default !== undefined ? row.is_default : row.isdefault),
+        createdAt: new Date(row.createdAt || row.created_at || row.createdat),
+        updatedAt: new Date(row.updatedAt || row.updated_at || row.updatedat)
       } as Area;
     } catch (error) {
       console.error('Error in createArea:', error);
