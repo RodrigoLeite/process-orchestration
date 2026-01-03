@@ -212,8 +212,11 @@ export default function AdminTeamsPage() {
       });
       toast.success("Membro adicionado com sucesso");
       setSelectedUserId("");
-      // Refetch both to ensure UI is in sync
-      await Promise.all([refetchUsers(), refetchTeams()]);
+      
+      // Force immediate refresh of data
+      await Promise.all([refetchTeams(), refetchUsers()]);
+      
+      // The useEffect at line 128 will handle updating selectedTeam when data?.teams changes
     } catch (error: any) {
       toast.error(error.message);
     }
