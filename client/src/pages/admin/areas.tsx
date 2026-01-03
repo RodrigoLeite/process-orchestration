@@ -114,6 +114,7 @@ export default function AdminAreasPage() {
   const removeAreaAdmin = useRemoveAreaAdmin();
 
   // Filter users based on their roles for governance assignment
+  const allUsers = usersData?.users || [];
   const areaOwnerUsers = allUsers.filter((u: any) => 
     u.role === "tenant_owner" || 
     u.role === "tenant_admin" || 
