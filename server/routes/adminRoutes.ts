@@ -602,19 +602,38 @@ router.get('/areas', async (req: Request, res: Response) => {
     const tenantId = getTenantId(req);
     
     // Fetch all data upfront to avoid parallel DB queries overwhelming the Neon driver
-    const [areasList, allTeams, allAdmins, allUsers] = await Promise.all([
+    const [areasList, allTeams, allAdmins, allUsers, tenantUserMappings] = await Promise.all([
       storage.getAreasByTenant(tenantId),
       storage.getTeamsByTenant(tenantId),
       storage.getAreaAdminsByTenant(tenantId),
-      userManagementService.listTenantUsers(tenantId)
+      userManagementService.listTenantUsers(tenantId),
+      storage.getTenantUserMappings(tenantId)
     ]);
     
     // Create lookup maps for efficient filtering
     const teamsArray = allTeams || [];
     const adminsArray = allAdmins || [];
     const usersArray = allUsers || [];
+    const mappingsArray = tenantUserMappings || [];
     
-    const usersMap = new Map(usersArray.map(u => [u.id, u]));
+    // Map by users.id (new format)
+    const usersMapById = new Map(usersArray.map(u => [u.id, u]));
+    // Map by tenant_users.id (legacy format) -> users.id
+    const tenantUserToUserId = new Map(mappingsArray.map(m => [m.tenantUserId, m.userId]));
+    
+    // Helper to find user by either users.id or tenant_users.id
+    const findUser = (userId: string | null | undefined) => {
+      if (!userId) return null;
+      // Try direct lookup by users.id first
+      let user = usersMapById.get(userId);
+      if (user) return user;
+      // Try lookup via tenant_users.id -> users.id mapping
+      const actualUserId = tenantUserToUserId.get(userId);
+      if (actualUserId) {
+        user = usersMapById.get(actualUserId);
+      }
+      return user || null;
+    };
     
     // Group teams by areaId
     const teamsByArea = new Map<string, any[]>();
@@ -634,7 +653,7 @@ router.get('/areas', async (req: Request, res: Response) => {
       const areaId = normalized.areaId;
       if (areaId) {
         if (!adminsByArea.has(areaId)) adminsByArea.set(areaId, []);
-        const user = normalized.userId ? usersMap.get(normalized.userId) : null;
+        const user = findUser(normalized.userId);
         adminsByArea.get(areaId)!.push({
           ...normalized,
           user: user ? { id: user.id, name: user.name, email: user.email, image: user.image } : null
