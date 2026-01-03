@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   useAdminTeams,
@@ -78,7 +78,7 @@ const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; color:
 export default function AdminTeamsPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
-  const { data, isLoading, error } = useAdminTeams();
+  const { data, isLoading, error, refetch: refetchTeams } = useAdminTeams();
   const { data: areasData } = useAdminAreas();
   const { data: usersData, refetch: refetchUsers } = useAdminUsers();
   
@@ -124,6 +124,13 @@ export default function AdminTeamsPage() {
     setMembersModalOpen(true);
     setSelectedUserId("");
   };
+
+  useEffect(() => {
+    if (selectedTeam && data?.teams) {
+      const updated = data.teams.find(t => t.id === selectedTeam.id);
+      if (updated) setSelectedTeam(updated);
+    }
+  }, [data?.teams]);
 
   const handleSubmit = async () => {
     if (!formName.trim()) {
@@ -205,7 +212,7 @@ export default function AdminTeamsPage() {
       toast.success("Membro adicionado com sucesso");
       setSelectedUserId("");
       // Refetch both to ensure UI is in sync
-      refetchUsers();
+      await Promise.all([refetchUsers(), refetchTeams()]);
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -220,7 +227,7 @@ export default function AdminTeamsPage() {
         teamId: selectedTeam.id
       });
       toast.success("Membro removido com sucesso");
-      refetchUsers();
+      await Promise.all([refetchUsers(), refetchTeams()]);
     } catch (error: any) {
       toast.error(error.message);
     }
