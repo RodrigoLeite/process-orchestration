@@ -360,9 +360,9 @@ export default function AdminAreasPage() {
                                   <Shield className="absolute -bottom-1 -right-1 h-3 w-3 text-amber-500" />
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-medium">{admin.user?.name || "Owner"}</p>
-                                <p className="text-xs text-muted-foreground">{t('admin.adminRoleOwner')}</p>
+                              <TooltipContent className="bg-popover text-popover-foreground border shadow-md">
+                                <p className="font-semibold">{admin.user?.name || "Owner"}</p>
+                                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">{t('admin.adminRoleOwner')}</p>
                               </TooltipContent>
                             </Tooltip>
                           ))}
@@ -379,9 +379,9 @@ export default function AdminAreasPage() {
                                   <Shield className="absolute -bottom-1 -right-1 h-3 w-3 text-blue-500" />
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-medium">{admin.user?.name || "Admin"}</p>
-                                <p className="text-xs text-muted-foreground">{t('admin.adminRoleAdmin')}</p>
+                              <TooltipContent className="bg-popover text-popover-foreground border shadow-md">
+                                <p className="font-semibold">{admin.user?.name || "Admin"}</p>
+                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400">{t('admin.adminRoleAdmin')}</p>
                               </TooltipContent>
                             </Tooltip>
                           ))}
