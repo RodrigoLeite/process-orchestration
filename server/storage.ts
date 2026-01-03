@@ -16,6 +16,7 @@ export interface IStorage {
   createTenantUser(tenantUser: InsertTenantUser): Promise<TenantUser>;
   getTenantUsers(tenantId: string): Promise<TenantUser[]>;
   getTenantUsersByUserId(userId: string): Promise<TenantUser[]>;
+  getTenantUserMappings(tenantId: string): Promise<{ tenantUserId: string; userId: string }[]>;
   updateTenantUser(id: string, updates: Partial<TenantUser>): Promise<TenantUser | undefined>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
@@ -913,6 +914,19 @@ export class DatabaseStorage implements IStorage {
       return (result && Array.isArray(result)) ? result : [];
     } catch (error) {
       console.error('Error in getTenantUsersByUserId:', error);
+      return [];
+    }
+  }
+
+  async getTenantUserMappings(tenantId: string): Promise<{ tenantUserId: string; userId: string }[]> {
+    try {
+      const result = await this.db.select({
+        tenantUserId: tenantUsers.id,
+        userId: tenantUsers.userId
+      }).from(tenantUsers).where(eq(tenantUsers.tenantId, tenantId));
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getTenantUserMappings:', error);
       return [];
     }
   }
