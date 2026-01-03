@@ -138,6 +138,7 @@ export interface IStorage {
 
   // Area Admins (Governance Roles)
   getAreaAdmins(areaId: string): Promise<AreaAdmin[]>;
+  getAreaAdminsByTenant(tenantId: string): Promise<AreaAdmin[]>;
   getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined>;
   getUserAreaRoles(userId: string, tenantId: string): Promise<AreaAdmin[]>;
   createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin>;
