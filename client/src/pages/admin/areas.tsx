@@ -113,21 +113,8 @@ export default function AdminAreasPage() {
   const addAreaAdmin = useAddAreaAdmin();
   const removeAreaAdmin = useRemoveAreaAdmin();
 
-  const areaAdminUsers = usersData?.users?.filter((u: any) => 
-    u.roles?.some((r: any) => 
-      r.name === "area_admin" || 
-      r.name === "Area Admin" || 
-      (typeof r === 'string' && (r === "area_admin" || r === "Area Admin"))
-    ) || u.role === "area_admin"
-  ) || [];
-
-  const areaOwnerUsers = usersData?.users?.filter((u: any) => 
-    u.roles?.some((r: any) => 
-      r.name === "area_owner" || 
-      r.name === "Area Owner" ||
-      (typeof r === 'string' && (r === "area_owner" || r === "Area Owner"))
-    ) || u.role === "area_owner"
-  ) || [];
+  // All users can be assigned as Area Owner or Area Admin
+  const allUsers = usersData?.users || [];
 
   const openCreateModal = () => {
     setFormName("");
@@ -516,7 +503,7 @@ export default function AdminAreasPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {areaAdminUsers.map((user: any) => (
+                  {allUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
                     </SelectItem>
@@ -534,7 +521,7 @@ export default function AdminAreasPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {areaOwnerUsers.map((user: any) => (
+                  {allUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
                     </SelectItem>

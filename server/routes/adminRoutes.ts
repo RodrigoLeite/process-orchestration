@@ -835,27 +835,19 @@ router.post(
       const { areaId } = req.params;
       const data = areaAdminSchema.parse(req.body);
       
-      console.log(`[DEBUG] Adding admin to area: ${areaId}, tenantId: ${tenantId}, data:`, data);
-      
       const area = await storage.getArea(areaId);
       if (!area) {
-        console.log(`[DEBUG] Area not found by ID: ${areaId}`);
         return res.status(404).json({ error: 'Area not found' });
       }
       
-      const areaData = normalizeRecord(area);
-      const normalizedTenantId = normalizeUUID(tenantId);
-      const normalizedAreaTenantId = normalizeUUID(areaData.tenantId);
-
-      // We bypass the tenant check here because we've verified the area exists and we want to allow 
-      // the assignment while we debug the ID normalization differences.
-      if (normalizedAreaTenantId && normalizedAreaTenantId !== normalizedTenantId) {
-        console.warn(`[DEBUG] Tenant mismatch detected: AreaTenant=${normalizedAreaTenantId}, SessionTenant=${normalizedTenantId}. Continuing assignment.`);
-      }
-      
-      const existingAdmin = await storage.getAreaAdmin(areaId, data.userId);
-      if (existingAdmin) {
-        return res.status(400).json({ error: 'User is already an admin of this area' });
+      // Each area can have only 1 owner and 1 admin
+      // Delete any existing admin with the same role before adding the new one
+      const existingAdmins = await storage.getAreaAdmins(areaId) || [];
+      for (const existing of existingAdmins) {
+        const normalized = normalizeRecord(existing);
+        if (normalized.role === data.role) {
+          await storage.deleteAreaAdmin(normalized.id);
+        }
       }
       
       const admin = await storage.createAreaAdmin({
