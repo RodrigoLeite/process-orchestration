@@ -91,8 +91,8 @@ export default function AdminAreasPage() {
 
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"owner" | "admin">("admin");
+  const [selectedAdminId, setSelectedAdminId] = useState("");
+  const [selectedOwnerId, setSelectedOwnerId] = useState("");
 
   const createArea = useCreateArea();
   const updateArea = useUpdateArea();
@@ -100,107 +100,50 @@ export default function AdminAreasPage() {
   const addAreaAdmin = useAddAreaAdmin();
   const removeAreaAdmin = useRemoveAreaAdmin();
 
-  const openCreateModal = () => {
-    setFormName("");
-    setFormDescription("");
-    setFormColor(COLOR_OPTIONS[0]);
-    setFormIcon(ICON_OPTIONS[0]);
-    setEditArea(null);
-    setCreateModalOpen(true);
-  };
+  const areaAdminUsers = usersData?.users?.filter((u: any) => 
+    u.roles?.some((r: any) => r.name === "area_admin" || r.name === "Area Admin")
+  ) || [];
 
-  const openEditModal = (area: Area) => {
-    setFormName(area.name);
-    setFormDescription(area.description || "");
-    setFormColor(area.color || COLOR_OPTIONS[0]);
-    setFormIcon(area.icon || ICON_OPTIONS[0]);
-    setEditArea(area);
-    setCreateModalOpen(true);
-  };
+  const areaOwnerUsers = usersData?.users?.filter((u: any) => 
+    u.roles?.some((r: any) => r.name === "area_owner" || r.name === "Area Owner")
+  ) || [];
 
   const openAdminModal = (area: Area) => {
     setSelectedArea(area);
-    setSelectedUserId("");
-    setSelectedRole("admin");
+    const currentAdmin = area.admins?.find(a => a.role === "admin");
+    const currentOwner = area.admins?.find(a => a.role === "owner");
+    setSelectedAdminId(currentAdmin?.userId || "");
+    setSelectedOwnerId(currentOwner?.userId || "");
     setAdminModalOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!formName.trim()) {
-      toast.error(t('admin.areaNameRequired'));
-      return;
-    }
-
-    try {
-      if (editArea) {
-        await updateArea.mutateAsync({
-          areaId: editArea.id,
-          name: formName,
-          description: formDescription || undefined,
-          color: formColor,
-          icon: formIcon,
-        });
-        toast.success(t('admin.areaUpdated'));
-      } else {
-        await createArea.mutateAsync({
-          name: formName,
-          description: formDescription || undefined,
-          color: formColor,
-          icon: formIcon,
-        });
-        toast.success(t('admin.areaCreated'));
-      }
-      setCreateModalOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleDelete = async (area: Area) => {
-    if (area.isDefault === "true") {
-      toast.error(t('admin.defaultAreaDeleteError'));
-      return;
-    }
-    if (!confirm(t('admin.areaDeleteConfirm').replace('{name}', getAreaName(area.name, language) || area.name))) {
-      return;
-    }
-
-    try {
-      await deleteArea.mutateAsync(area.id);
-      toast.success(t('admin.areaDeleted'));
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleAddAdmin = async () => {
-    if (!selectedArea || !selectedUserId) {
-      toast.error(t('admin.selectUser'));
-      return;
-    }
-
-    try {
-      await addAreaAdmin.mutateAsync({
-        areaId: selectedArea.id,
-        userId: selectedUserId,
-        role: selectedRole,
-      });
-      toast.success(t('admin.adminAdded'));
-      setSelectedUserId("");
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleRemoveAdmin = async (adminId: string) => {
+  const handleUpdateGovernance = async () => {
     if (!selectedArea) return;
 
     try {
-      await removeAreaAdmin.mutateAsync({
-        areaId: selectedArea.id,
-        adminId,
-      });
-      toast.success(t('admin.adminRemoved'));
+      // Logic to sync admins
+      const currentAdmins = selectedArea.admins || [];
+      const adminToSet = selectedAdminId;
+      const ownerToSet = selectedOwnerId;
+
+      // Simple implementation: for each role, if it changed, update it
+      // In a real app we might want a dedicated bulk endpoint, but here we can call the existing ones
+      
+      const currentAdmin = currentAdmins.find(a => a.role === "admin");
+      const currentOwner = currentAdmins.find(a => a.role === "owner");
+
+      if (adminToSet !== (currentAdmin?.userId || "")) {
+        if (currentAdmin) await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentAdmin.id });
+        if (adminToSet) await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: adminToSet, role: "admin" });
+      }
+
+      if (ownerToSet !== (currentOwner?.userId || "")) {
+        if (currentOwner) await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentOwner.id });
+        if (ownerToSet) await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: ownerToSet, role: "owner" });
+      }
+
+      toast.success(t('admin.governanceUpdated'));
+      setAdminModalOpen(false);
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -431,78 +374,54 @@ export default function AdminAreasPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="flex gap-2">
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="flex-1" data-testid="select-admin-user">
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label>{t('admin.adminRoleAdmin')}</Label>
+              <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
+                <SelectTrigger data-testid="select-area-admin">
                   <SelectValue placeholder={t('admin.selectUser')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {usersData?.users?.map((user: any) => (
+                  <SelectItem value="none">{t('common.none')}</SelectItem>
+                  {areaAdminUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-
-              <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as "owner" | "admin")}>
-                <SelectTrigger className="w-32" data-testid="select-admin-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="owner">{t('admin.adminRoleOwner')}</SelectItem>
-                  <SelectItem value="admin">{t('admin.adminRoleAdmin')}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                onClick={handleAddAdmin}
-                disabled={!selectedUserId || addAreaAdmin.isPending}
-                data-testid="button-add-admin"
-              >
-                <UserPlus className="h-4 w-4" />
-              </Button>
+              <p className="text-xs text-muted-foreground">{t('admin.areaAdminDescription')}</p>
             </div>
 
-            <div className="border rounded-lg divide-y">
-              {selectedArea?.admins?.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  {t('admin.noAdmins')}
-                </div>
-              ) : (
-                selectedArea?.admins?.map((admin: any) => (
-                  <div key={admin.id} className="flex items-center justify-between p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <Shield className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">
-                          {admin.user?.name || admin.user?.email || admin.userId}
-                        </p>
-                        <Badge variant="outline" className="text-xs">
-                          {admin.role === "owner" ? t('admin.adminRoleOwner') : t('admin.adminRoleAdmin')}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveAdmin(admin.id)}
-                      data-testid={`remove-admin-${admin.id}`}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
+            <div className="space-y-2">
+              <Label>{t('admin.adminRoleOwner')}</Label>
+              <Select value={selectedOwnerId} onValueChange={setSelectedOwnerId}>
+                <SelectTrigger data-testid="select-area-owner">
+                  <SelectValue placeholder={t('admin.selectUser')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('common.none')}</SelectItem>
+                  {areaOwnerUsers.map((user: any) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name || user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t('admin.areaOwnerDescription')}</p>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdminModalOpen(false)}>
               {t('common.cancel')}
+            </Button>
+            <Button 
+              onClick={handleUpdateGovernance}
+              disabled={addAreaAdmin.isPending || removeAreaAdmin.isPending}
+              data-testid="button-save-governance"
+            >
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
