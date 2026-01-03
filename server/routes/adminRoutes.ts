@@ -600,43 +600,63 @@ const areaAdminSchema = z.object({
 router.get('/areas', async (req: Request, res: Response) => {
   try {
     const tenantId = getTenantId(req);
-    const areasList = await storage.getAreasByTenant(tenantId);
     
-    // Fetch all admins for the tenant once to map them
-    const allAdmins = await storage.getAreaAdminsByTenant(tenantId) || [];
+    // Fetch all data upfront to avoid parallel DB queries overwhelming the Neon driver
+    const [areasList, allTeams, allAdmins, allUsers] = await Promise.all([
+      storage.getAreasByTenant(tenantId),
+      storage.getTeamsByTenant(tenantId),
+      storage.getAreaAdminsByTenant(tenantId),
+      userManagementService.listTenantUsers(tenantId)
+    ]);
     
-    const areasWithData = await Promise.all(
-      areasList.map(async (area) => {
-        const normalizedArea = normalizeRecord(area);
-        const areaId = normalizedArea.id;
-        const teams = await storage.getTeamsByArea(areaId) || [];
-        
-        // Filter admins for this specific area from the pre-fetched list
-        const areaAdmins = allAdmins.filter(admin => {
-          const normAdmin = normalizeRecord(admin);
-          return normAdmin.areaId === areaId;
+    // Create lookup maps for efficient filtering
+    const teamsArray = allTeams || [];
+    const adminsArray = allAdmins || [];
+    const usersArray = allUsers || [];
+    
+    const usersMap = new Map(usersArray.map(u => [u.id, u]));
+    
+    // Group teams by areaId
+    const teamsByArea = new Map<string, any[]>();
+    for (const team of teamsArray) {
+      const normalized = normalizeRecord(team);
+      const areaId = normalized.areaId;
+      if (areaId) {
+        if (!teamsByArea.has(areaId)) teamsByArea.set(areaId, []);
+        teamsByArea.get(areaId)!.push(normalized);
+      }
+    }
+    
+    // Group admins by areaId with user enrichment
+    const adminsByArea = new Map<string, any[]>();
+    for (const admin of adminsArray) {
+      const normalized = normalizeRecord(admin);
+      const areaId = normalized.areaId;
+      if (areaId) {
+        if (!adminsByArea.has(areaId)) adminsByArea.set(areaId, []);
+        const user = normalized.userId ? usersMap.get(normalized.userId) : null;
+        adminsByArea.get(areaId)!.push({
+          ...normalized,
+          user: user ? { id: user.id, name: user.name, email: user.email } : null
         });
-        
-        const enrichedAdmins = await Promise.all(
-          areaAdmins.map(async (admin) => {
-            const normalizedAdmin = normalizeRecord(admin);
-            const user = await storage.getUser(normalizedAdmin.userId);
-            return {
-              ...normalizedAdmin,
-              user: user ? { id: user.id, name: user.name, email: user.email } : null
-            };
-          })
-        );
-
-        return {
-          ...normalizedArea,
-          teams: teams.map(t => normalizeRecord(t)),
-          admins: enrichedAdmins,
-          teamCount: teams.length,
-          adminCount: enrichedAdmins.length
-        };
-      })
-    );
+      }
+    }
+    
+    // Build response without additional DB queries
+    const areasWithData = areasList.map(area => {
+      const normalizedArea = normalizeRecord(area);
+      const areaId = normalizedArea.id;
+      const teamsList = teamsByArea.get(areaId) || [];
+      const adminsList = adminsByArea.get(areaId) || [];
+      
+      return {
+        ...normalizedArea,
+        teams: teamsList,
+        admins: adminsList,
+        teamCount: teamsList.length,
+        adminCount: adminsList.length
+      };
+    });
     
     res.json({ areas: areasWithData });
   } catch (error: any) {
