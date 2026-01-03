@@ -920,11 +920,16 @@ export class DatabaseStorage implements IStorage {
 
   async getTenantUserMappings(tenantId: string): Promise<{ tenantUserId: string; userId: string }[]> {
     try {
-      const result = await this.db.select({
-        tenantUserId: tenantUsers.id,
-        userId: tenantUsers.userId
-      }).from(tenantUsers).where(eq(tenantUsers.tenantId, tenantId));
-      return (result && Array.isArray(result)) ? result : [];
+      const result = await this.db.execute(
+        sql`SELECT id::text as tenant_user_id, user_id::text FROM tenant_users WHERE tenant_id = ${tenantId}`
+      );
+      if (!result || !result.rows || !Array.isArray(result.rows)) {
+        return [];
+      }
+      return result.rows.map((row: any) => ({
+        tenantUserId: row.tenant_user_id,
+        userId: row.user_id
+      }));
     } catch (error) {
       console.error('Error in getTenantUserMappings:', error);
       return [];
