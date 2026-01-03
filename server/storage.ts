@@ -1085,15 +1085,24 @@ export class DatabaseStorage implements IStorage {
   async getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined> {
     if (!areaId || !userId) return undefined;
     try {
-      const result = await this.db.select().from(areaAdmins)
-        .where(and(eq(areaAdmins.areaId, areaId), eq(areaAdmins.userId, userId)))
-        .limit(1);
+      // Use raw SQL to avoid Neon HTTP driver issues
+      const rows = await this.neonClient(
+        `SELECT * FROM area_admins WHERE area_id = $1 AND user_id = $2 LIMIT 1`,
+        [areaId, userId]
+      );
       
-      // Defensively handle result that might be null or empty from Neon driver
-      if (!result || !Array.isArray(result) || result.length === 0) {
+      if (!rows || !Array.isArray(rows) || rows.length === 0) {
         return undefined;
       }
-      return result[0];
+      
+      const row = rows[0];
+      return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        userId: row.user_id,
+        role: row.role,
+      } as AreaAdmin;
     } catch (error) {
       console.error('Error in getAreaAdmin:', error);
       return undefined;
@@ -1134,9 +1143,27 @@ export class DatabaseStorage implements IStorage {
 
   async createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin> {
     try {
-      const result = await this.db.insert(areaAdmins).values(admin).returning();
-      if (!result || result.length === 0) throw new Error("Failed to create area admin");
-      return result[0];
+      // Use raw SQL to avoid Neon HTTP driver issues
+      const id = crypto.randomUUID();
+      const rows = await this.neonClient(
+        `INSERT INTO area_admins (id, tenant_id, area_id, user_id, role) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
+        [id, admin.tenantId, admin.areaId, admin.userId, admin.role]
+      );
+      
+      if (!rows || !Array.isArray(rows) || rows.length === 0) {
+        throw new Error("Failed to create area admin - no result returned");
+      }
+      
+      const row = rows[0];
+      return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        userId: row.user_id,
+        role: row.role,
+      } as AreaAdmin;
     } catch (error) {
       console.error('Error in createAreaAdmin:', error);
       throw error;
