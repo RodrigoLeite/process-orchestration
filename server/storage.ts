@@ -370,6 +370,10 @@ export class DatabaseStorage implements IStorage {
       } else {
         allDemands = await this.db.select().from(demands).where(eq(demands.status, status));
       }
+      
+      if (!allDemands || !Array.isArray(allDemands)) {
+        return {};
+      }
     } catch (error) {
       console.error('Error in countDemandsByStatus:', error);
       allDemands = [];
