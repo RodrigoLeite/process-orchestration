@@ -107,7 +107,7 @@ const ROLE_LABELS: Record<string, string> = {
 export default function AdminUsersPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
-  const { data, isLoading, error } = useAdminUsers();
+  const { data, isLoading, error, refetch } = useAdminUsers();
   const { data: teamsData } = useAdminTeams();
   
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -148,8 +148,7 @@ export default function AdminUsersPage() {
       toast.success("Usuário adicionado com sucesso. Ele poderá acessar ao logar com este e-mail.");
       setQuickAddModalOpen(false);
       setQuickAddEmail("");
-      // Refresh user list
-      window.location.reload();
+      await refetch();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -181,6 +180,7 @@ export default function AdminUsersPage() {
       setInviteEmail("");
       setInviteRole("team_member");
       setInviteTeamId(null);
+      await refetch();
     } catch (error: any) {
       toast.error(error.message || t('admin.inviteError'));
     }
@@ -215,6 +215,7 @@ export default function AdminUsersPage() {
       setBulkEmails("");
       setBulkRole("team_member");
       setBulkTeamId(null);
+      await refetch();
     } catch (error: any) {
       toast.error(error.message || t('admin.inviteError'));
     }
@@ -262,8 +263,7 @@ export default function AdminUsersPage() {
       
       toast.success("Usuário atualizado com sucesso");
       setEditModalOpen(false);
-      // Data will refresh via React Query if configured, or manually:
-      window.location.reload(); 
+      await refetch();
     } catch (error: any) {
       toast.error(error.message);
     }
