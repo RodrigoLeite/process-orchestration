@@ -965,7 +965,7 @@ export class DatabaseStorage implements IStorage {
     if (!id) return undefined;
     try {
       const result = await this.db.select().from(areas).where(eq(areas.id, id)).limit(1);
-      return result[0];
+      return (result && result[0]) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getArea:', error);
       return undefined;
@@ -977,8 +977,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
       
+      const areasList = (result && Array.isArray(result)) ? result : [];
+      
       // If no areas exist yet (except maybe General), seed the default ones
-      if (result.length <= 1) {
+      if (areasList.length <= 1) {
         const defaultAreas = [
           { name: "Operações", description: "Operações corporativas e processos", icon: "Settings", color: "#6366f1" },
           { name: "Financeiro", description: "Controle financeiro e orçamentário", icon: "DollarSign", color: "#10b981" },
@@ -989,7 +991,7 @@ export class DatabaseStorage implements IStorage {
         ];
 
         for (const areaDef of defaultAreas) {
-          const exists = result.find(a => a.name === areaDef.name);
+          const exists = areasList.find(a => a.name === areaDef.name);
           if (!exists) {
             await this.createArea({
               tenantId,
@@ -1002,10 +1004,11 @@ export class DatabaseStorage implements IStorage {
           }
         }
         // Re-fetch after seeding
-        return await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+        const finalResult = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+        return (finalResult && Array.isArray(finalResult)) ? finalResult : [];
       }
       
-      return result;
+      return areasList;
     } catch (error) {
       console.error('Error in getAreasByTenant:', error);
       return [];
@@ -1013,20 +1016,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDefaultArea(tenantId: string): Promise<Area | undefined> {
-    const result = await this.db.select().from(areas)
-      .where(and(eq(areas.tenantId, tenantId), eq(areas.isDefault, "true")))
-      .limit(1);
-    return result[0];
+    if (!tenantId) return undefined;
+    try {
+      const result = await this.db.select().from(areas)
+        .where(and(eq(areas.tenantId, tenantId), eq(areas.isDefault, "true")))
+        .limit(1);
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in getDefaultArea:', error);
+      return undefined;
+    }
   }
 
   async createArea(area: InsertArea): Promise<Area> {
-    const result = await this.db.insert(areas).values(area).returning();
-    return result[0];
+    try {
+      const result = await this.db.insert(areas).values(area).returning();
+      if (!result || !result[0]) throw new Error("Failed to create area");
+      return result[0];
+    } catch (error) {
+      console.error('Error in createArea:', error);
+      throw error;
+    }
   }
 
   async updateArea(id: string, updates: Partial<Area>): Promise<Area | undefined> {
-    const result = await this.db.update(areas).set({ ...updates, updatedAt: new Date() }).where(eq(areas.id, id)).returning();
-    return result[0];
+    if (!id) return undefined;
+    try {
+      const result = await this.db.update(areas).set({ ...updates, updatedAt: new Date() }).where(eq(areas.id, id)).returning();
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in updateArea:', error);
+      return undefined;
+    }
   }
 
   async deleteArea(id: string): Promise<void> {
@@ -1054,7 +1075,7 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.select().from(areaAdmins)
         .where(and(eq(areaAdmins.areaId, areaId), eq(areaAdmins.userId, userId)))
         .limit(1);
-      return result[0];
+      return (result && result[0]) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getAreaAdmin:', error);
       return undefined;
@@ -1062,8 +1083,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserAreaRoles(userId: string, tenantId: string): Promise<AreaAdmin[]> {
-    return await this.db.select().from(areaAdmins)
-      .where(and(eq(areaAdmins.userId, userId), eq(areaAdmins.tenantId, tenantId)));
+    if (!userId || !tenantId) return [];
+    try {
+      const result = await this.db.select().from(areaAdmins)
+        .where(and(eq(areaAdmins.userId, userId), eq(areaAdmins.tenantId, tenantId)));
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getUserAreaRoles:', error);
+      return [];
+    }
   }
 
   async getAreaAdminsByTenant(tenantId: string): Promise<AreaAdmin[]> {
@@ -1071,7 +1099,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db.select().from(areaAdmins)
         .where(eq(areaAdmins.tenantId, tenantId));
-      return Array.isArray(result) ? result : [];
+      return (result && Array.isArray(result)) ? result : [];
     } catch (error) {
       console.error('Error in getAreaAdminsByTenant:', error);
       return [];
@@ -1079,13 +1107,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin> {
-    const result = await this.db.insert(areaAdmins).values(admin).returning();
-    return result[0];
+    try {
+      const result = await this.db.insert(areaAdmins).values(admin).returning();
+      if (!result || !result[0]) throw new Error("Failed to create area admin");
+      return result[0];
+    } catch (error) {
+      console.error('Error in createAreaAdmin:', error);
+      throw error;
+    }
   }
 
   async updateAreaAdmin(id: string, role: string): Promise<AreaAdmin | undefined> {
-    const result = await this.db.update(areaAdmins).set({ role }).where(eq(areaAdmins.id, id)).returning();
-    return result[0];
+    if (!id) return undefined;
+    try {
+      const result = await this.db.update(areaAdmins).set({ role }).where(eq(areaAdmins.id, id)).returning();
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in updateAreaAdmin:', error);
+      return undefined;
+    }
   }
 
   async deleteAreaAdmin(id: string): Promise<void> {
@@ -1095,15 +1135,21 @@ export class DatabaseStorage implements IStorage {
   // ========== TEAMS (Execution Layer) ==========
 
   async getTeam(id: string): Promise<Team | undefined> {
-    const result = await this.db.select().from(teams).where(eq(teams.id, id)).limit(1);
-    return result[0];
+    if (!id) return undefined;
+    try {
+      const result = await this.db.select().from(teams).where(eq(teams.id, id)).limit(1);
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in getTeam:', error);
+      return undefined;
+    }
   }
 
   async getTeamsByTenant(tenantId: string): Promise<Team[]> {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
-      return result || [];
+      return (result && Array.isArray(result)) ? result : [];
     } catch (error) {
       console.error('Error in getTeamsByTenant:', error);
       return [];
@@ -1125,13 +1171,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTeam(team: InsertTeam): Promise<Team> {
-    const result = await this.db.insert(teams).values(team).returning();
-    return result[0];
+    try {
+      const result = await this.db.insert(teams).values(team).returning();
+      if (!result || !result[0]) throw new Error("Failed to create team");
+      return result[0];
+    } catch (error) {
+      console.error('Error in createTeam:', error);
+      throw error;
+    }
   }
 
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
-    const result = await this.db.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id)).returning();
-    return result[0];
+    if (!id) return undefined;
+    try {
+      const result = await this.db.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id)).returning();
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in updateTeam:', error);
+      return undefined;
+    }
   }
 
   async deleteTeam(id: string): Promise<void> {
@@ -1141,27 +1199,62 @@ export class DatabaseStorage implements IStorage {
   // ========== USER TEAMS (Team Membership) ==========
 
   async getUserTeams(userId: string, tenantId: string): Promise<UserTeam[]> {
-    return await this.db.select().from(userTeams)
-      .where(and(eq(userTeams.userId, userId), eq(userTeams.tenantId, tenantId)));
+    if (!userId || !tenantId) return [];
+    try {
+      const result = await this.db.select().from(userTeams)
+        .where(and(eq(userTeams.userId, userId), eq(userTeams.tenantId, tenantId)));
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getUserTeams:', error);
+      return [];
+    }
   }
 
   async getTeamMembers(teamId: string): Promise<UserTeam[]> {
-    return await this.db.select().from(userTeams).where(eq(userTeams.teamId, teamId));
+    if (!teamId) return [];
+    try {
+      const result = await this.db.select().from(userTeams).where(eq(userTeams.teamId, teamId));
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getTeamMembers:', error);
+      return [];
+    }
   }
 
   async getUserTeam(teamId: string, userId: string): Promise<UserTeam | undefined> {
-    const result = await this.db.select().from(userTeams)
-      .where(and(eq(userTeams.teamId, teamId), eq(userTeams.userId, userId)))
-      .limit(1);
-    return result[0];
+    if (!teamId || !userId) return undefined;
+    try {
+      const result = await this.db.select().from(userTeams)
+        .where(and(eq(userTeams.teamId, teamId), eq(userTeams.userId, userId)))
+        .limit(1);
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in getUserTeam:', error);
+      return undefined;
+    }
   }
 
   async createUserTeam(ut: InsertUserTeam): Promise<UserTeam> {
-    const result = await this.db.insert(userTeams).values(ut).returning();
-    return result[0];
+    try {
+      const result = await this.db.insert(userTeams).values(ut).returning();
+      if (!result || !result[0]) throw new Error("Failed to create user team");
+      return result[0];
+    } catch (error) {
+      console.error('Error in createUserTeam:', error);
+      throw error;
+    }
   }
 
   async updateUserTeamRole(id: string, role: string): Promise<UserTeam | undefined> {
+    if (!id) return undefined;
+    try {
+      const result = await this.db.update(userTeams).set({ role }).where(eq(userTeams.id, id)).returning();
+      return (result && result[0]) ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error in updateUserTeamRole:', error);
+      return undefined;
+    }
+  }
     const result = await this.db.update(userTeams).set({ role }).where(eq(userTeams.id, id)).returning();
     return result[0];
   }
