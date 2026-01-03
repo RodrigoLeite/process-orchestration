@@ -196,6 +196,7 @@ export default function AdminTeamsPage() {
         role: newRole as 'lead' | 'member' | 'viewer',
       });
       toast.success("Papel atualizado");
+      await Promise.all([refetchUsers(), refetchTeams()]);
     } catch (error: any) {
       toast.error(error.message);
     }
