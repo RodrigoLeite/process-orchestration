@@ -52,11 +52,12 @@ export const rolesService = {
     let roleRows: Role[] = [];
     
     try {
-      roleRows = await storage.db
+      const rows = await storage.db
         .select()
         .from(roles)
         .where(eq(roles.tenantId, normalizedTenantId))
         .orderBy(desc(roles.createdAt));
+      roleRows = Array.isArray(rows) ? rows : [];
     } catch (err) {
       console.error('[rolesService] Error fetching roles:', err);
       return [];
@@ -69,18 +70,19 @@ export const rolesService = {
       
       let rolePerms: any[] = [];
       try {
-        rolePerms = await storage.db
+        const permsResult = await storage.db
           .select({ permission: permissions })
           .from(rolePermissions)
           .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
           .where(eq(rolePermissions.roleId, normalizedRole.id));
+        rolePerms = Array.isArray(permsResult) ? permsResult : [];
       } catch (err) {
         console.error('[rolesService] Error fetching role permissions:', err);
       }
 
       let roleUsers: any[] = [];
       try {
-        roleUsers = await storage.db
+        const usersResult = await storage.db
           .select({
             id: users.id,
             name: users.name,
@@ -89,6 +91,7 @@ export const rolesService = {
           .from(userRoles)
           .innerJoin(users, eq(users.id, userRoles.userId))
           .where(eq(userRoles.roleId, normalizedRole.id));
+        roleUsers = Array.isArray(usersResult) ? usersResult : [];
       } catch (err) {
         console.error('[rolesService] Error fetching role users:', err);
       }
@@ -120,12 +123,17 @@ export const rolesService = {
     }
 
     const normalizedRole = normalizeRecord(role);
-    const rolePerms = await storage.db
-      .select({ permission: permissions })
-      .from(rolePermissions)
-      .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-      .where(eq(rolePermissions.roleId, normalizedRole.id))
-      .catch(() => [] as any[]);
+    let rolePerms: any[] = [];
+    try {
+      const permsResult = await storage.db
+        .select({ permission: permissions })
+        .from(rolePermissions)
+        .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+        .where(eq(rolePermissions.roleId, normalizedRole.id));
+      rolePerms = Array.isArray(permsResult) ? permsResult : [];
+    } catch (err) {
+      console.error('[rolesService] Error fetching role permissions:', err);
+    }
 
     return {
       ...normalizedRole,

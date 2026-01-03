@@ -1050,7 +1050,9 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.execute(sql.raw(
         `SELECT * FROM area_admins WHERE area_id = '${areaId}'::uuid`
       ));
-      return ((result as any).rows || []).map((row: any) => ({
+      
+      const rows = (result as any).rows || result || [];
+      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
         id: row.id,
         tenantId: row.tenant_id,
         areaId: row.area_id,
@@ -1129,7 +1131,9 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.execute(sql.raw(
         `SELECT * FROM teams WHERE area_id = '${areaId}'::uuid ORDER BY name`
       ));
-      return ((result as any).rows || []).map((row: any) => ({
+      
+      const rows = (result as any).rows || result || [];
+      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
         id: row.id,
         tenantId: row.tenant_id,
         areaId: row.area_id,
