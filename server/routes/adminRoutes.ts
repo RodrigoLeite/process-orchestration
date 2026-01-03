@@ -690,7 +690,7 @@ router.get('/areas/:areaId', async (req: Request, res: Response) => {
         const user = await storage.getUser(admin.userId);
         return {
           ...normalizeRecord(admin),
-          user: user ? { id: user.id, name: user.name, email: user.email } : null,
+          user: user ? { id: user.id, name: user.name, email: user.email, image: user.image } : null,
         };
       })
     );
@@ -815,7 +815,7 @@ router.get('/areas/:areaId/admins', async (req: Request, res: Response) => {
         const user = await storage.getUser(admin.userId);
         return {
           ...admin,
-          user: user ? { id: user.id, name: user.name, email: user.email } : null,
+          user: user ? { id: user.id, name: user.name, email: user.email, image: user.image } : null,
         };
       })
     );
