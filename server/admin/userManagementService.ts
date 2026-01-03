@@ -343,21 +343,30 @@ export const userManagementService = {
   },
 
   async assignUserToTeam(tenantId: string, userId: string, teamId: string): Promise<void> {
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedUserId = normalizeUUID(userId);
+    const normalizedTeamId = normalizeUUID(teamId);
+
     const existing = await storage.db
       .select()
       .from(userTeams)
       .where(and(
-        eq(userTeams.userId, userId),
-        eq(userTeams.teamId, teamId),
-        eq(userTeams.tenantId, tenantId)
+        eq(userTeams.userId, normalizedUserId),
+        eq(userTeams.teamId, normalizedTeamId),
+        eq(userTeams.tenantId, normalizedTenantId)
       ))
       .limit(1)
-      .then((rows: any[]) => rows[0]);
+      .then((rows: any[]) => (rows && rows.length > 0) ? rows[0] : null)
+      .catch(() => null);
 
     if (!existing) {
       await storage.db
         .insert(userTeams)
-        .values({ tenantId, userId, teamId });
+        .values({ 
+          tenantId: normalizedTenantId, 
+          userId: normalizedUserId, 
+          teamId: normalizedTeamId 
+        });
     }
   },
 
