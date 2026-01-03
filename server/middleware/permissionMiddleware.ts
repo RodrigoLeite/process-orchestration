@@ -40,7 +40,15 @@ async function getUserPermissions(userId: string, tenantId: string): Promise<Set
     }
 
     const userRole = tenantUser.role?.toLowerCase() || 'member';
-    const defaultPerms = DEFAULT_ROLE_PERMISSIONS[userRole] || DEFAULT_ROLE_PERMISSIONS.member;
+    
+    // Normalize role mapping for consistency (e.g. "tenant owner" -> "tenant_owner")
+    // Also handle possible legacy mappings or case differences
+    const roleKey = userRole.replace(/ /g, '_');
+    const defaultPerms = DEFAULT_ROLE_PERMISSIONS[roleKey] || 
+                        DEFAULT_ROLE_PERMISSIONS[userRole] || 
+                        DEFAULT_ROLE_PERMISSIONS[userRole.replace(/_/g, ' ')] ||
+                        DEFAULT_ROLE_PERMISSIONS.member;
+    
     defaultPerms.forEach(p => permissionSet.add(p));
 
     const customRoles = await storage.db
