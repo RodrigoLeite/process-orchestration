@@ -637,7 +637,7 @@ router.get('/areas', async (req: Request, res: Response) => {
         const user = normalized.userId ? usersMap.get(normalized.userId) : null;
         adminsByArea.get(areaId)!.push({
           ...normalized,
-          user: user ? { id: user.id, name: user.name, email: user.email } : null
+          user: user ? { id: user.id, name: user.name, email: user.email, image: user.image } : null
         });
       }
     }

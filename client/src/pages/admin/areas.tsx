@@ -54,6 +54,8 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COLOR_OPTIONS = [
   "#6366f1",
@@ -76,7 +78,7 @@ interface AreaAdmin {
 }
 
 export interface AreaAdminEnriched extends AreaAdmin {
-  user?: { id: string; name: string; email: string };
+  user?: { id: string; name: string; email: string; image?: string };
 }
 
 export interface AreaEnriched extends Omit<Area, 'teams'> {
@@ -354,24 +356,56 @@ export default function AdminAreasPage() {
                 )}
 
                 <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-3">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>{t('admin.adminsCount').replace('{count}', (area.admins?.length || area.adminCount || 0).toString())}</span>
-                  </div>
-                  {area.admins?.find(a => a.role === "owner") && (
-                    <div className="flex items-center gap-2" key={`owner-${area.id}`}>
-                      <Shield className="h-4 w-4 text-amber-500" />
-                      <span className="font-medium text-foreground">
-                        {t('admin.adminRoleOwner')}: {area.admins.find(a => a.role === "owner")?.user?.name || "User"}
-                      </span>
-                    </div>
-                  )}
-                  {area.admins?.find(a => a.role === "admin") && (
-                    <div className="flex items-center gap-2" key={`admin-${area.id}`}>
-                      <Shield className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium text-foreground">
-                        {t('admin.adminRoleAdmin')}: {area.admins.find(a => a.role === "admin")?.user?.name || "User"}
-                      </span>
+                  {(area.admins?.length || 0) > 0 ? (
+                    <TooltipProvider>
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {area.admins?.filter(a => a.role === "owner").map((admin) => (
+                            <Tooltip key={`avatar-owner-${admin.id}`}>
+                              <TooltipTrigger asChild>
+                                <div className="relative">
+                                  <Avatar className="h-8 w-8 border-2 border-amber-400 ring-2 ring-background">
+                                    <AvatarImage src={admin.user?.image} alt={admin.user?.name || "Owner"} />
+                                    <AvatarFallback className="bg-amber-100 text-amber-700 text-xs font-medium">
+                                      {(admin.user?.name || "O").substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <Shield className="absolute -bottom-1 -right-1 h-3 w-3 text-amber-500" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium">{admin.user?.name || "Owner"}</p>
+                                <p className="text-xs text-muted-foreground">{t('admin.adminRoleOwner')}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                          {area.admins?.filter(a => a.role === "admin").map((admin) => (
+                            <Tooltip key={`avatar-admin-${admin.id}`}>
+                              <TooltipTrigger asChild>
+                                <div className="relative">
+                                  <Avatar className="h-8 w-8 border-2 border-blue-400 ring-2 ring-background">
+                                    <AvatarImage src={admin.user?.image} alt={admin.user?.name || "Admin"} />
+                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-medium">
+                                      {(admin.user?.name || "A").substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <Shield className="absolute -bottom-1 -right-1 h-3 w-3 text-blue-500" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium">{admin.user?.name || "Admin"}</p>
+                                <p className="text-xs text-muted-foreground">{t('admin.adminRoleAdmin')}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                        <span className="text-xs">{t('admin.adminsCount').replace('{count}', (area.admins?.length || 0).toString())}</span>
+                      </div>
+                    </TooltipProvider>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>{t('admin.adminsCount').replace('{count}', '0')}</span>
                     </div>
                   )}
                 </div>
