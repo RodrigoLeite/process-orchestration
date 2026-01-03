@@ -1042,33 +1042,21 @@ export class DatabaseStorage implements IStorage {
 
   async createArea(area: InsertArea): Promise<Area> {
     try {
-      // Use raw SQL for insertion to ensure it works with the Neon HTTP driver's UUID handling
-      // Use explicit column naming in SELECT to ensure predictable casing
-      const result = await this.db.execute(
-        sql`INSERT INTO areas (tenant_id, name, description, color, icon, is_default) 
-            VALUES (${area.tenantId}, ${area.name}, ${area.description || null}, ${area.color || '#6366f1'}, ${area.icon || 'folder'}, ${area.isDefault || 'false'})
-            RETURNING id::text as "id", tenant_id::text as "tenantId", name as "name", description as "description", color as "color", icon as "icon", is_default as "isDefault", created_at as "createdAt", updated_at as "updatedAt"`
-      );
+      // Revert to Drizzle's built-in insert with returning which is more reliable for metadata
+      const [newArea] = await this.db.insert(areas).values({
+        tenantId: area.tenantId,
+        name: area.name,
+        description: area.description,
+        color: area.color || '#6366f1',
+        icon: area.icon || 'folder',
+        isDefault: area.isDefault || 'false',
+      }).returning();
       
-      if (!result || !result.rows || result.rows.length === 0) {
+      if (!newArea) {
         throw new Error("Failed to create area: No rows returned");
       }
       
-      const row = result.rows[0] as any;
-      console.log("[DEBUG] Area creation row returned:", row);
-
-      // Defensively map fields with support for both snake_case, camelCase, and lowercase names
-      return {
-        id: row.id,
-        tenantId: row.tenantId || row.tenant_id || row.tenantid,
-        name: row.name,
-        description: row.description,
-        color: row.color,
-        icon: row.icon,
-        isDefault: row.isDefault !== undefined ? row.isDefault : (row.is_default !== undefined ? row.is_default : row.isdefault),
-        createdAt: new Date(row.createdAt || row.created_at || row.createdat),
-        updatedAt: new Date(row.updatedAt || row.updated_at || row.updatedat)
-      } as Area;
+      return normalizeRecord(newArea) as Area;
     } catch (error) {
       console.error('Error in createArea:', error);
       throw error;
