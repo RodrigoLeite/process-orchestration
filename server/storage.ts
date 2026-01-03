@@ -887,11 +887,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTenantUsers(tenantId: string): Promise<TenantUser[]> {
-    return await this.db.select().from(tenantUsers).where(eq(tenantUsers.tenantId, tenantId));
+    try {
+      const result = await this.db.select().from(tenantUsers).where(eq(tenantUsers.tenantId, tenantId));
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getTenantUsers:', error);
+      return [];
+    }
   }
 
   async getTenantUsersByUserId(userId: string): Promise<TenantUser[]> {
-    return await this.db.select().from(tenantUsers).where(eq(tenantUsers.userId, userId));
+    try {
+      const result = await this.db.select().from(tenantUsers).where(eq(tenantUsers.userId, userId));
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getTenantUsersByUserId:', error);
+      return [];
+    }
   }
 
   async updateTenantUser(id: string, updates: Partial<TenantUser>): Promise<TenantUser | undefined> {
@@ -910,23 +922,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAuditLogs(tenantId: string, filters?: { entityType?: string; entityId?: string; userId?: string }, limit?: number): Promise<AuditLog[]> {
-    let query = this.db.select().from(auditLogs).where(eq(auditLogs.tenantId, tenantId));
+    try {
+      let query = this.db.select().from(auditLogs).where(eq(auditLogs.tenantId, tenantId));
 
-    if (filters?.entityType) {
-      query = query.where(eq(auditLogs.entityType, filters.entityType));
+      if (filters?.entityType) {
+        query = query.where(eq(auditLogs.entityType, filters.entityType));
+      }
+
+      if (filters?.userId) {
+        query = query.where(eq(auditLogs.userId, filters.userId));
+      }
+
+      query = query.orderBy(desc(auditLogs.createdAt));
+
+      if (limit) {
+        const result = await query.limit(limit);
+        return (result && Array.isArray(result)) ? result : [];
+      }
+
+      const result = await query;
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getAuditLogs:', error);
+      return [];
     }
-
-    if (filters?.userId) {
-      query = query.where(eq(auditLogs.userId, filters.userId));
-    }
-
-    query = query.orderBy(desc(auditLogs.createdAt));
-
-    if (limit) {
-      return await query.limit(limit);
-    }
-
-    return await query;
   }
 
   async createJob(job: InsertJob): Promise<Job> {
@@ -940,18 +959,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobs(tenantId: string, limit: number = 50, status?: string): Promise<Job[]> {
-    let conditions = [eq(jobs.tenantId, tenantId)];
-    
-    if (status) {
-      conditions.push(eq(jobs.status, status));
-    }
+    try {
+      let conditions = [eq(jobs.tenantId, tenantId)];
+      
+      if (status) {
+        conditions.push(eq(jobs.status, status));
+      }
 
-    return await this.db
-      .select()
-      .from(jobs)
-      .where(and(...conditions))
-      .orderBy(desc(jobs.createdAt))
-      .limit(limit);
+      const result = await this.db
+        .select()
+        .from(jobs)
+        .where(and(...conditions))
+        .orderBy(desc(jobs.createdAt))
+        .limit(limit);
+      return (result && Array.isArray(result)) ? result : [];
+    } catch (error) {
+      console.error('Error in getJobs:', error);
+      return [];
+    }
   }
 
   async updateJob(id: string, updates: Partial<Job>): Promise<Job | undefined> {
@@ -965,7 +990,12 @@ export class DatabaseStorage implements IStorage {
     if (!id) return undefined;
     try {
       const result = await this.db.select().from(areas).where(eq(areas.id, id)).limit(1);
-      return (result && result[0]) ? result[0] : undefined;
+      
+      // Defensively handle result that might be null or empty from Neon driver
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return undefined;
+      }
+      return result[0];
     } catch (error) {
       console.error('Error in getArea:', error);
       return undefined;
@@ -976,39 +1006,10 @@ export class DatabaseStorage implements IStorage {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
-      
-      const areasList = (result && Array.isArray(result)) ? result : [];
-      
-      // If no areas exist yet (except maybe General), seed the default ones
-      if (areasList.length <= 1) {
-        const defaultAreas = [
-          { name: "Operações", description: "Operações corporativas e processos", icon: "Settings", color: "#6366f1" },
-          { name: "Financeiro", description: "Controle financeiro e orçamentário", icon: "DollarSign", color: "#10b981" },
-          { name: "Jurídico", description: "Gestão de questões legais e contratos", icon: "Scale", color: "#f59e0b" },
-          { name: "RH", description: "Recursos Humanos e gestão de pessoas", icon: "User", color: "#ec4899" },
-          { name: "TI", description: "Tecnologia da Informação e infraestrutura", icon: "Grid3x3", color: "#3b82f6" },
-          { name: "Vendas", description: "Gestão de vendas e relacionamento comercial", icon: "BarChart3", color: "#8b5cf6" },
-        ];
-
-        for (const areaDef of defaultAreas) {
-          const exists = areasList.find(a => a.name === areaDef.name);
-          if (!exists) {
-            await this.createArea({
-              tenantId,
-              name: areaDef.name,
-              description: areaDef.description,
-              icon: areaDef.icon,
-              color: areaDef.color,
-              isDefault: "true"
-            });
-          }
-        }
-        // Re-fetch after seeding
-        const finalResult = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
-        return (finalResult && Array.isArray(finalResult)) ? finalResult : [];
+      if (!result || !Array.isArray(result)) {
+        return [];
       }
-      
-      return areasList;
+      return result;
     } catch (error) {
       console.error('Error in getAreasByTenant:', error);
       return [];
@@ -1021,7 +1022,7 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.select().from(areas)
         .where(and(eq(areas.tenantId, tenantId), eq(areas.isDefault, "true")))
         .limit(1);
-      return (result && result[0]) ? result[0] : undefined;
+      return (result && result.length > 0) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getDefaultArea:', error);
       return undefined;
@@ -1043,7 +1044,7 @@ export class DatabaseStorage implements IStorage {
     if (!id) return undefined;
     try {
       const result = await this.db.update(areas).set({ ...updates, updatedAt: new Date() }).where(eq(areas.id, id)).returning();
-      return (result && result[0]) ? result[0] : undefined;
+      return (result && result.length > 0) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in updateArea:', error);
       return undefined;
@@ -1062,7 +1063,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db.select().from(areaAdmins)
         .where(eq(areaAdmins.areaId, areaId));
-      return Array.isArray(result) ? result : [];
+      
+      // Defensively handle null/undefined response from Neon HTTP driver
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getAreaAdmins:', error);
       return [];
@@ -1075,7 +1081,12 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.select().from(areaAdmins)
         .where(and(eq(areaAdmins.areaId, areaId), eq(areaAdmins.userId, userId)))
         .limit(1);
-      return (result && result[0]) ? result[0] : undefined;
+      
+      // Defensively handle result that might be null or empty from Neon driver
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return undefined;
+      }
+      return result[0];
     } catch (error) {
       console.error('Error in getAreaAdmin:', error);
       return undefined;
@@ -1087,7 +1098,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db.select().from(areaAdmins)
         .where(and(eq(areaAdmins.userId, userId), eq(areaAdmins.tenantId, tenantId)));
-      return (result && Array.isArray(result)) ? result : [];
+      
+      // Defensively handle null/undefined response from Neon HTTP driver
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getUserAreaRoles:', error);
       return [];
@@ -1099,7 +1115,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db.select().from(areaAdmins)
         .where(eq(areaAdmins.tenantId, tenantId));
-      return (result && Array.isArray(result)) ? result : [];
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getAreaAdminsByTenant:', error);
       return [];
@@ -1109,7 +1128,7 @@ export class DatabaseStorage implements IStorage {
   async createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin> {
     try {
       const result = await this.db.insert(areaAdmins).values(admin).returning();
-      if (!result || !result[0]) throw new Error("Failed to create area admin");
+      if (!result || result.length === 0) throw new Error("Failed to create area admin");
       return result[0];
     } catch (error) {
       console.error('Error in createAreaAdmin:', error);
@@ -1121,7 +1140,7 @@ export class DatabaseStorage implements IStorage {
     if (!id) return undefined;
     try {
       const result = await this.db.update(areaAdmins).set({ role }).where(eq(areaAdmins.id, id)).returning();
-      return (result && result[0]) ? result[0] : undefined;
+      return (result && result.length > 0) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in updateAreaAdmin:', error);
       return undefined;
@@ -1138,7 +1157,7 @@ export class DatabaseStorage implements IStorage {
     if (!id) return undefined;
     try {
       const result = await this.db.select().from(teams).where(eq(teams.id, id)).limit(1);
-      return (result && result[0]) ? result[0] : undefined;
+      return (result && result.length > 0) ? result[0] : undefined;
     } catch (error) {
       console.error('Error in getTeam:', error);
       return undefined;
@@ -1149,7 +1168,10 @@ export class DatabaseStorage implements IStorage {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
-      return (result && Array.isArray(result)) ? result : [];
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getTeamsByTenant:', error);
       return [];
@@ -1163,7 +1185,10 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.select().from(teams)
         .where(eq(teams.areaId, areaId))
         .orderBy(teams.name);
-      return Array.isArray(result) ? result : [];
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getTeamsByArea:', error);
       return [];
@@ -1203,7 +1228,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await this.db.select().from(userTeams)
         .where(and(eq(userTeams.userId, userId), eq(userTeams.tenantId, tenantId)));
-      return (result && Array.isArray(result)) ? result : [];
+      
+      // Defensively handle null/undefined response from Neon HTTP driver
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getUserTeams:', error);
       return [];
@@ -1214,7 +1244,12 @@ export class DatabaseStorage implements IStorage {
     if (!teamId) return [];
     try {
       const result = await this.db.select().from(userTeams).where(eq(userTeams.teamId, teamId));
-      return (result && Array.isArray(result)) ? result : [];
+      
+      // Defensively handle null/undefined response from Neon HTTP driver
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return result;
     } catch (error) {
       console.error('Error in getTeamMembers:', error);
       return [];
@@ -1227,7 +1262,12 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.select().from(userTeams)
         .where(and(eq(userTeams.teamId, teamId), eq(userTeams.userId, userId)))
         .limit(1);
-      return (result && result[0]) ? result[0] : undefined;
+      
+      // Defensively handle null/undefined response from Neon HTTP driver
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return undefined;
+      }
+      return result[0];
     } catch (error) {
       console.error('Error in getUserTeam:', error);
       return undefined;
