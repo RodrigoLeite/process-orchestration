@@ -1145,11 +1145,12 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use raw SQL to avoid Neon HTTP driver issues
       const id = crypto.randomUUID();
+      const now = new Date().toISOString();
       const rows = await this.neonClient(
-        `INSERT INTO area_admins (id, tenant_id, area_id, user_id, role) 
-         VALUES ($1, $2, $3, $4, $5) 
+        `INSERT INTO area_admins (id, tenant_id, area_id, user_id, role, created_at) 
+         VALUES ($1, $2, $3, $4, $5, $6) 
          RETURNING *`,
-        [id, admin.tenantId, admin.areaId, admin.userId, admin.role]
+        [id, admin.tenantId, admin.areaId, admin.userId, admin.role, now]
       );
       
       if (!rows || !Array.isArray(rows) || rows.length === 0) {
