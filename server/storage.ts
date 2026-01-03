@@ -1042,9 +1042,29 @@ export class DatabaseStorage implements IStorage {
 
   async createArea(area: InsertArea): Promise<Area> {
     try {
-      const result = await this.db.insert(areas).values(area).returning();
-      if (!result || !result[0]) throw new Error("Failed to create area");
-      return result[0];
+      // Use raw SQL for insertion to ensure it works with the Neon HTTP driver's UUID handling
+      const result = await this.db.execute(
+        sql`INSERT INTO areas (tenant_id, name, description, color, icon, is_default) 
+            VALUES (${area.tenantId}, ${area.name}, ${area.description || null}, ${area.color || '#6366f1'}, ${area.icon || 'folder'}, ${area.isDefault || 'false'})
+            RETURNING id::text, tenant_id::text, name, description, color, icon, is_default, created_at, updated_at`
+      );
+      
+      if (!result || !result.rows || result.rows.length === 0) {
+        throw new Error("Failed to create area: No rows returned");
+      }
+      
+      const row = result.rows[0] as any;
+      return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        name: row.name,
+        description: row.description,
+        color: row.color,
+        icon: row.icon,
+        isDefault: row.is_default,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at)
+      } as Area;
     } catch (error) {
       console.error('Error in createArea:', error);
       throw error;
@@ -1066,14 +1086,25 @@ export class DatabaseStorage implements IStorage {
     const normalizedId = normalizeUUID(id);
     if (!normalizedId) return;
 
-    // Remove governance roles first
-    await this.db.delete(areaAdmins).where(eq(areaAdmins.areaId, normalizedId));
-    
-    // Set areaId to null in teams belonging to this area
-    await this.db.update(teams).set({ areaId: null }).where(eq(teams.areaId, normalizedId));
-    
-    // Delete the area
-    await this.db.delete(areas).where(eq(areas.id, normalizedId));
+    try {
+      // Remove governance roles first
+      await this.db.execute(
+        sql`DELETE FROM area_admins WHERE area_id::text = ${normalizedId}`
+      );
+      
+      // Set areaId to null in teams belonging to this area
+      await this.db.execute(
+        sql`UPDATE teams SET area_id = NULL WHERE area_id::text = ${normalizedId}`
+      );
+      
+      // Delete the area
+      await this.db.execute(
+        sql`DELETE FROM areas WHERE id::text = ${normalizedId}`
+      );
+    } catch (error) {
+      console.error('Error in deleteArea:', error);
+      throw error;
+    }
   }
 
   // ========== AREA ADMINS (Governance Roles) ==========
