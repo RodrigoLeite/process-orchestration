@@ -219,12 +219,14 @@ export default function AdminAreasPage() {
     }
   };
 
-  const openAdminModal = (area: Area) => {
+  const openAdminModal = (area: AreaEnriched) => {
     setSelectedArea(area);
     const currentAdmin = area.admins?.find(a => a.role === "admin");
     const currentOwner = area.admins?.find(a => a.role === "owner");
-    setSelectedAdminId(currentAdmin?.userId || "");
-    setSelectedOwnerId(currentOwner?.userId || "");
+    
+    // Ensure we are using the user's ID for the selection
+    setSelectedAdminId(currentAdmin?.userId || "none");
+    setSelectedOwnerId(currentOwner?.userId || "none");
     setAdminModalOpen(true);
   };
 
