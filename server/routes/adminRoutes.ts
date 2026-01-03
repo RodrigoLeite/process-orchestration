@@ -846,9 +846,10 @@ router.post(
       console.log(`[DEBUG] Enforcing single ${data.role} for area ${areaId}. Existing count: ${existingAdmins.length}`);
       
       for (const existing of existingAdmins) {
-        if (existing.role === data.role) {
-          console.log(`[DEBUG] Removing existing ${existing.role} (${existing.id}) for area ${areaId}`);
-          await storage.deleteAreaAdmin(existing.id);
+        const normalizedAdmin = normalizeRecord(existing);
+        if (normalizedAdmin.role === data.role) {
+          console.log(`[DEBUG] Removing existing ${normalizedAdmin.role} (${normalizedAdmin.id}) for area ${areaId}`);
+          await storage.deleteAreaAdmin(normalizedAdmin.id);
         }
       }
       
