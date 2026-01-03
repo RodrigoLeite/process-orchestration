@@ -870,7 +870,6 @@ router.post(
 
 router.delete(
   '/areas/:areaId/admins/:adminId',
-  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
