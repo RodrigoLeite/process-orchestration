@@ -636,13 +636,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAreaWorkflow(workflow: InsertAreaWorkflow): Promise<AreaWorkflow> {
-    const result = await this.db.insert(areaWorkflows).values(workflow).returning();
-    return result[0];
+    const id = crypto.randomUUID();
+    await this.db.insert(areaWorkflows).values({ ...workflow, id });
+    const [created] = await this.db.select().from(areaWorkflows).where(eq(areaWorkflows.id, id)).limit(1);
+    return created;
   }
 
   async createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStage> {
-    const result = await this.db.insert(workflowStages).values(stage).returning();
-    return result[0];
+    const id = crypto.randomUUID();
+    await this.db.insert(workflowStages).values({ ...stage, id });
+    const [created] = await this.db.select().from(workflowStages).where(eq(workflowStages.id, id)).limit(1);
+    return created;
   }
 
   async getWorkflowStages(workflowId: string): Promise<WorkflowStage[]> {
@@ -1092,8 +1096,9 @@ export class DatabaseStorage implements IStorage {
   async updateArea(id: string, updates: Partial<Area>): Promise<Area | undefined> {
     if (!id) return undefined;
     try {
-      const result = await this.db.update(areas).set({ ...updates, updatedAt: new Date() }).where(eq(areas.id, id)).returning();
-      return (result && result.length > 0) ? result[0] : undefined;
+      await this.db.update(areas).set({ ...updates, updatedAt: new Date() }).where(eq(areas.id, id));
+      const updatedArea = await this.getArea(id);
+      return updatedArea ? normalizeRecord(updatedArea) as Area : undefined;
     } catch (error) {
       console.error('Error in updateArea:', error);
       return undefined;
@@ -1299,8 +1304,24 @@ export class DatabaseStorage implements IStorage {
   async updateAreaAdmin(id: string, role: string): Promise<AreaAdmin | undefined> {
     if (!id) return undefined;
     try {
-      const result = await this.db.update(areaAdmins).set({ role }).where(eq(areaAdmins.id, id)).returning();
-      return (result && result.length > 0) ? result[0] : undefined;
+      await this.db.update(areaAdmins).set({ role }).where(eq(areaAdmins.id, id));
+      
+      const result = await this.db.execute(
+        sql`SELECT id::text, tenant_id::text, area_id::text, user_id::text, role FROM area_admins WHERE id = ${id} LIMIT 1`
+      );
+      
+      if (!result || !result.rows || result.rows.length === 0) {
+        return undefined;
+      }
+      
+      const row = result.rows[0] as any;
+      return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        userId: row.user_id,
+        role: row.role,
+      } as AreaAdmin;
     } catch (error) {
       console.error('Error in updateAreaAdmin:', error);
       return undefined;
@@ -1382,8 +1403,8 @@ export class DatabaseStorage implements IStorage {
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
     if (!id) return undefined;
     try {
-      const result = await this.db.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id)).returning();
-      return (result && result[0]) ? result[0] : undefined;
+      await this.db.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id));
+      return await this.getTeam(id);
     } catch (error) {
       console.error('Error in updateTeam:', error);
       return undefined;
@@ -1461,8 +1482,9 @@ export class DatabaseStorage implements IStorage {
   async updateUserTeamRole(id: string, role: string): Promise<UserTeam | undefined> {
     if (!id) return undefined;
     try {
-      const result = await this.db.update(userTeams).set({ role }).where(eq(userTeams.id, id)).returning();
-      return (result && result[0]) ? result[0] : undefined;
+      await this.db.update(userTeams).set({ role }).where(eq(userTeams.id, id));
+      const updated = await this.db.select().from(userTeams).where(eq(userTeams.id, id)).limit(1);
+      return updated[0];
     } catch (error) {
       console.error('Error in updateUserTeamRole:', error);
       return undefined;
