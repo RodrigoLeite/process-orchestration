@@ -38,6 +38,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { getAreaName, getAreaDescription } from "@/lib/i18n";
@@ -106,6 +116,8 @@ export default function AdminAreasPage() {
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
   const [selectedAdminId, setSelectedAdminId] = useState("");
   const [selectedOwnerId, setSelectedOwnerId] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
 
   const createArea = useCreateArea();
   const updateArea = useUpdateArea();
@@ -190,13 +202,18 @@ export default function AdminAreasPage() {
       toast.error(t('admin.defaultAreaDeleteError'));
       return;
     }
-    if (!confirm(t('admin.areaDeleteConfirm').replace('{name}', getAreaName(area.name, language) || area.name))) {
-      return;
-    }
+    setAreaToDelete(area);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!areaToDelete) return;
 
     try {
-      await deleteArea.mutateAsync(area.id);
+      await deleteArea.mutateAsync(areaToDelete.id);
       toast.success(t('admin.areaDeleted'));
+      setDeleteDialogOpen(false);
+      setAreaToDelete(null);
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -576,6 +593,27 @@ export default function AdminAreasPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('admin.deleteArea')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('admin.areaDeleteConfirm').replace('{name}', areaToDelete ? (getAreaName(areaToDelete.name, language) || areaToDelete.name) : '')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setAreaToDelete(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-area"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
