@@ -123,7 +123,58 @@ export default function AdminTeamsPage() {
     setSelectedTeam(team);
     setMembersModalOpen(true);
     setSelectedUserId("");
+    
+    // Find current lead if any
+    const currentLead = team.members?.find((m: any) => m.role === "lead");
+    setSelectedLeadId(currentLead?.userId || "none");
   };
+
+  const [selectedLeadId, setSelectedLeadId] = useState<string>("none");
+
+  const handleLeadChange = async (userId: string) => {
+    if (!selectedTeam) return;
+    setSelectedLeadId(userId);
+
+    try {
+      if (userId === "none") {
+        // Remove lead role from anyone who has it
+        const currentLead = selectedTeam.members?.find((m: any) => m.role === "lead");
+        if (currentLead) {
+          await updateMemberRole.mutateAsync({
+            teamId: selectedTeam.id,
+            userId: currentLead.userId,
+            role: "member",
+          });
+        }
+      } else {
+        await updateMemberRole.mutateAsync({
+          teamId: selectedTeam.id,
+          userId,
+          role: "lead",
+        });
+      }
+      toast.success("Team Lead atualizado");
+      await Promise.all([refetchUsers(), refetchTeams()]);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  // Filter users for Team Lead selection: Tenant Owner, Tenant Admin, Area Owner, Area Admin, Team Lead
+  const leadEligibleUsers = usersData?.users?.filter((u: any) => {
+    const roles = Array.isArray(u.roles) ? u.roles.map((r: any) => typeof r === 'string' ? r : (r.name || r.id)) : [u.role];
+    return roles.some((r: string) => 
+      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "lead", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin", "Team Lead"].includes(r)
+    );
+  }) || [];
+
+  // Filter users for Team Member selection: all roles allowed
+  const memberEligibleUsers = usersData?.users?.filter((u: any) => {
+    const roles = Array.isArray(u.roles) ? u.roles.map((r: any) => typeof r === 'string' ? r : (r.name || r.id)) : [u.role];
+    return roles.some((r: string) => 
+      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "lead", "member", "viewer", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin", "Team Lead", "Team Member", "Team Viewer"].includes(r)
+    );
+  }) || [];
 
   useEffect(() => {
     if (selectedTeam && data?.teams) {
@@ -514,28 +565,48 @@ export default function AdminTeamsPage() {
           </DialogHeader>
 
           <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-            <div className="flex gap-2 items-end border-b pb-6 mb-4">
-              <div className="flex-1 space-y-2">
-                <Label>Adicionar Membro</Label>
-                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um usuário" />
+            <div className="space-y-4 border-b pb-6 mb-4">
+              <div className="space-y-2">
+                <Label>Team Lead</Label>
+                <Select value={selectedLeadId} onValueChange={handleLeadChange}>
+                  <SelectTrigger data-testid="select-team-lead">
+                    <SelectValue placeholder="Selecione o Líder do Time" />
                   </SelectTrigger>
                   <SelectContent>
-                    {usersData?.users
-                      ?.filter(u => !selectedTeam?.members?.some((m: any) => m.userId === u.id))
-                      .map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name || user.email}
-                        </SelectItem>
-                      ))}
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {leadEligibleUsers.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name || user.email}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">O Líder tem permissões totais sobre as demandas deste time.</p>
               </div>
-              <Button onClick={handleAddMember} disabled={!selectedUserId || assignUserToTeam.isPending}>
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar
-              </Button>
+
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-2">
+                  <Label>Adicionar Membro</Label>
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger data-testid="select-add-member">
+                      <SelectValue placeholder="Selecione um usuário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {memberEligibleUsers
+                        ?.filter(u => !selectedTeam?.members?.some((m: any) => m.userId === u.id))
+                        .map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name || user.email}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleAddMember} disabled={!selectedUserId || assignUserToTeam.isPending} data-testid="button-add-member">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </div>
             </div>
 
             {selectedTeam?.members?.length === 0 ? (
