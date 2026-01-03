@@ -1046,7 +1046,7 @@ export class DatabaseStorage implements IStorage {
       const result = await this.db.execute(
         sql`INSERT INTO areas (tenant_id, name, description, color, icon, is_default) 
             VALUES (${area.tenantId}, ${area.name}, ${area.description || null}, ${area.color || '#6366f1'}, ${area.icon || 'folder'}, ${area.isDefault || 'false'})
-            RETURNING id::text, tenant_id::text, name, description, color, icon, is_default, created_at, updated_at`
+            RETURNING id::text, tenant_id::text as tenantId, name, description, color, icon, is_default as isDefault, created_at as createdAt, updated_at as updatedAt`
       );
       
       if (!result || !result.rows || result.rows.length === 0) {
@@ -1055,15 +1055,9 @@ export class DatabaseStorage implements IStorage {
       
       const row = result.rows[0] as any;
       return {
-        id: row.id,
-        tenantId: row.tenant_id,
-        name: row.name,
-        description: row.description,
-        color: row.color,
-        icon: row.icon,
-        isDefault: row.is_default,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at)
+        ...row,
+        createdAt: new Date(row.createdat || row.createdAt),
+        updatedAt: new Date(row.updatedat || row.updatedAt)
       } as Area;
     } catch (error) {
       console.error('Error in createArea:', error);
