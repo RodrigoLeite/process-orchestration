@@ -58,7 +58,11 @@ export const rolesService = {
         .where(eq(roles.tenantId, normalizedTenantId))
         .orderBy(desc(roles.createdAt));
       roleRows = (rows && Array.isArray(rows)) ? rows : [];
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.message?.includes("Cannot read properties of null")) {
+        console.log('[rolesService] Neon HTTP driver returned null for roles');
+        return [];
+      }
       console.error('[rolesService] Error fetching roles:', err);
       return [];
     }

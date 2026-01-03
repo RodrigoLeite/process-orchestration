@@ -358,7 +358,7 @@ export const userManagementService = {
         eq(userTeams.tenantId, normalizedTenantId)
       ))
       .limit(1)
-      .then((rows: any[]) => (rows && rows.length > 0) ? rows[0] : null)
+      .then((rows: any[]) => (rows && Array.isArray(rows) && rows.length > 0) ? rows[0] : null)
       .catch((err) => {
         console.error("[DEBUG] Error checking existing userTeam:", err);
         return null;
