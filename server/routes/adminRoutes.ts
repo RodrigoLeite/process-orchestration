@@ -843,10 +843,12 @@ router.post(
       // Each area can have only 1 owner and 1 admin
       // Delete any existing admin with the same role before adding the new one
       const existingAdmins = await storage.getAreaAdmins(areaId) || [];
+      console.log(`[DEBUG] Enforcing single ${data.role} for area ${areaId}. Existing count: ${existingAdmins.length}`);
+      
       for (const existing of existingAdmins) {
-        const normalized = normalizeRecord(existing);
-        if (normalized.role === data.role) {
-          await storage.deleteAreaAdmin(normalized.id);
+        if (existing.role === data.role) {
+          console.log(`[DEBUG] Removing existing ${existing.role} (${existing.id}) for area ${areaId}`);
+          await storage.deleteAreaAdmin(existing.id);
         }
       }
       
