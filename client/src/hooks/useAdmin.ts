@@ -133,6 +133,7 @@ export function useInviteUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }
@@ -149,6 +150,7 @@ export function useBulkInvite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }
@@ -165,6 +167,7 @@ export function useCSVImport() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }
@@ -180,6 +183,7 @@ export function useCancelInvitation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }
@@ -195,6 +199,7 @@ export function useResendInvitation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }
@@ -211,6 +216,7 @@ export function useUpdateUserRole() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }
@@ -226,6 +232,7 @@ export function useRemoveUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'teams'] });
     },
   });
 }

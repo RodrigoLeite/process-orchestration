@@ -78,7 +78,7 @@ export default function AdminTeamsPage() {
   const { t } = useTranslation();
   const { data, isLoading, error } = useAdminTeams();
   const { data: areasData } = useAdminAreas();
-  const { data: usersData } = useAdminUsers();
+  const { data: usersData, refetch: refetchUsers } = useAdminUsers();
   
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editTeam, setEditTeam] = useState<Team | null>(null);
@@ -89,12 +89,15 @@ export default function AdminTeamsPage() {
 
   const [membersModalOpen, setMembersModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
   const deleteTeam = useDeleteTeam();
   const moveTeamToArea = useMoveTeamToArea();
   const updateMemberRole = useUpdateTeamMemberRole();
+  const assignUserToTeam = useAssignUserToTeam();
+  const removeUserFromTeam = useRemoveUserFromTeam();
 
   const openCreateModal = () => {
     setFormName("");
@@ -117,6 +120,7 @@ export default function AdminTeamsPage() {
   const openMembersModal = (team: Team) => {
     setSelectedTeam(team);
     setMembersModalOpen(true);
+    setSelectedUserId("");
   };
 
   const handleSubmit = async () => {
@@ -182,7 +186,39 @@ export default function AdminTeamsPage() {
         userId,
         role: newRole as 'lead' | 'member' | 'viewer',
       });
-      toast.success("Role atualizado");
+      toast.success("Papel atualizado");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!selectedTeam || !selectedUserId) return;
+
+    try {
+      await assignUserToTeam.mutateAsync({
+        userId: selectedUserId,
+        teamId: selectedTeam.id
+      });
+      toast.success("Membro adicionado com sucesso");
+      setSelectedUserId("");
+      // Refetch both to ensure UI is in sync
+      refetchUsers();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!selectedTeam) return;
+
+    try {
+      await removeUserFromTeam.mutateAsync({
+        userId,
+        teamId: selectedTeam.id
+      });
+      toast.success("Membro removido com sucesso");
+      refetchUsers();
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -464,61 +500,97 @@ export default function AdminTeamsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="flex gap-2 items-end border-b pb-6 mb-4">
+              <div className="flex-1 space-y-2">
+                <Label>Adicionar Membro</Label>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usersData?.users
+                      ?.filter(u => !selectedTeam?.members?.some((m: any) => m.userId === u.id))
+                      .map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name || user.email}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleAddMember} disabled={!selectedUserId || assignUserToTeam.isPending}>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar
+              </Button>
+            </div>
+
             {selectedTeam?.members?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Nenhum membro neste time</p>
-                <p className="text-sm">Adicione membros na página de usuários</p>
               </div>
             ) : (
-              selectedTeam?.members?.map((member: any) => (
-                <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.image || undefined} />
-                      <AvatarFallback>
-                        {member.name?.charAt(0) || member.email?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{member.name || member.email}</p>
-                      {member.name && member.email && (
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
-                      )}
+              <div className="space-y-3">
+                <Label>Membros Atuais</Label>
+                {selectedTeam?.members?.map((member: any) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={member.image || undefined} />
+                        <AvatarFallback>
+                          {member.name?.charAt(0) || member.email?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{member.name || member.email}</p>
+                        {member.name && member.email && (
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Select 
+                        value={member.role || 'member'} 
+                        onValueChange={(value) => handleRoleChange(member.id, member.userId, value)}
+                      >
+                        <SelectTrigger className="w-32" data-testid={`select-role-${member.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lead">
+                            <div className="flex items-center gap-2">
+                              <Crown className="h-4 w-4 text-amber-500" />
+                              Líder
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="member">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-blue-500" />
+                              Membro
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="viewer">
+                            <div className="flex items-center gap-2">
+                              <Eye className="h-4 w-4 text-gray-500" />
+                              Visualizador
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => handleRemoveMember(member.userId)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-
-                  <Select 
-                    value={member.role || 'member'} 
-                    onValueChange={(value) => handleRoleChange(member.id, member.userId, value)}
-                  >
-                    <SelectTrigger className="w-36" data-testid={`select-role-${member.id}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lead">
-                        <div className="flex items-center gap-2">
-                          <Crown className="h-4 w-4 text-amber-500" />
-                          Líder
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="member">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          Membro
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="viewer">
-                        <div className="flex items-center gap-2">
-                          <Eye className="h-4 w-4 text-gray-500" />
-                          Visualizador
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
 
