@@ -49,34 +49,49 @@ export const rolesService = {
 
   async listRoles(tenantId: string): Promise<RoleWithUsers[]> {
     const normalizedTenantId = normalizeUUID(tenantId);
-    const roleRows = await storage.db
-      .select()
-      .from(roles)
-      .where(eq(roles.tenantId, normalizedTenantId))
-      .orderBy(desc(roles.createdAt))
-      .catch(() => [] as Role[]);
+    let roleRows: Role[] = [];
+    
+    try {
+      roleRows = await storage.db
+        .select()
+        .from(roles)
+        .where(eq(roles.tenantId, normalizedTenantId))
+        .orderBy(desc(roles.createdAt));
+    } catch (err) {
+      console.error('[rolesService] Error fetching roles:', err);
+      return [];
+    }
 
     const result: RoleWithUsers[] = [];
 
     for (const role of roleRows) {
       const normalizedRole = normalizeRecord(role);
-      const rolePerms = await storage.db
-        .select({ permission: permissions })
-        .from(rolePermissions)
-        .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-        .where(eq(rolePermissions.roleId, normalizedRole.id))
-        .catch(() => [] as any[]);
+      
+      let rolePerms: any[] = [];
+      try {
+        rolePerms = await storage.db
+          .select({ permission: permissions })
+          .from(rolePermissions)
+          .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+          .where(eq(rolePermissions.roleId, normalizedRole.id));
+      } catch (err) {
+        console.error('[rolesService] Error fetching role permissions:', err);
+      }
 
-      const roleUsers = await storage.db
-        .select({
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        })
-        .from(userRoles)
-        .innerJoin(users, eq(users.id, userRoles.userId))
-        .where(eq(userRoles.roleId, normalizedRole.id))
-        .catch(() => [] as any[]);
+      let roleUsers: any[] = [];
+      try {
+        roleUsers = await storage.db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+          })
+          .from(userRoles)
+          .innerJoin(users, eq(users.id, userRoles.userId))
+          .where(eq(userRoles.roleId, normalizedRole.id));
+      } catch (err) {
+        console.error('[rolesService] Error fetching role users:', err);
+      }
 
       result.push({
         ...normalizedRole,

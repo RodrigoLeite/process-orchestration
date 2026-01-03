@@ -776,7 +776,7 @@ router.get('/areas/:areaId/admins', async (req: Request, res: Response) => {
 
 router.post(
   '/areas/:areaId/admins',
-  checkPermission(AREA_PERMISSIONS.MANAGE),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -813,7 +813,7 @@ router.post(
 
 router.delete(
   '/areas/:areaId/admins/:adminId',
-  checkPermission(AREA_PERMISSIONS.MANAGE),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -866,7 +866,7 @@ router.get('/areas/:areaId/teams', async (req: Request, res: Response) => {
 
 router.post(
   '/areas/:areaId/teams',
-  checkPermission(AREA_PERMISSIONS.MANAGE_TEAMS),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -899,7 +899,7 @@ router.post(
 
 router.patch(
   '/teams/:teamId/area',
-  checkPermission(AREA_PERMISSIONS.MANAGE_TEAMS),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -930,7 +930,7 @@ router.patch(
 
 router.patch(
   '/teams/:teamId/members/:userId/role',
-  checkPermission(AREA_PERMISSIONS.MANAGE_TEAMS),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
