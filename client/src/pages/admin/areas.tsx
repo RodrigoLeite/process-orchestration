@@ -101,11 +101,19 @@ export default function AdminAreasPage() {
   const removeAreaAdmin = useRemoveAreaAdmin();
 
   const areaAdminUsers = usersData?.users?.filter((u: any) => 
-    u.roles?.some((r: any) => r.name === "area_admin" || r.name === "Area Admin")
+    u.roles?.some((r: any) => 
+      r.name === "area_admin" || 
+      r.name === "Area Admin" || 
+      (typeof r === 'string' && (r === "area_admin" || r === "Area Admin"))
+    ) || u.role === "area_admin"
   ) || [];
 
   const areaOwnerUsers = usersData?.users?.filter((u: any) => 
-    u.roles?.some((r: any) => r.name === "area_owner" || r.name === "Area Owner")
+    u.roles?.some((r: any) => 
+      r.name === "area_owner" || 
+      r.name === "Area Owner" ||
+      (typeof r === 'string' && (r === "area_owner" || r === "Area Owner"))
+    ) || u.role === "area_owner"
   ) || [];
 
   const openAdminModal = (area: Area) => {
