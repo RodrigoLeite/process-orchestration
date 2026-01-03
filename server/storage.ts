@@ -177,8 +177,9 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     try {
       if (!id) return undefined;
-      const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
-      return result && result.length > 0 ? result[0] : undefined;
+      // Use raw neon client for this lookup to avoid the Drizzle/Neon HTTP map error
+      const result = await this.neonClient("SELECT * FROM users WHERE id = $1 LIMIT 1", [id]);
+      return result && Array.isArray(result) && result.length > 0 ? (result[0] as User) : undefined;
     } catch (error) {
       console.error(`Error in getUser for id ${id}:`, error);
       return undefined;
