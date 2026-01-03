@@ -225,7 +225,7 @@ export default function AdminAreasPage() {
       // Handle Admin role
       if (adminToSet !== (currentAdmin?.userId || "")) {
         if (adminToSet) {
-          // Backend will replace the existing admin with the same role automatically
+          // Backend now correctly handles replacing the old one to ensure only 1 per role
           await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: adminToSet, role: "admin" });
         } else if (currentAdmin) {
           await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentAdmin.id });
@@ -235,7 +235,7 @@ export default function AdminAreasPage() {
       // Handle Owner role
       if (ownerToSet !== (currentOwner?.userId || "")) {
         if (ownerToSet) {
-          // Backend will replace the existing owner with the same role automatically
+          // Backend now correctly handles replacing the old one to ensure only 1 per role
           await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: ownerToSet, role: "owner" });
         } else if (currentOwner) {
           await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentOwner.id });
