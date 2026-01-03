@@ -829,6 +829,7 @@ router.get('/areas/:areaId/admins', async (req: Request, res: Response) => {
 
 router.post(
   '/areas/:areaId/admins',
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -842,7 +843,8 @@ router.post(
       
       // Each area can have only 1 owner and 1 admin
       // Delete any existing admin with the same role before adding the new one
-      const existingAdmins = await storage.getAreaAdmins(areaId) || [];
+      const admins = await storage.getAreaAdmins(areaId) || [];
+      const existingAdmins = Array.isArray(admins) ? admins : [];
       console.log(`[DEBUG] Enforcing single ${data.role} for area ${areaId}. Existing count: ${existingAdmins.length}`);
       
       for (const existing of existingAdmins) {
