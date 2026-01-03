@@ -342,9 +342,27 @@ export default function AdminAreasPage() {
                   <p className="text-sm text-muted-foreground mb-3">{getAreaDescription(area.name, language) || area.description}</p>
                 )}
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                  <Users className="h-4 w-4" />
-                  <span>{t('admin.adminsCount').replace('{count}', (area.admins?.length || 0).toString())}</span>
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>{t('admin.adminsCount').replace('{count}', (area.admins?.length || 0).toString())}</span>
+                  </div>
+                  {area.admins?.find(a => a.role === "owner") && (
+                    <div className="flex items-center gap-2" key={`owner-${area.id}`}>
+                      <Shield className="h-4 w-4 text-amber-500" />
+                      <span className="font-medium text-foreground">
+                        {t('admin.adminRoleOwner')}: {area.admins.find(a => a.role === "owner")?.user?.name || "User"}
+                      </span>
+                    </div>
+                  )}
+                  {area.admins?.find(a => a.role === "admin") && (
+                    <div className="flex items-center gap-2" key={`admin-${area.id}`}>
+                      <Shield className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium text-foreground">
+                        {t('admin.adminRoleAdmin')}: {area.admins.find(a => a.role === "admin")?.user?.name || "User"}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {area.teams && area.teams.length > 0 && (

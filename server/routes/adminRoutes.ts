@@ -613,6 +613,18 @@ router.get('/areas', async (req: Request, res: Response) => {
     
     try {
       allAdmins = await storage.getAreaAdminsByTenant(tenantId) || [];
+      // Enrich admins with user details
+      const userIds = Array.from(new Set(allAdmins.map(a => a.userId)));
+      const enrichedAdmins = await Promise.all(
+        allAdmins.map(async (admin) => {
+          const user = await storage.getUser(admin.userId);
+          return {
+            ...admin,
+            user: user ? { name: user.name, email: user.email } : null
+          };
+        })
+      );
+      allAdmins = enrichedAdmins;
     } catch (err) {
       console.error('Error getting all admins:', err);
     }
@@ -681,11 +693,21 @@ router.get('/areas/:areaId', async (req: Request, res: Response) => {
     const teamsList = await storage.getTeamsByArea(areaId) || [];
     const admins = await storage.getAreaAdmins(areaId) || [];
     
+    const enrichedAdmins = await Promise.all(
+      admins.map(async (admin) => {
+        const user = await storage.getUser(admin.userId);
+        return {
+          ...normalizeRecord(admin),
+          user: user ? { id: user.id, name: user.name, email: user.email } : null,
+        };
+      })
+    );
+    
     res.json({ 
       area: {
         ...normalizedArea,
         teams: teamsList.map(t => normalizeRecord(t)),
-        admins: admins.map(a => normalizeRecord(a)),
+        admins: enrichedAdmins,
         teamCount: teamsList.length,
       }
     });
