@@ -85,7 +85,7 @@ export const userManagementService = {
         .catch(() => [] as any[]);
 
       result.push({
-        id: normalizeUUID(row.tenantUserId),
+        id: normalizeUUID(row.userId),
         email: row.userEmail || '',
         name: row.userName,
         image: row.userImage,
