@@ -358,8 +358,10 @@ export default function AdminAreasPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-lg">{getAreaName(area.name, language) || area.name}</CardTitle>
-                      {area.isDefault === "true" && (
+                      {area.isDefault === "true" ? (
                         <Badge variant="secondary" className="text-xs">{t('admin.defaultArea')}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs border-blue-200 bg-blue-50 text-blue-700">Custom</Badge>
                       )}
                     </div>
                     <CardDescription>
