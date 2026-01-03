@@ -1245,7 +1245,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAreaAdmin(id: string): Promise<void> {
-    await this.db.delete(areaAdmins).where(eq(areaAdmins.id, id));
+    if (!id) return;
+    try {
+      // Allow deletion by adminId or userId to be more flexible
+      // since the frontend or route might pass either in some contexts
+      await this.db.delete(areaAdmins)
+        .where(
+          or(
+            eq(areaAdmins.id, id),
+            eq(areaAdmins.userId, id)
+          )
+        );
+    } catch (error) {
+      console.error('Error in deleteAreaAdmin:', error);
+    }
   }
 
   // ========== TEAMS (Execution Layer) ==========
