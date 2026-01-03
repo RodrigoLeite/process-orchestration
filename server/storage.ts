@@ -1085,17 +1085,16 @@ export class DatabaseStorage implements IStorage {
   async getAreaAdmin(areaId: string, userId: string): Promise<AreaAdmin | undefined> {
     if (!areaId || !userId) return undefined;
     try {
-      // Use raw SQL to avoid Neon HTTP driver issues
-      const rows = await this.neonClient(
-        `SELECT * FROM area_admins WHERE area_id = $1 AND user_id = $2 LIMIT 1`,
-        [areaId, userId]
+      // Use db.execute with sql template for better null handling
+      const result = await this.db.execute(
+        sql`SELECT * FROM area_admins WHERE area_id = ${areaId} AND user_id = ${userId} LIMIT 1`
       );
       
-      if (!rows || !Array.isArray(rows) || rows.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
         return undefined;
       }
       
-      const row = rows[0];
+      const row = result.rows[0] as any;
       return {
         id: row.id,
         tenantId: row.tenant_id,
@@ -1103,7 +1102,11 @@ export class DatabaseStorage implements IStorage {
         userId: row.user_id,
         role: row.role,
       } as AreaAdmin;
-    } catch (error) {
+    } catch (error: any) {
+      // Handle the specific Neon driver null error gracefully
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return undefined;
+      }
       console.error('Error in getAreaAdmin:', error);
       return undefined;
     }
@@ -1143,21 +1146,35 @@ export class DatabaseStorage implements IStorage {
 
   async createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin> {
     try {
-      // Use raw SQL to avoid Neon HTTP driver issues
+      // Use db.execute with sql template for better null handling
       const id = crypto.randomUUID();
-      const now = new Date().toISOString();
-      const rows = await this.neonClient(
-        `INSERT INTO area_admins (id, tenant_id, area_id, user_id, role, created_at) 
-         VALUES ($1, $2, $3, $4, $5, $6) 
-         RETURNING *`,
-        [id, admin.tenantId, admin.areaId, admin.userId, admin.role, now]
+      const now = new Date();
+      
+      const result = await this.db.execute(
+        sql`INSERT INTO area_admins (id, tenant_id, area_id, user_id, role, created_at) 
+            VALUES (${id}, ${admin.tenantId}, ${admin.areaId}, ${admin.userId}, ${admin.role}, ${now}) 
+            RETURNING *`
       );
       
-      if (!rows || !Array.isArray(rows) || rows.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
+        // Fallback: try to fetch the record we just inserted
+        const fetchResult = await this.db.execute(
+          sql`SELECT * FROM area_admins WHERE id = ${id}`
+        );
+        if (fetchResult?.rows?.[0]) {
+          const row = fetchResult.rows[0] as any;
+          return {
+            id: row.id,
+            tenantId: row.tenant_id,
+            areaId: row.area_id,
+            userId: row.user_id,
+            role: row.role,
+          } as AreaAdmin;
+        }
         throw new Error("Failed to create area admin - no result returned");
       }
       
-      const row = rows[0];
+      const row = result.rows[0] as any;
       return {
         id: row.id,
         tenantId: row.tenant_id,
@@ -1165,7 +1182,28 @@ export class DatabaseStorage implements IStorage {
         userId: row.user_id,
         role: row.role,
       } as AreaAdmin;
-    } catch (error) {
+    } catch (error: any) {
+      // Handle the specific Neon driver null error - try fallback INSERT without RETURNING
+      if (error?.message?.includes("Cannot read properties of null")) {
+        try {
+          const id = crypto.randomUUID();
+          const now = new Date();
+          await this.db.execute(
+            sql`INSERT INTO area_admins (id, tenant_id, area_id, user_id, role, created_at) 
+                VALUES (${id}, ${admin.tenantId}, ${admin.areaId}, ${admin.userId}, ${admin.role}, ${now})`
+          );
+          return {
+            id,
+            tenantId: admin.tenantId,
+            areaId: admin.areaId,
+            userId: admin.userId,
+            role: admin.role,
+          } as AreaAdmin;
+        } catch (fallbackError) {
+          console.error('Error in createAreaAdmin fallback:', fallbackError);
+          throw fallbackError;
+        }
+      }
       console.error('Error in createAreaAdmin:', error);
       throw error;
     }
