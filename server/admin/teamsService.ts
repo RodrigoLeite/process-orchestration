@@ -60,7 +60,11 @@ export const teamsService = {
           })
           .from(userTeams)
           .innerJoin(users, eq(users.id, userTeams.userId))
-          .where(eq(userTeams.teamId, normalizedTeam.id));
+          .where(eq(userTeams.teamId, normalizedTeam.id))
+          .catch(() => []);
+        if (!members || !Array.isArray(members)) {
+          members = [];
+        }
       } catch (err) {
         console.error(`[teamsService] Error fetching members for team ${normalizedTeam.id}:`, err);
         members = [];

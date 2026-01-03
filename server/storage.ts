@@ -1255,9 +1255,6 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
-    const result = await this.db.update(userTeams).set({ role }).where(eq(userTeams.id, id)).returning();
-    return result[0];
-  }
 
   async deleteUserTeam(id: string): Promise<void> {
     await this.db.delete(userTeams).where(eq(userTeams.id, id));
