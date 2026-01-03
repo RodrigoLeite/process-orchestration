@@ -370,6 +370,20 @@ export const userManagementService = {
     }
   },
 
+  async removeUserFromTeam(tenantId: string, userId: string, teamId: string): Promise<void> {
+    const normalizedTenantId = normalizeUUID(tenantId);
+    const normalizedUserId = normalizeUUID(userId);
+    const normalizedTeamId = normalizeUUID(teamId);
+
+    await storage.db
+      .delete(userTeams)
+      .where(and(
+        eq(userTeams.userId, normalizedUserId),
+        eq(userTeams.teamId, normalizedTeamId),
+        eq(userTeams.tenantId, normalizedTenantId)
+      ));
+  },
+
   async updateUserTeams(tenantId: string, tenantUserId: string, teamIds: string[]): Promise<void> {
     const normalizedTenantId = normalizeUUID(tenantId);
     const normalizedTenantUserId = normalizeUUID(tenantUserId);
