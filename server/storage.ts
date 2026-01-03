@@ -1074,7 +1074,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use db.execute with sql template for better null handling with Neon HTTP driver
       const result = await this.db.execute(
-        sql`SELECT * FROM area_admins WHERE area_id = ${areaId}`
+        sql`SELECT id::text, tenant_id::text, area_id::text, user_id::text, role FROM area_admins WHERE area_id = ${areaId}`
       );
       
       if (!result || !result.rows || !Array.isArray(result.rows)) {
@@ -1102,7 +1102,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Use db.execute with sql template for better null handling
       const result = await this.db.execute(
-        sql`SELECT * FROM area_admins WHERE area_id = ${areaId} AND user_id = ${userId} LIMIT 1`
+        sql`SELECT id::text, tenant_id::text, area_id::text, user_id::text, role FROM area_admins WHERE area_id = ${areaId} AND user_id = ${userId} LIMIT 1`
       );
       
       if (!result || !result.rows || result.rows.length === 0) {
