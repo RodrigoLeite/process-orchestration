@@ -75,11 +75,22 @@ interface AreaAdmin {
   user?: { name: string; email: string };
 }
 
+export interface AreaAdminEnriched extends AreaAdmin {
+  user?: { id: string; name: string; email: string };
+}
+
+export interface AreaEnriched extends Omit<Area, 'teams'> {
+  teams: any[];
+  admins: AreaAdminEnriched[];
+  teamCount: number;
+  adminCount: number;
+}
+
 export default function AdminAreasPage() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
   const { language } = useI18nStore();
-  const { data, isLoading, error } = useAdminAreas();
+  const { data, isLoading, error } = useAdminAreas() as { data: { areas: AreaEnriched[] } | undefined, isLoading: boolean, error: any };
   const { data: usersData } = useAdminUsers();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -345,7 +356,7 @@ export default function AdminAreasPage() {
                 <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-3">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    <span>{t('admin.adminsCount').replace('{count}', (area.admins?.length || 0).toString())}</span>
+                    <span>{t('admin.adminsCount').replace('{count}', (area.admins?.length || area.adminCount || 0).toString())}</span>
                   </div>
                   {area.admins?.find(a => a.role === "owner") && (
                     <div className="flex items-center gap-2" key={`owner-${area.id}`}>

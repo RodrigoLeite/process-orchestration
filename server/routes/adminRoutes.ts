@@ -602,80 +602,41 @@ router.get('/areas', async (req: Request, res: Response) => {
     const tenantId = getTenantId(req);
     const areasList = await storage.getAreasByTenant(tenantId);
     
-    let allTeams: any[] = [];
-    let allAdmins: any[] = [];
+    // Fetch all admins for the tenant once to map them
+    const allAdmins = await storage.getAreaAdminsByTenant(tenantId) || [];
     
-    try {
-      allTeams = await storage.getTeamsByTenant(tenantId) || [];
-    } catch (err) {
-      console.error('Error getting all teams:', err);
-    }
-    
-    try {
-      const adminsResult = await storage.getAreaAdminsByTenant(tenantId);
-      const rawAdmins = adminsResult || [];
-      
-      // Enrich admins with user details safely
-      const enrichedAdmins = await Promise.all(
-        rawAdmins.map(async (admin) => {
-          try {
+    const areasWithData = await Promise.all(
+      areasList.map(async (area) => {
+        const normalizedArea = normalizeRecord(area);
+        const areaId = normalizedArea.id;
+        const teams = await storage.getTeamsByArea(areaId) || [];
+        
+        // Filter admins for this specific area from the pre-fetched list
+        const areaAdmins = allAdmins.filter(admin => {
+          const normAdmin = normalizeRecord(admin);
+          return normAdmin.areaId === areaId;
+        });
+        
+        const enrichedAdmins = await Promise.all(
+          areaAdmins.map(async (admin) => {
             const normalizedAdmin = normalizeRecord(admin);
-            if (!normalizedAdmin.userId) return { ...normalizedAdmin, user: null };
             const user = await storage.getUser(normalizedAdmin.userId);
             return {
               ...normalizedAdmin,
-              user: user ? { name: user.name, email: user.email } : null
+              user: user ? { id: user.id, name: user.name, email: user.email } : null
             };
-          } catch (err) {
-            console.error(`Error fetching user for admin:`, err);
-            return { ...normalizeRecord(admin), user: null };
-          }
-        })
-      );
-      allAdmins = enrichedAdmins;
-    } catch (err) {
-      console.error('Error getting all admins:', err);
-      allAdmins = [];
-    }
-    
-    const teamsByArea = new Map<string, any[]>();
-    const adminsByArea = new Map<string, any[]>();
-    
-    for (const team of allTeams) {
-      const normalized = normalizeRecord(team);
-      if (normalized.areaId) {
-        if (!teamsByArea.has(normalized.areaId)) {
-          teamsByArea.set(normalized.areaId, []);
-        }
-        teamsByArea.get(normalized.areaId)!.push(normalized);
-      }
-    }
-    
-    for (const admin of allAdmins) {
-      // Don't call normalizeRecord here because we already normalized it during enrichment
-      const areaId = admin.areaId;
-      if (areaId) {
-        if (!adminsByArea.has(areaId)) {
-          adminsByArea.set(areaId, []);
-        }
-        adminsByArea.get(areaId)!.push(admin);
-      }
-    }
-    
-    const areasWithData = areasList.map(area => {
-      const normalizedArea = normalizeRecord(area);
-      const areaId = normalizedArea.id;
-      const teamsList = teamsByArea.get(areaId) || [];
-      const admins = adminsByArea.get(areaId) || [];
-      
-      return {
-        ...normalizedArea,
-        tenantId: normalizeUUID(normalizedArea.tenantId),
-        teams: teamsList,
-        admins: admins,
-        teamCount: teamsList.length,
-      };
-    });
+          })
+        );
+
+        return {
+          ...normalizedArea,
+          teams: teams.map(t => normalizeRecord(t)),
+          admins: enrichedAdmins,
+          teamCount: teams.length,
+          adminCount: enrichedAdmins.length
+        };
+      })
+    );
     
     res.json({ areas: areasWithData });
   } catch (error: any) {
