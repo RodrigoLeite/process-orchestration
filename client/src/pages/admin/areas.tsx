@@ -526,24 +526,6 @@ export default function AdminAreasPage() {
 
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label>{t('admin.adminRoleAdmin')}</Label>
-              <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
-                <SelectTrigger data-testid="select-area-admin">
-                  <SelectValue placeholder={t('admin.selectUser')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {areaAdminUsers.map((user: any) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">{t('admin.areaAdminDescription')}</p>
-            </div>
-
-            <div className="space-y-2">
               <Label>{t('admin.adminRoleOwner')}</Label>
               <Select value={selectedOwnerId} onValueChange={setSelectedOwnerId}>
                 <SelectTrigger data-testid="select-area-owner">
@@ -559,6 +541,24 @@ export default function AdminAreasPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{t('admin.areaOwnerDescription')}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('admin.adminRoleAdmin')}</Label>
+              <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
+                <SelectTrigger data-testid="select-area-admin">
+                  <SelectValue placeholder={t('admin.selectUser')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('common.none')}</SelectItem>
+                  {areaAdminUsers.map((user: any) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name || user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t('admin.areaAdminDescription')}</p>
             </div>
           </div>
 
