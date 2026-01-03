@@ -1038,28 +1038,10 @@ export class DatabaseStorage implements IStorage {
   async getAreaAdmins(areaId: string): Promise<AreaAdmin[]> {
     if (!areaId) return [];
     
-    // Validate UUID format - must be a proper UUID string
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(areaId)) {
-      console.error('getAreaAdmins: Invalid UUID format:', areaId);
-      return [];
-    }
-    
     try {
-      // Use raw SQL to avoid Drizzle/Neon driver issues with UUID parameters
-      const result = await this.db.execute(sql.raw(
-        `SELECT * FROM area_admins WHERE area_id = '${areaId}'::uuid`
-      ));
-      
-      const rows = (result as any).rows || result || [];
-      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
-        id: row.id,
-        tenantId: row.tenant_id,
-        areaId: row.area_id,
-        userId: row.user_id,
-        role: row.role,
-        createdAt: row.created_at,
-      })) as AreaAdmin[];
+      const result = await this.db.select().from(areaAdmins)
+        .where(eq(areaAdmins.areaId, areaId));
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Error in getAreaAdmins:', error);
       return [];
@@ -1082,6 +1064,18 @@ export class DatabaseStorage implements IStorage {
   async getUserAreaRoles(userId: string, tenantId: string): Promise<AreaAdmin[]> {
     return await this.db.select().from(areaAdmins)
       .where(and(eq(areaAdmins.userId, userId), eq(areaAdmins.tenantId, tenantId)));
+  }
+
+  async getAreaAdminsByTenant(tenantId: string): Promise<AreaAdmin[]> {
+    if (!tenantId) return [];
+    try {
+      const result = await this.db.select().from(areaAdmins)
+        .where(eq(areaAdmins.tenantId, tenantId));
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error in getAreaAdminsByTenant:', error);
+      return [];
+    }
   }
 
   async createAreaAdmin(admin: InsertAreaAdmin): Promise<AreaAdmin> {
@@ -1119,30 +1113,11 @@ export class DatabaseStorage implements IStorage {
   async getTeamsByArea(areaId: string): Promise<Team[]> {
     if (!areaId) return [];
     
-    // Validate UUID format - must be a proper UUID string
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(areaId)) {
-      console.error('getTeamsByArea: Invalid UUID format:', areaId);
-      return [];
-    }
-    
     try {
-      // Use raw SQL to avoid Drizzle/Neon driver issues with UUID parameters
-      const result = await this.db.execute(sql.raw(
-        `SELECT * FROM teams WHERE area_id = '${areaId}'::uuid ORDER BY name`
-      ));
-      
-      const rows = (result as any).rows || result || [];
-      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
-        id: row.id,
-        tenantId: row.tenant_id,
-        areaId: row.area_id,
-        name: row.name,
-        description: row.description,
-        color: row.color,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      })) as Team[];
+      const result = await this.db.select().from(teams)
+        .where(eq(teams.areaId, areaId))
+        .orderBy(teams.name);
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Error in getTeamsByArea:', error);
       return [];
