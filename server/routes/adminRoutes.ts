@@ -828,9 +828,9 @@ router.post(
         return res.status(404).json({ error: 'Area not found' });
       }
       
-      const normalizedArea = normalizeRecord(area);
-      if (normalizedArea.tenantId !== tenantId) {
-        console.log(`[DEBUG] Area tenant mismatch. Area tenant: ${normalizedArea.tenantId}, Session tenant: ${tenantId}`);
+      const areaData = area as any;
+      if (areaData.tenantId !== tenantId) {
+        console.log(`[DEBUG] Area tenant mismatch. Area tenant: ${areaData.tenantId}, Session tenant: ${tenantId}`);
         return res.status(404).json({ error: 'Area not found (tenant mismatch)' });
       }
       

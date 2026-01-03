@@ -57,7 +57,7 @@ export const rolesService = {
         .from(roles)
         .where(eq(roles.tenantId, normalizedTenantId))
         .orderBy(desc(roles.createdAt));
-      roleRows = Array.isArray(rows) ? rows : [];
+      roleRows = (rows && Array.isArray(rows)) ? rows : [];
     } catch (err) {
       console.error('[rolesService] Error fetching roles:', err);
       return [];

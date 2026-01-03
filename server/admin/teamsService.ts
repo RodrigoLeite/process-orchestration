@@ -34,6 +34,9 @@ export const teamsService = {
         .from(teams)
         .where(eq(teams.tenantId, normalizedTenantId))
         .orderBy(desc(teams.createdAt));
+      if (!teamRows || !Array.isArray(teamRows)) {
+        teamRows = [];
+      }
     } catch (err) {
       console.error('[teamsService] Error fetching teams:', err);
       return [];
