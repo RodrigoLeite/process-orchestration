@@ -9,6 +9,8 @@ import {
   useMoveTeamToArea,
   useUpdateTeamMemberRole,
   useAdminUsers,
+  useAssignUserToTeam,
+  useRemoveUserFromTeam,
   type Team,
 } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
