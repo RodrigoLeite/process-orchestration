@@ -1017,7 +1017,9 @@ router.patch(
       const { teamId, userId } = req.params;
       const { role } = req.body;
       
-      if (!Object.values(TEAM_ROLES).includes(role)) {
+      console.log(`[DEBUG] Updating team member role - teamId: ${teamId}, userId: ${userId}, role: ${role}`);
+      
+      if (!['lead', 'member', 'viewer'].includes(role)) {
         return res.status(400).json({ error: 'Invalid team role' });
       }
       
@@ -1028,7 +1030,13 @@ router.patch(
       
       const userTeam = await storage.getUserTeam(teamId, userId);
       if (!userTeam) {
-        return res.status(404).json({ error: 'User is not a member of this team' });
+        // Auto-assign user to team if they're not already in it
+        await userManagementService.assignUserToTeam(tenantId, userId, teamId);
+        const newUserTeam = await storage.getUserTeam(teamId, userId);
+        if (!newUserTeam) throw new Error("Failed to auto-assign user to team");
+        
+        const updatedUserTeam = await storage.updateUserTeamRole(newUserTeam.id, role);
+        return res.json({ userTeam: updatedUserTeam });
       }
       
       const updatedUserTeam = await storage.updateUserTeamRole(userTeam.id, role);
