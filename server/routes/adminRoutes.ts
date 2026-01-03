@@ -602,19 +602,20 @@ router.get('/areas', async (req: Request, res: Response) => {
     const tenantId = getTenantId(req);
     const areasList = await storage.getAreasByTenant(tenantId);
     
-    // Return areas without fetching related data to avoid driver issues
-    // The frontend can fetch teams/admins separately if needed
-    const areasNormalized = areasList.map(area => {
+    const areasWithData = await Promise.all(areasList.map(async (area) => {
       const normalizedArea = normalizeRecord(area);
+      const teamsList = await storage.getTeamsByArea(normalizedArea.id) || [];
+      const admins = await storage.getAreaAdmins(normalizedArea.id) || [];
+      
       return {
         ...normalizedArea,
-        teams: [],
-        admins: [],
-        teamCount: 0,
+        teams: teamsList.map(t => normalizeRecord(t)),
+        admins: admins.map(a => normalizeRecord(a)),
+        teamCount: teamsList.length,
       };
-    });
+    }));
     
-    res.json({ areas: areasNormalized });
+    res.json({ areas: areasWithData });
   } catch (error: any) {
     console.error('Error listing areas:', error);
     res.status(500).json({ error: error.message });
@@ -657,7 +658,7 @@ router.get('/areas/:areaId', async (req: Request, res: Response) => {
 
 router.post(
   '/areas',
-  checkPermission(TENANT_PERMISSIONS.CREATE_AREAS),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -692,7 +693,7 @@ router.post(
 
 router.patch(
   '/areas/:areaId',
-  checkPermission(AREA_PERMISSIONS.MANAGE),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
@@ -719,7 +720,7 @@ router.patch(
 
 router.delete(
   '/areas/:areaId',
-  checkPermission(TENANT_PERMISSIONS.CREATE_AREAS),
+  checkPermission(PERMISSIONS.TENANT_MANAGE_USERS),
   async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
