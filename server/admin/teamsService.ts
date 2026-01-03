@@ -26,28 +26,42 @@ export interface TeamWithMembers extends Team {
 export const teamsService = {
   async listTeams(tenantId: string): Promise<TeamWithMembers[]> {
     const normalizedTenantId = normalizeUUID(tenantId);
-    const teamRows = await storage.db
-      .select()
-      .from(teams)
-      .where(eq(teams.tenantId, normalizedTenantId))
-      .orderBy(desc(teams.createdAt));
+    let teamRows: Team[] = [];
+    
+    try {
+      teamRows = await storage.db
+        .select()
+        .from(teams)
+        .where(eq(teams.tenantId, normalizedTenantId))
+        .orderBy(desc(teams.createdAt));
+    } catch (err) {
+      console.error('[teamsService] Error fetching teams:', err);
+      return [];
+    }
 
     const result: TeamWithMembers[] = [];
 
     for (const team of teamRows) {
       const normalizedTeam = normalizeRecord(team);
-      const members = await storage.db
-        .select({
-          id: userTeams.id,
-          userId: users.id,
-          name: users.name,
-          email: users.email,
-          image: users.image,
-          role: userTeams.role,
-        })
-        .from(userTeams)
-        .innerJoin(users, eq(users.id, userTeams.userId))
-        .where(eq(userTeams.teamId, normalizedTeam.id));
+      let members: any[] = [];
+      
+      try {
+        members = await storage.db
+          .select({
+            id: userTeams.id,
+            userId: users.id,
+            name: users.name,
+            email: users.email,
+            image: users.image,
+            role: userTeams.role,
+          })
+          .from(userTeams)
+          .innerJoin(users, eq(users.id, userTeams.userId))
+          .where(eq(userTeams.teamId, normalizedTeam.id));
+      } catch (err) {
+        console.error(`[teamsService] Error fetching members for team ${normalizedTeam.id}:`, err);
+        members = [];
+      }
 
       const normalizedMembers = normalizeRecords(members || []).map((m: any) => ({
         ...m,
@@ -66,32 +80,46 @@ export const teamsService = {
   async getTeam(tenantId: string, teamId: string): Promise<TeamWithMembers | null> {
     const normalizedTenantId = normalizeUUID(tenantId);
     const normalizedTeamId = normalizeUUID(teamId);
-    const team = await storage.db
-      .select()
-      .from(teams)
-      .where(and(eq(teams.id, normalizedTeamId), eq(teams.tenantId, normalizedTenantId)))
-      .limit(1)
-      .then((rows: any[]) => rows[0]);
+    
+    let team: Team | undefined;
+    try {
+      const rows = await storage.db
+        .select()
+        .from(teams)
+        .where(and(eq(teams.id, normalizedTeamId), eq(teams.tenantId, normalizedTenantId)))
+        .limit(1);
+      team = rows[0];
+    } catch (err) {
+      console.error('[teamsService] Error fetching team:', err);
+      return null;
+    }
 
     if (!team) {
       return null;
     }
 
     const normalizedTeam = normalizeRecord(team);
-    const members = await storage.db
-      .select({
-        id: userTeams.id,
-        userId: users.id,
-        name: users.name,
-        email: users.email,
-        image: users.image,
-        role: userTeams.role,
-      })
-      .from(userTeams)
-      .innerJoin(users, eq(users.id, userTeams.userId))
-      .where(eq(userTeams.teamId, normalizedTeam.id));
+    let members: any[] = [];
+    
+    try {
+      members = await storage.db
+        .select({
+          id: userTeams.id,
+          userId: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+          role: userTeams.role,
+        })
+        .from(userTeams)
+        .innerJoin(users, eq(users.id, userTeams.userId))
+        .where(eq(userTeams.teamId, normalizedTeam.id));
+    } catch (err) {
+      console.error(`[teamsService] Error fetching members for team ${normalizedTeam.id}:`, err);
+      members = [];
+    }
 
-    const normalizedMembers = normalizeRecords(members).map((m: any) => ({
+    const normalizedMembers = normalizeRecords(members || []).map((m: any) => ({
       ...m,
       role: m.role || 'member',
     }));
