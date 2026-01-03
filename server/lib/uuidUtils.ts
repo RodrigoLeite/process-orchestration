@@ -76,7 +76,8 @@ const UUID_FIELDS = [
   'boardId', 'board_id', 'phaseId', 'phase_id', 'cardId', 'card_id',
   'teamId', 'team_id', 'roleId', 'role_id', 'demandId', 'demand_id',
   'workflowId', 'workflow_id', 'createdBy', 'created_by', 'updatedBy', 'updated_by',
-  'assignedTo', 'ownerId', 'owner_id', 'parentId', 'parent_id'
+  'assignedTo', 'ownerId', 'owner_id', 'parentId', 'parent_id',
+  'areaId', 'area_id'
 ];
 
 /**
