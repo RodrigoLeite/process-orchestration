@@ -151,28 +151,7 @@ export default function AdminAreasPage() {
   const addAreaAdmin = useAddAreaAdmin();
   const removeAreaAdmin = useRemoveAreaAdmin();
 
-  // Filter users based on their roles for governance assignment
   const allUsers = usersData?.users || [];
-  const areaOwnerUsers = allUsers.filter((u: any) => 
-    u.role === "tenant_owner" || 
-    u.role === "tenant_admin" || 
-    u.role === "area_owner" ||
-    u.role === "owner" ||
-    u.roles?.some((r: any) => 
-      ["tenant_owner", "tenant_admin", "area_owner", "owner", "Tenant Owner", "Tenant Admin", "Area Owner", "Owner"].includes(typeof r === 'string' ? r : (r.name || r.id))
-    )
-  );
-
-  const areaAdminUsers = allUsers.filter((u: any) => 
-    u.role === "tenant_owner" || 
-    u.role === "tenant_admin" || 
-    u.role === "area_owner" ||
-    u.role === "area_admin" ||
-    u.role === "owner" ||
-    u.roles?.some((r: any) => 
-      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "owner", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin", "Owner"].includes(typeof r === 'string' ? r : (r.name || r.id))
-    )
-  );
 
   const openCreateModal = () => {
     setFormName("");
@@ -250,14 +229,6 @@ export default function AdminAreasPage() {
     const currentAdmin = area.admins?.find(a => a.role === "admin");
     const currentOwner = area.admins?.find(a => a.role === "owner");
     
-    console.log('[DEBUG] Opening Admin Modal', {
-      areaId: area.id,
-      admins: area.admins,
-      currentAdminUserId: currentAdmin?.userId,
-      currentOwnerUserId: currentOwner?.userId
-    });
-    
-    // Use the user's ID for the selection
     const adminId = currentAdmin?.user?.id || currentAdmin?.userId || "none";
     const ownerId = currentOwner?.user?.id || currentOwner?.userId || "none";
     
@@ -277,20 +248,16 @@ export default function AdminAreasPage() {
       const currentAdmin = currentAdmins.find(a => a.role === "admin");
       const currentOwner = currentAdmins.find(a => a.role === "owner");
 
-      // Handle Admin role
       if (adminToSet !== (currentAdmin?.userId || "")) {
         if (adminToSet) {
-          // Backend now correctly handles replacing the old one to ensure only 1 per role
           await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: adminToSet, role: "admin" });
         } else if (currentAdmin) {
           await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentAdmin.id });
         }
       }
 
-      // Handle Owner role
       if (ownerToSet !== (currentOwner?.userId || "")) {
         if (ownerToSet) {
-          // Backend now correctly handles replacing the old one to ensure only 1 per role
           await addAreaAdmin.mutateAsync({ areaId: selectedArea.id, userId: ownerToSet, role: "owner" });
         } else if (currentOwner) {
           await removeAreaAdmin.mutateAsync({ areaId: selectedArea.id, adminId: currentOwner.id });
@@ -455,7 +422,7 @@ export default function AdminAreasPage() {
                       <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {t('admin.teams') || "Times"}
                       </Label>
-                        <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1">
                         {area.teams.map((team: any) => (
                           <Badge 
                             key={team.id} 
@@ -533,21 +500,6 @@ export default function AdminAreasPage() {
                     </div>
                   )}
                 </div>
-
-                {area.teams && area.teams.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {area.teams.slice(0, 3).map((team: any) => (
-                      <Badge key={team.id} variant="outline" className="text-xs">
-                        {team.name}
-                      </Badge>
-                    ))}
-                    {area.teams.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{area.teams.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
               </CardContent>
             </Card>
           ))}
@@ -614,12 +566,12 @@ export default function AdminAreasPage() {
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 rounded-full transition-all ${
+                    className={`w-8 h-8 rounded-full transition-all \${
                       formColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
                     }`}
                     style={{ backgroundColor: color }}
                     onClick={() => setFormColor(color)}
-                    data-testid={`color-${color}`}
+                    data-testid={`color-\${color}`}
                   />
                 ))}
               </div>
@@ -673,73 +625,90 @@ export default function AdminAreasPage() {
                       )}
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-[10px] h-5">
+                  <Badge variant="secondary" className="font-semibold">
                     {team.memberCount || 0} {t('admin.members') || "membros"}
                   </Badge>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  {t('admin.noTeamsInArea') || "Nenhum time vinculado a esta área."}
-                </p>
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                <p>{t('admin.noTeamsInArea') || "Nenhum time vinculado a esta área."}</p>
               </div>
             )}
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTeamsModalOpen(false)}>
-              {t('common.close') || "Fechar"}
-            </Button>
+            <Button onClick={() => setTeamsModalOpen(false)}>{t('common.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={adminModalOpen} onOpenChange={setAdminModalOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('admin.areaAdminsTitle')}</DialogTitle>
+            <DialogTitle>{t('admin.manageAdmins')}</DialogTitle>
             <DialogDescription>
-              {t('admin.areaAdminsSubtitle').replace('{name}', getAreaName(selectedArea?.name || '', language) || selectedArea?.name || '')}
+              {t('admin.manageAdminsSubtitle')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label>{t('admin.adminRoleOwner')}</Label>
+            <div className="space-y-4 p-4 border rounded-lg bg-amber-50/30 border-amber-100 dark:bg-amber-950/10 dark:border-amber-900/30">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <Shield className="h-4 w-4" />
+                <Label className="font-bold">{t('admin.adminRoleOwner')}</Label>
+              </div>
               <Select value={selectedOwnerId} onValueChange={setSelectedOwnerId}>
                 <SelectTrigger data-testid="select-area-owner">
-                  <SelectValue placeholder={t('admin.selectUser')} />
+                  <SelectValue placeholder={t('admin.selectOwner')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {areaOwnerUsers.map((user: any) => (
+                  <SelectItem value="none">{t('admin.noOwner')}</SelectItem>
+                  {allUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email}
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={user.image} />
+                          <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{user.name} ({user.email})</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">{t('admin.areaOwnerDescription')}</p>
+              <p className="text-xs text-amber-600/70 dark:text-amber-400/70 italic">
+                {t('admin.ownerRoleDescription') || "O proprietário tem controle total sobre as configurações e governança da área."}
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label>{t('admin.adminRoleAdmin')}</Label>
+            <div className="space-y-4 p-4 border rounded-lg bg-blue-50/30 border-blue-100 dark:bg-blue-950/10 dark:border-blue-900/30">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <Shield className="h-4 w-4" />
+                <Label className="font-bold">{t('admin.adminRoleAdmin')}</Label>
+              </div>
               <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
                 <SelectTrigger data-testid="select-area-admin">
-                  <SelectValue placeholder={t('admin.selectUser')} />
+                  <SelectValue placeholder={t('admin.selectAdmin')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{t('common.none')}</SelectItem>
-                  {areaAdminUsers.map((user: any) => (
+                  <SelectItem value="none">{t('admin.noAdmin')}</SelectItem>
+                  {allUsers.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email}
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={user.image} />
+                          <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{user.name} ({user.email})</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">{t('admin.areaAdminDescription')}</p>
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 italic">
+                {t('admin.adminRoleDescription') || "O administrador auxilia na gestão operacional e monitoramento dos processos da área."}
+              </p>
             </div>
           </div>
 
@@ -747,11 +716,7 @@ export default function AdminAreasPage() {
             <Button variant="outline" onClick={() => setAdminModalOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button 
-              onClick={handleUpdateGovernance}
-              disabled={addAreaAdmin.isPending || removeAreaAdmin.isPending}
-              data-testid="button-save-governance"
-            >
+            <Button onClick={handleUpdateGovernance} data-testid="button-save-governance">
               {t('common.save')}
             </Button>
           </DialogFooter>
@@ -761,17 +726,16 @@ export default function AdminAreasPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('admin.deleteArea')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('admin.deleteAreaConfirm')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('admin.areaDeleteConfirm').replace('{name}', areaToDelete ? (getAreaName(areaToDelete.name, language) || areaToDelete.name) : '')}
+              {t('admin.deleteAreaDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setAreaToDelete(null)}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-testid="button-confirm-delete-area"
             >
               {t('common.delete')}
             </AlertDialogAction>
