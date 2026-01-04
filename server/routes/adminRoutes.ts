@@ -407,15 +407,27 @@ router.patch(
       const { teamId, userId } = req.params;
       const { role } = req.body;
       
-      console.log(`[DEBUG] Updating team member role - teamId: ${teamId}, userId: ${userId}, role: ${role}`);
+      console.log(`[DEBUG] Updating team member role - teamId: ${teamId}, userId: ${userId}, role: ${role}, tenantId: ${tenantId}`);
       
       if (!['lead', 'member', 'viewer'].includes(role)) {
         return res.status(400).json({ error: 'Invalid team role' });
       }
       
       const team = await storage.getTeam(teamId);
-      if (!team || team.tenantId !== tenantId) {
+      const normalizedTeam = team ? normalizeRecord(team) : null;
+      console.log(`[DEBUG] Team found:`, normalizedTeam ? { id: normalizedTeam.id, tenantId: normalizedTeam.tenantId } : null);
+      
+      if (!normalizedTeam) {
         return res.status(404).json({ error: 'Team not found' });
+      }
+      
+      // Normalize both tenant IDs for comparison
+      const normalizedTeamTenantId = normalizeUUID(normalizedTeam.tenantId);
+      const normalizedRequestTenantId = normalizeUUID(tenantId);
+      console.log(`[DEBUG] Tenant comparison: team=${normalizedTeamTenantId}, request=${normalizedRequestTenantId}`);
+      
+      if (normalizedTeamTenantId !== normalizedRequestTenantId) {
+        return res.status(404).json({ error: 'Team not found (tenant mismatch)' });
       }
       
       const userTeam = await storage.getUserTeam(teamId, userId);
