@@ -408,7 +408,7 @@ export default function AdminAreasPage() {
                       )}
                     </div>
                     <CardDescription>
-                      {t('admin.teamsCount').replace('{count}', (area.teams?.length || 0).toString())}
+                      {t('admin.teamsCount').replace('{count}', (area.teamCount || area.teams?.length || 0).toString())}
                     </CardDescription>
                   </div>
                 </div>
@@ -448,12 +448,38 @@ export default function AdminAreasPage() {
                 </DropdownMenu>
               </CardHeader>
 
-              <CardContent>
-                {(area.description || getAreaDescription(area.name, language)) && (
-                  <p className="text-sm text-muted-foreground mb-3">{getAreaDescription(area.name, language) || area.description}</p>
-                )}
+              <CardContent className="space-y-4">
+                <div className="flex flex-col gap-3">
+                  {area.teams && area.teams.length > 0 ? (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {t('admin.teams') || "Times"}
+                      </Label>
+                        <div className="flex flex-wrap gap-1">
+                        {area.teams.map((team: any) => (
+                          <Badge 
+                            key={team.id} 
+                            variant="outline" 
+                            className="text-[10px] bg-blue-50/50 text-blue-700 border-blue-100 flex items-center gap-1.5 py-0.5"
+                          >
+                            <span className="font-medium">{team.name}</span>
+                            <span className="w-1 h-1 rounded-full bg-blue-400" />
+                            <span>{team.memberCount || 0}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic py-2">
+                      {t('admin.noTeamsInArea') || "Nenhum time vinculado"}
+                    </div>
+                  )}
+                </div>
 
-                <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-3">
+                <div className="pt-2 border-t">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+                    {t('admin.governance') || "Governança"}
+                  </Label>
                   {(area.admins?.length || 0) > 0 ? (
                     <TooltipProvider>
                       <div className="flex items-center gap-2">
@@ -521,7 +547,7 @@ export default function AdminAreasPage() {
                       </Badge>
                     )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           ))}
