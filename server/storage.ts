@@ -1592,13 +1592,21 @@ export class DatabaseStorage implements IStorage {
   async getTeamMembers(teamId: string): Promise<UserTeam[]> {
     if (!teamId) return [];
     try {
-      const result = await this.db.select().from(userTeams).where(eq(userTeams.teamId, teamId));
+      const normalizedTeamId = normalizeUUID(teamId);
+      // Use raw SQL with DISTINCT to ensure no double-counting due to multiple tenant associations
+      // or other potential data inconsistencies.
+      const query = `
+        SELECT DISTINCT ON (user_id) *
+        FROM user_teams 
+        WHERE team_id = $1
+      `;
+      const result = await this.db.execute(sql.raw(query, normalizedTeamId));
       
-      // Defensively handle null/undefined response from Neon HTTP driver
-      if (!result || !Array.isArray(result)) {
+      if (!result || !result.rows) {
         return [];
       }
-      return result;
+      
+      return normalizeRecords(result.rows) as UserTeam[];
     } catch (error) {
       console.error('Error in getTeamMembers:', error);
       return [];
