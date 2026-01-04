@@ -261,10 +261,16 @@ export class DatabaseStorage implements IStorage {
     try {
       if (tenantId) {
         const result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
-        return normalizeRecords(result || []);
+        if (!result || !Array.isArray(result)) {
+          return [];
+        }
+        return normalizeRecords(result);
       }
       const result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
-      return normalizeRecords(result || []);
+      if (!result || !Array.isArray(result)) {
+        return [];
+      }
+      return normalizeRecords(result);
     } catch (error) {
       console.error('Error in getDemands:', error);
       return [];
@@ -613,8 +619,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAreaWorkflow(areaName: string): Promise<AreaWorkflow | undefined> {
-    const result = await this.db.select().from(areaWorkflows).where(eq(areaWorkflows.areaName, areaName)).limit(1);
-    return result[0];
+    try {
+      const result = await this.db.select().from(areaWorkflows).where(eq(areaWorkflows.areaName, areaName)).limit(1);
+      
+      // Defensively handle null/undefined response from Neon HTTP driver
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return undefined;
+      }
+      return result[0];
+    } catch (error) {
+      console.error('Error in getAreaWorkflow:', error);
+      return undefined;
+    }
   }
 
   async getWorkflowById(workflowId: string): Promise<AreaWorkflow | undefined> {
@@ -1029,7 +1045,7 @@ export class DatabaseStorage implements IStorage {
       if (!result || !Array.isArray(result) || result.length === 0) {
         return undefined;
       }
-      return result[0];
+      return normalizeRecord(result[0]) as Area;
     } catch (error) {
       console.error('Error in getArea:', error);
       return undefined;
@@ -1040,6 +1056,7 @@ export class DatabaseStorage implements IStorage {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+      // Defensively handle null/undefined response from Neon HTTP driver
       if (!result || !Array.isArray(result)) {
         return [];
       }
@@ -1362,6 +1379,7 @@ export class DatabaseStorage implements IStorage {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
+      // Defensively handle null/undefined response from Neon HTTP driver
       if (!result || !Array.isArray(result)) {
         return [];
       }

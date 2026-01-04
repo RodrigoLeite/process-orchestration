@@ -260,6 +260,32 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
       console.error('[WORKSPACES] Error creating default agents:', agentError);
     }
 
+    // Create default governance areas for the new tenant
+    try {
+      console.log('[WORKSPACES] Creating default governance areas for tenant:', normalizedTenantId);
+      const defaultAreas = [
+        { name: "TI", description: "Tecnologia da Informação", color: "#3b82f6", icon: "cpu" },
+        { name: "RH", description: "Recursos Humanos", color: "#ec4899", icon: "users" },
+        { name: "Financeiro", description: "Gestão Financeira", color: "#10b981", icon: "banknote" },
+        { name: "Operações", description: "Gestão de Operações", color: "#f59e0b", icon: "settings" },
+        { name: "Vendas", description: "Área Comercial", color: "#ef4444", icon: "shopping-cart" }
+      ];
+
+      for (const areaData of defaultAreas) {
+        await storage.createArea({
+          tenantId: normalizedTenantId,
+          name: areaData.name,
+          description: areaData.description,
+          color: areaData.color,
+          icon: areaData.icon,
+          isDefault: "true"
+        });
+      }
+      console.log('[WORKSPACES] Default governance areas created');
+    } catch (areaError) {
+      console.error('[WORKSPACES] Error creating default areas:', areaError);
+    }
+
     // Add user as owner to the new tenant
     const userId = normalizeUUID(req.user.id);
     console.log('[WORKSPACES] Adding user to tenant:', { userId, tenantId: normalizedTenantId });
