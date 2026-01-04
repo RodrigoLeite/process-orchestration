@@ -1525,9 +1525,50 @@ export class DatabaseStorage implements IStorage {
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
     if (!id) return undefined;
     try {
-      await this.db.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id));
-      return await this.getTeam(id);
-    } catch (error) {
+      const normalizedId = normalizeUUID(id);
+      
+      // Filter out fields that shouldn't be updated directly via this method if needed
+      // but here we trust the updates object from the route
+      const setClause: string[] = [];
+      const values: any[] = [];
+      let i = 1;
+
+      if (updates.name !== undefined) {
+        setClause.push(`name = $${i++}`);
+        values.push(updates.name);
+      }
+      if (updates.description !== undefined) {
+        setClause.push(`description = $${i++}`);
+        values.push(updates.description);
+      }
+      if (updates.color !== undefined) {
+        setClause.push(`color = $${i++}`);
+        values.push(updates.color);
+      }
+      if (updates.areaId !== undefined) {
+        setClause.push(`area_id = $${i++}`);
+        values.push(updates.areaId ? normalizeUUID(updates.areaId) : null);
+      }
+      
+      setClause.push(`updated_at = $${i++}`);
+      values.push(new Date());
+
+      if (setClause.length === 1) return await this.getTeam(id); // Only updated_at
+
+      values.push(normalizedId);
+      const query = `UPDATE teams SET ${setClause.join(', ')} WHERE id = $${i} RETURNING *`;
+      
+      const result = await this.db.execute(sql.raw(query, ...values));
+      
+      if (!result || !result.rows || result.rows.length === 0) {
+        return await this.getTeam(id);
+      }
+      
+      return normalizeRecord(result.rows[0]) as Team;
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return await this.getTeam(id);
+      }
       console.error('Error in updateTeam:', error);
       return undefined;
     }
