@@ -1527,47 +1527,36 @@ export class DatabaseStorage implements IStorage {
     try {
       const normalizedId = normalizeUUID(id);
       
-      // Filter out fields that shouldn't be updated directly via this method if needed
-      // but here we trust the updates object from the route
-      const setClause: string[] = [];
-      const values: any[] = [];
-      let i = 1;
+      // Build the update object for Drizzle ORM
+      const updateData: Record<string, any> = {
+        updatedAt: new Date()
+      };
 
       if (updates.name !== undefined) {
-        setClause.push(`name = $${i++}`);
-        values.push(updates.name);
+        updateData.name = updates.name;
       }
       if (updates.description !== undefined) {
-        setClause.push(`description = $${i++}`);
-        values.push(updates.description);
+        updateData.description = updates.description;
       }
       if (updates.color !== undefined) {
-        setClause.push(`color = $${i++}`);
-        values.push(updates.color);
+        updateData.color = updates.color;
       }
       if (updates.areaId !== undefined) {
-        setClause.push(`area_id = $${i++}`);
-        values.push(updates.areaId ? normalizeUUID(updates.areaId) : null);
+        updateData.areaId = updates.areaId ? normalizeUUID(updates.areaId) : null;
       }
       
-      setClause.push(`updated_at = $${i++}`);
-      values.push(new Date());
-
-      if (setClause.length === 1) return await this.getTeam(id); // Only updated_at
-
-      // IMPORTANT: The placeholder for WHERE id = $X must be the LAST one
-      // Since i was already incremented for updated_at, i is now the next number
-      const query = `UPDATE teams SET ${setClause.join(', ')} WHERE id = $${i} RETURNING *`;
-      values.push(normalizedId);
-      
-      console.log(`[DEBUG] Executing SQL: ${query} with values:`, values);
-      const result = await this.db.execute(sql.raw(query, ...values));
-      
-      if (!result || !result.rows || result.rows.length === 0) {
+      // Check if there's anything to update besides updatedAt
+      if (Object.keys(updateData).length === 1) {
         return await this.getTeam(id);
       }
+
+      console.log(`[DEBUG] Updating team ${normalizedId} with:`, updateData);
       
-      return normalizeRecord(result.rows[0]) as Team;
+      // Use Drizzle's update without RETURNING (Neon HTTP driver workaround)
+      await this.db.update(teams).set(updateData).where(eq(teams.id, normalizedId));
+      
+      // Fetch the updated record
+      return await this.getTeam(id);
     } catch (error: any) {
       if (error?.message?.includes("null")) {
         return await this.getTeam(id);
