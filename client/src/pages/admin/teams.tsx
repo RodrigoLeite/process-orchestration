@@ -635,42 +635,45 @@ export default function AdminTeamsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Select 
-                        value={member.role || 'member'} 
-                        onValueChange={(value) => handleRoleChange(member.id, member.userId, value)}
-                      >
-                        <SelectTrigger className="w-32" data-testid={`select-role-${member.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="lead">
-                            <div className="flex items-center gap-2">
-                              <Crown className="h-4 w-4 text-amber-500" />
-                              Líder
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="member">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-blue-500" />
-                              Membro
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="viewer">
-                            <div className="flex items-center gap-2">
-                              <Eye className="h-4 w-4 text-gray-500" />
-                              Visualizador
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleRemoveMember(member.userId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {member.role === 'lead' ? (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-amber-100 dark:bg-amber-900/30 rounded-md border border-amber-200 dark:border-amber-800">
+                          <Crown className="h-4 w-4 text-amber-500" />
+                          <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Líder</span>
+                        </div>
+                      ) : (
+                        <Select 
+                          value={member.role || 'member'} 
+                          onValueChange={(value) => handleRoleChange(member.id, member.userId, value)}
+                        >
+                          <SelectTrigger className="w-32" data-testid={`select-role-${member.id}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="member">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-blue-500" />
+                                Membro
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="viewer">
+                              <div className="flex items-center gap-2">
+                                <Eye className="h-4 w-4 text-gray-500" />
+                                Visualizador
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {member.role !== 'lead' && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleRemoveMember(member.userId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
