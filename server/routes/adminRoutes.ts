@@ -366,9 +366,21 @@ router.patch(
       const { teamId } = req.params;
       const data = teamSchema.partial().parse(req.body);
       
-      const team = await teamsService.updateTeam(tenantId, teamId, data);
+      console.log(`[DEBUG] Updating team - teamId: ${teamId}, data:`, data);
       
-      res.json({ team });
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ error: 'Team not found' });
+      }
+      
+      const normalizedTeam = normalizeRecord(team);
+      if (normalizeUUID(normalizedTeam.tenantId) !== normalizeUUID(tenantId)) {
+        return res.status(404).json({ error: 'Team not found (tenant mismatch)' });
+      }
+      
+      const updatedTeam = await storage.updateTeam(teamId, data);
+      
+      res.json({ team: updatedTeam ? normalizeRecord(updatedTeam) : null });
     } catch (error: any) {
       console.error('Error updating team:', error);
       if (error instanceof z.ZodError) {
@@ -1049,21 +1061,33 @@ router.patch(
       const { teamId } = req.params;
       const { areaId } = req.body;
       
+      console.log(`[DEBUG] Moving team to area - teamId: ${teamId}, areaId: ${areaId}, tenantId: ${tenantId}`);
+      
       const team = await storage.getTeam(teamId);
-      if (!team || team.tenantId !== tenantId) {
+      if (!team) {
         return res.status(404).json({ error: 'Team not found' });
+      }
+      
+      const normalizedTeam = normalizeRecord(team);
+      if (normalizeUUID(normalizedTeam.tenantId) !== normalizeUUID(tenantId)) {
+        return res.status(404).json({ error: 'Team not found (tenant mismatch)' });
       }
       
       if (areaId) {
         const area = await storage.getArea(areaId);
-        if (!area || area.tenantId !== tenantId) {
+        if (!area) {
           return res.status(404).json({ error: 'Target area not found' });
+        }
+        
+        const normalizedArea = normalizeRecord(area);
+        if (normalizeUUID(normalizedArea.tenantId) !== normalizeUUID(tenantId)) {
+          return res.status(404).json({ error: 'Target area not found (tenant mismatch)' });
         }
       }
       
-      const updatedTeam = await storage.updateTeam(teamId, { areaId });
+      const updatedTeam = await storage.updateTeam(teamId, { areaId: areaId || null });
       
-      res.json({ team: updatedTeam });
+      res.json({ team: updatedTeam ? normalizeRecord(updatedTeam) : null });
     } catch (error: any) {
       console.error('Error moving team to area:', error);
       res.status(400).json({ error: error.message });
