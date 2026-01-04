@@ -268,7 +268,8 @@ router.post('/api/workspaces', async (req: AuthRequest, res: Response): Promise<
         { name: "RH", description: "Recursos Humanos", color: "#ec4899", icon: "users" },
         { name: "Financeiro", description: "Gestão Financeira", color: "#10b981", icon: "banknote" },
         { name: "Operações", description: "Gestão de Operações", color: "#f59e0b", icon: "settings" },
-        { name: "Vendas", description: "Área Comercial", color: "#ef4444", icon: "shopping-cart" }
+        { name: "Vendas", description: "Área Comercial", color: "#ef4444", icon: "shopping-cart" },
+        { name: "Jurídico", description: "Departamento Jurídico e Compliance", color: "#6366f1", icon: "scale" }
       ];
 
       for (const areaData of defaultAreas) {

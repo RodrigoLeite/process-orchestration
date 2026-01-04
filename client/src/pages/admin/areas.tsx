@@ -63,6 +63,17 @@ import {
   Shield,
   UserPlus,
   X,
+  Cpu,
+  UserCircle,
+  Banknote,
+  Settings,
+  ShoppingCart,
+  Scale,
+  Folder,
+  Layers,
+  Box,
+  Briefcase,
+  Star,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -78,7 +89,20 @@ const COLOR_OPTIONS = [
   "#14b8a6",
 ];
 
-const ICON_OPTIONS = ["building", "folder", "layers", "box", "briefcase", "star"];
+const ICON_OPTIONS = [
+  { value: "cpu", label: "CPU" },
+  { value: "users", label: "Users" },
+  { value: "banknote", label: "Banknote" },
+  { value: "settings", label: "Settings" },
+  { value: "shopping-cart", label: "Shopping Cart" },
+  { value: "scale", label: "Legal/Scale" },
+  { value: "folder", label: "Folder" },
+  { value: "layers", label: "Layers" },
+  { value: "box", label: "Box" },
+  { value: "briefcase", label: "Briefcase" },
+  { value: "star", label: "Star" },
+  { value: "building", label: "Building" }
+];
 
 interface AreaAdmin {
   id: string;
@@ -110,7 +134,7 @@ export default function AdminAreasPage() {
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formColor, setFormColor] = useState(COLOR_OPTIONS[0]);
-  const [formIcon, setFormIcon] = useState(ICON_OPTIONS[0]);
+  const [formIcon, setFormIcon] = useState(ICON_OPTIONS[0].value);
 
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
@@ -152,7 +176,7 @@ export default function AdminAreasPage() {
     setFormName("");
     setFormDescription("");
     setFormColor(COLOR_OPTIONS[0]);
-    setFormIcon(ICON_OPTIONS[0]);
+    setFormIcon(ICON_OPTIONS[0].value);
     setEditArea(null);
     setCreateModalOpen(true);
   };
@@ -161,7 +185,7 @@ export default function AdminAreasPage() {
     setFormName(area.name);
     setFormDescription(area.description || "");
     setFormColor(area.color || COLOR_OPTIONS[0]);
-    setFormIcon(area.icon || ICON_OPTIONS[0]);
+    setFormIcon(area.icon || ICON_OPTIONS[0].value);
     setEditArea(area);
     setCreateModalOpen(true);
   };
@@ -303,6 +327,23 @@ export default function AdminAreasPage() {
     );
   }
 
+  const getAreaIcon = (iconName: string | null) => {
+    switch (iconName) {
+      case "cpu": return <Cpu className="h-5 w-5" />;
+      case "users": return <Users className="h-5 w-5" />;
+      case "banknote": return <Banknote className="h-5 w-5" />;
+      case "settings": return <Settings className="h-5 w-5" />;
+      case "shopping-cart": return <ShoppingCart className="h-5 w-5" />;
+      case "scale": return <Scale className="h-5 w-5" />;
+      case "folder": return <Folder className="h-5 w-5" />;
+      case "layers": return <Layers className="h-5 w-5" />;
+      case "box": return <Box className="h-5 w-5" />;
+      case "briefcase": return <Briefcase className="h-5 w-5" />;
+      case "star": return <Star className="h-5 w-5" />;
+      default: return <Building2 className="h-5 w-5" />;
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -353,7 +394,7 @@ export default function AdminAreasPage() {
                     className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
                     style={{ backgroundColor: area.color || COLOR_OPTIONS[0] }}
                   >
-                    <Building2 className="h-5 w-5" />
+                    {getAreaIcon(area.icon)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -510,6 +551,25 @@ export default function AdminAreasPage() {
                 placeholder={t('admin.areaDescriptionPlaceholder')}
                 data-testid="input-area-description"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="area-icon">{t('admin.areaIcon') || "Ícone da Área"}</Label>
+              <Select value={formIcon} onValueChange={setFormIcon}>
+                <SelectTrigger id="area-icon">
+                  <SelectValue placeholder="Selecione um ícone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ICON_OPTIONS.map((icon) => (
+                    <SelectItem key={icon.value} value={icon.value}>
+                      <div className="flex items-center gap-2">
+                        {getAreaIcon(icon.value)}
+                        <span>{icon.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
