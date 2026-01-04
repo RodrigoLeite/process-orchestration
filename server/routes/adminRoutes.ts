@@ -397,6 +397,49 @@ router.delete(
   }
 );
 
+// IMPORTANT: More specific route must come BEFORE less specific ones
+router.patch(
+  '/teams/:teamId/members/:userId/role',
+  checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
+  async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { teamId, userId } = req.params;
+      const { role } = req.body;
+      
+      console.log(`[DEBUG] Updating team member role - teamId: ${teamId}, userId: ${userId}, role: ${role}`);
+      
+      if (!['lead', 'member', 'viewer'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid team role' });
+      }
+      
+      const team = await storage.getTeam(teamId);
+      if (!team || team.tenantId !== tenantId) {
+        return res.status(404).json({ error: 'Team not found' });
+      }
+      
+      const userTeam = await storage.getUserTeam(teamId, userId);
+      if (!userTeam) {
+        console.log(`[DEBUG] User ${userId} not in team ${teamId}, auto-assigning...`);
+        await userManagementService.assignUserToTeam(tenantId, userId, teamId);
+        const newUserTeam = await storage.getUserTeam(teamId, userId);
+        if (!newUserTeam) throw new Error("Failed to auto-assign user to team");
+        
+        const updatedUserTeam = await storage.updateUserTeamRole(newUserTeam.id, role);
+        return res.json({ userTeam: updatedUserTeam });
+      }
+      
+      const updatedUserTeam = await storage.updateUserTeamRole(userTeam.id, role);
+      console.log(`[DEBUG] Successfully updated team member role:`, updatedUserTeam);
+      
+      res.json({ userTeam: updatedUserTeam });
+    } catch (error: any) {
+      console.error('Error updating team member role:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
 router.post(
   '/teams/:teamId/members/:userId',
   checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
@@ -1003,49 +1046,6 @@ router.patch(
       res.json({ team: updatedTeam });
     } catch (error: any) {
       console.error('Error moving team to area:', error);
-      res.status(400).json({ error: error.message });
-    }
-  }
-);
-
-router.patch(
-  '/teams/:teamId/members/:userId/role',
-  checkPermission(PERMISSIONS.TENANT_MANAGE_TEAMS),
-  async (req: Request, res: Response) => {
-    try {
-      const tenantId = getTenantId(req);
-      const { teamId, userId } = req.params;
-      const { role } = req.body;
-      
-      console.log(`[DEBUG] Updating team member role - teamId: ${teamId}, userId: ${userId}, role: ${role}`);
-      
-      if (!['lead', 'member', 'viewer'].includes(role)) {
-        return res.status(400).json({ error: 'Invalid team role' });
-      }
-      
-      const team = await storage.getTeam(teamId);
-      if (!team || team.tenantId !== tenantId) {
-        return res.status(404).json({ error: 'Team not found' });
-      }
-      
-      const userTeam = await storage.getUserTeam(teamId, userId);
-      if (!userTeam) {
-        console.log(`[DEBUG] User ${userId} not in team ${teamId}, auto-assigning...`);
-        // Auto-assign user to team if they're not already in it
-        await userManagementService.assignUserToTeam(tenantId, userId, teamId);
-        const newUserTeam = await storage.getUserTeam(teamId, userId);
-        if (!newUserTeam) throw new Error("Failed to auto-assign user to team");
-        
-        const updatedUserTeam = await storage.updateUserTeamRole(newUserTeam.id, role);
-        return res.json({ userTeam: updatedUserTeam });
-      }
-      
-      const updatedUserTeam = await storage.updateUserTeamRole(userTeam.id, role);
-      console.log(`[DEBUG] Successfully updated team member role:`, updatedUserTeam);
-      
-      res.json({ userTeam: updatedUserTeam });
-    } catch (error: any) {
-      console.error('Error updating team member role:', error);
       res.status(400).json({ error: error.message });
     }
   }
