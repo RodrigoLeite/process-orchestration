@@ -142,6 +142,8 @@ export default function AdminAreasPage() {
   const [selectedOwnerId, setSelectedOwnerId] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
+  const [teamsModalOpen, setTeamsModalOpen] = useState(false);
+  const [viewingArea, setViewingArea] = useState<AreaEnriched | null>(null);
 
   const createArea = useCreateArea();
   const updateArea = useUpdateArea();
@@ -422,6 +424,13 @@ export default function AdminAreasPage() {
                       <Shield className="h-4 w-4 mr-2" />
                       {t('admin.manageAdmins')}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setViewingArea(area);
+                      setTeamsModalOpen(true);
+                    }}>
+                      <Users className="h-4 w-4 mr-2" />
+                      {t('admin.showTeams') || "Mostrar Times"}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => openEditModal(area)}>
                       <Pencil className="h-4 w-4 mr-2" />
                       {t('admin.editArea')}
@@ -601,6 +610,61 @@ export default function AdminAreasPage() {
               data-testid="button-save-area"
             >
               {editArea ? t('common.save') : t('admin.newArea')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={teamsModalOpen} onOpenChange={setTeamsModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t('admin.teamsInArea') || "Times na Área"}: {viewingArea && (getAreaName(viewingArea.name, language) || viewingArea.name)}
+            </DialogTitle>
+            <DialogDescription>
+              {t('admin.teamsListDescription') || "Lista de times vinculados a esta área de governança."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+            {viewingArea?.teams && viewingArea.teams.length > 0 ? (
+              viewingArea.teams.map((team: any) => (
+                <div 
+                  key={team.id} 
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: team.color || "#6366f1" }}
+                    >
+                      {team.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{team.name}</p>
+                      {team.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">{team.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] h-5">
+                    {team.memberCount || 0} {t('admin.members') || "membros"}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {t('admin.noTeamsInArea') || "Nenhum time vinculado a esta área."}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeamsModalOpen(false)}>
+              {t('common.close') || "Fechar"}
             </Button>
           </DialogFooter>
         </DialogContent>
