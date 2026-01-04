@@ -1086,6 +1086,7 @@ router.patch(
       }
       
       const updatedTeam = await storage.updateTeam(teamId, { areaId: areaId || null });
+      console.log(`[DEBUG] Moved team to area. Result:`, updatedTeam);
       
       res.json({ team: updatedTeam ? normalizeRecord(updatedTeam) : null });
     } catch (error: any) {
