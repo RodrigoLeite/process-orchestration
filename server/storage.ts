@@ -1453,8 +1453,11 @@ export class DatabaseStorage implements IStorage {
   async getUserTeam(teamId: string, userId: string): Promise<UserTeam | undefined> {
     if (!teamId || !userId) return undefined;
     try {
+      const normalizedTeamId = normalizeUUID(teamId);
+      const normalizedUserId = normalizeUUID(userId);
+      
       const result = await this.db.select().from(userTeams)
-        .where(and(eq(userTeams.teamId, teamId), eq(userTeams.userId, userId)))
+        .where(and(eq(userTeams.teamId, normalizedTeamId), eq(userTeams.userId, normalizedUserId)))
         .limit(1);
       
       // Defensively handle null/undefined response from Neon HTTP driver

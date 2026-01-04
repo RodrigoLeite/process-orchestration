@@ -187,9 +187,13 @@ export default function AdminTeamsPage() {
     
     // Check if any role matches
     return rolesList.some((r: string) => 
-      leadEligibleRoles.some(eligible => 
-        r.toLowerCase().replace(/[_\s]/g, '') === eligible.toLowerCase().replace(/[_\s]/g, '')
-      )
+      leadEligibleRoles.some(eligible => {
+        const normalizedRole = r.toLowerCase().replace(/[_\s]/g, '');
+        const normalizedEligible = eligible.toLowerCase().replace(/[_\s]/g, '');
+        // Special case for Tenant Owner which might be coming as "Tenant Owner" from different places
+        if (normalizedRole === 'tenantowner' || normalizedRole === 'owner') return true;
+        return normalizedRole === normalizedEligible;
+      })
     );
   }) || [];
 
