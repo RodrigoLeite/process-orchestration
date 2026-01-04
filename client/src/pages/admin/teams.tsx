@@ -161,10 +161,35 @@ export default function AdminTeamsPage() {
   };
 
   // Filter users for Team Lead selection: Tenant Owner, Tenant Admin, Area Owner, Area Admin, Team Lead
+  const leadEligibleRoles = [
+    "tenant_owner", "tenant_admin", "area_owner", "area_admin", "lead", "team_lead",
+    "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin", "Team Lead"
+  ];
+  
   const leadEligibleUsers = usersData?.users?.filter((u: any) => {
-    const roles = Array.isArray(u.roles) ? u.roles.map((r: any) => typeof r === 'string' ? r : (r.name || r.id)) : [u.role];
-    return roles.some((r: string) => 
-      ["tenant_owner", "tenant_admin", "area_owner", "area_admin", "lead", "Tenant Owner", "Tenant Admin", "Area Owner", "Area Admin", "Team Lead"].includes(r)
+    // Check multiple possible role fields
+    const rolesList: string[] = [];
+    
+    // Add role from u.role
+    if (u.role) rolesList.push(u.role);
+    
+    // Add roles from u.roles array
+    if (Array.isArray(u.roles)) {
+      u.roles.forEach((r: any) => {
+        if (typeof r === 'string') rolesList.push(r);
+        else if (r?.name) rolesList.push(r.name);
+        else if (r?.id) rolesList.push(r.id);
+      });
+    }
+    
+    // Add tenantRole if exists
+    if (u.tenantRole) rolesList.push(u.tenantRole);
+    
+    // Check if any role matches
+    return rolesList.some((r: string) => 
+      leadEligibleRoles.some(eligible => 
+        r.toLowerCase().replace(/[_\s]/g, '') === eligible.toLowerCase().replace(/[_\s]/g, '')
+      )
     );
   }) || [];
 
