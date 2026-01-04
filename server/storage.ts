@@ -1498,14 +1498,29 @@ export class DatabaseStorage implements IStorage {
     if (!areaId) return [];
     
     try {
-      const result = await this.db.select().from(teams)
-        .where(eq(teams.areaId, areaId))
-        .orderBy(teams.name);
-      if (!result || !Array.isArray(result)) {
+      const normalizedAreaId = normalizeUUID(areaId);
+      // Use db.execute with sql template for better null handling with Neon HTTP driver
+      const result = await this.db.execute(
+        sql`SELECT id::text, tenant_id::text, area_id::text, name, description, created_at, updated_at FROM teams WHERE area_id = ${normalizedAreaId} ORDER BY name`
+      );
+      
+      if (!result || !result.rows || !Array.isArray(result.rows)) {
         return [];
       }
-      return result;
-    } catch (error) {
+
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        name: row.name,
+        description: row.description,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      } as Team));
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return [];
+      }
       console.error('Error in getTeamsByArea:', error);
       return [];
     }

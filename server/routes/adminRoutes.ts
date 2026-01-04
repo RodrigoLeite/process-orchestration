@@ -742,7 +742,14 @@ router.get('/areas', async (req: Request, res: Response) => {
       const areaId = normalizedArea.id;
       
       // Fetch fresh teams for this area
-      const teamsList = await storage.getTeamsByArea(areaId);
+      let teamsList: Team[] = [];
+      try {
+        teamsList = await storage.getTeamsByArea(areaId);
+      } catch (err) {
+        console.error(`[adminRoutes] Error fetching teams for area ${areaId}:`, err);
+        teamsList = [];
+      }
+      
       const adminsList = adminsByArea.get(areaId) || [];
       
       const enrichedTeams = await Promise.all((teamsList || []).map(async (team) => {
