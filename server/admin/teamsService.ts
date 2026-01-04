@@ -34,6 +34,7 @@ export const teamsService = {
         .from(teams)
         .where(eq(teams.tenantId, normalizedTenantId))
         .orderBy(desc(teams.createdAt));
+      // Defensively handle null/undefined response from Neon HTTP driver
       if (!teamRows || !Array.isArray(teamRows)) {
         teamRows = [];
       }
