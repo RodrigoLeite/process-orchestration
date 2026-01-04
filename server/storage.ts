@@ -261,12 +261,14 @@ export class DatabaseStorage implements IStorage {
     try {
       if (tenantId) {
         const result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+        // Defensively handle null/undefined response from Neon HTTP driver
         if (!result || !Array.isArray(result)) {
           return [];
         }
         return normalizeRecords(result);
       }
       const result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
+      // Defensively handle null/undefined response from Neon HTTP driver
       if (!result || !Array.isArray(result)) {
         return [];
       }
@@ -1383,7 +1385,7 @@ export class DatabaseStorage implements IStorage {
       if (!result || !Array.isArray(result)) {
         return [];
       }
-      return result;
+      return result.map(t => normalizeRecord(t)) as Team[];
     } catch (error) {
       console.error('Error in getTeamsByTenant:', error);
       return [];
