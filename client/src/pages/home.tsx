@@ -95,6 +95,31 @@ export default function Dashboard() {
     }
   };
 
+  // Fetch areas to ensure they are available for display
+  const { data: areas = [] } = useQuery<any[]>({
+    queryKey: ["all-areas", tenant?.id],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/areas");
+      if (!res.ok) throw new Error("Failed to fetch areas");
+      const data = await res.json();
+      return data.areas || [];
+    },
+    enabled: !!tenant?.id
+  });
+
+  const demandsByArea = demands.reduce((acc, demand) => {
+    const area = demand.assignedTo || t("home.unassigned");
+    acc[area] = (acc[area] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Ensure all existing areas are shown even if they have 0 demands
+  areas.forEach(area => {
+    if (!demandsByArea[area.name]) {
+      demandsByArea[area.name] = 0;
+    }
+  });
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -384,22 +409,28 @@ export default function Dashboard() {
               <span className="text-muted-foreground">{t("common.loading")}</span>
             </div>
           ) : (
-            <div className="space-y-2">
-              {Object.entries(
-                demands.reduce((acc, demand) => {
-                  const area = demand.assignedTo || t("home.unassigned");
-                  acc[area] = (acc[area] || 0) + 1;
-                  return acc;
-                }, {} as Record<string, number>)
-              ).map(([area, count]) => (
-                <div
-                  key={area}
-                  className="flex items-center justify-between p-2 rounded border border-border"
-                >
-                  <span className="font-medium">{area}</span>
-                  <Badge color="blue">{count}</Badge>
-                </div>
-              ))}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(demandsByArea)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([areaName, count]) => {
+                  const areaData = areas.find(a => a.name === areaName);
+                  return (
+                    <div
+                      key={areaName}
+                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer"
+                      onClick={() => navigate(`/app/workflows?area=${encodeURIComponent(areaName)}`)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={ { backgroundColor: areaData?.color || '#6366f1' } }
+                        />
+                        <span className="font-medium text-sm">{areaName}</span>
+                      </div>
+                      <Badge color={count > 0 ? "blue" : "gray"}>{count}</Badge>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </CardContent>
