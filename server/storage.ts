@@ -259,20 +259,28 @@ export class DatabaseStorage implements IStorage {
 
   async getDemands(tenantId?: string): Promise<Demand[]> {
     try {
+      const normalizedTenantId = tenantId ? normalizeUUID(tenantId) : null;
       let result;
-      if (tenantId) {
-        result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+      
+      if (normalizedTenantId) {
+        result = await this.db.execute(
+          sql`SELECT * FROM demands WHERE tenant_id = ${normalizedTenantId} ORDER BY created_at DESC`
+        );
       } else {
-        result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
+        result = await this.db.execute(
+          sql`SELECT * FROM demands ORDER BY created_at DESC`
+        );
       }
       
-      // Defensively handle null/undefined/non-array response from Neon HTTP driver
-      if (!result || !Array.isArray(result)) {
-        console.log('[DEBUG] getDemands returned non-array:', result);
+      if (!result || !result.rows || !Array.isArray(result.rows)) {
         return [];
       }
-      return normalizeRecords(result);
-    } catch (error) {
+
+      return normalizeRecords(result.rows);
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return [];
+      }
       console.error('Error in getDemands:', error);
       return [];
     }
@@ -893,8 +901,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTenant(id: string): Promise<Tenant | undefined> {
-    const result = await this.db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
-    return result[0];
+    if (!id) return undefined;
+    try {
+      const normalizedId = normalizeUUID(id);
+      const result = await this.db.execute(
+        sql`SELECT id::text, name, slug, plan, is_configured, metadata, created_at FROM tenants WHERE id = ${normalizedId} LIMIT 1`
+      );
+      
+      if (!result || !result.rows || result.rows.length === 0) {
+        return undefined;
+      }
+      
+      const row = result.rows[0] as any;
+      return {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        plan: row.plan,
+        isConfigured: row.is_configured,
+        metadata: row.metadata,
+        createdAt: row.created_at,
+      } as Tenant;
+    } catch (error: any) {
+      if (error?.message?.includes("Cannot read properties of null")) {
+        return undefined;
+      }
+      console.error('Error in getTenant:', error);
+      return undefined;
+    }
   }
 
   async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
@@ -904,11 +938,29 @@ export class DatabaseStorage implements IStorage {
 
   async getTenantUser(tenantId: string, userId: string): Promise<TenantUser | undefined> {
     try {
-      const result = await this.db.select().from(tenantUsers).where(
-        and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId))
-      ).limit(1).catch(() => []);
-      return (Array.isArray(result) && result.length > 0) ? result[0] : undefined;
-    } catch (error) {
+      const normalizedTenantId = normalizeUUID(tenantId);
+      const normalizedUserId = normalizeUUID(userId);
+      
+      const result = await this.db.execute(
+        sql`SELECT id::text, tenant_id::text, user_id::text, role, created_at FROM tenant_users WHERE tenant_id = ${normalizedTenantId} AND user_id = ${normalizedUserId} LIMIT 1`
+      );
+      
+      if (!result || !result.rows || result.rows.length === 0) {
+        return undefined;
+      }
+      
+      const row = result.rows[0] as any;
+      return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        userId: row.user_id,
+        role: row.role,
+        createdAt: row.created_at,
+      } as TenantUser;
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return undefined;
+      }
       console.error('Error in getTenantUser:', error);
       return undefined;
     }
@@ -1040,14 +1092,31 @@ export class DatabaseStorage implements IStorage {
   async getArea(id: string): Promise<Area | undefined> {
     if (!id) return undefined;
     try {
-      const result = await this.db.select().from(areas).where(eq(areas.id, id)).limit(1);
+      const normalizedId = normalizeUUID(id);
+      const result = await this.db.execute(
+        sql`SELECT id::text, tenant_id::text, name, description, color, icon, is_default, created_at, updated_at FROM areas WHERE id = ${normalizedId} LIMIT 1`
+      );
       
-      // Defensively handle result that might be null or empty from Neon driver
-      if (!result || !Array.isArray(result) || result.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
         return undefined;
       }
-      return normalizeRecord(result[0]) as Area;
-    } catch (error) {
+      
+      const row = result.rows[0] as any;
+      return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        name: row.name,
+        description: row.description,
+        color: row.color,
+        icon: row.icon,
+        isDefault: row.is_default,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      } as Area;
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return undefined;
+      }
       console.error('Error in getArea:', error);
       return undefined;
     }
@@ -1056,15 +1125,31 @@ export class DatabaseStorage implements IStorage {
   async getAreasByTenant(tenantId: string): Promise<Area[]> {
     if (!tenantId) return [];
     try {
-      const result = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
+      const normalizedTenantId = normalizeUUID(tenantId);
+      // Use db.execute with sql template for better null handling with Neon HTTP driver
+      const result = await this.db.execute(
+        sql`SELECT id::text, tenant_id::text, name, description, color, icon, is_default, created_at, updated_at FROM areas WHERE tenant_id = ${normalizedTenantId} ORDER BY name`
+      );
       
-      // Defensively handle null/undefined/non-array response from Neon HTTP driver
-      if (!result || !Array.isArray(result)) {
-        console.log('[DEBUG] getAreasByTenant returned non-array:', result);
+      if (!result || !result.rows || !Array.isArray(result.rows)) {
         return [];
       }
-      return result.map(a => normalizeRecord(a)) as Area[];
-    } catch (error) {
+
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        name: row.name,
+        description: row.description,
+        color: row.color,
+        icon: row.icon,
+        isDefault: row.is_default,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      } as Area));
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return [];
+      }
       console.error('Error in getAreasByTenant:', error);
       return [];
     }
@@ -1381,15 +1466,29 @@ export class DatabaseStorage implements IStorage {
   async getTeamsByTenant(tenantId: string): Promise<Team[]> {
     if (!tenantId) return [];
     try {
-      const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
+      const normalizedTenantId = normalizeUUID(tenantId);
+      // Use db.execute with sql template for better null handling with Neon HTTP driver
+      const result = await this.db.execute(
+        sql`SELECT id::text, tenant_id::text, area_id::text, name, description, created_at, updated_at FROM teams WHERE tenant_id = ${normalizedTenantId} ORDER BY name`
+      );
       
-      // Defensively handle null/undefined/non-array response from Neon HTTP driver
-      if (!result || !Array.isArray(result)) {
-        console.log('[DEBUG] getTeamsByTenant returned non-array:', result);
+      if (!result || !result.rows || !Array.isArray(result.rows)) {
         return [];
       }
-      return result.map(t => normalizeRecord(t)) as Team[];
-    } catch (error) {
+
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        areaId: row.area_id,
+        name: row.name,
+        description: row.description,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      } as Team));
+    } catch (error: any) {
+      if (error?.message?.includes("null")) {
+        return [];
+      }
       console.error('Error in getTeamsByTenant:', error);
       return [];
     }
