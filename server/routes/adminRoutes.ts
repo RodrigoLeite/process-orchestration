@@ -432,19 +432,27 @@ router.patch(
       
       const userTeam = await storage.getUserTeam(teamId, userId);
       if (!userTeam) {
-        console.log(`[DEBUG] User ${userId} not in team ${teamId}, auto-assigning...`);
-        await userManagementService.assignUserToTeam(tenantId, userId, teamId);
-        const newUserTeam = await storage.getUserTeam(teamId, userId);
-        if (!newUserTeam) throw new Error("Failed to auto-assign user to team");
-        
-        const updatedUserTeam = await storage.updateUserTeamRole(newUserTeam.id, role);
-        return res.json({ userTeam: updatedUserTeam });
+        console.log(`[DEBUG] User ${userId} not in team ${teamId}, inserting with role ${role}...`);
+        // Insert directly with the correct role instead of updating after
+        const newUserTeam = await storage.createUserTeam({
+          tenantId: normalizedRequestTenantId,
+          userId: normalizeUUID(userId),
+          teamId: normalizeUUID(teamId),
+          role: role
+        });
+        console.log(`[DEBUG] Created userTeam:`, newUserTeam);
+        return res.json({ userTeam: normalizeRecord(newUserTeam) });
       }
       
-      const updatedUserTeam = await storage.updateUserTeamRole(userTeam.id, role);
+      // User already in team, update their role
+      const normalizedUserTeam = normalizeRecord(userTeam);
+      const normalizedUserTeamId = normalizeUUID(normalizedUserTeam.id);
+      console.log(`[DEBUG] Updating existing userTeam with ID: ${normalizedUserTeamId}`);
+      
+      const updatedUserTeam = await storage.updateUserTeamRole(normalizedUserTeamId, role);
       console.log(`[DEBUG] Successfully updated team member role:`, updatedUserTeam);
       
-      res.json({ userTeam: updatedUserTeam });
+      res.json({ userTeam: normalizeRecord(updatedUserTeam) });
     } catch (error: any) {
       console.error('Error updating team member role:', error);
       res.status(400).json({ error: error.message });
