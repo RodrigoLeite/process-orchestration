@@ -1555,8 +1555,8 @@ export class DatabaseStorage implements IStorage {
 
       if (setClause.length === 1) return await this.getTeam(id); // Only updated_at
 
-      values.push(normalizedId);
       const query = `UPDATE teams SET ${setClause.join(', ')} WHERE id = $${i} RETURNING *`;
+      values.push(normalizedId);
       
       const result = await this.db.execute(sql.raw(query, ...values));
       
