@@ -1470,8 +1470,19 @@ export class DatabaseStorage implements IStorage {
 
   async createUserTeam(ut: InsertUserTeam): Promise<UserTeam> {
     try {
-      const result = await this.db.insert(userTeams).values(ut).returning();
-      if (!result || !result[0]) throw new Error("Failed to create user team");
+      // Generate UUID for the new record
+      const id = crypto.randomUUID();
+      
+      // Insert without RETURNING (Neon HTTP driver workaround)
+      await this.db.insert(userTeams).values({ ...ut, id });
+      
+      // Fetch the inserted record
+      const result = await this.db.select().from(userTeams).where(eq(userTeams.id, id)).limit(1);
+      
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        throw new Error("Failed to create user team - record not found after insert");
+      }
+      
       return result[0];
     } catch (error) {
       console.error('Error in createUserTeam:', error);
