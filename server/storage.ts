@@ -1600,7 +1600,7 @@ export class DatabaseStorage implements IStorage {
         FROM user_teams 
         WHERE team_id = $1
       `;
-      const result = await this.db.execute(sql.raw(query, normalizedTeamId));
+      const result = await this.db.execute(sql.raw(`SELECT DISTINCT ON (user_id) * FROM user_teams WHERE team_id = '${normalizedTeamId}'`));
       
       if (!result || !result.rows) {
         return [];
