@@ -737,20 +737,28 @@ router.get('/areas', async (req: Request, res: Response) => {
     }
     
     // Build response without additional DB queries
-    const areasWithData = areasList.map(area => {
+    const areasWithData = await Promise.all(areasList.map(async area => {
       const normalizedArea = normalizeRecord(area);
       const areaId = normalizedArea.id;
       const teamsList = teamsByArea.get(areaId) || [];
       const adminsList = adminsByArea.get(areaId) || [];
       
+      const enrichedTeams = await Promise.all(teamsList.map(async (team) => {
+        const members = await storage.getTeamMembers(team.id);
+        return {
+          ...team,
+          memberCount: members.length
+        };
+      }));
+      
       return {
         ...normalizedArea,
-        teams: teamsList,
+        teams: enrichedTeams,
         admins: adminsList,
-        teamCount: teamsList.length,
+        teamCount: enrichedTeams.length,
         adminCount: adminsList.length
       };
-    });
+    }));
     
     res.json({ areas: areasWithData });
   } catch (error: any) {
