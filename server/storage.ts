@@ -1555,9 +1555,12 @@ export class DatabaseStorage implements IStorage {
 
       if (setClause.length === 1) return await this.getTeam(id); // Only updated_at
 
+      // IMPORTANT: The placeholder for WHERE id = $X must be the LAST one
+      // Since i was already incremented for updated_at, i is now the next number
       const query = `UPDATE teams SET ${setClause.join(', ')} WHERE id = $${i} RETURNING *`;
       values.push(normalizedId);
       
+      console.log(`[DEBUG] Executing SQL: ${query} with values:`, values);
       const result = await this.db.execute(sql.raw(query, ...values));
       
       if (!result || !result.rows || result.rows.length === 0) {
