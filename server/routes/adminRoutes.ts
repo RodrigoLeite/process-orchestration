@@ -1030,6 +1030,7 @@ router.patch(
       
       const userTeam = await storage.getUserTeam(teamId, userId);
       if (!userTeam) {
+        console.log(`[DEBUG] User ${userId} not in team ${teamId}, auto-assigning...`);
         // Auto-assign user to team if they're not already in it
         await userManagementService.assignUserToTeam(tenantId, userId, teamId);
         const newUserTeam = await storage.getUserTeam(teamId, userId);
@@ -1040,6 +1041,7 @@ router.patch(
       }
       
       const updatedUserTeam = await storage.updateUserTeamRole(userTeam.id, role);
+      console.log(`[DEBUG] Successfully updated team member role:`, updatedUserTeam);
       
       res.json({ userTeam: updatedUserTeam });
     } catch (error: any) {
