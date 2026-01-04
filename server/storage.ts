@@ -259,17 +259,16 @@ export class DatabaseStorage implements IStorage {
 
   async getDemands(tenantId?: string): Promise<Demand[]> {
     try {
+      let result;
       if (tenantId) {
-        const result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
-        // Defensively handle null/undefined response from Neon HTTP driver
-        if (!result || !Array.isArray(result)) {
-          return [];
-        }
-        return normalizeRecords(result);
+        result = await this.db.select().from(demands).where(eq(demands.tenantId, tenantId as any)).orderBy(desc(demands.createdAt));
+      } else {
+        result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
       }
-      const result = await this.db.select().from(demands).orderBy(desc(demands.createdAt));
-      // Defensively handle null/undefined response from Neon HTTP driver
+      
+      // Defensively handle null/undefined/non-array response from Neon HTTP driver
       if (!result || !Array.isArray(result)) {
+        console.log('[DEBUG] getDemands returned non-array:', result);
         return [];
       }
       return normalizeRecords(result);
@@ -1058,11 +1057,13 @@ export class DatabaseStorage implements IStorage {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(areas).where(eq(areas.tenantId, tenantId)).orderBy(areas.name);
-      // Defensively handle null/undefined response from Neon HTTP driver
+      
+      // Defensively handle null/undefined/non-array response from Neon HTTP driver
       if (!result || !Array.isArray(result)) {
+        console.log('[DEBUG] getAreasByTenant returned non-array:', result);
         return [];
       }
-      return result;
+      return result.map(a => normalizeRecord(a)) as Area[];
     } catch (error) {
       console.error('Error in getAreasByTenant:', error);
       return [];
@@ -1381,8 +1382,10 @@ export class DatabaseStorage implements IStorage {
     if (!tenantId) return [];
     try {
       const result = await this.db.select().from(teams).where(eq(teams.tenantId, tenantId)).orderBy(teams.name);
-      // Defensively handle null/undefined response from Neon HTTP driver
+      
+      // Defensively handle null/undefined/non-array response from Neon HTTP driver
       if (!result || !Array.isArray(result)) {
+        console.log('[DEBUG] getTeamsByTenant returned non-array:', result);
         return [];
       }
       return result.map(t => normalizeRecord(t)) as Team[];
